@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/screenshot1.jpg" width="550"/>
-</p>
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/screenshot1.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/screenshot2.jpg)
 
@@ -23,7 +21,7 @@ Sample Media: https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!as
 
 ## Install
 
-PDJ Media Repeater a green standalone software. In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
+PDJ Media Repeater is a green standalone software. In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
 
 Double click the .srt file in the webpage to launch PDJ Media Repeater. 
 
