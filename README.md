@@ -11,13 +11,17 @@
 PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language learning. It's modified based on Filebrowser. 
 
 ## Assets Download
-Windows: https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/windows-amd64/filebrowser.zip 
+windows version:
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14853719/filebrowser.zip)
 
-Linux amd64: https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/linux-amd64/filebrowser.zip
+linux amd64 version:
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14853739/filebrowser.zip)
 
-Linux arm64: https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/linux-arm64/filebrowser.zip 
+linux arm64 version:
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14853749/filebrowser.zip)
 
-Sample Media: https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/sample%20media.zip
+sample media:
+[sample media.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14853810/sample.media.zip)
 
 ## Install
 
