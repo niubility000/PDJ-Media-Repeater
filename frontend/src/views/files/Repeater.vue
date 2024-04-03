@@ -698,8 +698,8 @@ export default {
         } else if (
           i > 0 &&
           i < this.srtSubtitles.length - 1 &&
-          media.currentTime < this.srtSubtitles[i].startTime &&
-          media.currentTime > this.srtSubtitles[i - 1].endTime
+          media.currentTime < this.srtSubtitles[i + 1].startTime &&
+          media.currentTime > this.srtSubtitles[i].endTime
         ) {
           this.sentenceIndex = i + 1;
         } else if (media.currentTime < this.srtSubtitles[0].startTime) {
