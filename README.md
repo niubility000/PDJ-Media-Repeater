@@ -1,6 +1,6 @@
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot1.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot1.jpg)
 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot2.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot2.jpg)
 
 [![Build](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml/badge.svg)](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/filebrowser/filebrowser?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser)
@@ -20,6 +20,8 @@ linux amd64 version:
 linux arm64 version:
 [filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/releases/download/v2.0/filebrowser-linux-arm64.zip)
 
+(To compile the filebrowser for other platform, see "Method of Compiling Filebrowser Source Codes in windows")
+
 [sample media.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14895563/sample.media.zip)
 (Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
 
@@ -30,7 +32,7 @@ In windows, just double click the filebrowser.exe, then you can visit it at 127.
 Double click the .srt file in the webpage to launch PDJ Media Repeater. 
 
 Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder after you change the settings or add a favorate sentence. 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot3.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
 To change the password, the root dir, the port..., please see "Filebrowser Settings with command lines". 
 
@@ -132,7 +134,7 @@ Download it from https://nodejs.org
 Install it, set the path to C:\nodejs\, then next, next,...
 
 set the envirnment variables: 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot4.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot4.jpg)
 
 restart your cmd windows:
 
@@ -141,7 +143,7 @@ node -v
 npm -v   // to make sure you installed them correctly.
 
 1.3 Download the filebrowser source code:
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot5.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot5.jpg)
 
 Unzip it, and put the filebrowser folder into c:\go\src\
 
