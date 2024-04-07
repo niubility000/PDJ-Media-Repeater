@@ -60,21 +60,21 @@ Swipe down: close this player.
 
 ## Functions:
 
-.Switch subtitle languages.
+-Switch subtitle languages.
 
-.Jump to a certain sentence by inputting the sentence number
+-Jump to a certain sentence by inputting the sentence number
 
-.Switch between Sentence Repetition Mode and Regular Mode
+-Switch between Sentence Repetition Mode and Regular Mode
 
-.In Sentence Repetition Mode:
+-In Sentence Repetition Mode:
 
-..Set the repetition times, intervals, playback speed for each time
+--Set the repetition times, intervals, playback speed for each time
 
-..add or remove favorite sentences 
+--add or remove favorite sentences 
 
-..play the favorite list
+--play the favorite list
 
-..Utter the translation lines in the subtitles with TTS at first or in the end.
+--Utter the translation lines in the subtitles with TTS in the beginning or in the end.
 
 ## Source Files Changed in this Project based on Filebrowser v2.28.0
 
