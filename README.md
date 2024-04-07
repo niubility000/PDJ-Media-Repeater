@@ -29,7 +29,7 @@ In windows, just double click the filebrowser.exe, then you can visit it at 127.
 
 Double click the .srt file in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories"  It will add a "favorate.txt" file in current folder after you change the settings or add a favorate sentence. 
+Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder after you change the settings or add a favorate sentence. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot3.jpg)
 
 To change the password, the root dir, the port..., please see "Filebrowser Settings with command lines". 
