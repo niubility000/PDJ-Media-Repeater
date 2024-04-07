@@ -20,11 +20,10 @@ linux amd64 version:
 linux arm64 version:
 [filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/releases/download/v2.0/filebrowser-linux-arm64.zip)
 
-sample media:
 [sample media.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14895563/sample.media.zip)
+(Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
 
 ## Install
-
 PDJ Media Repeater is a green standalone software. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
 In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
 
@@ -32,4 +31,11 @@ Double click the .srt file in the webpage to launch PDJ Media Repeater.
 
 To change the password, the root dir, the port, please visit Filebrowser: https://github.com/filebrowser/filebrowser 
 
-
+## Operating Instructions
+Click top-right button: switch Playback Mode between "Single Sentence Repetition Mode" and "RegularMode".
+Click (down arrow key on keyboard): replay current sentence.
+DoubleClick (up arrow key on keyboard): pause.
+Swipe left (right arrow key on keyboard): jump to next sentence.
+Swipe right (left arrow key on keyboard): jump to last sentence.
+Swipe Up: add this sentence to Favorate List.
+Swipe down: close this player.
