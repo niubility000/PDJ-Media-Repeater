@@ -8,7 +8,7 @@
 [![Version](https://img.shields.io/github/release/filebrowser/filebrowser.svg?style=flat-square)](https://github.com/filebrowser/filebrowser/releases/latest)
 [![Chat IRC](https://img.shields.io/badge/freenode-%23filebrowser-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23filebrowser)
 
-PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language learning. It's modified based on Filebrowser. 
+PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language learning. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
 
 ## Assets Download
 
@@ -25,12 +25,14 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 (Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
 
 ## Install
-PDJ Media Repeater is a green standalone software. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
+
+PDJ Media Repeater is a green standalone software. 
+
 In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
 
 Double click the .srt file in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder after you change the settings or add a favorate sentence. 
+Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
 To change the password, the root dir, the port..., please see "Filebrowser Settings with command lines". 
@@ -39,9 +41,9 @@ To change the password, the root dir, the port..., please see "Filebrowser Setti
 
 Media file should be .Mp3 or .Mp4.
 
-.srt subtitle file should has the same name with the .mp3 or mp4 in the same folder. 
+.srt subtitle file should has the same name with the .mp3 or mp4 file in the same folder. 
 
-If the .srt file has language other than English, it should use utf8 encoding. (You can use windows NotePad to change it easily, just save as, choose "utf8".)
+If the .srt file has language other than English, it should use utf8 encoding. (To change it, just open it with windows NotePad and choose "save as", select "utf8" encoding.)
 
 ## Operating Instructions
 
@@ -86,10 +88,21 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 Modified:
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Files.vue
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot6.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot7.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot8.jpg)
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/root.go
 
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot9.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot10.jpg)
+
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/version/version.go
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot11.jpg)
 
 ## Filebrowser Settings with command lines
 
