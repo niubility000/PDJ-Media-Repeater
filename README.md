@@ -34,11 +34,19 @@ Note: To change the settings or add a favorite sentence, you need login the file
 
 To change the password, the root dir, the port..., please see "Filebrowser Settings with command lines". 
 
+## Media Files Requirements
+
+Media file should be .Mp3 or .Mp4.
+
+.srt subtitle file should has the same name with the .mp3 or mp4 in the same folder. 
+
+If the .srt file has language other than English, it should use utf8 encoding. (You can use windows NotePad to change it easily, just save as, choose "utf8".)
+
 ## Operating Instructions
 
 Click top-right button: switch Playback Mode between "Single Sentence Repetition Mode" and "RegularMode".
 
-Click (down arrow key on keyboard): replay current sentence.
+Click in subtitle area (down arrow key on keyboard): replay current sentence.
 
 DoubleClick (up arrow key on keyboard): pause.
 
@@ -49,6 +57,24 @@ Swipe right (left arrow key on keyboard): jump to last sentence.
 Swipe Up: add this sentence to Favorate List.
 
 Swipe down: close this player.
+
+## Functions:
+
+.Switch subtitle languages.
+
+.Jump to a certain sentence by inputting the sentence number
+
+.Switch between Sentence Repetition Mode and Regular Mode
+
+.In Sentence Repetition Mode:
+
+..Set the repetition times, intervals, playback speed for each time
+
+..add or remove favorite sentences 
+
+..play the favorite list
+
+..Utter the translation lines in the subtitles with TTS at first or in the end.
 
 ## Source Files Changed in this Project based on Filebrowser v2.28.0
 
