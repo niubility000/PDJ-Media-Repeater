@@ -1,6 +1,6 @@
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/screenshot1.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot1.jpg)
 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!assets/screenshot2.jpg)
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!notes/screenshot2.jpg)
 
 [![Build](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml/badge.svg)](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/filebrowser/filebrowser?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser)
