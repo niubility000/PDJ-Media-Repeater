@@ -19,10 +19,11 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 [filebrowser-windows-64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14896160/filebrowser-windows-64.zip)
 
 
-(To compile the filebrowser for other platform, see "Method of Compiling Filebrowser Source Codes in windows")
+To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
-[sample media.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14895563/sample.media.zip)
-(Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
+sample media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14899256/sample-media-1.zip)
+
+(Note: In the settings, Language Used In translation Line should be zh-CN for this sample media.)
 
 ## Install
 
@@ -35,7 +36,7 @@ Double click the .srt file in the webpage to launch PDJ Media Repeater.
 Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
-To change the password, the root dir, the port..., please see "Filebrowser Settings with command lines". 
+To change the password, the root dir, the port..., please see [Filebrowser Settings with command lines](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#filebrowser-settings-with-command-lines). 
 
 ## Media Files Requirements
 
