@@ -356,7 +356,7 @@ export default {
       isFavOnPlay: false,
       isReadyToPlay: false,
       subtitleLang: "both",
-      isUtterSecLine: false,
+      isUtterSecLine: true,
       pauseTimeSecLine: 5,
       speedOfUtter: 1,
       isUtterSecLineFirstly: true,
@@ -827,7 +827,6 @@ export default {
 
     regularPlay() {
       this.isSingle = false;
-   //   this.cleanUp();
       const media = this.$refs.player;
       if (media) {
         media.playbackRate = 1.0;
@@ -1053,6 +1052,7 @@ export default {
         this.favList = JSON.parse(favAll.content.split("Subtitle:")[1]);
       } catch (e) {
         this.favList = [];
+        if (this.autoLineNumOfTrans) this.autoDetectLangInTrans();
       }
       if (this.currentFileFavList) {
         for (var i = 0; i < this.currentFileFavList.length; ++i) {
