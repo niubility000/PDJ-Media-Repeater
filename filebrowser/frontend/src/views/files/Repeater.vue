@@ -433,8 +433,8 @@ export default {
               parseFloat(endHH) * 3600 +
               parseFloat(endMM) * 60 +
               parseFloat(endSS) +
-              (parseFloat(endMS) + this.timeStampChange) / 1000 -
-              0.001;
+              (parseFloat(endMS) + this.timeStampChange - 1) / 1000;
+
             var content = textSubtitle[2];
             if (textSubtitle.length > 2) {
               for (var j = 3; j < textSubtitle.length; j++) {
@@ -796,7 +796,9 @@ export default {
         } else {
           this.$refs.player.currentTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
-          this.regularPlay();
+          setTimeout(() => {
+            this.regularPlay();
+          }, 1);
         }
         return;
       } else if (
@@ -813,7 +815,9 @@ export default {
         } else {
           this.$refs.player.currentTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
-          this.regularPlay();
+          setTimeout(() => {
+            this.regularPlay();
+          }, 1);
         }
         return;
       } else if (x < 0 && mode == "CLOSE" && !this.isFav) {

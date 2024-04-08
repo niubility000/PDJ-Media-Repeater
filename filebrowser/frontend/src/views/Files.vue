@@ -4,18 +4,20 @@
 
     <breadcrumbs base="/files" />
     <listing />
-    <errors v-if="error" :errorCode="error.status" />
-    <component v-else-if="currentView" :is="currentView"></component>
-    <div v-else-if="currentView !== null">
-      <h2 class="message delayed">
-        <div class="spinner">
-          <div class="bounce1"></div>
-          <div class="bounce2"></div>
-          <div class="bounce3"></div>
-        </div>
-        <span>{{ $t("files.loading") }}</span>
-      </h2>
-    </div>
+    <transition name="closing">
+      <errors v-if="error" :errorCode="error.status" />
+      <component v-else-if="currentView" :is="currentView"></component>
+      <div v-else-if="currentView !== null">
+        <h2 class="message delayed">
+          <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+          </div>
+          <span>{{ $t("files.loading") }}</span>
+        </h2>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -57,9 +59,7 @@ export default {
     currentView() {
       if (this.req.type == undefined || this.req.isDir) {
         return null;
-      } else if (
-        this.req.name.endsWith("srt")
-      ) {
+      } else if (this.req.name.endsWith("srt")) {
         return "repeater";
       } else if (
         this.req.type === "text" ||
@@ -163,3 +163,13 @@ export default {
   },
 };
 </script>
+<style>
+.closing-leave-active {
+  animation: closing 0.5s;
+}
+@keyframes closing {
+  to {
+    transform: scale(0);
+  }
+}
+</style>
