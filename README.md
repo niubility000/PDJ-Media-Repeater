@@ -31,7 +31,7 @@ PDJ Media Repeater is a green standalone software.
 
 In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
 
-Double click the .srt file in the webpage to launch PDJ Media Repeater. 
+Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
 Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
