@@ -80,6 +80,14 @@ Swipe down: close this player.
 
 --Utter the translation lines in the subtitles with TTS in the beginning or in the end.
 
+## To Learn A Language Using PDJ Media Repeater
+
+There are two very effective methods to learn a language: Shadowing and Reciting. For shadowing, you need listen to a sentence first, and then repeat it yourself immediately (maybe in mind). For reciting, you need read or listen to a sentence in your mother language, then translate to the new language immediately. 
+
+The key to success is REPETITION. For the same sentence, you need to repeat shadowing and reciting it again and again (maybe 100 times in a month) to make it as familiar as your mother language. This is a boring and time-consuming job with no obvious effects in a short time.
+
+With PDJ Media Repeater, you can do shadowing and reciting much easier. Every week, just choose a video or audio with 20-50 sentences, repeat shadowing and reciting them every morning and evening 2 or 3 times. You can lie in your bed, close your eyes, and click, or swipe left, up in your cell phone to learn the language. Thus, in one year, you may master thoudands of sentences as fluent as your mother language. That will be a big improvement. 
+
 ## Source Files Changed in this Project based on Filebrowser v2.28.0
 
 Added:
