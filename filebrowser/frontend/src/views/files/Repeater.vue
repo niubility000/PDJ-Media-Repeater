@@ -130,16 +130,14 @@
           </p>
           <p style="color: white">
             <input type="checkbox" v-model="isUtterSecLine" />
-            Utter Subtitle's Translation Line with TTS
+            Utter Subtitle's Translation Line with TTS (<input
+              type="checkbox"
+              v-model="isAutoDetectLang"
+            />
+            auto-detect)
           </p>
           <div v-if="isUtterSecLine" style="display: block">
-            <span class="subject">
-              Language Used In translation Line (<input
-                type="checkbox"
-                v-model="autoLangInTrans"
-              />
-              auto-detect):
-            </span>
+            <span class="subject"> Language Used In translation Line: </span>
             <input
               class="input input--repeater"
               type="text"
@@ -148,11 +146,7 @@
           </div>
           <div v-if="isUtterSecLine" style="display: block">
             <span class="subject">
-              Line Number Of Translation In Subtitle (<input
-                type="checkbox"
-                v-model="autoLineNumOfTrans"
-              />
-              auto-detect):
+              Line Number Of Translation In Subtitle:
             </span>
             <input
               class="input input--repeater"
@@ -362,8 +356,7 @@ export default {
       isUtterSecLineFirstly: true,
       langInSecLine: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
-      autoLangInTrans: true,
-      autoLineNumOfTrans: true,
+      isAutoDetectLang: true,
     };
   },
   computed: {
@@ -551,13 +544,11 @@ export default {
     lineNumOfTrans: function () {
       this.save();
     },
-    autoLangInTrans: function () {
-      if (this.autoLangInTrans)
+    isAutoDetectLang: function () {
+      if (this.isAutoDetectLang) {
         this.langInSecLine = navigator.language || navigator.userLanguage;
-      this.save();
-    },
-    autoLineNumOfTrans: function () {
-      if (this.autoLineNumOfTrans) this.autoDetectLangInTrans();
+        this.autoDetectLangInTrans();
+      }
       this.save();
     },
   },
@@ -577,7 +568,6 @@ export default {
       this.isReadyToPlay = true;
       setTimeout(() => {
         this.$refs.player.pause();
-        this.$refs.player.muted = false;
       }, 1);
     },
     singleModePlay() {
@@ -757,7 +747,7 @@ export default {
       }
       this.distanceY = event.clientY - this.startY;
       if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
-        this.checkNav(this.distanceY, "CLOSE");
+        this.checkNav(this.distanceY, "vertical");
         return;
       }
       this.click();
@@ -780,7 +770,7 @@ export default {
       }
       this.distanceY = event.changedTouches[0].clientY - this.startY;
       if (this.timeDiff < 300 && Math.abs(this.distanceY) > 20) {
-        this.checkNav(this.distanceY, "CLOSE");
+        this.checkNav(this.distanceY, "vertical");
         return;
       }
       this.click();
@@ -820,10 +810,14 @@ export default {
           }, 1);
         }
         return;
-      } else if (x < 0 && mode == "CLOSE" && !this.isFav) {
+      } else if (
+        x < 0 &&
+        mode == "vertical" &&
+        ((!this.isFavOnPlay && !this.isFav) || (this.isFavOnPlay && this.isFav))
+      ) {
         this.switchIsFav();
         return;
-      } else if (x > 0 && mode == "CLOSE") {
+      } else if (x > 0 && mode == "vertical") {
         this.close();
         return;
       }
@@ -953,14 +947,12 @@ export default {
       }
     },
     autoDetectLangInTrans() {
-      if (this.isEnglish && this.srtSubtitles[1].content.split("\r\n")[1]) {
+      if (this.isEnglish && !this.srtSubtitles[0].content.split("\r\n")[1])
+        this.isUtterSecLine = false;
+      else this.isUtterSecLine = true;
+      if (this.isEnglish && this.srtSubtitles[0].content.split("\r\n")[1]) {
         this.lineNumOfTrans = 2;
-      } else if (
-        !this.isEnglish &&
-        this.srtSubtitles[1].content.split("\r\n")[1]
-      ) {
-        this.lineNumOfTrans = 1;
-      }
+      } else this.lineNumOfTrans = 1;
     },
     async save() {
       let customConfig =
@@ -990,9 +982,7 @@ export default {
         ":" +
         JSON.stringify(this.lineNumOfTrans) +
         ":" +
-        JSON.stringify(this.autoLangInTrans) +
-        ":" +
-        JSON.stringify(this.autoLineNumOfTrans) +
+        JSON.stringify(this.isAutoDetectLang) +
         ":";
 
       let favContent =
@@ -1013,7 +1003,6 @@ export default {
         !this.$refs.player.ended
       ) {
         this.autoPlay = false;
-        this.$refs.player.muted = true;
       }
 
       let dirs = this.$route.fullPath.split("/");
@@ -1038,25 +1027,26 @@ export default {
         this.timeStampChange = Number(JSON.parse(favAll.content.split(":")[4]));
         this.currentSpeed = JSON.parse(favAll.content.split(":")[5]);
         this.subtitleLang = JSON.parse(favAll.content.split(":")[6]);
-        this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
         this.pauseTimeSecLine = Number(
           JSON.parse(favAll.content.split(":")[8])
         );
         this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
         this.isUtterSecLineFirstly = JSON.parse(favAll.content.split(":")[10]);
-        this.autoLangInTrans = JSON.parse(favAll.content.split(":")[13]);
-        this.autoLineNumOfTrans = JSON.parse(favAll.content.split(":")[14]);
-        if (!this.autoLangInTrans)
+        this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
+        if (!this.isAutoDetectLang) {
+          this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
           this.langInSecLine = JSON.parse(favAll.content.split(":")[11]);
-        if (!this.autoLineNumOfTrans)
           this.lineNumOfTrans = Number(
             JSON.parse(favAll.content.split(":")[12])
           );
-        else this.autoDetectLangInTrans();
+        } else {
+          this.autoDetectLangInTrans();
+          this.langInSecLine = navigator.language || navigator.userLanguage;
+        }
         this.favList = JSON.parse(favAll.content.split("Subtitle:")[1]);
       } catch (e) {
         this.favList = [];
-        if (this.autoLineNumOfTrans) this.autoDetectLangInTrans();
+        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
       }
       if (this.currentFileFavList) {
         for (var i = 0; i < this.currentFileFavList.length; ++i) {

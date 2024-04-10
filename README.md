@@ -58,7 +58,7 @@ Swipe left (right arrow key on keyboard): jump to next sentence.
 
 Swipe right (left arrow key on keyboard): jump to last sentence.
 
-Swipe Up: add this sentence to Favorate List.
+Swipe Up: add this sentence to Favorate List (in Single Sentence Repetition Mode) or remove this sentence from Favorate List (when playing favorite list).
 
 Swipe down: close this player.
 
