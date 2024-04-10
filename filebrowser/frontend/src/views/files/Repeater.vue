@@ -222,7 +222,7 @@
           Loading Media...
         </p>
         <span
-          v-if="srtSubtitles && isMediaType == 2 && isReadyToPlay"
+          v-if="srtSubtitles && isReadyToPlay"
           style="
             flex-grow: 1;
             color: yellow;
@@ -248,66 +248,29 @@
           </p>
         </span>
 
-        <div
-          v-if="isMediaType == 1"
-          style="
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-          <span
-            v-if="srtSubtitles && isReadyToPlay"
-            style="
-              color: yellow;
-              overflow-wrap: break-word;
-              width: 100%;
-              font-size: 1.5em;
-              margin: 0 0.5em 0 0.5em;
-            "
-          >
-            <p v-if="subtitleLang !== 'line2'">
-              {{
-                !isEmpty
-                  ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
-                  : "   "
-              }}
-            </p>
-            <p v-if="subtitleLang !== 'line1'">
-              {{
-                !isEmpty
-                  ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
-                  : "   "
-              }}
-            </p>
-          </span>
-        </div>
-        <div
-          v-if="isMediaType == 1"
-          style="
-            height: 20%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-          <audio
-            v-if="isMediaType == 1"
-            ref="player"
-            :src="raw"
-            :controls="!isSingle"
-            controlslist="noplaybackrate"
-            :autoplay="autoPlay"
-            @play="autoPlay = true"
-            @loadedmetadata="readyStatus"
-          ></audio>
-        </div>
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
           folder, or the .srt file is incorrect.
         </p>
       </div>
+      <audio
+        style="
+          position: fixed;
+          bottom: 10%;
+          width: 78%;
+          left: 0;
+          right: 0;
+          margin: auto;
+        "
+        v-if="isMediaType == 1"
+        ref="player"
+        :src="raw"
+        :controls="!isSingle"
+        controlslist="noplaybackrate"
+        :autoplay="autoPlay"
+        @play="autoPlay = true"
+        @loadedmetadata="readyStatus"
+      ></audio>
     </template>
   </div>
 </template>
@@ -601,7 +564,7 @@ export default {
         } else {
           this.loopPlay();
         }
-      }, 3000);
+      }, this.pauseTimeSecLine * 1000);
     },
 
     switchSubtitle() {

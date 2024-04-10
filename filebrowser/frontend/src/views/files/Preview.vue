@@ -1,16 +1,15 @@
 <template>
   <div
     id="previewer"
-    @touchmove.prevent.stop 
+    @touchmove.prevent.stop
     @wheel.prevent.stop
     @mousemove="toggleNavigation"
-    @touchstart="toggleNavigation"
+    @touchstart="startTouch"
     @mousedown="startDrag"
     @mouseup="endDrag"
-    @touchstart="startTouch"
-    @touchend="endTouch"    
+    @touchend="endTouch"
   >
-    <header-bar  v-if="showNav">
+    <header-bar v-if="showNav">
       <action icon="close" :label="$t('buttons.close')" @action="close()" />
       <title>{{ name }}</title>
       <action
@@ -61,79 +60,94 @@
     </div>
     <template v-else>
       <div class="preview">
-        <transition 
-	  appear
-	  :enter-active-class="animateIn"
-	  :leave-active-class="animateOut"
+        <transition
+          appear
+          :enter-active-class="animateIn"
+          :leave-active-class="animateOut"
           :appear-active-class="animateIn"
-	>   
-          <ExtendedImage v-if="req.type == 'image'" class="switchAnimation" :key="raw" :src="raw"></ExtendedImage>
-          <audio class="switchAnimation"
-	  :key="raw"
-          v-else-if="req.type == 'audio'"
-          ref="player"
-          :src="raw"
-          controls
-          :autoplay="autoPlay"
-          @play="autoPlay = true"
+        >
+          <ExtendedImage
+            v-if="req.type == 'image'"
+            class="switchAnimation"
+            :key="raw"
+            :src="raw"
+          ></ExtendedImage>
+          <audio
+            class="switchAnimation"
+            :key="raw"
+            v-if="req.type == 'audio'"
+            ref="player"
+            :src="raw"
+            controls
+            :autoplay="autoPlay"
+            @play="autoPlay = true"
           ></audio>
-          <video class="switchAnimation"
-          :key="raw"
-          v-else-if="req.type == 'video'"
-          ref="player"
-          :src="raw"
-          controls
-          :autoplay="autoPlay"
-          @play="autoPlay = true"
+          <video
+            class="switchAnimation"
+            :key="raw"
+            v-if="req.type == 'video'"
+            ref="player"
+            :src="raw"
+            controls
+            :autoplay="autoPlay"
+            @play="autoPlay = true"
           >
             <track
-            kind="captions"
-            v-for="(sub, index) in subtitles"
-            :key="index"
-            :src="sub"
-            :label="'Subtitle ' + index"
-            :default="index === 0"
+              kind="captions"
+              v-for="(sub, index) in subtitles"
+              :key="index"
+              :src="sub"
+              :label="'Subtitle ' + index"
+              :default="index === 0"
             />
-            Sorry, your browser doesn't support embedded videos, but don't worry,
-            you can <a :href="downloadUrl">download it</a>
+            Sorry, your browser doesn't support embedded videos, but don't
+            worry, you can <a :href="downloadUrl">download it</a>
             and watch it with your favorite video player!
           </video>
 
-          <object class="switchAnimation"
+          <object
+            class="switchAnimation pdf"
             :key="raw"
-            v-else-if="req.extension.toLowerCase() == '.pdf'"
-            class="pdf"
+            v-if="req.extension.toLowerCase() == '.pdf'"
             :data="raw"
           ></object>
 
-	  <div v-else-if="req.type == 'blob'" class="info switchAnimation" :key="raw">
+          <div
+            v-if="req.type == 'blob' && req.extension.toLowerCase() !== '.pdf'"
+            class="info switchAnimation"
+            :key="raw"
+          >
             <div class="title">
               <i class="material-icons">feedback</i>
               {{ $t("files.noPreview") }}
             </div>
-          <div>
-            <a target="_blank" :href="downloadUrl" class="button button--flat">
-              <div>
-                <i class="material-icons">file_download</i
-                >{{ $t("buttons.download") }}
-              </div>
-            </a>
-            <a
-              target="_blank"
-              :href="raw"
-              class="button button--flat"
-              v-if="!req.isDir"
-            >
-              <div>
-                <i class="material-icons">open_in_new</i
-                >{{ $t("buttons.openFile") }}
-              </div>
-            </a>
+            <div>
+              <a
+                target="_blank"
+                :href="downloadUrl"
+                class="button button--flat"
+              >
+                <div>
+                  <i class="material-icons">file_download</i
+                  >{{ $t("buttons.download") }}
+                </div>
+              </a>
+              <a
+                target="_blank"
+                :href="raw"
+                class="button button--flat"
+                v-if="!req.isDir"
+              >
+                <div>
+                  <i class="material-icons">open_in_new</i
+                  >{{ $t("buttons.openFile") }}
+                </div>
+              </a>
+            </div>
           </div>
-        </div>
-      </transition> 
-    </div>
-  </template>
+        </transition>
+      </div>
+    </template>
 
     <button
       @click="prev"
@@ -170,7 +184,7 @@ import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
 import ExtendedImage from "@/components/files/ExtendedImage.vue";
 
-import 'animate.css';
+import "animate.css";
 const mediaTypes = ["image", "video", "audio", "blob"];
 
 export default {
@@ -195,7 +209,7 @@ export default {
       nextRaw: "",
       animateIn: "animate__fadeIn",
       animateOut: "",
-      startTime: null, 
+      startTime: null,
       startX: null,
       startY: null,
       timeDiff: null,
@@ -251,53 +265,54 @@ export default {
   },
   methods: {
     startDrag(event) {
-      event.preventDefault();        
-      this.startTime = new Date().getTime();  
+      event.preventDefault();
+      this.startTime = new Date().getTime();
       this.startX = event.clientX;
-      this.startY = event.clientY;       
+      this.startY = event.clientY;
     },
     endDrag(event) {
-      event.preventDefault();       
+      event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
       if (this.timeDiff < 300 && Math.abs(this.distanceX) > 100) {
-        this.checkNav(this.distanceX, "SWITCHIMG"); 
+        this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
-      this.distanceY = event.clientY - this.startY;   
+      this.distanceY = event.clientY - this.startY;
       if (this.timeDiff < 300 && this.distanceY > 100) {
-        this.checkNav(this.distanceY, "CLOSE"); 
+        this.checkNav(this.distanceY, "CLOSE");
         return;
       }
     },
     startTouch(event) {
-      this.startTime = new Date().getTime(); 
+      this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
-      this.startY = event.touches[0].clientY;       
+      this.startY = event.touches[0].clientY;
+      this.toggleNavigation();
     },
     endTouch(event) {
-      this.timeDiff = new Date().getTime() - this.startTime;  
-      this.distanceX = event.changedTouches[0].clientX - this.startX; 
+      this.timeDiff = new Date().getTime() - this.startTime;
+      this.distanceX = event.changedTouches[0].clientX - this.startX;
       if (this.timeDiff < 300 && Math.abs(this.distanceX) > 30) {
-        this.checkNav(this.distanceX, "SWITCHIMG"); 
-	return;
-      }
-      this.distanceY = event.changedTouches[0].clientY - this.startY; 
-      if (this.timeDiff < 300 && this.distanceY > 20) {
-        this.checkNav(this.distanceY, "CLOSE"); 
+        this.checkNav(this.distanceX, "SWITCHIMG");
         return;
-      }      
+      }
+      this.distanceY = event.changedTouches[0].clientY - this.startY;
+      if (this.timeDiff < 300 && this.distanceY > 20) {
+        this.checkNav(this.distanceY, "CLOSE");
+        return;
+      }
     },
     checkNav(x, mode) {
-      if ( x > 0 && this.hasPrevious && mode =="SWITCHIMG") {
+      if (x > 0 && this.hasPrevious && mode == "SWITCHIMG") {
         this.prev();
         return;
-      } else if ( x < 0 && this.hasNext && mode =="SWITCHIMG") {
+      } else if (x < 0 && this.hasNext && mode == "SWITCHIMG") {
         this.next();
         return;
-      } else if ( x > 0 && mode =="CLOSE") {
+      } else if (x > 0 && mode == "CLOSE") {
         this.close();
-        return;      
+        return;
       }
     },
     deleteFile() {
@@ -321,7 +336,7 @@ export default {
       this.animateIn = "animate__fadeInLeft";
       this.animateOut = "animate__fadeOutRight";
       this.$nextTick(() => {
-        this.$router.replace({ path: this.previousLink });  
+        this.$router.replace({ path: this.previousLink });
       });
     },
     next() {
@@ -428,7 +443,7 @@ export default {
     }, 500),
     close() {
       this.$store.commit("updateRequest", {});
-      history.back();   
+      history.back();
     },
     download() {
       window.open(this.downloadUrl);
@@ -437,12 +452,12 @@ export default {
 };
 </script>
 <style>
-  .switchAnimation {  
-  position: absolute;  
-  left: 0;  
-  top: 0;  
-  width: 100%;  
+.switchAnimation {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
   height: 100%;
   animation-duration: 0.9s;
-  } 
+}
 </style>
