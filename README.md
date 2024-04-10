@@ -163,7 +163,7 @@ node -v
 
 npm -v   // to make sure you installed them correctly.
 
-1.3 Download the filebrowser source code:
+1.3 Download the Latest PDJ Media Repeater (a Modified Filebrowser) source code:
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot5.jpg)
 
 Unzip it, and put the filebrowser folder into c:\go\src\
