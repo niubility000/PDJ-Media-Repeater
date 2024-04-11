@@ -152,7 +152,7 @@
         id="listing"
         ref="listing"
         :class="user.viewMode + ' file-icons'"
-	@scroll="scrollEvent"
+        @scroll="scrollEvent"
       >
         <div>
           <div class="item header">
@@ -384,7 +384,10 @@ export default {
   },
   watch: {
     req: function () {
-      if (window.sessionStorage.getItem("listFrozen") !=="true" && window.sessionStorage.getItem("modified") !=="true"){
+      if (
+        window.sessionStorage.getItem("listFrozen") !== "true" &&
+        window.sessionStorage.getItem("modified") !== "true"
+      ) {
         // Reset the show value
         this.showLimit = this.req.numDirs + this.req.numFiles;
 
@@ -396,15 +399,20 @@ export default {
           // Fill and fit the window with listing items
           this.fillWindow(true);
           if (window.sessionStorage.getItem(this.$route.path)) {
-            document.getElementById("listing").scrollTop = JSON.parse(window.sessionStorage.getItem(this.$route.path))[0];
-            if(!this.isMobile) this.addSelected(JSON.parse(window.sessionStorage.getItem(this.$route.path))[1]);
+            document.getElementById("listing").scrollTop = JSON.parse(
+              window.sessionStorage.getItem(this.$route.path)
+            )[0];
+            if (!this.isMobile)
+              this.addSelected(
+                JSON.parse(window.sessionStorage.getItem(this.$route.path))[1]
+              );
             window.sessionStorage.removeItem(this.$route.path);
           }
         });
       }
       if (this.req.isDir) {
         window.sessionStorage.setItem("listFrozen", "false");
-        window.sessionStorage.setItem("modified", "false"); 
+        window.sessionStorage.setItem("modified", "false");
       }
     },
   },
@@ -616,7 +624,7 @@ export default {
         document.querySelector("main").offsetWidth / this.columnWidth
       );
       if (columns === 0) columns = 1;
-      if (this.isMobile && this.viewIcon == 'view_list') columns=2;
+      if (this.isMobile && this.viewIcon == "view_list") columns = 2;
       items.style.width = `calc(${100 / columns}% - 1em)`;
     },
     scrollEvent: throttle(function () {
@@ -625,10 +633,12 @@ export default {
       // All items are displayed
       if (this.showLimit >= totalItems) return;
 
-      const currentPos = window.innerHeight + document.getElementById("listing").scrollTop;
+      const currentPos =
+        window.innerHeight + document.getElementById("listing").scrollTop;
 
       // Trigger at the 75% of the window height
-      const triggerPos = this.showLimit * this.itemWeight - window.innerHeight * 0.25;
+      const triggerPos =
+        this.showLimit * this.itemWeight - window.innerHeight * 0.25;
 
       if (currentPos > triggerPos) {
         // Quantity of items needed to fill 2x of the window height
@@ -888,9 +898,13 @@ export default {
       const windowHeight = window.innerHeight;
 
       // Quantity of items needed to fill 2x of the window height
-      const showQuantity = window.sessionStorage.getItem(this.$route.path) ?
-        Math.ceil((JSON.parse(window.sessionStorage.getItem(this.$route.path))[0] + windowHeight * 2) / this.itemWeight) :
-        Math.ceil((windowHeight + windowHeight * 2) / this.itemWeight);
+      const showQuantity = window.sessionStorage.getItem(this.$route.path)
+        ? Math.ceil(
+            (JSON.parse(window.sessionStorage.getItem(this.$route.path))[0] +
+              windowHeight * 2) /
+              this.itemWeight
+          )
+        : Math.ceil((windowHeight + windowHeight * 2) / this.itemWeight);
 
       // Less items to display than current
       if (this.showLimit > showQuantity && !fit) return;
@@ -902,8 +916,8 @@ export default {
 };
 </script>
 <style>
-  #listing {
-    height: calc(100vh - 8em);   
-    overflow-y: auto; 
-  }
+#listing {
+  height: calc(100vh - 8em);
+  overflow-y: auto;
+}
 </style>

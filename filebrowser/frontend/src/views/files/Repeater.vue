@@ -1,5 +1,5 @@
 <template>
-  <div id="repeater" @touchmove.prevent.stop @wheel.prevent.stop>
+  <div id="repeater">
     <div class="loading delayed" v-if="loading">
       <div class="spinner">
         <div class="bounce1"></div>
@@ -67,7 +67,11 @@
           @click="onSetting"
           title="Settings"
         >
-          <i style="color: blue" class="material-icons">settings</i>
+          <i
+            :style="{ color: isSetting ? 'red' : 'blue' }"
+            class="material-icons"
+            >settings</i
+          >
         </button>
 
         <button
@@ -88,112 +92,167 @@
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
       </header-bar>
-      <div id="settingBox" v-if="srtSubtitles && isSetting">
-        <div style="display: block">
-          <span class="subject">Sentence Playback Times: </span>
-          <input
-            class="input input--repeater"
-            type="number"
-            min="1"
-            max="1000"
-            v-model="repeatTimes"
-          />
-        </div>
-        <div style="display: block">
-          <span class="subject">Interval (in second): </span>
-          <input
-            class="input input--repeater"
-            type="text"
-            v-model.number="interval"
-          />
-        </div>
-        <div style="display: block">
-          <span class="subject">Timestamp Move (in ms): </span>
-          <input
-            class="input input--repeater"
-            type="text"
-            v-model.number="timeStampChange"
-          />
-        </div>
-        <div style="display: block">
-          <span class="subject">Speed Each Time (default:1): </span>
-          <input
-            class="input input--repeater"
-            type="text"
-            v-model="currentSpeed"
-          />
-        </div>
-        <div style="display: block">
-          <p style="color: white">
-            <input type="checkbox" v-model="autoPlayNext" />
-            Autoplay Next Sentence
-          </p>
-          <p style="color: white">
-            <input type="checkbox" v-model="isUtterSecLine" />
-            Utter Subtitle's Translation Line with TTS (<input
-              type="checkbox"
-              v-model="isAutoDetectLang"
-            />
-            auto-detect)
-          </p>
-          <div v-if="isUtterSecLine" style="display: block">
-            <span class="subject"> Language Used In translation Line: </span>
-            <input
-              class="input input--repeater"
-              type="text"
-              v-model="langInSecLine"
-            />
-          </div>
-          <div v-if="isUtterSecLine" style="display: block">
-            <span class="subject">
-              Line Number Of Translation In Subtitle:
-            </span>
+      <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
+        <div id="settingBox">
+          <p style="color: blue">SETTINGS</p>
+          <div style="display: block">
+            <span class="subject">Sentence Playback Times: </span>
             <input
               class="input input--repeater"
               type="number"
               min="1"
-              max="2"
-              v-model="lineNumOfTrans"
-            />
-          </div>
-          <div v-if="isUtterSecLine" style="display: block">
-            <span class="subject"> Pause time (in second): </span>
-            <input
-              class="input input--repeater"
-              type="number"
-              min="0"
               max="1000"
-              v-model="pauseTimeSecLine"
+              v-model="repeatTimes"
             />
           </div>
-          <div v-if="isUtterSecLine" style="display: block">
-            <span class="subject"> Speed of Uttering: </span>
+          <div style="display: block">
+            <span class="subject">Interval (in second): </span>
             <input
               class="input input--repeater"
               type="text"
-              v-model.number="speedOfUtter"
+              v-model.number="interval"
             />
           </div>
-          <p v-if="isUtterSecLine" style="color: white">
-            <input type="checkbox" v-model="isUtterSecLineFirstly" />
-            Utter Subtitle's translation Line at first
-          </p>
-        </div>
-        <div style="color: white">
-          <p>INSTRUCTIONS and DOWNLOAD</p>
-          <p>
-            <a
-              href="https://github.com/niubility000/PDJ-Media-Repeater"
-              target="_blank"
-              >Project on Github:
-              https://github.com/niubility000/PDJ-Media-Repeater</a
-            >
-          </p>
-          <p>
-            <a href="https://note.youdao.com/s/MI81scdr" target="_blank"
-              >YouDao Notes: https://note.youdao.com/s/MI81scdr</a
-            >
-          </p>
+          <div style="display: block">
+            <span class="subject">Timestamp Move (in ms): </span>
+            <input
+              class="input input--repeater"
+              type="text"
+              v-model.number="timeStampChange"
+            />
+          </div>
+          <div style="display: block">
+            <span class="subject">Speed Each Time (default:1): </span>
+            <input
+              class="input input--repeater"
+              type="text"
+              v-model="currentSpeed"
+            />
+          </div>
+          <div style="display: block">
+            <p style="color: white">
+              <input type="checkbox" v-model="autoPlayNext" />
+              Autoplay Next Sentence
+            </p>
+            <p style="color: white">
+              <input type="checkbox" v-model="isUtterSecLine" />
+              Utter Subtitle's Translation Line with TTS (<input
+                type="checkbox"
+                v-model="isAutoDetectLang"
+              />
+              auto-detect)
+            </p>
+            <div v-if="isUtterSecLine" style="display: block">
+              <span class="subject"> Language Used In translation Line: </span>
+              <input
+                class="input input--repeater"
+                type="text"
+                v-model="langInSecLine"
+              />
+            </div>
+            <div v-if="isUtterSecLine" style="display: block">
+              <span class="subject">
+                Line Number Of Translation In Subtitle:
+              </span>
+              <input
+                class="input input--repeater"
+                type="number"
+                min="1"
+                max="2"
+                v-model="lineNumOfTrans"
+              />
+            </div>
+            <div v-if="isUtterSecLine" style="display: block">
+              <span class="subject"> Pause time (in second): </span>
+              <input
+                class="input input--repeater"
+                type="number"
+                min="0"
+                max="1000"
+                v-model="pauseTimeSecLine"
+              />
+            </div>
+            <div v-if="isUtterSecLine" style="display: block">
+              <span class="subject"> Speed of Uttering: </span>
+              <input
+                class="input input--repeater"
+                type="text"
+                v-model.number="speedOfUtter"
+              />
+            </div>
+            <p v-if="isUtterSecLine" style="color: white">
+              <input type="checkbox" v-model="isUtterSecLineFirstly" />
+              Utter Subtitle's translation Line at first
+            </p>
+          </div>
+          <div style="color: white">
+            <p style="color: blue; padding-top: 1em">INSTRUCTIONS</p>
+            <p>
+              Click on the screen (down arrow key on keyboard): replay current
+              sentence
+            </p>
+            <p>DoubleClick on the screen (up arrow key on keyboard): pause</p>
+            <p>
+              Swipe left on the screen (right arrow key on keyboard): jump to
+              next sentence
+            </p>
+            <p>
+              Swipe right on the screen(left arrow key on keyboard): jump to
+              last sentence
+            </p>
+            <p>
+              Swipe up on the screen: add to favorites (Or remove a favorite
+              when playing Favorite List)
+            </p>
+            <p>Swipe down on the screen: close this player</p>
+            <p>
+              Click button
+              <i style="color: blue" class="material-icons">repeat_one</i>:
+              switch Playback Mode between "Single Sentence Repetition Mode" and
+              "Regular Mode"
+            </p>
+            <p>
+              Click button
+              <i style="color: blue" class="material-icons">closed_caption</i>:
+              switch Subtitle's language
+            </p>
+            <p>
+              Click button
+              <i style="color: blue" class="material-icons">settings</i>: show
+              SETTINGS, INSTRUCTIONS, UPDATES and COMMENTS
+            </p>
+            <p>
+              Click button
+              <i style="color: blue" class="material-icons">folder_special</i>:
+              play sentences in favorite List
+            </p>
+            <p>
+              Click button
+              <i style="color: blue" class="material-icons">grade</i>: add or
+              remove a favorite sentence.
+            </p>
+            <p>
+              Click and Input
+              <span style="color: blue"
+                >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
+              >: show current Sentence No. and switch to a special Sentence No.
+            </p>
+
+            <p style="color: blue; padding-top: 1em">UPDATES and COMMENTS</p>
+            <p>
+              <a
+                href="https://github.com/niubility000/PDJ-Media-Repeater"
+                target="_blank"
+                >Project on Github:
+                https://github.com/niubility000/PDJ-Media-Repeater</a
+              >
+            </p>
+            <p>
+              <a href="https://note.youdao.com/s/MI81scdr" target="_blank"
+                >YouDao Notes: https://note.youdao.com/s/MI81scdr</a
+              >
+            </p>
+          </div>
         </div>
       </div>
       <div
@@ -568,6 +627,7 @@ export default {
     },
 
     switchSubtitle() {
+      this.isSetting = false;
       if (this.subtitleLang == "both") {
         this.subtitleLang = "line1";
       } else if (this.subtitleLang == "line1") {
@@ -595,6 +655,7 @@ export default {
     },
 
     playFavList() {
+      this.isSetting = false;
       if (!this.isFavOnPlay) {
         window.sessionStorage.setItem("lastPosition", this.sentenceIndex);
       }
@@ -613,6 +674,7 @@ export default {
     },
 
     switchIsFav() {
+      this.isSetting = false;
       this.isFav = !this.isFav;
       if (this.isFav) {
         var fav = {
@@ -645,6 +707,7 @@ export default {
     },
 
     onSingle() {
+      this.isSetting = false;
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
         this.cleanUp();
@@ -667,6 +730,7 @@ export default {
     },
     onSetting() {
       this.isSetting = !this.isSetting;
+      this.cleanUp();
       return;
     },
     click: function () {
@@ -1076,8 +1140,8 @@ export default {
   },
 };
 </script>
+
 <style>
-/* Repeater */
 #repeater {
   background-color: rgba(0, 0, 0, 0.99);
   position: fixed;
@@ -1085,7 +1149,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 9999;
+  z-index: 1005;
   overflow: hidden;
 }
 #repeater .repeater {
@@ -1142,33 +1206,38 @@ header {
   background: transparent;
 }
 
-#settingBox {
-  position: fixed;
+#settingBoxContainer {
   display: flex;
+  position: fixed;
+  width: 75%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  top: 5em;
+  bottom: 1em;
+  justify-content: center;
   align-items: center;
-  flex-direction: column;
-  justify-content: space-evenly;
-  top: 4em;
-  left: 0;
-  right: 0;
-  margin: auto;
-  max-width: 60%;
-  max-height: 100%;
-  z-index: 9999;
-  padding-top: 1em;
-  background: grey;
+  z-index: 1006;
+}
+
+#settingBox {
+  position: relative;
+  height: 100%;
+  padding: 1em;
   border-radius: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: grey;
 }
 
 @media (max-width: 736px) {
   #repeater .repeater {
     margin: 0;
   }
-  #settingBox {
-    max-width: 95%;
-  }
   span.subject {
     width: 13em;
+  }
+  #settingBoxContainer {
+    width: 100%;
   }
   input.input.input--repeater {
     margin-bottom: 0.5em;
