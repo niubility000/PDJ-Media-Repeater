@@ -8,19 +8,34 @@
       </div>
     </div>
     <template v-else>
-      <header-bar v-if="srtSubtitles">
+      <header-bar v-if="srtSubtitles" style="padding: 0.5em">
         <action
           style="color: blue"
           icon="close"
           :label="$t('buttons.close')"
           @action="close()"
         />
-        <title
-          style="flex-grow: 1; white-space: nowrap"
-          :style="{ opacity: !isMobile ? 1 : 0 }"
-        >
+        <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
           {{ req.name.replace(".srt", "") }}
         </title>
+        <span>
+          <input
+            style="text-align: right; border: none; padding: 0; margin: 0"
+            class="input input--headSubject"
+            type="text"
+            v-model.number="sentenceIndex"
+          />
+          <span
+            class="headSubject"
+            style="
+              text-align: right;
+              border: none;
+              padding: 0;
+              margin: 0 0.5em 0 0;
+            "
+            >/{{ srtSubtitles.length }}</span
+          >
+        </span>
         <button
           v-if="srtSubtitles && isSingle"
           :disabled="loading"
@@ -32,24 +47,6 @@
             >grade</i
           >
         </button>
-
-        <input
-          style="text-align: right; border: none; padding: 0; margin: 0"
-          class="input input--headSubject"
-          type="text"
-          v-model.number="sentenceIndex"
-        />
-        <span
-          class="headSubject"
-          style="
-            text-align: right;
-            border: none;
-            padding: 0;
-            margin: 0 0.5em 0 0;
-          "
-          >/{{ srtSubtitles.length }}</span
-        >
-
         <button
           v-if="isSingle"
           :disabled="loading || favList.length == 0"
@@ -188,23 +185,24 @@
           <div style="color: white">
             <p style="color: blue; padding-top: 1em">INSTRUCTIONS</p>
             <p>
-              Click on the screen (down arrow key on keyboard): replay current
+              CLICK on the screen (DOWN arrow key on keyboard): replay current
               sentence
             </p>
-            <p>DoubleClick on the screen (up arrow key on keyboard): pause</p>
             <p>
-              Swipe left on the screen (right arrow key on keyboard): jump to
+              SWIPE DOWN on the screen (UP arrow key on keyboard): stop playing
+            </p>
+            <p>
+              SWIPE LEFT on the screen (RIGHT arrow key on keyboard): jump to
               next sentence
             </p>
             <p>
-              Swipe right on the screen(left arrow key on keyboard): jump to
-              last sentence
+              SWIPE RIGHT on the screen(LEFT arrow key on keyboard): jump to
+              prev sentence
             </p>
             <p>
-              Swipe up on the screen: add to favorites (Or remove a favorite
+              SWIPE UP on the screen: add to favorites (or remove a favorite
               when playing Favorite List)
             </p>
-            <p>Swipe down on the screen: close this player</p>
             <p>
               Click button
               <i style="color: blue" class="material-icons">repeat_one</i>:
@@ -711,18 +709,11 @@ export default {
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
         this.cleanUp();
-        window.sessionStorage.setItem(
-          "singlePlayLastPosition",
-          this.sentenceIndex
-        );
         this.$refs.player.currentTime = 0;
         this.regularPlay();
       }
       if (this.isSingle) {
         this.isEmpty = false;
-        this.sentenceIndex = Number(
-          window.sessionStorage.getItem("singlePlayLastPosition")
-        );
         this.$refs.player.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.singleModePlay();
@@ -735,24 +726,15 @@ export default {
     },
     click: function () {
       this.cleanUp();
-      setTimeout(() => {
-        this.touches = 0;
-      }, 300);
-
-      this.touches++;
-      if (this.touches > 1) {
-        //double click
-        this.cleanUp();
-        return;
-      }
-
       if (this.isSingle) {
         this.singleModePlay();
         return;
       } else {
         this.$refs.player.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        this.$refs.player.play();
+        setTimeout(() => {
+          this.regularPlay();
+        }, 1);
       }
     },
 
@@ -845,7 +827,7 @@ export default {
         this.switchIsFav();
         return;
       } else if (x > 0 && mode == "vertical") {
-        this.close();
+        this.cleanUp();
         return;
       }
     },
@@ -1232,6 +1214,10 @@ header {
 @media (max-width: 736px) {
   #repeater .repeater {
     margin: 0;
+  }
+  header {
+    display: flex;
+    justify-content: space-around !important;
   }
   span.subject {
     width: 13em;

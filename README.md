@@ -48,19 +48,17 @@ If the .srt file has language other than English, it should use utf8 encoding. (
 
 ## Operating Instructions
 
+CLICK on the screen (DOWN arrow key on keyboard): replay current sentence
+
+SWIPE DOWN on the screen (UP arrow key on keyboard): stop playing
+
+SWIPE LEFT on the screen (RIGHT arrow key on keyboard): jump to next sentence
+
+SWIPE RIGHT on the screen(LEFT arrow key on keyboard): jump to prev sentence
+
+SWIPE UP on the screen: add to favorites (or remove a favorite when playing Favorite List)
+
 Click top-right button: switch Playback Mode between "Single Sentence Repetition Mode" and "RegularMode".
-
-Click in subtitle area (down arrow key on keyboard): replay current sentence.
-
-DoubleClick (up arrow key on keyboard): pause.
-
-Swipe left (right arrow key on keyboard): jump to next sentence.
-
-Swipe right (left arrow key on keyboard): jump to last sentence.
-
-Swipe Up: add this sentence to Favorate List (in Single Sentence Repetition Mode) or remove this sentence from Favorate List (when playing favorite list).
-
-Swipe down: close this player.
 
 ## Functions:
 
