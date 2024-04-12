@@ -185,24 +185,25 @@
           <div style="color: white">
             <p style="color: blue; padding-top: 1em">INSTRUCTIONS</p>
             <p>
-              CLICK on the screen (DOWN arrow key on keyboard): replay current
+              Click on the screen (DOWN arrow key on keyboard): replay current
               sentence
             </p>
             <p>
-              SWIPE DOWN on the screen (UP arrow key on keyboard): stop playing
+              DoubleClick on the screen (UP arrow key on keyboard): stop playing
             </p>
             <p>
-              SWIPE LEFT on the screen (RIGHT arrow key on keyboard): jump to
+              Swipe Left on the screen (RIGHT arrow key on keyboard): jump to
               next sentence
             </p>
             <p>
-              SWIPE RIGHT on the screen(LEFT arrow key on keyboard): jump to
-              prev sentence
+              Swipe Right on the screen(LEFT arrow key on keyboard): jump to
+              previous sentence
             </p>
             <p>
-              SWIPE UP on the screen: add to favorites (or remove a favorite
+              Swipe Up on the screen: add to favorites (Or remove a favorite
               when playing Favorite List)
             </p>
+            <p>Swipe Down on the screen: close this player</p>
             <p>
               Click button
               <i style="color: blue" class="material-icons">repeat_one</i>:
@@ -377,6 +378,7 @@ export default {
       langInSecLine: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
+      touches: 0,
     };
   },
   computed: {
@@ -510,9 +512,7 @@ export default {
     sentenceIndex: function () {
       if (this.isFavOnPlay) {
         this.isFav = true;
-        return;
-      }
-      if (this.currentFileFavList) {
+      } else if (this.currentFileFavList) {
         for (var i = 0; i < this.currentFileFavList.length; ++i) {
           if (
             this.currentFileFavList[i].startTime ==
@@ -726,15 +726,27 @@ export default {
     },
     click: function () {
       this.cleanUp();
-      if (this.isSingle) {
-        this.singleModePlay();
+      setTimeout(() => {
+        if (this.touches == 1) {
+          if (this.isSingle) {
+            this.singleModePlay();
+          } else {
+            this.$refs.player.currentTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            setTimeout(() => {
+              this.regularPlay();
+            }, 1);
+          }
+        }
+        this.touches = 0;
+      }, 300);
+
+      this.touches++;
+      if (this.touches > 1) {
+        //double click
+        this.cleanUp();
+        this.touches = 0;
         return;
-      } else {
-        this.$refs.player.currentTime =
-          this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        setTimeout(() => {
-          this.regularPlay();
-        }, 1);
       }
     },
 
@@ -756,7 +768,7 @@ export default {
       }
       this.distanceY = event.clientY - this.startY;
       if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
-        this.checkNav(this.distanceY, "vertical");
+        this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
       this.click();
@@ -779,7 +791,7 @@ export default {
       }
       this.distanceY = event.changedTouches[0].clientY - this.startY;
       if (this.timeDiff < 300 && Math.abs(this.distanceY) > 20) {
-        this.checkNav(this.distanceY, "vertical");
+        this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
       this.click();
@@ -821,13 +833,13 @@ export default {
         return;
       } else if (
         x < 0 &&
-        mode == "vertical" &&
+        mode == "VERTICAL" &&
         ((!this.isFavOnPlay && !this.isFav) || (this.isFavOnPlay && this.isFav))
       ) {
         this.switchIsFav();
         return;
-      } else if (x > 0 && mode == "vertical") {
-        this.cleanUp();
+      } else if (x > 0 && mode == "VERTICAL") {
+        this.close();
         return;
       }
     },
