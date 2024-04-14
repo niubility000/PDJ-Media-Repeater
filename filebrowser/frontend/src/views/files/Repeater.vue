@@ -494,6 +494,12 @@ export default {
         return srtUrl.replace(".srt", ".mp4");
       } else return "";
     },
+    currentFileFavList() {
+      let currentMediaName = this.mediaName;
+      return this.favList.filter(function (item) {
+        return item.rawPath == currentMediaName;
+      });
+    },
     mediaName() {
       if (this.isMediaType == 1) {
         return this.req.name.replace(".srt", ".mp3");
@@ -502,12 +508,6 @@ export default {
       } else {
         return "";
       }
-    },
-    currentFileFavList() {
-      let currentMediaName = this.mediaName;
-      return this.favList.filter(function (item) {
-        return item.rawPath == currentMediaName;
-      });
     },
     isEnglish() {
       let str = this.srtSubtitles[1].content.split("\r\n")[0];
@@ -630,10 +630,6 @@ export default {
           }
         }
       } catch (e) {
-        // const error = new Error("No favorite.txt found");
-        // error.status = 0;
-        // throw error;
-        alert("No favorite.txt found");
         this.favList = [];
         if (this.isAutoDetectLang) this.autoDetectLangInTrans();
       }
@@ -844,17 +840,19 @@ export default {
     endTouch(event) {
       event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
-      this.distanceX = event.changedTouches[0].clientX - this.startX;
 
+      this.distanceY = event.changedTouches[0].clientY - this.startY;
+      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
+        this.checkNav(this.distanceY, "VERTICAL");
+        return;
+      }
+
+      this.distanceX = event.changedTouches[0].clientX - this.startX;
       if (this.timeDiff < 300 && Math.abs(this.distanceX) > 30) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
-      this.distanceY = event.changedTouches[0].clientY - this.startY;
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 20) {
-        this.checkNav(this.distanceY, "VERTICAL");
-        return;
-      }
+
       this.click();
     },
     checkNav(x, mode) {
