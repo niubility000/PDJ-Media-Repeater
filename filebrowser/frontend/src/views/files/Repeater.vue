@@ -16,12 +16,7 @@
           @action="close()"
         />
         <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
-          {{
-            raw
-              .split("?")[0]
-              .split("/")
-              [raw.split("?")[0].split("/").length - 1].replace(/%20/g, " ")
-          }}
+          {{ mediaName }}
         </title>
         <span>
           <input
@@ -499,10 +494,19 @@ export default {
         return srtUrl.replace(".srt", ".mp4");
       } else return "";
     },
+    mediaName() {
+      if (this.isMediaType == 1) {
+        return this.req.name.replace(".srt", ".mp3");
+      } else if (this.isMediaType == 2) {
+        return this.req.name.replace(".srt", ".mp4");
+      } else {
+        return "";
+      }
+    },
     currentFileFavList() {
-      let reqName = this.req.name;
+      let currentMediaName = this.mediaName;
       return this.favList.filter(function (item) {
-        return item.rawPath == reqName;
+        return item.rawPath == currentMediaName;
       });
     },
     isEnglish() {
@@ -726,7 +730,7 @@ export default {
         this.isFav = !this.isFav;
         if (this.isFav) {
           var fav = {
-            rawPath: this.req.name,
+            rawPath: this.mediaName,
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
             endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
             content: this.srtSubtitles[this.sentenceIndex - 1].content,
