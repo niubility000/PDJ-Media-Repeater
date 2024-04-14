@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -181,8 +182,15 @@ user created with the credentials from options "username" and "password".`,
 
 		defer listener.Close()
 
+		ip, err := getInternalIP()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+	
+
 		if strings.Contains(adr, "0.0.0.0") {
-			log.Println("Listening on 0.0.0.0:" + server.Port + ". You can access the FileBrowser at 127.0.0.1:" + server.Port)
+			log.Println("Listening on 0.0.0.0:" + server.Port + ". You can access your FileBrowser at " + ip +":"+server.Port)
 		} else {
 			log.Println("Listening on", listener.Addr().String())
 		}
@@ -191,6 +199,40 @@ user created with the credentials from options "username" and "password".`,
 			log.Fatal(err)
 		}
 	}, pythonConfig{allowNoDB: true}),
+}
+
+func getInternalIP() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range interfaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			ip, _, err := net.ParseCIDR(addr.String())
+			if err == nil && ip.To4() != nil && isPrivateIP(ip) {
+				return ip.String(), nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no internal IPv4 address found")
+}
+
+func isPrivateIP(ip net.IP) bool {
+	privateIPBlocks := []*net.IPNet{
+		{IP: net.ParseIP("10.0.0.0"), Mask: net.CIDRMask(8, 32)},
+		{IP: net.ParseIP("172.16.0.0"), Mask: net.CIDRMask(12, 32)},
+		{IP: net.ParseIP("192.168.0.0"), Mask: net.CIDRMask(16, 32)},
+	}
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 func cleanupHandler(listener net.Listener, c chan os.Signal) { //nolint:interfacer

@@ -16,7 +16,12 @@
           @action="close()"
         />
         <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
-          {{ req.name.replace(".srt", "") }}
+          {{
+            raw
+              .split("?")[0]
+              .split("/")
+              [raw.split("?")[0].split("/").length - 1].replace(/%20/g, " ")
+          }}
         </title>
         <span>
           <input
@@ -482,8 +487,8 @@ export default {
             return 1;
           }
         }
-      }
-      return 0;
+        return 0;
+      } else return -1;
     },
 
     raw() {
@@ -495,9 +500,9 @@ export default {
       } else return "";
     },
     currentFileFavList() {
-      let reqUrl = this.req.url.replace("/files/", "").replace("srt", "");
+      let reqName = this.req.name;
       return this.favList.filter(function (item) {
-        return item.rawPath.includes(reqUrl);
+        return item.rawPath == reqName;
       });
     },
     isEnglish() {
@@ -583,9 +588,53 @@ export default {
     this.cleanUp();
   },
   methods: {
-    readyStatus() {
-      this.$refs.player.play();
+    async readyStatus() {
+      try {
+        const pathf = url.removeLastDir(this.$route.path);
+        var favAll = await api.fetch(pathf + "/favorite.txt");
+        this.repeatTimes = Number(JSON.parse(favAll.content.split(":")[1]));
+        this.interval = Number(JSON.parse(favAll.content.split(":")[2]));
+        this.autoPlayNext = JSON.parse(favAll.content.split(":")[3]);
+        this.timeStampChange = Number(JSON.parse(favAll.content.split(":")[4]));
+        this.currentSpeed = JSON.parse(favAll.content.split(":")[5]);
+        this.subtitleLang = JSON.parse(favAll.content.split(":")[6]);
+        this.pauseTimeSecLine = Number(
+          JSON.parse(favAll.content.split(":")[8])
+        );
+        this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
+        this.isUtterSecLineFirstly = JSON.parse(favAll.content.split(":")[10]);
+        this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
+        if (!this.isAutoDetectLang) {
+          this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
+          this.langInSecLine = JSON.parse(favAll.content.split(":")[11]);
+          this.lineNumOfTrans = Number(
+            JSON.parse(favAll.content.split(":")[12])
+          );
+        } else {
+          this.autoDetectLangInTrans();
+          this.langInSecLine = navigator.language || navigator.userLanguage;
+        }
+        this.favList = JSON.parse(favAll.content.split("Subtitle:")[1]);
+        if (this.currentFileFavList) {
+          for (var i = 0; i < this.currentFileFavList.length; ++i) {
+            if (
+              this.currentFileFavList[i].startTime ==
+              this.srtSubtitles[this.sentenceIndex - 1].startTime
+            ) {
+              this.isFav = true;
+            }
+          }
+        }
+      } catch (e) {
+        // const error = new Error("No favorite.txt found");
+        // error.status = 0;
+        // throw error;
+        alert("No favorite.txt found");
+        this.favList = [];
+        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+      }
       this.isReadyToPlay = true;
+      this.$refs.player.play();
       setTimeout(() => {
         this.$refs.player.pause();
       }, 1);
@@ -673,33 +722,36 @@ export default {
 
     switchIsFav() {
       this.isSetting = false;
-      this.isFav = !this.isFav;
-      if (this.isFav) {
-        var fav = {
-          rawPath: this.raw.split("?")[0].split("/raw/")[1],
-          startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
-          endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
-          content: this.srtSubtitles[this.sentenceIndex - 1].content,
-        };
-        this.favList.push(fav);
-        this.save();
-      } else {
-        var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        this.favList = this.favList.filter(function (item) {
-          return item.startTime !== nowStartTime;
-        });
-        this.save();
-        if (this.isFavOnPlay) {
-          if (this.srtSubtitles.length < 1) {
-            this.isFavOnPlay = false;
-            return;
+      if (this.isReadyToPlay) {
+        this.isFav = !this.isFav;
+        if (this.isFav) {
+          var fav = {
+            rawPath: this.req.name,
+            startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
+            endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
+            content: this.srtSubtitles[this.sentenceIndex - 1].content,
+          };
+          this.favList.push(fav);
+          this.save();
+        } else {
+          var nowStartTime =
+            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          this.favList = this.favList.filter(function (item) {
+            return item.startTime !== nowStartTime;
+          });
+          this.save();
+          if (this.isFavOnPlay) {
+            if (this.srtSubtitles.length < 1) {
+              this.isFavOnPlay = false;
+              return;
+            }
+            if (this.sentenceIndex > this.srtSubtitles.length) {
+              this.sentenceIndex = this.sentenceIndex - 1;
+            }
+            this.isFav = true;
+            this.cleanUp();
+            this.singleModePlay();
           }
-          if (this.sentenceIndex > this.srtSubtitles.length) {
-            this.sentenceIndex = this.sentenceIndex - 1;
-          }
-          this.isFav = true;
-          this.cleanUp();
-          this.singleModePlay();
         }
       }
     },
@@ -721,7 +773,13 @@ export default {
     },
     onSetting() {
       this.isSetting = !this.isSetting;
-      this.cleanUp();
+      if (this.isSetting) this.cleanUp();
+      else {
+        setTimeout(() => {
+          this.singleModePlay();
+        }, 50);
+      }
+
       return;
     },
     click: function () {
@@ -744,7 +802,6 @@ export default {
       this.touches++;
       if (this.touches > 1) {
         //double click
-        this.cleanUp();
         this.touches = 0;
         return;
       }
@@ -1038,48 +1095,6 @@ export default {
           this.$showError(e);
         }
       }
-      try {
-        const pathf = url.removeLastDir(this.$route.path);
-        var favAll = await api.fetch(pathf + "/favorite.txt");
-
-        this.repeatTimes = Number(JSON.parse(favAll.content.split(":")[1]));
-        this.interval = Number(JSON.parse(favAll.content.split(":")[2]));
-        this.autoPlayNext = JSON.parse(favAll.content.split(":")[3]);
-        this.timeStampChange = Number(JSON.parse(favAll.content.split(":")[4]));
-        this.currentSpeed = JSON.parse(favAll.content.split(":")[5]);
-        this.subtitleLang = JSON.parse(favAll.content.split(":")[6]);
-        this.pauseTimeSecLine = Number(
-          JSON.parse(favAll.content.split(":")[8])
-        );
-        this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
-        this.isUtterSecLineFirstly = JSON.parse(favAll.content.split(":")[10]);
-        this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
-        if (!this.isAutoDetectLang) {
-          this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
-          this.langInSecLine = JSON.parse(favAll.content.split(":")[11]);
-          this.lineNumOfTrans = Number(
-            JSON.parse(favAll.content.split(":")[12])
-          );
-        } else {
-          this.autoDetectLangInTrans();
-          this.langInSecLine = navigator.language || navigator.userLanguage;
-        }
-        this.favList = JSON.parse(favAll.content.split("Subtitle:")[1]);
-      } catch (e) {
-        this.favList = [];
-        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
-      }
-      if (this.currentFileFavList) {
-        for (var i = 0; i < this.currentFileFavList.length; ++i) {
-          if (
-            this.currentFileFavList[i].startTime ==
-            this.srtSubtitles[this.sentenceIndex - 1].startTime
-          ) {
-            this.isFav = true;
-            return;
-          }
-        }
-      }
     },
 
     key(event) {
@@ -1203,7 +1218,7 @@ header {
 #settingBoxContainer {
   display: flex;
   position: fixed;
-  width: 75%;
+  width: 55%;
   left: 50%;
   transform: translate(-50%, 0);
   top: 5em;
@@ -1215,6 +1230,7 @@ header {
 
 #settingBox {
   position: relative;
+  width: 100%;
   height: 100%;
   padding: 1em;
   border-radius: 10px;
