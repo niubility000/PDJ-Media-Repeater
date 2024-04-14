@@ -1263,4 +1263,13 @@ header {
     margin: 0;
   }
 }
+@media screen and (max-width: 736px) and (orientation: landscape) {
+  #repeater .repeater {
+    padding-top: 4.5em;
+  }
+  #repeater .repeater span p {
+    margin-block-start: 0.2em;
+    margin-block-end: 0.2em;
+  }
+}
 </style>
