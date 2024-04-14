@@ -29,7 +29,7 @@ sample media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Rep
 
 PDJ Media Repeater is a green standalone software. 
 
-In windows, just double click the filebrowser.exe, then you can visit it at 127.0.0.1:8080, 192.168.x.x:8080 or public internet in your browser. The default account is admin:admin
+In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
