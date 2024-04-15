@@ -93,7 +93,9 @@
         <div id="settingBox">
           <p style="color: blue">SETTINGS</p>
           <div style="display: block">
-            <span class="subject">Sentence Playback Times: </span>
+            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+              >Sentence Playback Times:
+            </span>
             <input
               class="input input--repeater"
               type="number"
@@ -103,7 +105,9 @@
             />
           </div>
           <div style="display: block">
-            <span class="subject">Interval (in second): </span>
+            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+              >Interval (in second):
+            </span>
             <input
               class="input input--repeater"
               type="text"
@@ -111,7 +115,9 @@
             />
           </div>
           <div style="display: block">
-            <span class="subject">Timestamp Move (in ms): </span>
+            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+              >Timestamp Move (in ms):
+            </span>
             <input
               class="input input--repeater"
               type="text"
@@ -119,7 +125,9 @@
             />
           </div>
           <div style="display: block">
-            <span class="subject">Speed Each Time (default:1): </span>
+            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+              >Speed Each Time (default:1):
+            </span>
             <input
               class="input input--repeater"
               type="text"
@@ -131,27 +139,51 @@
               <input type="checkbox" v-model="autoPlayNext" />
               Autoplay Next Sentence
             </p>
-            <p style="color: white">
-              <input type="checkbox" v-model="isUtterSecLine" />
-              Utter Subtitle's Translation Line with TTS (<input
-                type="checkbox"
-                v-model="isAutoDetectLang"
-              />
-              auto-detect)
+            <p>
+              <span :style="{ color: !isAutoDetectLang ? 'white' : '#bbbaba' }">
+                <input
+                  :disabled="isAutoDetectLang"
+                  type="checkbox"
+                  v-model="isUtterSecLine"
+                />
+                Utter Subtitle's Translation Line with TTS
+              </span>
+              <span style="color: white">
+                (<input type="checkbox" v-model="isAutoDetectLang" />
+                auto-detect)
+              </span>
             </p>
-            <div v-if="isUtterSecLine" style="display: block">
-              <span class="subject"> Language Used In translation Line: </span>
+            <div style="display: block">
+              <span
+                :style="{
+                  color:
+                    isUtterSecLine && !isAutoDetectLang ? 'white' : '#bbbaba',
+                }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                Language Used In translation Line:
+              </span>
               <input
+                :disabled="!(isUtterSecLine && !isAutoDetectLang)"
                 class="input input--repeater"
                 type="text"
                 v-model="langInSecLine"
               />
             </div>
-            <div v-if="isUtterSecLine" style="display: block">
-              <span class="subject">
+            <div style="display: block">
+              <span
+                :style="{
+                  color:
+                    isUtterSecLine && !isAutoDetectLang ? 'white' : '#bbbaba',
+                }"
+                style="margin-left: 1em"
+                class="subject"
+              >
                 Line Number Of Translation In Subtitle:
               </span>
               <input
+                :disabled="!(isUtterSecLine && !isAutoDetectLang)"
                 class="input input--repeater"
                 type="number"
                 min="1"
@@ -159,9 +191,16 @@
                 v-model="lineNumOfTrans"
               />
             </div>
-            <div v-if="isUtterSecLine" style="display: block">
-              <span class="subject"> Pause time (in second): </span>
+            <div style="display: block">
+              <span
+                :style="{ color: isUtterSecLine ? 'white' : '#bbbaba' }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                Pause Time (in second):
+              </span>
               <input
+                :disabled="!isUtterSecLine"
                 class="input input--repeater"
                 type="number"
                 min="0"
@@ -169,24 +208,43 @@
                 v-model="pauseTimeSecLine"
               />
             </div>
-            <div v-if="isUtterSecLine" style="display: block">
-              <span class="subject"> Speed of Uttering: </span>
+            <div style="display: block">
+              <span
+                :style="{ color: isUtterSecLine ? 'white' : '#bbbaba' }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                Speed Of Uttering:
+              </span>
               <input
+                :disabled="!isUtterSecLine"
                 class="input input--repeater"
                 type="text"
                 v-model.number="speedOfUtter"
               />
             </div>
-            <p v-if="isUtterSecLine" style="color: white">
-              <input type="checkbox" v-model="isUtterSecLineFirstly" />
-              Utter Subtitle's translation Line at first
+            <p :style="{ color: isUtterSecLine ? 'white' : '#bbbaba' }">
+              <input
+                :disabled="!isUtterSecLine"
+                style="margin-left: 1em"
+                type="checkbox"
+                v-model="isUtterSecLineFirstly"
+              />
+              Utter Subtitle's Translation Line Firstly
             </p>
             <p
-              v-if="isUtterSecLine && isUtterSecLineFirstly"
-              style="color: white"
+              :style="{
+                color:
+                  isUtterSecLine && isUtterSecLineFirstly ? 'white' : '#bbbaba',
+              }"
             >
-              <input type="checkbox" v-model="isPauseAfterUttering" />
-              Pause After Uttering translation Line, and then Click to continue.
+              <input
+                :disabled="!(isUtterSecLine && isUtterSecLineFirstly)"
+                style="margin-left: 2em"
+                type="checkbox"
+                v-model="isPauseAfterUttering"
+              />
+              AutoPause After Uttering Translation Line, And Click To Continue.
             </p>
           </div>
           <div style="color: white">
@@ -1268,6 +1326,10 @@ header {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: grey;
+}
+
+input:disabled {
+  background-color: #bbbaba;
 }
 
 @media (max-width: 736px) {
