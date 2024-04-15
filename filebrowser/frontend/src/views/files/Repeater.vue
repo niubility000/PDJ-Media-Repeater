@@ -386,7 +386,7 @@ export default {
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
       touches: 0,
-      isPauseAfterUttering: false,
+      isPauseAfterUttering: true,
       pausingAfterUttering: false,
     };
   },
