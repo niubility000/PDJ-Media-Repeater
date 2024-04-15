@@ -842,7 +842,7 @@ export default {
       this.timeDiff = new Date().getTime() - this.startTime;
 
       this.distanceY = event.changedTouches[0].clientY - this.startY;
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
+      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 60) {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
