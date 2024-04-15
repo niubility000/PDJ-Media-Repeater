@@ -181,6 +181,13 @@
               <input type="checkbox" v-model="isUtterSecLineFirstly" />
               Utter Subtitle's translation Line at first
             </p>
+            <p
+              v-if="isUtterSecLine && isUtterSecLineFirstly"
+              style="color: white"
+            >
+              <input type="checkbox" v-model="isPauseAfterUttering" />
+              Pause After Uttering translation Line, and then Click to continue.
+            </p>
           </div>
           <div style="color: white">
             <p style="color: blue; padding-top: 1em">INSTRUCTIONS</p>
@@ -379,6 +386,8 @@ export default {
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
       touches: 0,
+      isPauseAfterUttering: false,
+      pausingAfterUttering: false,
     };
   },
   computed: {
@@ -580,6 +589,9 @@ export default {
       }
       this.save();
     },
+    isPauseAfterUttering: function () {
+      this.save();
+    },
   },
 
   async mounted() {
@@ -607,6 +619,7 @@ export default {
         );
         this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
         this.isUtterSecLineFirstly = JSON.parse(favAll.content.split(":")[10]);
+        this.isPauseAfterUttering = JSON.parse(favAll.content.split(":")[14]);
         this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
         if (!this.isAutoDetectLang) {
           this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
@@ -663,14 +676,23 @@ export default {
     },
 
     endUtter() {
-      this.timeOutId = setTimeout(() => {
-        if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
-          this.sentenceIndex = this.sentenceIndex + 1;
-          this.singleModePlay();
-        } else {
-          this.loopPlay();
-        }
-      }, this.pauseTimeSecLine * 1000);
+      if (
+        this.isUtterSecLine &&
+        this.isUtterSecLineFirstly &&
+        this.isPauseAfterUttering
+      ) {
+        this.pausingAfterUttering = true;
+        return;
+      } else {
+        this.timeOutId = setTimeout(() => {
+          if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
+            this.sentenceIndex = this.sentenceIndex + 1;
+            this.singleModePlay();
+          } else {
+            this.loopPlay();
+          }
+        }, this.pauseTimeSecLine * 1000);
+      }
     },
 
     switchSubtitle() {
@@ -787,7 +809,12 @@ export default {
       setTimeout(() => {
         if (this.touches == 1) {
           if (this.isSingle) {
-            this.singleModePlay();
+            if (this.pausingAfterUttering) {
+              this.pausingAfterUttering = false;
+              this.loopPlay();
+            } else {
+              this.singleModePlay();
+            }
           } else {
             this.$refs.player.currentTime =
               this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -1063,6 +1090,8 @@ export default {
         JSON.stringify(this.lineNumOfTrans) +
         ":" +
         JSON.stringify(this.isAutoDetectLang) +
+        ":" +
+        JSON.stringify(this.isPauseAfterUttering) +
         ":";
 
       let favContent =
