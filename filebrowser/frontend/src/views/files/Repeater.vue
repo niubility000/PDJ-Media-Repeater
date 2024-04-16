@@ -91,6 +91,17 @@
       </header-bar>
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
+          <p
+            style="
+              text-align: center;
+              color: white;
+              background-color: blue;
+              font-weight: bold;
+            "
+          >
+            IMPORTANT! Please use standard browser: Edge, Chrome, Safari or
+            Firefox to ensure PDJ Media Repeater works correctly.
+          </p>
           <p style="color: blue">SETTINGS</p>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
@@ -344,7 +355,7 @@
           style="color: red; font-size: 1.2em"
         >
           Sorry, this browser does not fully comply with HTML5 standard. Please
-          use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ
+          use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ
           Media Repeater works correctly.
         </p>
         <p
@@ -592,12 +603,12 @@ export default {
 
     browserSupported() {
       let ua = navigator.userAgent;
-      if (
+        if (
         ua.indexOf("Firefox") !== -1 ||
         ua.indexOf("Edge") !== -1 ||
         ua.indexOf("Chrome") !== -1 ||
         (ua.indexOf("Safari") !== -1 && ua.indexOf("MQQBrowser") == -1) ||
-        ua.indexOf("MicroMessenger") !== -1
+        (ua.indexOf("MicroMessenger") !== -1 && ua.indexOf("iPhone") !== -1)
       ) {
         return true;
       } else {
