@@ -12,11 +12,11 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14954395/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14986636/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14954397/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14986637/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14954400/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14986639/filebrowser-linux-arm64.zip)
 
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
@@ -30,6 +30,10 @@ sample media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Rep
 PDJ Media Repeater is a green standalone software. 
 
 In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin
+
+WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack <video> and <audio> tags. 
+
+Please use standard browser (Chrome, Edge, Safari, Firefox) to visit PDJ Media Repeater.   
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
