@@ -596,7 +596,8 @@ export default {
         ua.indexOf("Firefox") !== -1 ||
         ua.indexOf("Edge") !== -1 ||
         ua.indexOf("Chrome") !== -1 ||
-        ua.indexOf("Safari") !== -1
+        (ua.indexOf("Safari") !== -1 && ua.indexOf("MQQBrowser") == -1) ||
+        ua.indexOf("MicroMessenger") !== -1
       ) {
         return true;
       } else {
