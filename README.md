@@ -31,9 +31,7 @@ PDJ Media Repeater is a green standalone software.
 
 In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin
 
-WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack <video> and <audio> tags. 
-
-Please use standard browser (Chrome, Edge, Safari, Firefox) to visit PDJ Media Repeater.   
+**WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack <video> and <audio> tags.**
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
