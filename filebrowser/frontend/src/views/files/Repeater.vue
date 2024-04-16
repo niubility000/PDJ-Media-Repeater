@@ -140,7 +140,7 @@
               Autoplay Next Sentence
             </p>
             <p>
-              <span :style="{ color: !isAutoDetectLang ? 'white' : '#bbbaba' }">
+              <span style="color: white">
                 <input
                   :disabled="isAutoDetectLang"
                   type="checkbox"
@@ -156,8 +156,7 @@
             <div style="display: block">
               <span
                 :style="{
-                  color:
-                    isUtterSecLine && !isAutoDetectLang ? 'white' : '#bbbaba',
+                  color: isUtterSecLine ? 'white' : '#bbbaba',
                 }"
                 style="margin-left: 1em"
                 class="subject"
@@ -174,8 +173,7 @@
             <div style="display: block">
               <span
                 :style="{
-                  color:
-                    isUtterSecLine && !isAutoDetectLang ? 'white' : '#bbbaba',
+                  color: isUtterSecLine ? 'white' : '#bbbaba',
                 }"
                 style="margin-left: 1em"
                 class="subject"
@@ -329,7 +327,7 @@
       >
         <video
           style="max-height: 70%; max-width: 100%"
-          v-if="isMediaType == 2"
+          v-if="isMediaType == 2 && browserSupported"
           ref="player"
           :src="raw"
           :autoplay="autoPlay"
@@ -341,7 +339,18 @@
           x5-video-orientation="landscape|portrait"
           @play="autoPlay = true"
         ></video>
-        <p v-if="!isReadyToPlay && isMediaType > 0" style="color: white">
+        <p
+          v-if="isMediaType > 0 && !browserSupported"
+          style="color: red; font-size: 1.2em"
+        >
+          Sorry, this browser does not fully comply with HTML5 standard. Please
+          use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ
+          Media Repeater works correctly.
+        </p>
+        <p
+          v-if="!isReadyToPlay && isMediaType > 0 && browserSupported"
+          style="color: white"
+        >
           Loading Media...
         </p>
         <span
@@ -385,7 +394,7 @@
           right: 0;
           margin: auto;
         "
-        v-if="isMediaType == 1"
+        v-if="isMediaType == 1 && browserSupported"
         ref="player"
         :src="raw"
         :controls="!isSingle"
@@ -579,6 +588,20 @@ export default {
     isEnglish() {
       let str = this.srtSubtitles[1].content.split("\r\n")[0];
       return /^[a-zA-Z]/.test(str);
+    },
+
+    browserSupported() {
+      let ua = navigator.userAgent;
+      if (
+        ua.indexOf("Firefox") !== -1 ||
+        ua.indexOf("Edge") !== -1 ||
+        ua.indexOf("Chrome") !== -1 ||
+        ua.indexOf("Safari") !== -1
+      ) {
+        return true;
+      } else {
+        return false;
+      }
     },
   },
   watch: {
