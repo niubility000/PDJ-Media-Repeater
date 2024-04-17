@@ -91,18 +91,21 @@
       </header-bar>
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
+          <p style="text-align: center; color: blue; font-weight: bold">
+            IMPORTANT
+          </p>
           <p
             style="
               text-align: center;
               color: white;
-              background-color: blue;
               font-weight: bold;
+              margin-bottom: 2.5em;
             "
           >
-            IMPORTANT! Please use standard browser: Edge, Chrome, Safari or
-            Firefox to ensure PDJ Media Repeater works correctly.
+            Please use standard browser - Edge, Chrome, Safari or Firefox to
+            ensure PDJ Media Repeater can work correctly.
           </p>
-          <p style="color: blue">SETTINGS</p>
+          <p style="color: blue; font-weight: bold">SETTINGS</p>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >Sentence Playback Times:
@@ -257,7 +260,9 @@
             </p>
           </div>
           <div style="color: white">
-            <p style="color: blue; padding-top: 1em">INSTRUCTIONS</p>
+            <p style="color: blue; font-weight: bold; padding-top: 1em">
+              INSTRUCTIONS
+            </p>
             <p>
               Click on the screen (DOWN arrow key on keyboard): replay current
               sentence
@@ -311,7 +316,9 @@
               >: show current Sentence No. and switch to a special Sentence No.
             </p>
 
-            <p style="color: blue; padding-top: 1em">UPDATES and COMMENTS</p>
+            <p style="color: blue; font-weight: bold; padding-top: 1em">
+              UPDATES and COMMENTS
+            </p>
             <p>
               <a
                 href="https://github.com/niubility000/PDJ-Media-Repeater"
@@ -338,7 +345,7 @@
       >
         <video
           style="max-height: 70%; max-width: 100%"
-          v-if="isMediaType == 2 && browserSupported"
+          v-if="isMediaType == 2 && !browserStatus"
           ref="player"
           :src="raw"
           :autoplay="autoPlay"
@@ -351,15 +358,16 @@
           @play="autoPlay = true"
         ></video>
         <p
-          v-if="isMediaType > 0 && !browserSupported"
-          style="color: red; font-size: 1.2em"
+          v-if="isMediaType > 0 && browserStatus"
+          style="color: red; font-size: 1.2em; padding-top: 4em"
         >
-          Sorry, this browser does not fully comply with HTML5 standard. Please
-          use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ
-          Media Repeater works correctly.
+          Sorry, video or audeo tag is hijacked by this browser. This browser
+          does not fully comply with HTML5 standard. Please use standard
+          browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater
+          can work correctly.
         </p>
         <p
-          v-if="!isReadyToPlay && isMediaType > 0 && browserSupported"
+          v-if="!isReadyToPlay && isMediaType > 0 && !browserStatus"
           style="color: white"
         >
           Loading Media...
@@ -405,7 +413,7 @@
           right: 0;
           margin: auto;
         "
-        v-if="isMediaType == 1 && browserSupported"
+        v-if="isMediaType == 1 && !browserStatus"
         ref="player"
         :src="raw"
         :controls="!isSingle"
@@ -466,6 +474,7 @@ export default {
       touches: 0,
       isPauseAfterUttering: true,
       pausingAfterUttering: false,
+      browserStatus: window.sessionStorage.getItem("isBrowserSupported"),
     };
   },
   computed: {
@@ -600,21 +609,6 @@ export default {
       let str = this.srtSubtitles[1].content.split("\r\n")[0];
       return /^[a-zA-Z]/.test(str);
     },
-
-    browserSupported() {
-      let ua = navigator.userAgent;
-        if (
-        ua.indexOf("Firefox") !== -1 ||
-        ua.indexOf("Edge") !== -1 ||
-        ua.indexOf("Chrome") !== -1 ||
-        (ua.indexOf("Safari") !== -1 && ua.indexOf("MQQBrowser") == -1) ||
-        (ua.indexOf("MicroMessenger") !== -1 && ua.indexOf("iPhone") !== -1)
-      ) {
-        return true;
-      } else {
-        return false;
-      }
-    },
   },
   watch: {
     $route: function () {
@@ -748,7 +742,20 @@ export default {
     singleModePlay() {
       this.cleanUp();
       if (this.isUtterSecLine && this.isUtterSecLineFirstly) {
-        this.utterSecLine();
+        this.$refs.player.currentTime =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.$refs.player.play();
+        setTimeout(() => {
+          this.$refs.player.pause();
+          this.utterSecLine();
+          if (
+            this.$refs.player.currentTime <
+            this.srtSubtitles[this.sentenceIndex - 1].startTime
+          ) {
+            window.sessionStorage.setItem("isBrowserSupported", true);
+            location.reload();
+          }
+        }, 10);
       } else this.loopPlay();
     },
 
@@ -1113,6 +1120,15 @@ export default {
         this.$refs.player.playbackRate = 1;
       }
       this.playSection();
+      setTimeout(() => {
+        if (
+          this.$refs.player.currentTime <
+          this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.5
+        ) {
+          window.sessionStorage.setItem("isBrowserSupported", true);
+          location.reload();
+        }
+      }, 1000);
       this.playCount++;
       if (this.playCount >= this.repeatTimes) {
         this.playCount = 0;
