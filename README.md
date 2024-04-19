@@ -98,6 +98,7 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 Modified:
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Files.vue
+
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot6.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot7.jpg)
@@ -106,7 +107,6 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/root.go
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot12.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot9.jpg)
 
