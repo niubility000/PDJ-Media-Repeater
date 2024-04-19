@@ -150,8 +150,12 @@
           </div>
           <div style="display: block">
             <p style="color: white">
+              <input type="checkbox" v-model="autoPlay" />
+              Auto Play Current Sentence
+            </p>
+            <p style="color: white">
               <input type="checkbox" v-model="autoPlayNext" />
-              Autoplay Next Sentence
+              Auto Switch to Next Sentence
             </p>
             <p>
               <span style="color: white">
@@ -355,7 +359,6 @@
           webkit-playsinline="true"
           playsinline="true"
           x5-video-orientation="landscape|portrait"
-          @play="autoPlay = true"
         ></video>
         <p v-if="!isReadyToPlay && isMediaType > 0" style="color: white">
           Loading Media...
@@ -407,7 +410,6 @@
         :controls="!isSingle"
         controlslist="noplaybackrate"
         :autoplay="autoPlay"
-        @play="autoPlay = true"
         @loadedmetadata="readyStatus"
       ></audio>
     </template>
@@ -441,6 +443,7 @@ export default {
       playCount: 0,
       timeOutId: null,
       autoPlayNext: true,
+      autoPlay: true,
       timeStampChange: -100,
       currentSpeed: "0.7, 0.5, 1",
       listing: null,
@@ -669,6 +672,9 @@ export default {
     isPauseAfterUttering: function () {
       this.save();
     },
+    autoPlay: function () {
+      this.save();
+    },
   },
 
   async mounted() {
@@ -697,6 +703,7 @@ export default {
         this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
         this.isUtterSecLineFirstly = JSON.parse(favAll.content.split(":")[10]);
         this.isPauseAfterUttering = JSON.parse(favAll.content.split(":")[14]);
+        this.autoPlay = Number(JSON.parse(favAll.content.split(":")[15]));
         this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
         if (!this.isAutoDetectLang) {
           this.isUtterSecLine = JSON.parse(favAll.content.split(":")[7]);
@@ -992,6 +999,11 @@ export default {
           this.singleModePlay();
           this.currentMedia.currentTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          if (!this.autoPlay) {
+            setTimeout(() => {
+              this.cleanUp();
+            }, 1);
+          }
         } else {
           setTimeout(() => {
             this.regularPlay();
@@ -1011,6 +1023,11 @@ export default {
           this.singleModePlay();
           this.currentMedia.currentTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          if (!this.autoPlay) {
+            setTimeout(() => {
+              this.cleanUp();
+            }, 1);
+          }
         } else {
           setTimeout(() => {
             this.regularPlay();
@@ -1133,6 +1150,10 @@ export default {
                 this.sentenceIndex = this.sentenceIndex + 1;
                 this.singleModePlay();
               }
+              if (!this.autoPlay) {
+                this.cleanUp();
+                return;
+              }
             },
             (this.interval +
               (this.srtSubtitles[this.sentenceIndex - 1].endTime -
@@ -1193,6 +1214,8 @@ export default {
         JSON.stringify(this.isAutoDetectLang) +
         ":" +
         JSON.stringify(this.isPauseAfterUttering) +
+        ":" +
+        JSON.stringify(this.autoPlay) +
         ":";
 
       let favContent =
