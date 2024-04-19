@@ -112,9 +112,6 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/roo
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot10.jpg)
 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot13.jpg)
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot14.jpg)
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/version/version.go
 
