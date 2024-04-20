@@ -349,7 +349,7 @@
       >
         <video
           style="max-height: 70%; max-width: 100%"
-          v-if="isMediaType == 2"
+          v-if="isMediaType == 2 && !browserStatus"
           id="myVideo"
           :src="raw"
           :autoplay="autoPlay"
@@ -360,7 +360,19 @@
           playsinline="true"
           x5-video-orientation="landscape|portrait"
         ></video>
-        <p v-if="!isReadyToPlay && isMediaType > 0" style="color: white">
+        <p
+          v-if="isMediaType > 0 && browserStatus"
+          style="color: red; font-size: 1.2em; padding-top: 4em"
+        >
+          Sorry, video or audeo tag is hijacked by this browser. This browser
+          does not fully comply with HTML5 standard. Please use standard
+          browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater
+          can work correctly.
+        </p>
+        <p
+          v-if="!isReadyToPlay && isMediaType > 0 && !browserStatus"
+          style="color: white"
+        >
           Loading Media...
         </p>
         <span
@@ -404,7 +416,7 @@
           right: 0;
           margin: auto;
         "
-        v-if="isMediaType == 1"
+        v-if="isMediaType == 1 && !browserStatus"
         id="myAudio"
         :src="raw"
         :controls="!isSingle"
@@ -463,7 +475,7 @@ export default {
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
       touches: 0,
-      isPauseAfterUttering: true,
+      isPauseAfterUttering: false,
       pausingAfterUttering: false,
       browserStatus: window.sessionStorage.getItem("isBrowserSupported"),
       currentMedia: null,
@@ -597,7 +609,6 @@ export default {
         return "";
       }
     },
-
     isEnglish() {
       let str = this.srtSubtitles[1].content.split("\r\n")[0];
       return /^[a-zA-Z]/.test(str);
@@ -750,7 +761,20 @@ export default {
     singleModePlay() {
       this.cleanUp();
       if (this.isUtterSecLine && this.isUtterSecLineFirstly) {
-        this.utterSecLine();
+        this.currentMedia.play();
+        this.currentMedia.currentTime =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        setTimeout(() => {
+          this.currentMedia.pause();
+          this.utterSecLine();
+          if (
+            this.currentMedia.currentTime <
+            this.srtSubtitles[this.sentenceIndex - 1].startTime
+          ) {
+            window.sessionStorage.setItem("isBrowserSupported", true);
+            location.reload();
+          }
+        }, 10);
       } else this.loopPlay();
     },
 
@@ -777,7 +801,7 @@ export default {
         };
       } else {
         alert(
-          "Sorry, your browser does not have embedded TTS, Please use standard browsers, such as Chrome in Android, Edge in Windows, Safari in IOS."
+          "Sorry, your browser does not support 'speechSynthesis'. Please use a standard browser: Chrome, Edge, Safari, or Firefox with an enabled 'Text to Speech' Service in your device system. In China, use Firefox in your Android phone."
         );
         this.isAutoDetectLang = false;
         this.isUtterSecLine = false;
@@ -1138,6 +1162,15 @@ export default {
       } else {
         this.currentMedia.playbackRate = 1;
       }
+      setTimeout(() => {
+        if (
+          this.currentMedia.currentTime <
+          this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.5
+        ) {
+          window.sessionStorage.setItem("isBrowserSupported", true);
+          location.reload();
+        }
+      }, 1000);
       this.playCount++;
       if (this.playCount >= this.repeatTimes) {
         this.playCount = 0;
