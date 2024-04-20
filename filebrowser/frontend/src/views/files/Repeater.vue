@@ -801,7 +801,7 @@ export default {
         };
       } else {
         alert(
-          "Sorry, your browser does not support 'speechSynthesis'. Please use a standard browser: Chrome, Edge, Safari, or Firefox with an enabled 'Text to Speech' Service in your device system. In China, use Firefox in your Android phone."
+          "Sorry, your browser does not support 'speechSynthesis' and it can't utter the subtitle's translation line with system embedded TTS. Please use a standard browser: Chrome, Edge, Safari, or Firefox with an enabled 'Text to Speech' Service in your device system. In China, use Firefox in your Android phone."
         );
         this.isAutoDetectLang = false;
         this.isUtterSecLine = false;
