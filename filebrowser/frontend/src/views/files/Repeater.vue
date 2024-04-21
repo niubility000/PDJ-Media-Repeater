@@ -775,6 +775,12 @@ export default {
             location.reload();
           }
         }, 1);
+      } else if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
+        this.utterSecLine();
+        setTimeout(() => {
+          window.speechSynthesis.cancel();
+          this.loopPlay();
+        }, 1);
       } else this.loopPlay();
     },
 
@@ -816,10 +822,21 @@ export default {
       ) {
         this.pausingAfterUttering = true;
         return;
+      } else if (
+        !this.autoPlayNext &&
+        this.isUtterSecLine &&
+        !this.isUtterSecLineFirstly
+      ) {
+        this.cleanUp();
+        return;
       } else {
         this.timeOutId = setTimeout(() => {
           if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
             this.sentenceIndex = this.sentenceIndex + 1;
+            if (!this.autoPlay) {
+              this.cleanUp();
+              return;
+            }
             this.singleModePlay();
           } else {
             this.loopPlay();
@@ -1174,27 +1191,27 @@ export default {
       this.playCount++;
       if (this.playCount >= this.repeatTimes) {
         this.playCount = 0;
-        if (this.autoPlayNext) {
-          this.timeOutId = setTimeout(
-            () => {
-              if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
-                this.utterSecLine();
-              } else {
+        this.timeOutId = setTimeout(
+          () => {
+            if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
+              this.utterSecLine();
+            } else {
+              if (this.autoPlayNext) {
                 this.sentenceIndex = this.sentenceIndex + 1;
+                if (!this.autoPlay) {
+                  this.cleanUp();
+                  return;
+                }
                 this.singleModePlay();
               }
-              if (!this.autoPlay) {
-                this.cleanUp();
-                return;
-              }
-            },
-            (this.interval +
-              (this.srtSubtitles[this.sentenceIndex - 1].endTime -
-                this.srtSubtitles[this.sentenceIndex - 1].startTime) /
-                this.currentMedia.playbackRate) *
-              1000
-          );
-        }
+            }
+          },
+          (this.interval +
+            (this.srtSubtitles[this.sentenceIndex - 1].endTime -
+              this.srtSubtitles[this.sentenceIndex - 1].startTime) /
+              this.currentMedia.playbackRate) *
+            1000
+        );
       } else {
         this.timeOutId = setTimeout(
           () => {
@@ -1317,11 +1334,18 @@ export default {
       } else if (event.which === 40) {
         // down arrow
         if (this.isSingle) {
-          this.singleModePlay();
+          if (this.pausingAfterUttering) {
+            this.pausingAfterUttering = false;
+            this.loopPlay();
+          } else {
+            this.singleModePlay();
+          }
         } else {
-          this.regularPlay();
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          setTimeout(() => {
+            this.regularPlay();
+            this.currentMedia.currentTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          }, 1);
         }
       } else if (event.which === 27) {
         // esc
