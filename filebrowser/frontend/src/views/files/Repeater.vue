@@ -41,7 +41,7 @@
           :disabled="loading"
           class="action"
           @click="switchIsFav"
-          title="Fav"
+          :title="$t('repeater.fav')"
         >
           <i :style="{ color: isFav ? 'red' : 'blue' }" class="material-icons"
             >grade</i
@@ -52,7 +52,7 @@
           :disabled="loading || favList.length == 0"
           class="action"
           @click="playFavList"
-          title="Play Favorite List"
+          :title="$t('repeater.playFavoriteList')"
         >
           <i :style="favListStatus" class="material-icons">folder_special</i>
         </button>
@@ -62,7 +62,7 @@
           :disabled="loading"
           class="action"
           @click="onSetting"
-          title="Settings"
+          :title="$t('repeater.settings')"
         >
           <i
             :style="{ color: isSetting ? 'red' : 'blue' }"
@@ -75,7 +75,7 @@
           :disabled="loading"
           class="action"
           @click="switchSubtitle"
-          title="Switch Subtitle Language"
+          :title="$t('repeater.switchsubtitleLanguages')"
         >
           <i :style="subSwitch" class="material-icons">closed_caption</i>
         </button>
@@ -84,7 +84,7 @@
           :disabled="loading || isFavOnPlay"
           class="action"
           @click="onSingle"
-          :title="isSingle ? 'Single Sentence Repetition Mode' : 'Regular Mode'"
+          :title="isSingle ? $t('repeater.singleSentenceRepetitionMode') : $t('repeater.regularMode')"
         >
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
@@ -92,7 +92,7 @@
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
           <p style="text-align: center; color: blue; font-weight: bold">
-            IMPORTANT
+            {{ $t("repeater.important") }}
           </p>
           <p
             style="
@@ -101,14 +101,12 @@
               font-weight: bold;
               margin-bottom: 2.5em;
             "
-          >
-            Please use standard browser - Edge, Chrome, Safari or Firefox to
-            ensure PDJ Media Repeater can work correctly.
+          > {{ $t("repeater.note1") }}
           </p>
-          <p style="color: blue; font-weight: bold">SETTINGS</p>
+          <p style="color: blue; font-weight: bold">{{ $t("repeater.settings") }}</p>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >Sentence Playback Times:
+              >{{ $t("repeater.sentencePlaybackTimes") }}
             </span>
             <input
               class="input input--repeater"
@@ -120,7 +118,7 @@
           </div>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >Interval (in second):
+              >{{ $t("repeater.interval") }}
             </span>
             <input
               class="input input--repeater"
@@ -130,7 +128,7 @@
           </div>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >Timestamp Move (in ms):
+              >{{ $t("repeater.timestampMove") }}
             </span>
             <input
               class="input input--repeater"
@@ -140,7 +138,7 @@
           </div>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >Speed Each Time (default:1):
+              >{{ $t("repeater.speedEachTime") }}
             </span>
             <input
               class="input input--repeater"
@@ -151,11 +149,11 @@
           <div style="display: block">
             <p style="color: white">
               <input type="checkbox" v-model="autoPlay" />
-              Auto Play Current Sentence
+              {{ $t("repeater.autoPlayCurrentSentence") }}
             </p>
             <p style="color: white">
               <input type="checkbox" v-model="autoPlayNext" />
-              Auto Switch to Next Sentence
+              {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
             <p>
               <span style="color: white">
@@ -164,11 +162,11 @@
                   type="checkbox"
                   v-model="isUtterSecLine"
                 />
-                Utter Subtitle's Translation Line with TTS
+                {{ $t("repeater.utterSubtitle") }}
               </span>
               <span style="color: white">
                 (<input type="checkbox" v-model="isAutoDetectLang" />
-                auto-detect)
+                {{ $t("repeater.autoDetect") }})
               </span>
             </p>
             <div style="display: block">
@@ -179,7 +177,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-                Language Used In translation Line:
+              {{ $t("repeater.langInTransLine") }}
               </span>
               <input
                 :disabled="!(isUtterSecLine && !isAutoDetectLang)"
@@ -196,7 +194,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-                Line Number Of Translation In Subtitle:
+              {{ $t("repeater.lineNumOfTrans") }}
               </span>
               <input
                 :disabled="!(isUtterSecLine && !isAutoDetectLang)"
@@ -213,7 +211,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-                Pause Time (in second):
+              {{ $t("repeater.pauseTime") }}
               </span>
               <input
                 :disabled="!isUtterSecLine"
@@ -230,7 +228,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-                Speed Of Uttering:
+              {{ $t("repeater.speedOfUttering") }}
               </span>
               <input
                 :disabled="!isUtterSecLine"
@@ -246,7 +244,7 @@
                 type="checkbox"
                 v-model="isUtterSecLineFirstly"
               />
-              Utter Subtitle's Translation Line Firstly
+              {{ $t("repeater.utterTransFirstly") }}
             </p>
             <p
               :style="{
@@ -260,80 +258,73 @@
                 type="checkbox"
                 v-model="isPauseAfterUttering"
               />
-              AutoPause After Uttering Translation Line, And Click To Continue.
+              {{ $t("repeater.autoPauseAfterUttering") }}
             </p>
           </div>
           <div style="color: white">
             <p style="color: blue; font-weight: bold; padding-top: 1em">
-              INSTRUCTIONS
+              {{ $t("repeater.instructions") }}
             </p>
             <p>
-              Click on the screen (DOWN arrow key on keyboard): replay current
-              sentence
+              {{ $t("repeater.instruction1") }}
             </p>
             <p>
-              DoubleClick on the screen (UP arrow key on keyboard): stop playing
+              {{ $t("repeater.instruction2") }}
             </p>
             <p>
-              Swipe Left on the screen (RIGHT arrow key on keyboard): jump to
-              next sentence
+              {{ $t("repeater.instruction3") }}
             </p>
             <p>
-              Swipe Right on the screen(LEFT arrow key on keyboard): jump to
-              previous sentence
+              {{ $t("repeater.instruction4") }}
             </p>
             <p>
-              Swipe Up on the screen: add to favorites (Or remove a favorite
-              when playing Favorite List)
+              {{ $t("repeater.instruction5") }}
             </p>
-            <p>Swipe Down on the screen: close this player</p>
+            <p>{{ $t("repeater.instruction6") }}</p>
             <p>
-              Click button
+              {{ $t("repeater.clickButton") }}
               <i style="color: blue" class="material-icons">repeat_one</i>:
-              switch Playback Mode between "Single Sentence Repetition Mode" and
-              "Regular Mode"
+              {{ $t("repeater.instruction7") }}
             </p>
             <p>
-              Click button
+              {{ $t("repeater.clickButton") }}
               <i style="color: blue" class="material-icons">closed_caption</i>:
-              switch Subtitle's language
+              {{ $t("repeater.instruction8") }}
             </p>
             <p>
-              Click button
-              <i style="color: blue" class="material-icons">settings</i>: show
-              SETTINGS, INSTRUCTIONS, UPDATES and COMMENTS
+              {{ $t("repeater.clickButton") }}
+              <i style="color: blue" class="material-icons">settings</i>: {{ $t("repeater.instruction9") }}
             </p>
             <p>
-              Click button
+              {{ $t("repeater.clickButton") }}
               <i style="color: blue" class="material-icons">folder_special</i>:
-              play sentences in favorite List
+              {{ $t("repeater.instruction10") }}
             </p>
             <p>
-              Click button
-              <i style="color: blue" class="material-icons">grade</i>: add or
-              remove a favorite sentence.
+              {{ $t("repeater.clickButton") }}
+              <i style="color: blue" class="material-icons">grade</i>: {{ $t("repeater.instruction11") }}
             </p>
             <p>
-              Click and Input
+              {{ $t("repeater.clickandInput") }}
               <span style="color: blue"
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
-              >: show current Sentence No. and switch to a special Sentence No.
+              >: {{ $t("repeater.instruction12") }}
             </p>
 
             <p style="color: blue; font-weight: bold; padding-top: 1em">
-              UPDATES and COMMENTS
+              {{ $t("repeater.updatesandComments") }}
             </p>
             <p>
               <a
                 href="https://github.com/niubility000/PDJ-Media-Repeater"
                 target="_blank"
-                >Project on Github:
+                >{{ $t("repeater.github") }}
                 https://github.com/niubility000/PDJ-Media-Repeater</a
               >
             </p>
             <p>
               <a href="https://note.youdao.com/s/MI81scdr" target="_blank"
-                >YouDao Notes: https://note.youdao.com/s/MI81scdr</a
+                >{{ $t("repeater.youdao") }} https://note.youdao.com/s/MI81scdr</a
               >
             </p>
           </div>
@@ -1430,7 +1421,7 @@ header {
 #settingBoxContainer {
   display: flex;
   position: fixed;
-  width: 55%;
+  width: 65%;
   left: 50%;
   transform: translate(-50%, 0);
   top: 5em;
