@@ -1,4 +1,4 @@
-const name = window.FileBrowser.Name || "File Browser";
+const name = window.FileBrowser.Name || "PDJ Media Repeater";
 const disableExternal = window.FileBrowser.DisableExternal;
 const disableUsedPercentage = window.FileBrowser.DisableUsedPercentage;
 const baseURL = window.FileBrowser.BaseURL;

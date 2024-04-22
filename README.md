@@ -125,6 +125,8 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/zh-cn.json
 
+
+
 ## Filebrowser Settings with command lines
 
 In windows for example:
