@@ -84,7 +84,11 @@
           :disabled="loading || isFavOnPlay"
           class="action"
           @click="onSingle"
-          :title="isSingle ? $t('repeater.singleSentenceRepetitionMode') : $t('repeater.regularMode')"
+          :title="
+            isSingle
+              ? $t('repeater.singleSentenceRepetitionMode')
+              : $t('repeater.regularMode')
+          "
         >
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
@@ -94,16 +98,21 @@
           <p style="text-align: center; color: blue; font-weight: bold">
             {{ $t("repeater.important") }}
           </p>
-          <p
-            style="
-              text-align: center;
-              color: white;
-              font-weight: bold;
-              margin-bottom: 2.5em;
-            "
-          > {{ $t("repeater.note1") }}
+          <p style="text-align: center; color: white">
+            {{ $t("repeater.note1") }}
           </p>
-          <p style="color: blue; font-weight: bold">{{ $t("repeater.settings") }}</p>
+          <p style="text-align: center; color: white; margin-bottom: 2.5em">
+            {{ $t("repeater.note2") }}
+            <a
+              href="https://ftp.mozilla.org/pub/fenix/releases/125.0/android/fenix-125.0-android-arm64-v8a/fenix-125.0.multi.android-arm64-v8a.apk"
+              target="_blank"
+              style="color: blue"
+              >Official Firefox Browser</a
+            >
+          </p>
+          <p style="color: blue; font-weight: bold">
+            {{ $t("repeater.settings") }}
+          </p>
           <div style="display: block">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.sentencePlaybackTimes") }}
@@ -177,7 +186,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-              {{ $t("repeater.langInTransLine") }}
+                {{ $t("repeater.langInTransLine") }}
               </span>
               <input
                 :disabled="!(isUtterSecLine && !isAutoDetectLang)"
@@ -194,7 +203,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-              {{ $t("repeater.lineNumOfTrans") }}
+                {{ $t("repeater.lineNumOfTrans") }}
               </span>
               <input
                 :disabled="!(isUtterSecLine && !isAutoDetectLang)"
@@ -211,7 +220,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-              {{ $t("repeater.pauseTime") }}
+                {{ $t("repeater.pauseTime") }}
               </span>
               <input
                 :disabled="!isUtterSecLine"
@@ -228,7 +237,7 @@
                 style="margin-left: 1em"
                 class="subject"
               >
-              {{ $t("repeater.speedOfUttering") }}
+                {{ $t("repeater.speedOfUttering") }}
               </span>
               <input
                 :disabled="!isUtterSecLine"
@@ -293,7 +302,8 @@
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">settings</i>: {{ $t("repeater.instruction9") }}
+              <i style="color: blue" class="material-icons">settings</i>:
+              {{ $t("repeater.instruction9") }}
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
@@ -302,7 +312,8 @@
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">grade</i>: {{ $t("repeater.instruction11") }}
+              <i style="color: blue" class="material-icons">grade</i>:
+              {{ $t("repeater.instruction11") }}
             </p>
             <p>
               {{ $t("repeater.clickandInput") }}
@@ -310,7 +321,18 @@
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
               >: {{ $t("repeater.instruction12") }}
             </p>
-
+            <p style="color: blue; font-weight: bold; padding-top: 1em">
+              {{ $t("repeater.learnLangUsingPDJ") }}
+            </p>
+            <p>
+              {{ $t("repeater.learnLang1") }}
+            </p>
+            <p>
+              {{ $t("repeater.learnLang2") }}
+            </p>
+            <p>
+              {{ $t("repeater.learnLang3") }}
+            </p>
             <p style="color: blue; font-weight: bold; padding-top: 1em">
               {{ $t("repeater.updatesandComments") }}
             </p>
@@ -318,13 +340,18 @@
               <a
                 href="https://github.com/niubility000/PDJ-Media-Repeater"
                 target="_blank"
-                >{{ $t("repeater.github") }}
+                >{{
+                  $t("repeater.github")
+                }}
                 https://github.com/niubility000/PDJ-Media-Repeater</a
               >
             </p>
             <p>
               <a href="https://note.youdao.com/s/MI81scdr" target="_blank"
-                >{{ $t("repeater.youdao") }} https://note.youdao.com/s/MI81scdr</a
+                >{{
+                  $t("repeater.youdao")
+                }}
+                https://note.youdao.com/s/MI81scdr</a
               >
             </p>
           </div>
@@ -355,10 +382,7 @@
           v-if="isMediaType > 0 && browserStatus"
           style="color: red; font-size: 1.2em; padding-top: 4em"
         >
-          Sorry, video or audeo tag is hijacked by this browser. This browser
-          does not fully comply with HTML5 standard. Please use standard
-          browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater
-          can work correctly.
+          {{ $t("repeater.warning1") }}
         </p>
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserStatus"

@@ -12,15 +12,15 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15052277/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15063951/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15052279/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15063954/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15052281/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15063958/filebrowser-linux-arm64.zip)
 
 **Latest Source Code**
 
-[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15052282/filebrowser.zip)
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15063969/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -120,6 +120,10 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/roo
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/version/version.go
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot11.jpg)
+
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/en.json
+
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/zh-cn.json
 
 ## Filebrowser Settings with command lines
 
