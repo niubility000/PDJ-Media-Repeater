@@ -340,6 +340,7 @@
               <a
                 href="https://github.com/niubility000/PDJ-Media-Repeater"
                 target="_blank"
+                style="color: blue"
                 >{{
                   $t("repeater.github")
                 }}
@@ -347,7 +348,10 @@
               >
             </p>
             <p>
-              <a href="https://note.youdao.com/s/MI81scdr" target="_blank"
+              <a
+                href="https://note.youdao.com/s/MI81scdr"
+                target="_blank"
+                style="color: blue"
                 >{{
                   $t("repeater.youdao")
                 }}
@@ -367,7 +371,7 @@
       >
         <video
           style="max-height: 70%; max-width: 100%"
-          v-if="isMediaType == 2 && !browserStatus"
+          v-if="isMediaType == 2 && !browserStatus && !showSpeechsynthesisAlert"
           id="myVideo"
           :src="raw"
           :autoplay="autoPlay"
@@ -384,6 +388,13 @@
         >
           {{ $t("repeater.warning1") }}
         </p>
+
+        <p
+          v-if="isMediaType > 0 && showSpeechsynthesisAlert"
+          style="color: red; font-size: 1.2em; padding-top: 4em"
+        >
+          {{ $t("repeater.speechsynthesisAlert") }}
+        </p>
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserStatus"
           style="color: white"
@@ -391,7 +402,7 @@
           Loading Media...
         </p>
         <span
-          v-if="srtSubtitles && isReadyToPlay"
+          v-if="srtSubtitles && isReadyToPlay && !showSpeechsynthesisAlert"
           style="
             flex-grow: 1;
             color: yellow;
@@ -431,7 +442,7 @@
           right: 0;
           margin: auto;
         "
-        v-if="isMediaType == 1 && !browserStatus"
+        v-if="isMediaType == 1 && !browserStatus && !showSpeechsynthesisAlert"
         id="myAudio"
         :src="raw"
         :controls="!isSingle"
@@ -444,6 +455,7 @@
 </template>
 
 <script>
+import Vue from "vue";
 import { mapGetters, mapState } from "vuex";
 import { files as api } from "@/api";
 import url from "@/utils/url";
@@ -494,6 +506,8 @@ export default {
       pausingAfterUttering: false,
       browserStatus: window.sessionStorage.getItem("isBrowserSupported"),
       currentMedia: null,
+      showSpeechsynthesisAlert: false,
+      resized: false,
     };
   },
   computed: {
@@ -705,11 +719,13 @@ export default {
 
   async mounted() {
     window.addEventListener("keydown", this.key);
+    window.addEventListener("resize", this.handleResize);
     this.listing = this.oldReq.items;
     this.updatePreview();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
+    window.removeEventListener("resize", this.handleResize);
     this.cleanUp();
   },
   methods: {
@@ -821,9 +837,7 @@ export default {
           this.endUtter();
         };
       } else {
-        alert(
-          "Sorry, your browser does not support 'speechSynthesis API' and it can't utter the subtitle's translation line with system embedded TTS. Please use a standard browser: Chrome, Edge, Safari, or Firefox with an enabled Text to Speech Service in your system. In China, you may use Firefox in your Android phone."
-        );
+        this.showSpeechsynthesisAlert = true;
         this.isAutoDetectLang = false;
         this.isUtterSecLine = false;
       }
@@ -873,8 +887,9 @@ export default {
 
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      this.currentMedia.pause();
+      if(this.currentMedia) this.currentMedia.pause();
       this.playCount = 0;
+      if (this.showSpeechsynthesisAlert) this.showSpeechsynthesisAlert = false;
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1367,10 +1382,18 @@ export default {
         this.close();
       }
     },
-
+    handleResize() {
+      this.resized = true;
+    },
     close() {
       this.$store.commit("updateRequest", {});
       this.cleanUp();
+      let uri = url.removeLastDir(this.$route.path) + "/";
+      if (this.resized) {
+        Vue.nextTick(() => {
+          location.assign(uri);
+        });
+      }
       history.back();
     },
   },

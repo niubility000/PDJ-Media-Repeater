@@ -45,7 +45,6 @@
     "updatesandComments": "更新和评论",
     "github": "Github项目地址:",
     "youdao": "有道云笔记:",
-    "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统的tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器(尤其国内安卓手机用户), 在iphone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
     "warning1": "Video或audeo标签被该浏览器劫持！媒体文件失去控制。该浏览器不完全遵循HTML5标准。请更换标准浏览器: Edge, Chrome, Safari or Firefox以确保PDJ Media Repeater能正常使用。"    
   },
   "buttons": {
