@@ -324,13 +324,13 @@
             <p style="color: blue; font-weight: bold; padding-top: 1em">
               {{ $t("repeater.learnLangUsingPDJ") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.learnLang1") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.learnLang2") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.learnLang3") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 1em">
@@ -887,7 +887,7 @@ export default {
 
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if(this.currentMedia) this.currentMedia.pause();
+      if (this.currentMedia) this.currentMedia.pause();
       this.playCount = 0;
       if (this.showSpeechsynthesisAlert) this.showSpeechsynthesisAlert = false;
       if (this.timeOutId) {
