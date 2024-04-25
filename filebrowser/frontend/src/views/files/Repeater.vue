@@ -107,7 +107,7 @@
               href="https://ftp.mozilla.org/pub/fenix/releases/125.0/android/fenix-125.0-android-arm64-v8a/fenix-125.0.multi.android-arm64-v8a.apk"
               target="_blank"
               style="color: blue"
-              >Official Firefox Browser</a
+              >Firefox Browser</a
             >
           </p>
           <p style="color: blue; font-weight: bold">
@@ -508,6 +508,10 @@ export default {
       currentMedia: null,
       showSpeechsynthesisAlert: false,
       resized: false,
+      isFirstClick: true,
+      hasSpeechSynthesis:
+        !!window.speechSynthesis || "speechSynthesis" in window,
+      utterThis: null,
     };
   },
   computed: {
@@ -722,6 +726,7 @@ export default {
     window.addEventListener("resize", this.handleResize);
     this.listing = this.oldReq.items;
     this.updatePreview();
+    this.initUtter();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -785,58 +790,60 @@ export default {
 
       this.isReadyToPlay = true;
       this.currentMedia.play();
+      this.currentMedia.muted = true;
       setTimeout(() => {
+        this.currentMedia.muted = false;
         this.currentMedia.pause();
+      }, 1);
+    },
+    initUtter() {
+      if (this.hasSpeechSynthesis) {
+        this.utterThis = new SpeechSynthesisUtterance();
+      }
+    },
+    firstClick() {
+      this.isFirstClick = false;
+      this.utterSecLine();
+      this.currentMedia.play();
+      this.currentMedia.muted = true;
+      setTimeout(() => {
+        this.currentMedia.muted = false;
+        this.cleanUp();
       }, 1);
     },
     singleModePlay() {
       this.cleanUp();
       if (this.isUtterSecLine && this.isUtterSecLineFirstly) {
-        this.currentMedia.play();
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        setTimeout(() => {
-          this.currentMedia.pause();
-          this.utterSecLine();
-          if (
-            this.currentMedia.currentTime <
-            this.srtSubtitles[this.sentenceIndex - 1].startTime
-          ) {
-            window.sessionStorage.setItem("isBrowserSupported", true);
-            location.reload();
-          }
-        }, 1);
-      } else if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
         this.utterSecLine();
-        setTimeout(() => {
-          window.speechSynthesis.cancel();
-          this.loopPlay();
-        }, 1);
+        if (
+          this.currentMedia.currentTime <
+          this.srtSubtitles[this.sentenceIndex - 1].startTime
+        ) {
+          window.sessionStorage.setItem("isBrowserSupported", true);
+          location.reload();
+        }
+      } else if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
+        this.loopPlay();
       } else this.loopPlay();
     },
 
     utterSecLine() {
-      let hasSpeechSynthesis;
-      if (!!window.speechSynthesis || "speechSynthesis" in window) {
-        hasSpeechSynthesis = true;
-      } else {
-        hasSpeechSynthesis = false;
-      }
-      if (hasSpeechSynthesis) {
-        let utterThis = new SpeechSynthesisUtterance();
+      if (this.hasSpeechSynthesis) {
         let secLineContent =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
           ];
-        utterThis.text =
+        this.utterThis.text =
           secLineContent !== undefined ? secLineContent : "no translation line";
-        utterThis.lang = this.langInSecLine;
-        utterThis.rate = this.speedOfUtter;
-        window.speechSynthesis.speak(utterThis);
-        utterThis.onend = () => {
+        this.utterThis.lang = this.langInSecLine;
+        this.utterThis.rate = this.speedOfUtter;
+        window.speechSynthesis.speak(this.utterThis);
+        this.utterThis.onend = () => {
           this.endUtter();
         };
-      } else {
+      } else if (this.isUtterSecLine) {
         this.showSpeechsynthesisAlert = true;
         this.isAutoDetectLang = false;
         this.isUtterSecLine = false;
@@ -861,11 +868,11 @@ export default {
       } else {
         this.timeOutId = setTimeout(() => {
           if (this.isUtterSecLine && !this.isUtterSecLineFirstly) {
-            this.sentenceIndex = this.sentenceIndex + 1;
             if (!this.autoPlay) {
               this.cleanUp();
               return;
             }
+            this.sentenceIndex = this.sentenceIndex + 1;
             this.singleModePlay();
           } else {
             this.loopPlay();
@@ -985,6 +992,7 @@ export default {
       return;
     },
     click: function () {
+      if (this.isFirstClick) this.firstClick();
       this.cleanUp();
       setTimeout(() => {
         if (this.touches == 1) {
@@ -1048,15 +1056,14 @@ export default {
       event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
 
-      this.distanceY = event.changedTouches[0].clientY - this.startY;
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 60) {
-        this.checkNav(this.distanceY, "VERTICAL");
-        return;
-      }
-
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       if (this.timeDiff < 300 && Math.abs(this.distanceX) > 30) {
         this.checkNav(this.distanceX, "SWITCHIMG");
+        return;
+      }
+      this.distanceY = event.changedTouches[0].clientY - this.startY;
+      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 60) {
+        this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
 
@@ -1227,11 +1234,11 @@ export default {
               this.utterSecLine();
             } else {
               if (this.autoPlayNext) {
-                this.sentenceIndex = this.sentenceIndex + 1;
                 if (!this.autoPlay) {
                   this.cleanUp();
                   return;
                 }
+                this.sentenceIndex = this.sentenceIndex + 1;
                 this.singleModePlay();
               }
             }
