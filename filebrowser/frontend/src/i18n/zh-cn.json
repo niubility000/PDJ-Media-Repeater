@@ -6,9 +6,9 @@
     "switchsubtitleLanguages": "切换字幕",
     "singleSentenceRepetitionMode": "单句复读模式",
     "regularMode": "普通模式",
-    "important": "重要",
     "note1": "请使用原版标准浏览器 - Edge、Chrome、Safari or Firefox，以确保PDJ媒体复读机能正常使用",
     "note2": "国内安卓手机用户，若无法使用原版Chrome浏览器，请使用原版",
+    "note3": "其他浏览器可能不支持调用系统tts朗读译文，或可能劫持网页video、audio标签致使PDJ媒体复读机失去对媒体文件的控制（如手机QQ浏览器、UC浏览器、夸克浏览器等）。",
     "sentencePlaybackTimes": "单句复读次数：",
     "interval": "暂停时间（秒）：",
     "timestampMove": "全文字幕时间戳移动（毫秒）：",
@@ -23,6 +23,7 @@
     "speedOfUttering": "译文朗读速度：",	  
     "utterTransFirstly": "先朗读译文",	    
     "autoPauseAfterUttering": "朗读译文后自动暂停，之后单击继续播放",
+    "playFullFavList": "播放收藏列表时播放当前文件夹内所有收藏的句子。（此模式下，出于浏览器的限制，自动播放当前句将被禁用）",
     "instructions": "操作指南",
     "instruction1": "单击屏幕（或键盘向下键）：重播当前句",    
     "instruction2": "双击屏幕（或键盘向上键）：停止播放",
@@ -45,7 +46,7 @@
     "updatesandComments": "更新和评论",
     "github": "Github项目地址：",
     "youdao": "有道云笔记：",
-    "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器（尤其国内安卓手机用户）, 在IPhone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
+    "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器（尤其国内安卓手机用户）, 在iPhone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
     "warning1": "Video或audeo标签被该浏览器劫持！媒体文件失去控制。该浏览器不完全遵循HTML5标准。请更换标准浏览器: Edge、Chrome、Safari或Firefox以确保PDJ媒体复读机能正常使用。"    
   },
   "buttons": {

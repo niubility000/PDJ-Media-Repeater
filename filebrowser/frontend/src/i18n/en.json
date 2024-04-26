@@ -6,9 +6,9 @@
     "switchsubtitleLanguages": "Switch Subtitle Lines",
     "singleSentenceRepetitionMode": "Single Sentence Repetition Mode",
     "regularMode": "Regular Mode",
-    "important": "IMPORTANT",
     "note1": "Please use standard browser - Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly.",
     "note2": "For Android Phone in China, please use Official",
+    "note3": "Other browsers may not support uttering translation lines with system TTS, or may hijack video or audio tag to make PDJ media repeater losing control of the media file.",
     "sentencePlaybackTimes": "Sentence Playback Times:",
     "interval": "Interval (in second):",
     "timestampMove": "Timestamp Move (in ms):",
@@ -23,6 +23,7 @@
     "speedOfUttering": "Speed Of Uttering:",	  
     "utterTransFirstly": "Utter Subtitle's Translation Line Firstly",
     "autoPauseAfterUttering": "AutoPause After Uttering Translation Line, And Click To Continue.",
+    "playFullFavList": "Play All Favorite Sentenses in Current Folder When Playing Favorite List (In this mode, autoPlay current sentence is not allowed due to browser's restriction.)",
     "instructions": "INSTRUCTIONS",
     "instruction1": "Click on the screen (DOWN arrow key on keyboard): replay current sentence",    
     "instruction2": "DoubleClick on the screen (UP arrow key on keyboard): stop playing",
@@ -45,8 +46,8 @@
     "updatesandComments": "UPDATES and COMMENTS",
     "github": "Project on Github:",
     "youdao": "YouDao Notes:",
-    "speechsynthesisAlert": "Sorry, your browser does not support 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS. You can use official Firefox browser in Android phone (especially in China), Safari in iphone, and Chrome/Edge in windows PC",
-    "warning1": "Video or audeo tag is hijacked by this browser. This browser does not fully comply with HTML5 standard. Please use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly."    
+    "speechsynthesisAlert": "Sorry, your browser does not support 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS. You can use official Firefox browser in Android phone (especially in China), Safari in iPhone, and Chrome/Edge in windows PC",
+     "warning1": "Video or audeo tag is hijacked by this browser. This browser does not fully comply with HTML5 standard. Please use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly."    
   },
   "buttons": {
     "cancel": "Cancel",
