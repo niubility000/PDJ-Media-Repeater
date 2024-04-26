@@ -1074,6 +1074,7 @@ export default {
       if (this.isReadyToPlay) {
         this.isFav = !this.isFav;
         if (this.isFav) {
+          //add a fav
           var fav = {
             langUsed: this.langInSecLine,
             lineNum: this.lineNumOfTrans,
@@ -1087,6 +1088,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
+          //remove a fav
           var nowStartTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
           this.favList = this.favList.filter(function (item) {
@@ -1094,6 +1096,7 @@ export default {
           });
           this.save();
           if (this.isFavOnPlay) {
+            this.cleanUp();
             if (this.srtSubtitles.length < 1) {
               this.isFavOnPlay = false;
               return;
@@ -1102,8 +1105,7 @@ export default {
               this.sentenceIndex = this.sentenceIndex - 1;
             }
             this.isFav = true;
-            this.cleanUp();
-            this.singleModePlay();
+            if (!this.isPlayFullFavList) this.singleModePlay();
           }
         }
       }
