@@ -95,10 +95,10 @@
       </header-bar>
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
-          <p style="text-align: left; color: white">
+          <p style="text-align: justify; text-align-last: left; color: white">
             {{ $t("repeater.note1") }}
           </p>
-          <p style="text-align: left; color: white">
+          <p style="text-align: justify; text-align-last: left; color: white">
             {{ $t("repeater.note2") }}
             <a
               href="https://ftp.mozilla.org/pub/fenix/releases/125.0/android/fenix-125.0-android-arm64-v8a/fenix-125.0.multi.android-arm64-v8a.apk"
@@ -107,7 +107,14 @@
               >Firefox Browser</a
             >
           </p>
-          <p style="text-align: left; color: white; margin-bottom: 2.5em">
+          <p
+            style="
+              text-align: justify;
+              text-align-last: left;
+              color: white;
+              margin-bottom: 2.5em;
+            "
+          >
             {{ $t("repeater.note3") }}
           </p>
           <p style="color: blue; font-weight: bold">
@@ -282,6 +289,11 @@
               :style="{
                 color: !isFavOnPlay ? 'white' : '#bbbaba',
               }"
+              style="
+                margin-top: 1.5em;
+                text-align: justify;
+                text-align-last: left;
+              "
             >
               <input
                 :disabled="isFavOnPlay"
@@ -1014,9 +1026,7 @@ export default {
       if (this.currentMedia) this.currentMedia.pause();
       this.playCount = 0;
       if (this.notSuportSpeechSynthesis) this.notSuportSpeechSynthesis = false;
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
+      if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener(
           "timeupdate",
@@ -1360,6 +1370,19 @@ export default {
             }
           }, this.interval * 1000);
         } else {
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
+          if (this.currentMedia) this.currentMedia.pause();
+          if (this.notSuportSpeechSynthesis)
+            this.notSuportSpeechSynthesis = false;
+          if (this.timeOutId) clearTimeout(this.timeOutId);
+          if (this.currentMedia && this.currentMedia.removeEventListener) {
+            this.currentMedia.removeEventListener(
+              "timeupdate",
+              this.sessionEnd,
+              false
+            );
+            this.currentMedia.removeEventListener("timeupdate", this.syncSub);
+          }
           this.timeOutId = setTimeout(() => {
             this.loopPlay();
           }, this.interval * 1000);
@@ -1369,10 +1392,8 @@ export default {
 
     loopPlay() {
       this.isSingle = true;
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-        this.currentMedia.pause();
-      }
+      if (this.timeOutId) clearTimeout(this.timeOutId);
+      if (this.currentMedia) this.currentMedia.pause();
       this.playSection();
       if (this.currentSpeed.split(",")[this.playCount]) {
         this.currentMedia.playbackRate = Number(
@@ -1467,7 +1488,11 @@ export default {
         return;
       }
       this.cleanUp();
-      if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
+      if (
+        event.which === 39 &&
+        this.sentenceIndex < this.srtSubtitles.length &&
+        !this.isSetting
+      ) {
         // right arrow
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isSingle) {
@@ -1477,7 +1502,11 @@ export default {
           this.currentMedia.currentTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
         }
-      } else if (event.which === 37 && this.sentenceIndex > 1) {
+      } else if (
+        event.which === 37 &&
+        this.sentenceIndex > 1 &&
+        !this.isSetting
+      ) {
         // left arrow
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isSingle) {
@@ -1489,9 +1518,8 @@ export default {
         }
       } else if (event.which === 38) {
         // up arrow
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        this.currentMedia.pause(); //stop play
-      } else if (event.which === 40) {
+        this.cleanUp(); //stop play
+      } else if (event.which === 40 && !this.isSetting) {
         // down arrow
         if (this.isSingle) {
           if (this.pausingAfterUttering) {
