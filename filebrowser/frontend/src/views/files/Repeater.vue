@@ -749,7 +749,13 @@ export default {
       this.save();
     },
     timeStampChange: function () {
-      this.save();
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.save();
+        clearTimeout(this.timeOutId);
+      }, 1);
     },
     subtitleLang: function () {
       this.save();
@@ -832,6 +838,8 @@ export default {
         this.langInSecLine = this.srtSubtitles[this.sentenceIndex - 1].langUsed;
         this.lineNumOfTrans = this.srtSubtitles[this.sentenceIndex - 1].lineNum;
         this.isUtterSecLine = this.srtSubtitles[this.sentenceIndex - 1].isUtter;
+        this.timeStampChange =
+          this.srtSubtitles[this.sentenceIndex - 1].tsChange;
         this.playCount = 0;
         this.currentMedia.addEventListener("canplay", this.switchReadyToPlay);
       }
@@ -1047,6 +1055,7 @@ export default {
         window.sessionStorage.setItem("lastLang", this.langInSecLine);
         window.sessionStorage.setItem("lastLineNum", this.lineNumOfTrans);
         window.sessionStorage.setItem("lastIsUtter", this.isUtterSecLine);
+        window.sessionStorage.setItem("lastTsChange", this.timeStampChange);
         window.sessionStorage.setItem("lastAutoDetect", this.isAutoDetectLang);
         this.autoPlay = false;
       }
@@ -1061,6 +1070,7 @@ export default {
           this.langInSecLine = window.sessionStorage.getItem("lastLang");
           this.lineNumOfTrans = window.sessionStorage.getItem("lastLineNum");
           this.isUtterSecLine = window.sessionStorage.getItem("lastIsUtter");
+          this.timeStampChange = window.sessionStorage.getItem("lastTsChange");
           this.isAutoDetectLang =
             window.sessionStorage.getItem("lastAutoDetect");
           this.autoPlay = window.sessionStorage.getItem("lastAutoPlay");
@@ -1082,6 +1092,7 @@ export default {
             langUsed: this.langInSecLine,
             lineNum: this.lineNumOfTrans,
             isUtter: this.isUtterSecLine,
+            tsChange: this.timeStampChange,
             rawPath: this.mediaName,
             originalRawPath: this.raw.split("?")[0].split("/raw/")[1],
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
@@ -1183,12 +1194,12 @@ export default {
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
 
-      if (this.timeDiff < 300 && Math.abs(this.distanceX) > 40) {
+      if (this.timeDiff < 300 && Math.abs(this.distanceX) > 100) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
       this.distanceY = event.clientY - this.startY;
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 40) {
+      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
@@ -1461,13 +1472,6 @@ export default {
 
     async updatePreview() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (
-        this.currentMedia &&
-        this.currentMedia.paused &&
-        !this.currentMedia.ended
-      ) {
-        this.autoPlay = false;
-      }
 
       let dirs = this.$route.fullPath.split("/");
       this.name = decodeURIComponent(dirs[dirs.length - 1]);
@@ -1544,15 +1548,25 @@ export default {
       this.resized = true;
     },
     close() {
-      this.$store.commit("updateRequest", {});
       this.cleanUp();
-      let uri = url.removeLastDir(this.$route.path) + "/";
-      if (this.resized) {
-        Vue.nextTick(() => {
-          location.assign(uri);
-        });
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        this.langInSecLine = window.sessionStorage.getItem("lastLang");
+        this.lineNumOfTrans = window.sessionStorage.getItem("lastLineNum");
+        this.isUtterSecLine = window.sessionStorage.getItem("lastIsUtter");
+        this.timeStampChange = window.sessionStorage.getItem("lastTsChange");
+        this.isAutoDetectLang = window.sessionStorage.getItem("lastAutoDetect");
+        this.autoPlay = window.sessionStorage.getItem("lastAutoPlay");
       }
-      history.back();
+      setTimeout(() => {
+        this.$store.commit("updateRequest", {});
+        let uri = url.removeLastDir(this.$route.path) + "/";
+        if (this.resized) {
+          Vue.nextTick(() => {
+            location.assign(uri);
+          });
+        }
+        history.back();
+      }, 10);
     },
   },
 };
