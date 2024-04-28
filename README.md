@@ -16,15 +16,16 @@ Updated: 04-27-2024
 
 2.07 fix for slow internet speed performance
 
-[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15140579/filebrowser-windows.zip)
- 
-[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15140580/filebrowser-linux-amd64.zip)
+[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142329/filebrowser-windows.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15140582/filebrowser-linux-arm64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142332/filebrowser-linux-amd64.zip)
+
+[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142333/filebrowser-linux-arm64.zip)
 
 **Latest Source Code**
 
-[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15140583/filebrowser.zip)
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142339/filebrowser.zip)
+
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

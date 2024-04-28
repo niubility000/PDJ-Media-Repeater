@@ -1074,11 +1074,15 @@ export default {
           this.isAutoDetectLang =
             window.sessionStorage.getItem("lastAutoDetect");
           this.autoPlay = window.sessionStorage.getItem("lastAutoPlay");
+          this.sentenceIndex = Number(
+            window.sessionStorage.getItem("lastPosition")
+          );
+        } else {
+          this.sentenceIndex = Number(
+            window.sessionStorage.getItem("lastPosition")
+          );
+          this.singleModePlay();
         }
-        this.sentenceIndex = Number(
-          window.sessionStorage.getItem("lastPosition")
-        );
-        this.singleModePlay();
       }
     },
 
