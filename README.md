@@ -12,7 +12,7 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-Updated: 04-27-2024
+Updated: 04-28-2024
 
 2.07 fix for slow internet speed performance
 
