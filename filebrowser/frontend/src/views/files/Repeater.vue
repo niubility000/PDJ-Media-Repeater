@@ -867,7 +867,7 @@ export default {
       this.isReadyToPlay = true;
       try {
         const pathf = url.removeLastDir(this.$route.path);
-        var favAll = await api.fetch(pathf + "/!pdj!!pdj!favorite.txt");
+        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
         this.repeatTimes = Number(JSON.parse(favAll.content.split(":")[1]));
         this.interval = Number(JSON.parse(favAll.content.split(":")[2]));
         this.autoPlayNext = JSON.parse(favAll.content.split(":")[3]);
