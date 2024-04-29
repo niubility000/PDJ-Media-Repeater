@@ -107,17 +107,10 @@
               >Firefox Browser</a
             >
           </p>
-          <p
-            style="
-              text-align: justify;
-              text-align-last: left;
-              color: white;
-              margin-bottom: 2.5em;
-            "
-          >
+          <p style="text-align: justify; text-align-last: left; color: white">
             {{ $t("repeater.note3") }}
           </p>
-          <p style="color: blue; font-weight: bold">
+          <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.settings") }}
           </p>
           <div style="display: block">
@@ -179,6 +172,7 @@
               <input type="checkbox" v-model="autoPlayNext" />
               {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p>
               <span style="color: white">
                 <input
@@ -193,6 +187,53 @@
                 {{ $t("repeater.autoDetect") }})
               </span>
             </p>
+
+            <div
+              :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
+              :disabled="!isUtterTransLine"
+            >
+              <p>
+                <input
+                  style="margin-left: 1em"
+                  type="radio"
+                  value="Yes"
+                  v-model="isSystemTTS"
+                />
+                <span>{{ $t("repeater.systemTTS") }}</span>
+              </p>
+              <p
+                v-if="notSuportSpeechSynthesis"
+                style="color: red; margin-left: 2em"
+              >
+                {{ $t("repeater.speechsynthesisAlert") }}
+              </p>
+              <p style="margin-left: 2em">{{ $t("repeater.SystemTTSnote") }}</p>
+              <p>
+                <input
+                  style="margin-left: 1em"
+                  type="radio"
+                  value="No"
+                  v-model="isSystemTTS"
+                />
+                <span>{{ $t("repeater.notSystemTTS") }}</span>
+              </p>
+              <input
+                style="
+                  margin-left: 2em;
+                  width: calc(100% - 2em);
+                  text-align: justify;
+                  text-align-last: left;
+                "
+                :disabled="isSystemTTS == 'Yes'"
+                class="input input--repeater"
+                type="text"
+                v-model="TTSurl"
+              />
+              <p style="margin-left: 2em">
+                {{ $t("repeater.notSystemTTSnote") }}
+              </p>
+            </div>
+
             <div style="display: block">
               <span
                 :style="{
@@ -248,14 +289,19 @@
             </div>
             <div style="display: block">
               <span
-                :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
+                :style="{
+                  color:
+                    !isUtterTransLine || isSystemTTS == 'No'
+                      ? '#bbbaba'
+                      : 'white',
+                }"
                 style="margin-left: 1em"
                 class="subject"
               >
                 {{ $t("repeater.speedOfUttering") }}
               </span>
               <input
-                :disabled="!isUtterTransLine"
+                :disabled="!isUtterTransLine || isSystemTTS == 'No'"
                 class="input input--repeater"
                 type="text"
                 v-model.number="speedOfUtter"
@@ -286,16 +332,12 @@
               />
               {{ $t("repeater.autoPauseAfterUttering") }}
             </p>
-
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p
               :style="{
                 color: !isFavOnPlay ? 'white' : '#bbbaba',
               }"
-              style="
-                margin-top: 1.5em;
-                text-align: justify;
-                text-align-last: left;
-              "
+              style="text-align: justify; text-align-last: left"
             >
               <input
                 :disabled="isFavOnPlay"
@@ -306,7 +348,7 @@
             </p>
           </div>
           <div style="color: white">
-            <p style="color: blue; font-weight: bold; padding-top: 1em">
+            <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.instructions") }}
             </p>
             <p>
@@ -356,7 +398,7 @@
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
               >: {{ $t("repeater.instruction12") }}
             </p>
-            <p style="color: blue; font-weight: bold; padding-top: 1em">
+            <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.learnLangUsingPDJ") }}
             </p>
             <p style="text-align: justify">
@@ -368,7 +410,7 @@
             <p style="text-align: justify">
               {{ $t("repeater.learnLang3") }}
             </p>
-            <p style="color: blue; font-weight: bold; padding-top: 1em">
+            <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.updatesandComments") }}
             </p>
             <p>
@@ -422,13 +464,6 @@
           style="color: red; font-size: 1.2em; padding-top: 4em"
         >
           {{ $t("repeater.warning1") }}
-        </p>
-
-        <p
-          v-if="isMediaType > 0 && notSuportSpeechSynthesis"
-          style="color: red; font-size: 1.2em; padding-top: 4em"
-        >
-          {{ $t("repeater.speechsynthesisAlert") }}
         </p>
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
@@ -548,6 +583,10 @@ export default {
         !!window.speechSynthesis || "speechSynthesis" in window,
       utterThis: null,
       isPlayFullFavList: false,
+      audio: null,
+      isSystemTTS: "Yes",
+      TTSurl:
+        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=0.9&volume=100&text=",
     };
   },
   computed: {
@@ -771,6 +810,20 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+    isSystemTTS: function () {
+      if (this.isSystemTTS == "Yes" && !this.hasSpeechSynthesis) {
+        this.notSuportSpeechSynthesis = true;
+      }
+      if (this.isSystemTTS == "No" && !this.hasSpeechSynthesis) {
+        this.notSuportSpeechSynthesis = false;
+      }
+
+      this.save();
+    },
+    TTSurl: function () {
+      this.save();
+    },
+
     pauseTimeTransLine: function () {
       this.save();
     },
@@ -884,6 +937,8 @@ export default {
         this.isPauseAfterUttering = JSON.parse(favAll.content.split(":")[14]);
         this.autoPlay = Number(JSON.parse(favAll.content.split(":")[15]));
         this.isPlayFullFavList = JSON.parse(favAll.content.split(":")[16]);
+        this.isSystemTTS = JSON.parse(favAll.content.split(":")[17]);
+        this.TTSurl = JSON.parse(favAll.content.split(":")[18]);
         this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
         if (!this.isAutoDetectLang) {
           this.isUtterTransLine = JSON.parse(favAll.content.split(":")[7]);
@@ -910,9 +965,8 @@ export default {
         this.favList = [];
         if (this.isAutoDetectLang) this.autoDetectLangInTrans();
       }
-      if (!(!!window.speechSynthesis || "speechSynthesis" in window)) {
-        this.isAutoDetectLang = false;
-        this.isUtterTransLine = false;
+      if (!this.hasSpeechSynthesis) {
+        this.isSystemTTS = "No";
       }
 
       if (this.isMediaType == 1) {
@@ -934,6 +988,7 @@ export default {
     },
 
     initUtter() {
+      this.audio = new Audio();
       if (this.hasSpeechSynthesis) {
         this.utterThis = new SpeechSynthesisUtterance();
       }
@@ -969,7 +1024,7 @@ export default {
     },
 
     utterTransLine() {
-      if (this.hasSpeechSynthesis) {
+      if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         let transLineContent =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
@@ -984,14 +1039,28 @@ export default {
         this.utterThis.onend = () => {
           this.endUtter();
         };
-      } else if (this.isUtterTransLine) {
-        this.notSuportSpeechSynthesis = true;
-        this.isAutoDetectLang = false;
-        this.isUtterTransLine = false;
+      } else if (this.isUtterTransLine && this.isSystemTTS == "No") {
+        let transLineContent =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfTrans - 1
+          ];
+        let text =
+          transLineContent !== undefined
+            ? transLineContent
+            : "no translation line";
+        let ttsFullUrl = this.TTSurl + text;
+        fetch(ttsFullUrl)
+          .then(() => {
+            this.audio.src = ttsFullUrl;
+            this.audio.play();
+            this.audio.addEventListener("ended", this.endUtter, false);
+          })
+          .catch((error) => console.error("Error playing audio:", error));
       }
     },
 
     endUtter() {
+      this.audio.removeEventListener("ended", this.endUtter, false);
       if (
         this.isUtterTransLine &&
         this.isUtterTransLineFirstly &&
@@ -1040,6 +1109,7 @@ export default {
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
+      if (this.audio) this.audio.pause();
       this.playCount = 0;
       if (this.notSuportSpeechSynthesis) this.notSuportSpeechSynthesis = false;
       if (this.timeOutId) clearTimeout(this.timeOutId);
@@ -1470,6 +1540,10 @@ export default {
         JSON.stringify(this.autoPlay) +
         ":" +
         JSON.stringify(this.isPlayFullFavList) +
+        ":" +
+        JSON.stringify(this.isSystemTTS) +
+        ":" +
+        JSON.stringify(this.TTSurl) +
         ":";
 
       let favContent =

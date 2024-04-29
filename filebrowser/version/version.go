@@ -4,7 +4,7 @@ var (
 	// Version is the current File Browser version.
 
 
-	Version = "- PDJ Media Repeater-2.07"
+	Version = "- PDJ Media Repeater-2.08"
 
 	// CommitSHA is the commmit sha.
 	CommitSHA = "(unknown)"
