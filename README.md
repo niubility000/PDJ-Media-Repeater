@@ -12,20 +12,19 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-Updated: 04-28-2024
+Updated: 04-29-2024
 
-2.07 fix for slow internet speed performance
+2.07 
 
-[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142329/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15144728/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142332/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15144729/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142333/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15144730/filebrowser-linux-arm64.zip)
 
 **Latest Source Code**
 
-[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15142339/filebrowser.zip)
-
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15144732/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -43,7 +42,7 @@ In windows, just double click the filebrowser.exe, then you can visit it at your
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "favorate.txt" file in current folder. 
+Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "!pdj!favorite.txt" file in current folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
 To change the password, the root dir, the port..., please see [Filebrowser Settings with command lines](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#filebrowser-settings-with-command-lines). 
