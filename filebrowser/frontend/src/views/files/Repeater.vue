@@ -207,7 +207,13 @@
               >
                 {{ $t("repeater.speechsynthesisAlert") }}
               </p>
-              <p style="margin-left: 2em">{{ $t("repeater.SystemTTSnote") }}</p>
+
+              <p
+                style="margin-left: 2em"
+                :style="{ color: isSystemTTS == 'Yes' ? 'white' : '#bbbaba' }"
+              >
+                {{ $t("repeater.SystemTTSnote") }}
+              </p>
               <p>
                 <input
                   style="margin-left: 1em"
@@ -229,7 +235,10 @@
                 type="text"
                 v-model="TTSurl"
               />
-              <p style="margin-left: 2em">
+              <p
+                style="margin-left: 2em"
+                :style="{ color: isSystemTTS == 'No' ? 'white' : '#bbbaba' }"
+              >
                 {{ $t("repeater.notSystemTTSnote") }}
               </p>
             </div>
@@ -586,7 +595,7 @@ export default {
       audio: null,
       isSystemTTS: "Yes",
       TTSurl:
-        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=0.9&volume=100&text=",
+        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
   },
   computed: {
@@ -921,30 +930,32 @@ export default {
       try {
         const pathf = url.removeLastDir(this.$route.path);
         var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
-        this.repeatTimes = Number(JSON.parse(favAll.content.split(":")[1]));
-        this.interval = Number(JSON.parse(favAll.content.split(":")[2]));
-        this.autoPlayNext = JSON.parse(favAll.content.split(":")[3]);
-        this.timeStampChange = Number(JSON.parse(favAll.content.split(":")[4]));
-        this.currentSpeed = JSON.parse(favAll.content.split(":")[5]);
-        this.subtitleLang = JSON.parse(favAll.content.split(":")[6]);
+        this.repeatTimes = Number(JSON.parse(favAll.content.split("::")[1]));
+        this.interval = Number(JSON.parse(favAll.content.split("::")[2]));
+        this.autoPlayNext = JSON.parse(favAll.content.split("::")[3]);
+        this.timeStampChange = Number(
+          JSON.parse(favAll.content.split("::")[4])
+        );
+        this.currentSpeed = JSON.parse(favAll.content.split("::")[5]);
+        this.subtitleLang = JSON.parse(favAll.content.split("::")[6]);
         this.pauseTimeTransLine = Number(
-          JSON.parse(favAll.content.split(":")[8])
+          JSON.parse(favAll.content.split("::")[8])
         );
-        this.speedOfUtter = Number(JSON.parse(favAll.content.split(":")[9]));
+        this.speedOfUtter = Number(JSON.parse(favAll.content.split("::")[9]));
         this.isUtterTransLineFirstly = JSON.parse(
-          favAll.content.split(":")[10]
+          favAll.content.split("::")[10]
         );
-        this.isPauseAfterUttering = JSON.parse(favAll.content.split(":")[14]);
-        this.autoPlay = Number(JSON.parse(favAll.content.split(":")[15]));
-        this.isPlayFullFavList = JSON.parse(favAll.content.split(":")[16]);
-        this.isSystemTTS = JSON.parse(favAll.content.split(":")[17]);
-        this.TTSurl = JSON.parse(favAll.content.split(":")[18]);
-        this.isAutoDetectLang = JSON.parse(favAll.content.split(":")[13]);
+        this.isPauseAfterUttering = JSON.parse(favAll.content.split("::")[14]);
+        this.autoPlay = Number(JSON.parse(favAll.content.split("::")[15]));
+        this.isPlayFullFavList = JSON.parse(favAll.content.split("::")[16]);
+        this.isSystemTTS = JSON.parse(favAll.content.split("::")[17]);
+        this.TTSurl = JSON.parse(favAll.content.split("::")[18]);
+        this.isAutoDetectLang = JSON.parse(favAll.content.split("::")[13]);
         if (!this.isAutoDetectLang) {
-          this.isUtterTransLine = JSON.parse(favAll.content.split(":")[7]);
-          this.langInTransLine = JSON.parse(favAll.content.split(":")[11]);
+          this.isUtterTransLine = JSON.parse(favAll.content.split("::")[7]);
+          this.langInTransLine = JSON.parse(favAll.content.split("::")[11]);
           this.lineNumOfTrans = Number(
-            JSON.parse(favAll.content.split(":")[12])
+            JSON.parse(favAll.content.split("::")[12])
           );
         } else {
           this.autoDetectLangInTrans();
@@ -1299,11 +1310,15 @@ export default {
       this.timeDiff = new Date().getTime() - this.startTime;
 
       this.distanceX = event.changedTouches[0].clientX - this.startX;
-      if (this.timeDiff < 300 && Math.abs(this.distanceX) > 50) {
+      this.distanceY = event.changedTouches[0].clientY - this.startY;
+      if (
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) > 25 &&
+        Math.abs(this.distanceY) < 50
+      ) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
-      this.distanceY = event.changedTouches[0].clientY - this.startY;
       if (this.timeDiff < 300 && Math.abs(this.distanceY) > 50) {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
@@ -1508,43 +1523,43 @@ export default {
     async save() {
       let customConfig =
         "customConfig" +
-        ":" +
+        "::" +
         JSON.stringify(this.repeatTimes) +
-        ":" +
+        "::" +
         JSON.stringify(this.interval) +
-        ":" +
+        "::" +
         JSON.stringify(this.autoPlayNext) +
-        ":" +
+        "::" +
         JSON.stringify(this.timeStampChange) +
-        ":" +
+        "::" +
         JSON.stringify(this.currentSpeed) +
-        ":" +
+        "::" +
         JSON.stringify(this.subtitleLang) +
-        ":" +
+        "::" +
         JSON.stringify(this.isUtterTransLine) +
-        ":" +
+        "::" +
         JSON.stringify(this.pauseTimeTransLine) +
-        ":" +
+        "::" +
         JSON.stringify(this.speedOfUtter) +
-        ":" +
+        "::" +
         JSON.stringify(this.isUtterTransLineFirstly) +
-        ":" +
+        "::" +
         JSON.stringify(this.langInTransLine) +
-        ":" +
+        "::" +
         JSON.stringify(this.lineNumOfTrans) +
-        ":" +
+        "::" +
         JSON.stringify(this.isAutoDetectLang) +
-        ":" +
+        "::" +
         JSON.stringify(this.isPauseAfterUttering) +
-        ":" +
+        "::" +
         JSON.stringify(this.autoPlay) +
-        ":" +
+        "::" +
         JSON.stringify(this.isPlayFullFavList) +
-        ":" +
+        "::" +
         JSON.stringify(this.isSystemTTS) +
-        ":" +
+        "::" +
         JSON.stringify(this.TTSurl) +
-        ":";
+        "::";
 
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
