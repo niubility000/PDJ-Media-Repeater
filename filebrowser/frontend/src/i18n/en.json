@@ -50,6 +50,7 @@
     "updatesandComments": "UPDATES and COMMENTS",
     "github": "Project on Github:",
     "youdao": "YouDao Notes:",
+    "resetTTSurl": "RESET to default URL",    
     "speechsynthesisAlert": "Sorry, your browser does not support 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS. You can use official Firefox browser in Android phone (especially in China), Safari in iPhone, and Chrome/Edge in windows PC",
      "warning1": "Video or audeo tag is hijacked by this browser. This browser does not fully comply with HTML5 standard. Please use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly."    
   },

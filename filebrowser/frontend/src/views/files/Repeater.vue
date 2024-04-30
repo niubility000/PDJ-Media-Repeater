@@ -222,6 +222,20 @@
                   v-model="isSystemTTS"
                 />
                 <span>{{ $t("repeater.notSystemTTS") }}</span>
+                <button
+                  :disabled="isSystemTTS == 'Yes'"
+                  class="action"
+                  @click="resetTTSurl"
+                  :title="$t('repeater.resetTTSurl')"
+                >
+                  <i
+                    :style="{
+                      color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                    }"
+                    class="material-icons"
+                    >settings_backup_restore</i
+                  >
+                </button>
               </p>
               <input
                 style="
@@ -1116,7 +1130,10 @@ export default {
         this.subtitleLang = "both";
       }
     },
-
+    resetTTSurl() {
+      this.TTSurl =
+        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
+    },
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
