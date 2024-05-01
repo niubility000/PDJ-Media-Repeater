@@ -194,7 +194,7 @@
               :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
               :disabled="!isUtterTransLine"
             >
-              <p>
+              <p style="margin-bottom: 0">
                 <input
                   :disabled="!isUtterTransLine"
                   style="margin-left: 1em"
@@ -212,7 +212,7 @@
               </p>
 
               <p
-                style="margin-left: 2em"
+                style="margin: 0.5em 0 1em 2em"
                 :style="{
                   color:
                     isSystemTTS == 'Yes' && isUtterTransLine
@@ -222,7 +222,7 @@
               >
                 {{ $t("repeater.SystemTTSnote") }}
               </p>
-              <p>
+              <p style="margin-bottom: 0">
                 <input
                   :disabled="!isUtterTransLine"
                   style="margin-left: 1em"
@@ -268,7 +268,7 @@
               </p>
               <input
                 style="
-                  margin-left: 2em;
+                  margin: 0 0 0.5em 2em;
                   width: calc(100% - 2em);
                   text-align: left;
                 "
@@ -277,10 +277,11 @@
                 type="text"
                 v-model="TTSurl"
               />
-
               <p
                 style="
-                  margin-left: 2em;
+                  margin: 0 0 1em 2em;
+                  text-align: justify;
+                  text-align-last: left;
                   word-wrap: break-word;
                   overflow-wrap: break-word;
                 "
@@ -384,10 +385,14 @@
                     ? 'white'
                     : '#bbbaba',
               }"
+              style="
+                text-align: justify;
+                text-align-last: left;
+                margin-left: 2em;
+              "
             >
               <input
                 :disabled="!(isUtterTransLine && isUtterTransLineFirstly)"
-                style="margin-left: 2em"
                 type="checkbox"
                 v-model="isPauseAfterUttering"
               />
@@ -412,52 +417,52 @@
             <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.instructions") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.instruction1") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.instruction2") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.instruction3") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.instruction4") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.instruction5") }}
             </p>
-            <p>{{ $t("repeater.instruction6") }}</p>
-            <p>
+            <p style="text-align: justify">{{ $t("repeater.instruction6") }}</p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">repeat_one</i>:
-              {{ $t("repeater.instruction7") }}
+              <i style="color: white" class="material-icons">repeat_one</i
+              >{{ $t("repeater.instruction7") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">closed_caption</i>:
-              {{ $t("repeater.instruction8") }}
+              <i style="color: white" class="material-icons">closed_caption</i
+              >{{ $t("repeater.instruction8") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">settings</i>:
-              {{ $t("repeater.instruction9") }}
+              <i style="color: white" class="material-icons">settings</i
+              >{{ $t("repeater.instruction9") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">folder_special</i>:
-              {{ $t("repeater.instruction10") }}
+              <i style="color: white" class="material-icons">folder_special</i
+              >{{ $t("repeater.instruction10") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">grade</i>:
-              {{ $t("repeater.instruction11") }}
+              <i style="color: white" class="material-icons">grade</i
+              >{{ $t("repeater.instruction11") }}
             </p>
-            <p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickandInput") }}
               <span style="color: white"
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
-              >: {{ $t("repeater.instruction12") }}
+              >{{ $t("repeater.instruction12") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.learnLangUsingPDJ") }}
@@ -1100,8 +1105,13 @@ export default {
         .then(() => {
           this.audio.src = ttsFullUrl;
           this.audio.play();
+          this.audio.addEventListener("ended", this.endTestUtter, false);
         })
         .catch((error) => console.error("Error Uttering Trans Line:", error));
+    },
+    endTestUtter() {
+      this.audio.removeEventListener("ended", this.endTestUtter, false);
+      this.cleanUp();
     },
     utterTransLine() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
@@ -1135,7 +1145,7 @@ export default {
             this.audio.play();
             this.audio.addEventListener("ended", this.endUtter, false);
           })
-          .catch((error) => console.error("Error playing audio:", error));
+          .catch((error) => console.error("Error Uttering Trans Line:", error));
       }
     },
 
