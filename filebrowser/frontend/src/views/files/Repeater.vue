@@ -196,6 +196,7 @@
             >
               <p>
                 <input
+                  :disabled="!isUtterTransLine"
                   style="margin-left: 1em"
                   type="radio"
                   value="Yes"
@@ -212,12 +213,18 @@
 
               <p
                 style="margin-left: 2em"
-                :style="{ color: isSystemTTS == 'Yes' ? 'white' : '#bbbaba' }"
+                :style="{
+                  color:
+                    isSystemTTS == 'Yes' && isUtterTransLine
+                      ? 'white'
+                      : '#bbbaba',
+                }"
               >
                 {{ $t("repeater.SystemTTSnote") }}
               </p>
               <p>
                 <input
+                  :disabled="!isUtterTransLine"
                   style="margin-left: 1em"
                   type="radio"
                   value="No"
@@ -225,17 +232,37 @@
                 />
                 <span>{{ $t("repeater.notSystemTTS") }}</span>
                 <button
-                  :disabled="isSystemTTS == 'Yes'"
+                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                   class="action"
                   @click="resetTTSurl"
                   :title="$t('repeater.resetTTSurl')"
                 >
                   <i
                     :style="{
-                      color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                      color:
+                        isSystemTTS == 'Yes' || !isUtterTransLine
+                          ? '#bbbaba'
+                          : 'blue',
                     }"
                     class="material-icons"
                     >settings_backup_restore</i
+                  >
+                </button>
+                <button
+                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
+                  class="action"
+                  @click="testTTSurl"
+                  :title="$t('repeater.testTTSurl')"
+                >
+                  <i
+                    :style="{
+                      color:
+                        isSystemTTS == 'Yes' || !isUtterTransLine
+                          ? '#bbbaba'
+                          : 'blue',
+                    }"
+                    class="material-icons"
+                    >play_circle_outline</i
                   >
                 </button>
               </p>
@@ -243,17 +270,26 @@
                 style="
                   margin-left: 2em;
                   width: calc(100% - 2em);
-                  text-align: justify;
-                  text-align-last: left;
+                  text-align: left;
                 "
-                :disabled="isSystemTTS == 'Yes'"
+                :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                 class="input input--repeater"
                 type="text"
                 v-model="TTSurl"
               />
+
               <p
-                style="margin-left: 2em"
-                :style="{ color: isSystemTTS == 'No' ? 'white' : '#bbbaba' }"
+                style="
+                  margin-left: 2em;
+                  word-wrap: break-word;
+                  overflow-wrap: break-word;
+                "
+                :style="{
+                  color:
+                    isSystemTTS == 'No' && isUtterTransLine
+                      ? 'white'
+                      : '#bbbaba',
+                }"
               >
                 {{ $t("repeater.notSystemTTSnote") }}
               </p>
@@ -1050,7 +1086,23 @@ export default {
         this.utterTransLine();
       } else this.loopPlay();
     },
-
+    testTTSurl() {
+      let transLineContent =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfTrans - 1
+        ];
+      let text =
+        transLineContent !== undefined
+          ? transLineContent
+          : "no translation line";
+      let ttsFullUrl = this.TTSurl + text;
+      fetch(ttsFullUrl)
+        .then(() => {
+          this.audio.src = ttsFullUrl;
+          this.audio.play();
+        })
+        .catch((error) => console.error("Error Uttering Trans Line:", error));
+    },
     utterTransLine() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         let transLineContent =
