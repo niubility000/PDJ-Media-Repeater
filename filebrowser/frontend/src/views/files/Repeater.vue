@@ -121,7 +121,7 @@
               class="input input--repeater"
               type="number"
               min="1"
-              max="1000"
+              max="100"
               v-model="repeatTimes"
             />
           </div>
@@ -131,7 +131,9 @@
             </span>
             <input
               class="input input--repeater"
-              type="text"
+              type="number"
+              min="0"
+              max="1000"
               v-model.number="interval"
             />
           </div>
@@ -392,32 +394,32 @@
             <p>{{ $t("repeater.instruction6") }}</p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">repeat_one</i>:
+              <i style="color: white" class="material-icons">repeat_one</i>:
               {{ $t("repeater.instruction7") }}
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">closed_caption</i>:
+              <i style="color: white" class="material-icons">closed_caption</i>:
               {{ $t("repeater.instruction8") }}
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">settings</i>:
+              <i style="color: white" class="material-icons">settings</i>:
               {{ $t("repeater.instruction9") }}
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">folder_special</i>:
+              <i style="color: white" class="material-icons">folder_special</i>:
               {{ $t("repeater.instruction10") }}
             </p>
             <p>
               {{ $t("repeater.clickButton") }}
-              <i style="color: blue" class="material-icons">grade</i>:
+              <i style="color: white" class="material-icons">grade</i>:
               {{ $t("repeater.instruction11") }}
             </p>
             <p>
               {{ $t("repeater.clickandInput") }}
-              <span style="color: blue"
+              <span style="color: white"
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
               >: {{ $t("repeater.instruction12") }}
             </p>
@@ -476,6 +478,8 @@
           :src="raw"
           :autoplay="autoPlay"
           :controls="!isSingle"
+          controlslist="noplaybackrate nodownload noremoteplayback"
+          disablePictureInPicture="true"
           @loadedmetadata="readyStatus"
           x5-video-player-type="h5-page"
           webkit-playsinline="true"
@@ -539,7 +543,7 @@
         id="myAudio"
         :src="raw"
         :controls="!isSingle"
-        controlslist="noplaybackrate"
+        controlslist="noplaybackrate nodownload"
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
@@ -549,7 +553,7 @@
 
 <script>
 import Vue from "vue";
-import { mapGetters, mapState } from "vuex";
+import { mapState } from "vuex";
 import { files as api } from "@/api";
 import url from "@/utils/url";
 import HeaderBar from "@/components/header/HeaderBar.vue";
@@ -614,7 +618,6 @@ export default {
   },
   computed: {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
-    ...mapGetters(["currentPrompt"]),
     isMobile() {
       return window.innerWidth < 736;
     },
@@ -1242,14 +1245,20 @@ export default {
         this.cleanUp();
         this.regularPlay();
         this.currentMedia.currentTime = 0;
+        this.currentMedia.addEventListener("focus", this.removeFocus);
       }
       if (this.isSingle) {
         this.isEmpty = false;
         this.singleModePlay();
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.currentMedia.removeEventListener("focus", this.removeFocus);
       }
     },
+    removeFocus() {
+      this.currentMedia.blur();
+    },
+
     onSetting() {
       this.isSetting = !this.isSetting;
       if (this.isSetting) this.cleanUp();
@@ -1606,9 +1615,6 @@ export default {
     },
 
     key(event) {
-      if (this.currentPrompt !== null) {
-        return;
-      }
       this.cleanUp();
       if (
         event.which === 39 &&
@@ -1731,7 +1737,7 @@ export default {
 input.input.input--repeater {
   margin-bottom: 0.5em;
   display: inline;
-  width: 5.5em;
+  width: 8em;
 }
 span.subject {
   margin-bottom: 0.5em;
@@ -1800,7 +1806,7 @@ input:disabled {
   input.input.input--repeater {
     margin-bottom: 0.5em;
     display: inline;
-    width: 3.5em;
+    width: 5em;
     padding: 0;
     margin: 0;
   }

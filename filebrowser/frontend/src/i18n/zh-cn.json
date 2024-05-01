@@ -7,8 +7,8 @@
     "singleSentenceRepetitionMode": "单句复读模式",
     "regularMode": "普通模式",
     "note1": "强烈推荐使用原版标准浏览器 - Edge、Chrome、Safari 或 Firefox，以确保PDJ媒体复读机能正常使用。",
-    "note2": "国内安卓手机用户，若无法使用原版Chrome浏览器，请使用原版",
-    "note3": "其他浏览器可能不支持调用系统内置tts朗读译文（将自动选择第三方在线tts服务），或可能劫持网页video、audio标签致使PDJ媒体复读机失去对媒体文件的控制（如手机QQ浏览器、UC浏览器、夸克浏览器等）。",
+    "note2": "国内安卓手机用户，若需调用系统内置tts服务来朗读译文，可使用原版",
+    "note3": "其他浏览器可能不支持调用系统内置tts朗读译文（将自动切换为在线tts服务），或可能劫持网页video、audio标签致使PDJ媒体复读机失去对媒体文件的控制（如手机QQ浏览器、UC浏览器、夸克浏览器等）。",
     "sentencePlaybackTimes": "单句复读次数：",
     "interval": "暂停时间（秒）：",
     "timestampMove": "全文字幕时间戳移动（毫秒）：",
@@ -20,7 +20,7 @@
     "systemTTS": "使用系统内置TTS服务",
     "SystemTTSnote": "简单、快速、稳定。（国内安卓手机可使用原版Firefox浏览器来使用此服务）",
     "notSystemTTS": "使用在线TTS服务",
-    "notSystemTTSnote": "上面的免费TTS API地址可能会失效。可更换成任何其他TTS API地址。更换前请先在浏览器中测试，例如百度TTS API: http://tsn.baidu.com/text2audio?lan=zh&cuid=*****&ctp=1&tok=*****&tex=你好，百度智能云。（个人用户可在百度智能云申请180天免费使用权）",
+    "notSystemTTSnote": "默认的TTS API地址可能会失效。可更换成任何其他TTS API地址。更换前请先测试。例如百度TTS API: http://tsn.baidu.com/text2audio?spd=4&vol=15&per=1&lan=zh&cuid=*****&ctp=1&tok=*****&tex= （个人用户可在百度智能云申请180天免费使用权）",
     "langInTransLine": "字幕中译文使用的语言：",
     "lineNumOfTrans": "字幕中译文所在的行数：",
     "pauseTime": "朗读译文后暂停时间（秒）：",    
@@ -51,7 +51,7 @@
     "github": "Github项目地址：",
     "youdao": "有道云笔记：",
     "resetTTSurl": "重置为默认值",    
-    "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器（尤其国内安卓手机用户）, 在iPhone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
+    "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统内置tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器（尤其国内安卓手机用户）, 在iPhone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
     "warning1": "Video或audeo标签被该浏览器劫持！媒体文件失去控制。该浏览器不完全遵循HTML5标准。请更换标准浏览器: Edge、Chrome、Safari或Firefox以确保PDJ媒体复读机能正常使用。"    
   },
   "buttons": {

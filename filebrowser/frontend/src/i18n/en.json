@@ -20,7 +20,7 @@
     "systemTTS": "Use System Built-In TTS",
     "SystemTTSnote": "Simple, Fast and Steady",
     "notSystemTTS": "Use Online TTS Service",
-    "notSystemTTSnote": "The above is a free TTS API address. You can also input any other online TTS API address (Test it in browser firstly). ",
+    "notSystemTTSnote": "This default TTS API address maybe invalid. You can change it to any other online TTS API address (Test it firstly). ",
     "langInTransLine": "Language Used In translation Line:",
     "lineNumOfTrans": "Line Number Of Translation In Subtitle:",
     "pauseTime": "Pause Time (in second):",    
