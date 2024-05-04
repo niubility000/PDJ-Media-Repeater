@@ -52,6 +52,7 @@
     "github": "Project on Github:",
     "youdao": "YouDao Notes:",
     "resetTTSurl": "RESET to default URL",    
+    "favoriteClearConfirm": "No !pdf!favorite.txt found in current folder! Click 'OK' to Create a new one. Or Click 'Cancel' to close and retry later.", 
     "speechsynthesisAlert": "Sorry, your browser does not support 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS. You can use official Firefox browser in Android phone (especially in China), Safari in iPhone, and Chrome/Edge in windows PC",
      "warning1": "Video or audeo tag is hijacked by this browser. This browser does not fully comply with HTML5 standard. Please use standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly."    
   },

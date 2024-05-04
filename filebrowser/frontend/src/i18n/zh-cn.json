@@ -51,7 +51,8 @@
     "updatesandComments": "更新和评论",
     "github": "Github项目地址：",
     "youdao": "有道云笔记：",
-    "resetTTSurl": "重置为默认值",    
+    "resetTTSurl": "重置为默认值", 
+    "favoriteClearConfirm": "无法在当前文件夹找到收藏列表文件'!pdf!favorite.txt'！点击'确认'将新建；若是由于服务器硬盘休眠等原因造成，点击'取消'将关闭，稍后再重试。", 
     "speechsynthesisAlert": "该浏览器不支持'speechSynthesis API'接口，无法调用系统内置tts服务来朗读译文。 建议在安卓手机上使用原版Firefox火狐浏览器（尤其国内安卓手机用户）, 在iPhone上使用Safari浏览器，在windows电脑上使用Chrome或Edge浏览器。",
     "warning1": "Video或audeo标签被该浏览器劫持！媒体文件失去控制。该浏览器不完全遵循HTML5标准。请更换标准浏览器: Edge、Chrome、Safari或Firefox以确保PDJ媒体复读机能正常使用。"    
   },

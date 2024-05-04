@@ -10,7 +10,8 @@
     <template v-else>
       <header-bar v-if="srtSubtitles" style="padding: 0.5em">
         <action
-          style="color: blue"
+          :disabled="isSetting"
+          :style="{ color: isSetting ? 'grey' : 'blue' }"
           icon="close"
           :label="$t('buttons.close')"
           @action="close()"
@@ -37,19 +38,22 @@
           >
         </span>
         <button
-          v-if="srtSubtitles && isSingle"
-          :disabled="loading"
+          v-if="srtSubtitles"
+          :disabled="loading || isSetting || !isSingle"
           class="action"
           @click="switchIsFav"
           :title="$t('repeater.fav')"
         >
-          <i :style="{ color: isFav ? 'red' : 'blue' }" class="material-icons"
+          <i
+            :style="{
+              color: isSetting || !isSingle ? 'grey' : isFav ? 'red' : 'blue',
+            }"
+            class="material-icons"
             >grade</i
           >
         </button>
         <button
-          v-if="isSingle"
-          :disabled="loading || favList.length == 0"
+          :disabled="loading || favList.length == 0 || isSetting || !isSingle"
           class="action"
           @click="playFavList"
           :title="$t('repeater.playFavoriteList')"
@@ -58,21 +62,20 @@
         </button>
 
         <button
-          v-if="isSingle"
-          :disabled="loading"
+          :disabled="loading || !isSingle"
           class="action"
           @click="onSetting"
           :title="$t('repeater.settings')"
         >
           <i
-            :style="{ color: isSetting ? 'red' : 'blue' }"
+            :style="{ color: !isSingle ? 'grey' : isSetting ? 'red' : 'blue' }"
             class="material-icons"
             >settings</i
           >
         </button>
 
         <button
-          :disabled="loading"
+          :disabled="loading || isSetting"
           class="action"
           @click="switchSubtitle"
           :title="$t('repeater.switchsubtitleLanguages')"
@@ -81,7 +84,7 @@
         </button>
 
         <button
-          :disabled="loading || isFavOnPlay"
+          :disabled="loading || isFavOnPlay || isSetting"
           class="action"
           @click="onSingle"
           :title="
@@ -184,8 +187,16 @@
                 />
                 {{ $t("repeater.utterSubtitle") }}
               </span>
-              <span style="color: white">
-                (<input type="checkbox" v-model="isAutoDetectLang" />
+              <span
+                :style="{
+                  color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
+                }"
+              >
+                (<input
+                  :disabled="isFavOnPlay && isPlayFullFavList"
+                  type="checkbox"
+                  v-model="isAutoDetectLang"
+                />
                 {{ $t("repeater.autoDetect") }})
               </span>
             </p>
@@ -615,14 +626,14 @@ export default {
       timeDiff: null,
       distanceX: null,
       distanceY: null,
-      repeatTimes: 4,
-      interval: 3,
+      repeatTimes: 3,
+      interval: 2,
       playCount: 0,
       timeOutId: null,
       autoPlayNext: true,
       autoPlay: true,
       timeStampChange: -100,
-      currentSpeed: "0.7, 0.5, 1",
+      currentSpeed: "0.8, 0.5",
       listing: null,
       isSetting: false,
       isEmpty: false,
@@ -633,7 +644,7 @@ export default {
       isReadyToPlay: false,
       subtitleLang: "both",
       isUtterTransLine: true,
-      pauseTimeTransLine: 5,
+      pauseTimeTransLine: 3,
       speedOfUtter: 1,
       isUtterTransLineFirstly: true,
       langInTransLine: navigator.language || navigator.userLanguage,
@@ -652,6 +663,7 @@ export default {
       utterThis: null,
       isPlayFullFavList: false,
       audio: null,
+      lastStatus: "",
       isSystemTTS: "Yes",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
@@ -663,6 +675,7 @@ export default {
       return window.innerWidth < 736;
     },
     favListStatus() {
+      if (this.isSetting || !this.isSingle) return { color: "grey" };
       if (!this.isPlayFullFavList) {
         if (this.currentFileFavList.length == 0) {
           return { color: "grey" };
@@ -682,6 +695,7 @@ export default {
       }
     },
     subSwitch() {
+      if (this.isSetting) return { color: "grey" };
       if (this.subtitleLang == "both") {
         return { color: "blue" };
       } else if (this.subtitleLang == "line1") {
@@ -691,7 +705,7 @@ export default {
       }
     },
     playMode() {
-      if (this.isFavOnPlay) {
+      if (this.isFavOnPlay || this.isSetting) {
         return { color: "grey" };
       } else if (this.isSingle) {
         return { color: "red" };
@@ -791,13 +805,23 @@ export default {
             "?"
           )[0] +
           "?" +
-          srtUrl.split("?")[1]
+          srtUrl.split("?")[1] +
+          "?timestamp=" +
+          new Date().getMinutes()
         );
       } else {
         if (srtUrl && this.isMediaType == 1) {
-          return srtUrl.replace(".srt", ".mp3");
+          return (
+            srtUrl.replace(".srt", ".mp3") +
+            "?timestamp=" +
+            new Date().getMinutes()
+          );
         } else if (srtUrl && this.isMediaType == 2) {
-          return srtUrl.replace(".srt", ".mp4");
+          return (
+            srtUrl.replace(".srt", ".mp4") +
+            "?timestamp=" +
+            new Date().getMinutes()
+          );
         } else return "";
       }
     },
@@ -964,7 +988,7 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].isUtter;
         this.timeStampChange =
           this.srtSubtitles[this.sentenceIndex - 1].tsChange;
-        this.playCount = 0;
+        this.isFirstClick = true;
         this.currentMedia.addEventListener("canplay", this.switchReadyToPlay);
       }
     },
@@ -1004,7 +1028,7 @@ export default {
           favAll.content.split("::")[10]
         );
         this.isPauseAfterUttering = JSON.parse(favAll.content.split("::")[14]);
-        this.autoPlay = Number(JSON.parse(favAll.content.split("::")[15]));
+        this.autoPlay = JSON.parse(favAll.content.split("::")[15]);
         this.isPlayFullFavList = JSON.parse(favAll.content.split("::")[16]);
         this.isSystemTTS = JSON.parse(favAll.content.split("::")[17]);
         this.TTSurl = JSON.parse(favAll.content.split("::")[18]);
@@ -1031,8 +1055,7 @@ export default {
           }
         }
       } catch (e) {
-        this.favList = [];
-        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+        this.showConfirm();
       }
       if (!this.hasSpeechSynthesis) {
         this.isSystemTTS = "No";
@@ -1049,6 +1072,36 @@ export default {
         this.currentMedia.muted = false;
         this.currentMedia.pause();
       }, 1);
+    },
+
+    async restoreLastStatus() {
+      try {
+        const pathf = url.removeLastDir(this.$route.path);
+        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
+        var readLastStatus = favAll.content.split("lastStatus::")[1];
+        this.isAutoDetectLang = JSON.parse(readLastStatus.split("::")[0]);
+        this.langInTransLine = JSON.parse(readLastStatus.split("::")[1]);
+        this.lineNumOfTrans = Number(JSON.parse(readLastStatus.split("::")[2]));
+        this.isUtterTransLine = JSON.parse(readLastStatus.split("::")[3]);
+        this.timeStampChange = Number(
+          JSON.parse(readLastStatus.split("::")[4])
+        );
+        this.sentenceIndex = Number(JSON.parse(readLastStatus.split("::")[5]));
+        this.autoPlay = JSON.parse(readLastStatus.split("::")[6]);
+      } catch (e) {
+        this.showConfirm();
+      }
+    },
+
+    async restorePosition() {
+      try {
+        const pathf = url.removeLastDir(this.$route.path);
+        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
+        var readLastStatus = favAll.content.split("lastStatus::")[1];
+        this.sentenceIndex = Number(JSON.parse(readLastStatus.split("::")[5]));
+      } catch (e) {
+        this.showConfirm();
+      }
     },
 
     switchReadyToPlay() {
@@ -1186,7 +1239,6 @@ export default {
     },
 
     switchSubtitle() {
-      this.isSetting = false;
       if (this.subtitleLang == "both") {
         this.subtitleLang = "line1";
       } else if (this.subtitleLang == "line1") {
@@ -1217,17 +1269,28 @@ export default {
     },
 
     playFavList() {
-      this.isSetting = false;
       this.cleanUp();
-      if (!this.isFavOnPlay)
-        window.sessionStorage.setItem("lastPosition", this.sentenceIndex);
+      if (!this.isFavOnPlay) {
+        this.lastStatus =
+          "lastStatus" +
+          "::" +
+          JSON.stringify(this.isAutoDetectLang) +
+          "::" +
+          JSON.stringify(this.langInTransLine) +
+          "::" +
+          JSON.stringify(this.lineNumOfTrans) +
+          "::" +
+          JSON.stringify(this.isUtterTransLine) +
+          "::" +
+          JSON.stringify(this.timeStampChange) +
+          "::" +
+          JSON.stringify(this.sentenceIndex) +
+          "::" +
+          JSON.stringify(this.autoPlay) +
+          "::";
+        this.save();
+      }
       if (!this.isFavOnPlay && this.isPlayFullFavList) {
-        window.sessionStorage.setItem("lastAutoPlay", this.autoPlay);
-        window.sessionStorage.setItem("lastLang", this.langInTransLine);
-        window.sessionStorage.setItem("lastLineNum", this.lineNumOfTrans);
-        window.sessionStorage.setItem("lastIsUtter", this.isUtterTransLine);
-        window.sessionStorage.setItem("lastTsChange", this.timeStampChange);
-        window.sessionStorage.setItem("lastAutoDetect", this.isAutoDetectLang);
         this.autoPlay = false;
       }
       this.isFavOnPlay = !this.isFavOnPlay;
@@ -1237,28 +1300,17 @@ export default {
           this.singleModePlay();
         }
       } else {
+        this.lastStatus = "";
         if (this.isPlayFullFavList) {
-          this.langInTransLine = window.sessionStorage.getItem("lastLang");
-          this.lineNumOfTrans = window.sessionStorage.getItem("lastLineNum");
-          this.isUtterTransLine = window.sessionStorage.getItem("lastIsUtter");
-          this.timeStampChange = window.sessionStorage.getItem("lastTsChange");
-          this.isAutoDetectLang =
-            window.sessionStorage.getItem("lastAutoDetect");
-          this.autoPlay = window.sessionStorage.getItem("lastAutoPlay");
-          this.sentenceIndex = Number(
-            window.sessionStorage.getItem("lastPosition")
-          );
+          this.restoreLastStatus();
         } else {
-          this.sentenceIndex = Number(
-            window.sessionStorage.getItem("lastPosition")
-          );
+          this.restorePosition();
           this.singleModePlay();
         }
       }
     },
 
     switchIsFav() {
-      this.isSetting = false;
       if (this.isReadyToPlay) {
         this.isFav = !this.isFav;
         if (this.isFav) {
@@ -1299,9 +1351,19 @@ export default {
         }
       }
     },
-
+    showConfirm() {
+      var userConfirmation = window.confirm(
+        this.$t("repeater.favoriteClearConfirm")
+      );
+      if (userConfirmation) {
+        this.favList = [];
+        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+      } else {
+        this.cleanUp();
+        this.close();
+      }
+    },
     onSingle() {
-      this.isSetting = false;
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
         this.cleanUp();
@@ -1650,7 +1712,10 @@ export default {
         "::";
 
       let favContent =
-        customConfig + "Subtitle:" + JSON.stringify(this.favList);
+        customConfig +
+        this.lastStatus +
+        "Subtitle:" +
+        JSON.stringify(this.favList);
       const path = url.removeLastDir(this.$route.path);
       try {
         await api.post(path + "/!pdj!favorite.txt", favContent, true);
@@ -1735,24 +1800,14 @@ export default {
     },
     close() {
       this.cleanUp();
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        this.langInTransLine = window.sessionStorage.getItem("lastLang");
-        this.lineNumOfTrans = window.sessionStorage.getItem("lastLineNum");
-        this.isUtterTransLine = window.sessionStorage.getItem("lastIsUtter");
-        this.timeStampChange = window.sessionStorage.getItem("lastTsChange");
-        this.isAutoDetectLang = window.sessionStorage.getItem("lastAutoDetect");
-        this.autoPlay = window.sessionStorage.getItem("lastAutoPlay");
+      this.$store.commit("updateRequest", {});
+      let uri = url.removeLastDir(this.$route.path) + "/";
+      if (this.resized) {
+        Vue.nextTick(() => {
+          location.assign(uri);
+        });
       }
-      setTimeout(() => {
-        this.$store.commit("updateRequest", {});
-        let uri = url.removeLastDir(this.$route.path) + "/";
-        if (this.resized) {
-          Vue.nextTick(() => {
-            location.assign(uri);
-          });
-        }
-        history.back();
-      }, 10);
+      history.back();
     },
   },
 };
