@@ -295,6 +295,7 @@
                   text-align-last: left;
                   word-wrap: break-word;
                   overflow-wrap: break-word;
+                  word-break: break-all;
                 "
                 :style="{
                   color:
@@ -610,6 +611,7 @@ import { files as api } from "@/api";
 import url from "@/utils/url";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
+import { setTimeout } from "core-js";
 
 export default {
   name: "repeater",
@@ -665,6 +667,8 @@ export default {
       audio: null,
       lastStatus: "",
       isSystemTTS: "Yes",
+      isMount: true,
+      favAll: null,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -989,7 +993,6 @@ export default {
         this.timeStampChange =
           this.srtSubtitles[this.sentenceIndex - 1].tsChange;
         this.isFirstClick = true;
-        this.currentMedia.addEventListener("canplay", this.switchReadyToPlay);
       }
     },
   },
@@ -1009,41 +1012,77 @@ export default {
   methods: {
     async readyStatus() {
       this.isReadyToPlay = true;
+      let vm = this;
       try {
         const pathf = url.removeLastDir(this.$route.path);
-        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
-        this.repeatTimes = Number(JSON.parse(favAll.content.split("::")[1]));
-        this.interval = Number(JSON.parse(favAll.content.split("::")[2]));
-        this.autoPlayNext = JSON.parse(favAll.content.split("::")[3]);
+        vm.favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
+      } catch (e) {
+        this.showConfirm();
+      }
+      if (this.favAll !== null) {
+        this.repeatTimes = Number(
+          JSON.parse(this.favAll.content.split("::")[1])
+        );
+        this.interval = Number(JSON.parse(this.favAll.content.split("::")[2]));
+        this.autoPlayNext = JSON.parse(this.favAll.content.split("::")[3]);
         this.timeStampChange = Number(
-          JSON.parse(favAll.content.split("::")[4])
+          JSON.parse(this.favAll.content.split("::")[4])
         );
-        this.currentSpeed = JSON.parse(favAll.content.split("::")[5]);
-        this.subtitleLang = JSON.parse(favAll.content.split("::")[6]);
+        this.currentSpeed = JSON.parse(this.favAll.content.split("::")[5]);
+        this.subtitleLang = JSON.parse(this.favAll.content.split("::")[6]);
         this.pauseTimeTransLine = Number(
-          JSON.parse(favAll.content.split("::")[8])
+          JSON.parse(this.favAll.content.split("::")[8])
         );
-        this.speedOfUtter = Number(JSON.parse(favAll.content.split("::")[9]));
+        this.speedOfUtter = Number(
+          JSON.parse(this.favAll.content.split("::")[9])
+        );
         this.isUtterTransLineFirstly = JSON.parse(
-          favAll.content.split("::")[10]
+          this.favAll.content.split("::")[10]
         );
-        this.isPauseAfterUttering = JSON.parse(favAll.content.split("::")[14]);
-        this.autoPlay = JSON.parse(favAll.content.split("::")[15]);
-        this.isPlayFullFavList = JSON.parse(favAll.content.split("::")[16]);
-        this.isSystemTTS = JSON.parse(favAll.content.split("::")[17]);
-        this.TTSurl = JSON.parse(favAll.content.split("::")[18]);
-        this.isAutoDetectLang = JSON.parse(favAll.content.split("::")[13]);
+        this.isPauseAfterUttering = JSON.parse(
+          this.favAll.content.split("::")[14]
+        );
+        this.autoPlay = JSON.parse(this.favAll.content.split("::")[15]);
+        this.isPlayFullFavList = JSON.parse(
+          this.favAll.content.split("::")[16]
+        );
+        this.isSystemTTS = JSON.parse(this.favAll.content.split("::")[17]);
+        this.TTSurl = JSON.parse(this.favAll.content.split("::")[18]);
+        this.isAutoDetectLang = JSON.parse(this.favAll.content.split("::")[13]);
         if (!this.isAutoDetectLang) {
-          this.isUtterTransLine = JSON.parse(favAll.content.split("::")[7]);
-          this.langInTransLine = JSON.parse(favAll.content.split("::")[11]);
+          this.isUtterTransLine = JSON.parse(
+            this.favAll.content.split("::")[7]
+          );
+          this.langInTransLine = JSON.parse(
+            this.favAll.content.split("::")[11]
+          );
           this.lineNumOfTrans = Number(
-            JSON.parse(favAll.content.split("::")[12])
+            JSON.parse(this.favAll.content.split("::")[12])
           );
         } else {
           this.autoDetectLangInTrans();
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
-        this.favList = JSON.parse(favAll.content.split("Subtitle:")[1]);
+        if (this.isMount && this.favAll.content.includes("lastStatus::")) {
+          var readLastStatus = this.favAll.content.split("lastStatus::")[1];
+          this.isAutoDetectLang = JSON.parse(readLastStatus.split("::")[0]);
+          if (!this.isAutoDetectLang) {
+            this.langInTransLine = JSON.parse(readLastStatus.split("::")[1]);
+            this.lineNumOfTrans = Number(
+              JSON.parse(readLastStatus.split("::")[2])
+            );
+            this.isUtterTransLine = JSON.parse(readLastStatus.split("::")[3]);
+          } else {
+            this.autoDetectLangInTrans();
+            this.langInTransLine = navigator.language || navigator.userLanguage;
+          }
+          this.timeStampChange = Number(
+            JSON.parse(readLastStatus.split("::")[4])
+          );
+          this.autoPlay = JSON.parse(readLastStatus.split("::")[6]);
+          this.lastStatus = "";
+        }
+        this.favList = JSON.parse(this.favAll.content.split("Subtitle:")[1]);
         if (this.currentFileFavList) {
           for (var i = 0; i < this.currentFileFavList.length; ++i) {
             if (
@@ -1054,59 +1093,24 @@ export default {
             }
           }
         }
-      } catch (e) {
-        this.showConfirm();
-      }
-      if (!this.hasSpeechSynthesis) {
-        this.isSystemTTS = "No";
-      }
 
-      if (this.isMediaType == 1) {
-        this.currentMedia = document.getElementById("myAudio");
-      } else if (this.isMediaType == 2) {
-        this.currentMedia = document.getElementById("myVideo");
-      }
-      this.currentMedia.play();
-      this.currentMedia.muted = true;
-      setTimeout(() => {
-        this.currentMedia.muted = false;
-        this.currentMedia.pause();
-      }, 1);
-    },
+        if (!this.hasSpeechSynthesis) {
+          this.isSystemTTS = "No";
+        }
 
-    async restoreLastStatus() {
-      try {
-        const pathf = url.removeLastDir(this.$route.path);
-        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
-        var readLastStatus = favAll.content.split("lastStatus::")[1];
-        this.isAutoDetectLang = JSON.parse(readLastStatus.split("::")[0]);
-        this.langInTransLine = JSON.parse(readLastStatus.split("::")[1]);
-        this.lineNumOfTrans = Number(JSON.parse(readLastStatus.split("::")[2]));
-        this.isUtterTransLine = JSON.parse(readLastStatus.split("::")[3]);
-        this.timeStampChange = Number(
-          JSON.parse(readLastStatus.split("::")[4])
-        );
-        this.sentenceIndex = Number(JSON.parse(readLastStatus.split("::")[5]));
-        this.autoPlay = JSON.parse(readLastStatus.split("::")[6]);
-      } catch (e) {
-        this.showConfirm();
+        if (this.isMediaType == 1) {
+          this.currentMedia = document.getElementById("myAudio");
+        } else if (this.isMediaType == 2) {
+          this.currentMedia = document.getElementById("myVideo");
+        }
+        this.isMount = false;
+        this.currentMedia.play();
+        this.currentMedia.muted = true;
+        setTimeout(() => {
+          this.currentMedia.muted = false;
+          this.currentMedia.pause();
+        }, 1);
       }
-    },
-
-    async restorePosition() {
-      try {
-        const pathf = url.removeLastDir(this.$route.path);
-        var favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
-        var readLastStatus = favAll.content.split("lastStatus::")[1];
-        this.sentenceIndex = Number(JSON.parse(readLastStatus.split("::")[5]));
-      } catch (e) {
-        this.showConfirm();
-      }
-    },
-
-    switchReadyToPlay() {
-      this.isReadyToPlay = true;
-      this.currentMedia.removeEventListener("canplay", this.switchReadyToPlay);
     },
 
     initUtter() {
@@ -1300,13 +1304,27 @@ export default {
           this.singleModePlay();
         }
       } else {
-        this.lastStatus = "";
         if (this.isPlayFullFavList) {
-          this.restoreLastStatus();
+          this.isAutoDetectLang = JSON.parse(this.lastStatus.split("::")[1]);
+          this.langInTransLine = JSON.parse(this.lastStatus.split("::")[2]);
+          this.lineNumOfTrans = Number(
+            JSON.parse(this.lastStatus.split("::")[3])
+          );
+          this.isUtterTransLine = JSON.parse(this.lastStatus.split("::")[4]);
+          this.timeStampChange = Number(
+            JSON.parse(this.lastStatus.split("::")[5])
+          );
+          this.sentenceIndex = Number(
+            JSON.parse(this.lastStatus.split("::")[6])
+          );
+          this.autoPlay = JSON.parse(this.lastStatus.split("::")[7]);
         } else {
-          this.restorePosition();
+          this.sentenceIndex = Number(
+            JSON.parse(this.lastStatus.split("::")[6])
+          );
           this.singleModePlay();
         }
+        this.lastStatus = "";
       }
     },
 
@@ -1400,12 +1418,14 @@ export default {
       setTimeout(() => {
         if (this.touches == 1) {
           if (this.isSingle) {
-            if (this.pausingAfterUttering) {
-              this.pausingAfterUttering = false;
-              this.loopPlay();
-            } else {
-              this.singleModePlay();
-            }
+            setTimeout(() => {
+              if (this.pausingAfterUttering) {
+                this.pausingAfterUttering = false;
+                this.loopPlay();
+              } else {
+                this.singleModePlay();
+              }
+            }, 1);
           } else {
             setTimeout(() => {
               this.regularPlay();
@@ -1458,22 +1478,24 @@ export default {
     endTouch(event) {
       event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
-
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       this.distanceY = event.changedTouches[0].clientY - this.startY;
       if (
         this.timeDiff < 300 &&
-        Math.abs(this.distanceX) > 25 &&
-        Math.abs(this.distanceY) < 50
+        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
+        Math.abs(this.distanceX) > 30
       ) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 50) {
+      if (
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
+        Math.abs(this.distanceY) > 70
+      ) {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-
       this.click();
     },
     checkNav(x, mode) {

@@ -16,21 +16,21 @@ Updated: 04-30-2024
 
 2.08 add online tts support
 
-[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15211198/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15214771/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15211200/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15214773/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15211201/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15214774/filebrowser-linux-arm64.zip)
 
 Latest Source Code
 
-[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15211205/filebrowser.zip)
+[filebrowser.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/15214775/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
-sample media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14899256/sample-media-1.zip)
+Sample Media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14899256/sample-media-1.zip)
 
-(Note: In the settings, Language Used In translation Line should be zh-CN for this sample media.)
+(Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
 
 ## Install
 
