@@ -632,6 +632,7 @@ export default {
       interval: 2,
       playCount: 0,
       timeOutId: null,
+      intervalId: null,
       autoPlayNext: true,
       autoPlay: true,
       timeStampChange: -100,
@@ -981,9 +982,9 @@ export default {
       }, 1);
     },
     raw: function () {
+      this.isReadyToPlay = false;
+      this.playCount = 0;
       if (this.isFavOnPlay && this.isPlayFullFavList) {
-        this.isReadyToPlay = false;
-        this.playCount = 0;
         this.isAutoDetectLang = false;
         this.langInTransLine =
           this.srtSubtitles[this.sentenceIndex - 1].langUsed;
@@ -992,8 +993,9 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].isUtter;
         this.timeStampChange =
           this.srtSubtitles[this.sentenceIndex - 1].tsChange;
-        this.isFirstClick = true;
+        if (this.autoPlay) this.autoPlay = false;
       }
+      this.isFirstClick = true;
     },
   },
 
@@ -1001,6 +1003,7 @@ export default {
     window.addEventListener("keydown", this.key);
     window.addEventListener("resize", this.handleResize);
     this.listing = this.oldReq.items;
+
     this.updatePreview();
     this.initUtter();
   },
@@ -1093,11 +1096,9 @@ export default {
             }
           }
         }
-
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
-
         if (this.isMediaType == 1) {
           this.currentMedia = document.getElementById("myAudio");
         } else if (this.isMediaType == 2) {
@@ -1121,19 +1122,19 @@ export default {
     },
     firstClick() {
       this.isFirstClick = false;
-      this.utterTransLine();
+      if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
+        this.utterTransLine();
+      if (this.audio) this.audio.muted = true;
       this.currentMedia.play();
-      this.currentMedia.currentTime =
-        this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      this.currentMedia.currentTime = 1;
       this.currentMedia.muted = true;
       setTimeout(() => {
         this.currentMedia.muted = false;
+        if (this.audio) this.audio.muted = false;
         this.cleanUp();
         if (
-          this.currentMedia.currentTime <
-            this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.1 ||
-          this.currentMedia.currentTime >
-            this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2
+          this.currentMedia.currentTime < 0.9 ||
+          this.currentMedia.currentTime > 1.2
         ) {
           window.sessionStorage.setItem("isBrowserHiJack", true);
           location.reload();
@@ -1261,13 +1262,11 @@ export default {
       if (this.audio) this.audio.pause();
       this.playCount = 0;
       if (this.notSuportSpeechSynthesis) this.notSuportSpeechSynthesis = false;
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+      }
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
-        this.currentMedia.removeEventListener(
-          "timeupdate",
-          this.sessionEnd,
-          false
-        );
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
     },
@@ -1294,14 +1293,22 @@ export default {
           "::";
         this.save();
       }
-      if (!this.isFavOnPlay && this.isPlayFullFavList) {
-        this.autoPlay = false;
-      }
       this.isFavOnPlay = !this.isFavOnPlay;
       if (this.isFavOnPlay) {
         this.sentenceIndex = 1;
         if (!this.isPlayFullFavList) {
           this.singleModePlay();
+        } else {
+          this.isAutoDetectLang = false;
+          this.langInTransLine =
+            this.srtSubtitles[this.sentenceIndex - 1].langUsed;
+          this.lineNumOfTrans =
+            this.srtSubtitles[this.sentenceIndex - 1].lineNum;
+          this.isUtterTransLine =
+            this.srtSubtitles[this.sentenceIndex - 1].isUtter;
+          this.timeStampChange =
+            this.srtSubtitles[this.sentenceIndex - 1].tsChange;
+          this.autoPlay = false;
         }
       } else {
         if (this.isPlayFullFavList) {
@@ -1608,20 +1615,15 @@ export default {
     playSection() {
       const media = this.currentMedia;
       if (media && media.removeEventListener) {
-        media.removeEventListener("timeupdate", this.sessionEnd, false);
         media.removeEventListener("timeupdate", this.syncSub);
       }
       if (media) {
         let realIndex = this.sentenceIndex - 1;
-        media
-          .play()
-          .then(() => {
-            media.currentTime = this.srtSubtitles[realIndex].startTime;
-            media.addEventListener("timeupdate", this.sessionEnd, false);
-          })
-          .catch((error) => {
-            console.error(error);
-          });
+        media.play();
+        media.currentTime = this.srtSubtitles[realIndex].startTime;
+        this.intervalId = setInterval(() => {
+          this.sessionEnd();
+        }, 10);
       }
     },
 
@@ -1629,6 +1631,9 @@ export default {
       const media = this.currentMedia;
       let realIndex = this.sentenceIndex - 1;
       if (media.currentTime >= this.srtSubtitles[realIndex].endTime) {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
         media.pause();
         if (this.playCount >= this.repeatTimes) {
           this.cleanUp();
@@ -1656,11 +1661,6 @@ export default {
             this.notSuportSpeechSynthesis = false;
           if (this.timeOutId) clearTimeout(this.timeOutId);
           if (this.currentMedia && this.currentMedia.removeEventListener) {
-            this.currentMedia.removeEventListener(
-              "timeupdate",
-              this.sessionEnd,
-              false
-            );
             this.currentMedia.removeEventListener("timeupdate", this.syncSub);
           }
           this.timeOutId = setTimeout(() => {
