@@ -36,7 +36,7 @@ Sample Media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Rep
 
 PDJ Media Repeater is a green standalone software. 
 
-In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin (If you can't run filebrowser.exe in this way, use [command line instead](## Filebrowser Settings with command lines).)
+In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin (If you can't run filebrowser.exe in this way, use <a href="#lable">command line instead</a>.)
 
 **WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack <video> and <audio> tags.**
 
@@ -135,7 +135,7 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/utils/constants.js
 
-## Filebrowser Settings with command lines
+## Filebrowser Settings with command lines<span id="lable">:</span>
 
 In windows for example:
 
