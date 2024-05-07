@@ -135,11 +135,13 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/utils/constants.js
 
-## Filebrowser Settings with command lines<span id="lable">:</span>
+
+<span id="lable"> </span>
+## Filebrowser Settings with command lines
 
 In windows for example:
 
-Put your filebrowser.exe into the folder d:\filebrowser
+Put your filebrowser.exe into a folder like d:\filebrowser
 
 In DOS window:
 
@@ -153,11 +155,11 @@ cd d:\filebrowser
 
 .\filebrowser.exe -d filebrowser.db config set --root d:/     //set the root path to driver d in your computer.
 
-run:
+run filebrowser:
 
 .\filebrowser.exe -d .\filebrowser.db --disable-preview-resize --cache-dir .\cache
 
-stop:
+stop filebrowser:
 
 ctrl+c
 
