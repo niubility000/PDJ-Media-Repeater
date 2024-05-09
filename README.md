@@ -42,8 +42,12 @@ In windows, just double click the filebrowser.exe, then you can visit it at your
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add a favorite sentence, you need login the filebrowser with an account which has the permission to "Create files and directories".  It will add a "!pdj!favorite.txt" file in current folder. 
+Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "!pdj!favorite.txt" file in current folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
+
+And the following account permission settings in filebrowser will not allow the account user to change the settings and add/remove a favorite sentence in PDJ media repeater.
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot12.jpg)
+
 
 To change the password, the root dir, the port..., please see [Filebrowser Settings with command lines](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#filebrowser-settings-with-command-lines). 
 
