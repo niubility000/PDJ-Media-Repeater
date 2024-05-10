@@ -538,7 +538,7 @@
         style="display: flex"
       >
         <video
-          style="max-height: 70%; max-width: 100%"
+          style="max-height: 60%; max-width: 100%"
           v-if="isMediaType == 2 && !browserHiJack"
           id="myVideo"
           :src="raw"
@@ -552,16 +552,6 @@
           playsinline="true"
           x5-video-orientation="landscape|portrait"
         ></video>
-        <audio
-          style="width: 70%; height: 50%; margin: auto; position: fixed"
-          v-if="isMediaType == 1 && !browserHiJack"
-          id="myAudio"
-          :src="raw"
-          :controls="!isSingle"
-          controlslist="noplaybackrate nodownload"
-          :autoplay="autoPlay"
-          @loadedmetadata="readyStatus"
-        ></audio>
         <p
           v-if="isMediaType > 0 && browserHiJack"
           style="color: red; font-size: 1.2em; padding-top: 4em"
@@ -583,6 +573,7 @@
             font-size: 1.5em;
             margin: 0;
           "
+          :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
           <p v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'">
             {{
@@ -633,6 +624,23 @@
           ></textarea>
         </span>
       </div>
+      <audio
+        style="
+          position: fixed;
+          bottom: 5%;
+          width: 85%;
+          left: 0;
+          right: 0;
+          margin: auto;
+        "
+        v-if="isMediaType == 1 && !browserHiJack"
+        id="myAudio"
+        :src="raw"
+        :controls="!isSingle"
+        controlslist="noplaybackrate nodownload"
+        :autoplay="autoPlay"
+        @loadedmetadata="readyStatus"
+      ></audio>
     </template>
   </div>
 </template>
@@ -1618,7 +1626,7 @@ export default {
         this.isReadyToPlay &&
         this.timeDiff < 300 &&
         Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
-        Math.abs(this.distanceX) > 100
+        Math.abs(this.distanceX) > 60
       ) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
