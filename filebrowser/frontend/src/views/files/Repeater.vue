@@ -52,6 +52,22 @@
             >grade</i
           >
         </button>
+
+        <button
+          :disabled="loading || isSetting"
+          class="action"
+          @click="switchShowNotes"
+          :title="$t('repeater.showNotes')"
+        >
+          <i
+            :style="{
+              color: loading || isSetting ? 'grey' : showNotes ? 'red' : 'blue',
+            }"
+            class="material-icons"
+            >wysiwyg</i
+          >
+        </button>
+
         <button
           :disabled="loading || favList.length == 0 || isSetting || !isSingle"
           class="action"
@@ -216,7 +232,7 @@
                 <span>{{ $t("repeater.systemTTS") }}</span>
               </p>
               <p
-                v-if="notSuportSpeechSynthesis"
+                v-if="alertNotSuportSpeechSynthesis"
                 style="color: red; margin-left: 2em"
               >
                 {{ $t("repeater.speechsynthesisAlert") }}
@@ -392,23 +408,20 @@
             </p>
             <p
               :style="{
-                color:
-                  isUtterTransLine && isUtterTransLineFirstly
-                    ? 'white'
-                    : '#bbbaba',
+                color: isUtterTransLine ? 'white' : '#bbbaba',
               }"
               style="
                 text-align: justify;
                 text-align-last: left;
-                margin-left: 2em;
+                margin-left: 1em;
               "
             >
               <input
-                :disabled="!(isUtterTransLine && isUtterTransLineFirstly)"
+                :disabled="!isUtterTransLine"
                 type="checkbox"
-                v-model="isPauseAfterUttering"
+                v-model="isPauseAfterFirstDone"
               />
-              {{ $t("repeater.autoPauseAfterUttering") }}
+              {{ $t("repeater.autoPauseAfterFirstDone") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p
@@ -526,7 +539,7 @@
       >
         <video
           style="max-height: 70%; max-width: 100%"
-          v-if="isMediaType == 2 && !browserHiJack && !notSuportSpeechSynthesis"
+          v-if="isMediaType == 2 && !browserHiJack"
           id="myVideo"
           :src="raw"
           :autoplay="autoPlay"
@@ -539,6 +552,16 @@
           playsinline="true"
           x5-video-orientation="landscape|portrait"
         ></video>
+        <audio
+          style="width: 70%; height: 50%; margin: auto; position: fixed"
+          v-if="isMediaType == 1 && !browserHiJack"
+          id="myAudio"
+          :src="raw"
+          :controls="!isSingle"
+          controlslist="noplaybackrate nodownload"
+          :autoplay="autoPlay"
+          @loadedmetadata="readyStatus"
+        ></audio>
         <p
           v-if="isMediaType > 0 && browserHiJack"
           style="color: red; font-size: 1.2em; padding-top: 4em"
@@ -552,9 +575,8 @@
           Loading Media...
         </p>
         <span
-          v-if="srtSubtitles && isReadyToPlay && !notSuportSpeechSynthesis"
+          v-if="srtSubtitles && isReadyToPlay"
           style="
-            flex-grow: 1;
             color: yellow;
             overflow-wrap: break-word;
             width: 100%;
@@ -562,14 +584,14 @@
             margin: 0;
           "
         >
-          <p v-if="subtitleLang !== 'line2'">
+          <p v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'">
             {{
               !isEmpty
                 ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
                 : "   "
             }}
           </p>
-          <p v-if="subtitleLang !== 'line1'">
+          <p v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'">
             {{
               !isEmpty
                 ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
@@ -577,29 +599,40 @@
             }}
           </p>
         </span>
-
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
           folder, or the .srt file is incorrect.
         </p>
+        <span
+          v-if="srtSubtitles && isReadyToPlay"
+          style="
+            color: white;
+            width: 100%;
+            font-size: 1em;
+            margin: auto;
+            left: 0;
+            right: 0;
+            flex-grow: 1;
+            overflow: auto;
+          "
+        >
+          <textarea
+            v-if="showNotes && !isEmpty"
+            id="noteArea"
+            rows="4"
+            v-model="note"
+            placeholder="......"
+            style="
+              width: 100%;
+              background-color: black;
+              color: whitesmoke;
+              border: none;
+              resize: none;
+              text-align: center;
+            "
+          ></textarea>
+        </span>
       </div>
-      <audio
-        style="
-          position: fixed;
-          bottom: 10%;
-          width: 78%;
-          left: 0;
-          right: 0;
-          margin: auto;
-        "
-        v-if="isMediaType == 1 && !browserHiJack && !notSuportSpeechSynthesis"
-        id="myAudio"
-        :src="raw"
-        :controls="!isSingle"
-        controlslist="noplaybackrate nodownload"
-        :autoplay="autoPlay"
-        @loadedmetadata="readyStatus"
-      ></audio>
     </template>
   </div>
 </template>
@@ -634,7 +667,7 @@ export default {
       timeOutId: null,
       intervalId: null,
       autoPlayNext: true,
-      autoPlay: true,
+      autoPlay: false,
       timeStampChange: -100,
       currentSpeed: "0.8, 0.5",
       listing: null,
@@ -642,6 +675,7 @@ export default {
       isEmpty: false,
       isSingle: true,
       favList: [],
+      noteList: [],
       isFav: false,
       isFavOnPlay: false,
       isReadyToPlay: false,
@@ -654,11 +688,10 @@ export default {
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
       touches: 0,
-      isPauseAfterUttering: false,
-      pausingAfterUttering: false,
+      isPauseAfterFirstDone: false,
+      pauseAfterFirstDone: false,
       browserHiJack: window.sessionStorage.getItem("isBrowserHiJack"),
-      currentMedia: null,
-      notSuportSpeechSynthesis: false,
+      alertNotSuportSpeechSynthesis: false,
       resized: false,
       isFirstClick: true,
       hasSpeechSynthesis:
@@ -669,7 +702,9 @@ export default {
       lastStatus: "",
       isSystemTTS: "Yes",
       isMount: true,
-      favAll: null,
+      contentAll: null,
+      note: "",
+      showNotes: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -704,9 +739,11 @@ export default {
       if (this.subtitleLang == "both") {
         return { color: "blue" };
       } else if (this.subtitleLang == "line1") {
-        return { color: "black" };
-      } else {
         return { color: "red" };
+      } else if (this.subtitleLang == "line2") {
+        return { color: "green" };
+      } else {
+        return { color: "black" };
       }
     },
     playMode() {
@@ -724,9 +761,10 @@ export default {
         var textSubtitles;
         if (this.req.content.includes("\r\n\r\n")) {
           textSubtitles = this.req.content.split("\r\n\r\n");
-        } else {
+        } else if (this.req.content.includes("\n\n")) {
           textSubtitles = this.req.content.split("\n\n");
-        }
+        } else textSubtitles = this.req.content.split("\n");
+
         for (var i = 0; i < textSubtitles.length; ++i) {
           var textSubtitle = textSubtitles[i].split("\n");
 
@@ -776,7 +814,6 @@ export default {
         return this.currentFileFavList;
       }
     },
-
     isMediaType() {
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         if (
@@ -785,7 +822,7 @@ export default {
           return 2;
         } else return 1;
       } else {
-        if (this.listing) {
+        if (this.listing && this.req.name) {
           for (var i = 0; i < this.listing.length; ++i) {
             if (this.listing[i].name == this.req.name.replace(".srt", ".mp4")) {
               return 2;
@@ -830,6 +867,13 @@ export default {
         } else return "";
       }
     },
+    currentMedia() {
+      if (this.isMediaType == 1) {
+        return document.getElementById("myAudio");
+      } else if (this.isMediaType == 2) {
+        return document.getElementById("myVideo");
+      } else return null;
+    },
     currentFileFavList() {
       let currentMediaName = this.mediaName;
       return this.favList.filter(function (item) {
@@ -846,7 +890,7 @@ export default {
       }
     },
     isEnglish() {
-      let str = this.srtSubtitles[1].content.split("\r\n")[0];
+      let str = this.srtSubtitles[0].content.split("\r\n")[0];
       return /^[a-zA-Z]/.test(str);
     },
   },
@@ -872,6 +916,27 @@ export default {
       } else {
         this.isFav = false;
       }
+      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      var singleNoteList = this.noteList.filter(function (item) {
+        return item.startTime == nowStartTime;
+      });
+      if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
+      else this.note = "";
+    },
+    isMount: function () {
+      if (!this.isMount && !this.isFavOnPlay) this.autoPlay = true;
+    },
+    isSetting: function () {
+      if (
+        !this.issetting &&
+        this.isSystemTTS == "Yes" &&
+        !this.hasSpeechSynthesis
+      ) {
+        this.isSystemTTS = "No";
+      }
+    },
+    showNotes: function () {
+      this.save();
     },
     repeatTimes: function () {
       this.save();
@@ -908,10 +973,10 @@ export default {
     },
     isSystemTTS: function () {
       if (this.isSystemTTS == "Yes" && !this.hasSpeechSynthesis) {
-        this.notSuportSpeechSynthesis = true;
+        this.alertNotSuportSpeechSynthesis = true;
       }
       if (this.isSystemTTS == "No" && !this.hasSpeechSynthesis) {
-        this.notSuportSpeechSynthesis = false;
+        this.alertNotSuportSpeechSynthesis = false;
       }
 
       this.save();
@@ -960,7 +1025,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
-    isPauseAfterUttering: function () {
+    isPauseAfterFirstDone: function () {
       this.save();
     },
     autoPlay: function () {
@@ -997,13 +1062,28 @@ export default {
       }
       this.isFirstClick = true;
     },
+    note: function () {
+      //add or renew a note
+      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+      this.noteList = this.noteList.filter(function (item) {
+        return item.startTime !== nowStartTime && item.endTime !== nowEndTime;
+      });
+      var sentenceNote = {
+        rawPath: this.mediaName,
+        startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
+        endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
+        content: this.note,
+      };
+      this.noteList.push(sentenceNote);
+      this.save();
+    },
   },
 
   async mounted() {
     window.addEventListener("keydown", this.key);
     window.addEventListener("resize", this.handleResize);
     this.listing = this.oldReq.items;
-
     this.updatePreview();
     this.initUtter();
   },
@@ -1018,56 +1098,66 @@ export default {
       let vm = this;
       try {
         const pathf = url.removeLastDir(this.$route.path);
-        vm.favAll = await api.fetch(pathf + "/!pdj!favorite.txt");
+        vm.contentAll = await api.fetch(pathf + "/!pdj!favorite.txt");
       } catch (e) {
         this.showConfirm();
       }
-      if (this.favAll !== null) {
+      if (this.contentAll !== null) {
         this.repeatTimes = Number(
-          JSON.parse(this.favAll.content.split("::")[1])
+          JSON.parse(this.contentAll.content.split("::")[1])
         );
-        this.interval = Number(JSON.parse(this.favAll.content.split("::")[2]));
-        this.autoPlayNext = JSON.parse(this.favAll.content.split("::")[3]);
+        this.interval = Number(
+          JSON.parse(this.contentAll.content.split("::")[2])
+        );
+        this.autoPlayNext = JSON.parse(this.contentAll.content.split("::")[3]);
         this.timeStampChange = Number(
-          JSON.parse(this.favAll.content.split("::")[4])
+          JSON.parse(this.contentAll.content.split("::")[4])
         );
-        this.currentSpeed = JSON.parse(this.favAll.content.split("::")[5]);
-        this.subtitleLang = JSON.parse(this.favAll.content.split("::")[6]);
+        this.currentSpeed = JSON.parse(this.contentAll.content.split("::")[5]);
+        this.subtitleLang = JSON.parse(this.contentAll.content.split("::")[6]);
         this.pauseTimeTransLine = Number(
-          JSON.parse(this.favAll.content.split("::")[8])
+          JSON.parse(this.contentAll.content.split("::")[8])
         );
         this.speedOfUtter = Number(
-          JSON.parse(this.favAll.content.split("::")[9])
+          JSON.parse(this.contentAll.content.split("::")[9])
         );
         this.isUtterTransLineFirstly = JSON.parse(
-          this.favAll.content.split("::")[10]
+          this.contentAll.content.split("::")[10]
         );
-        this.isPauseAfterUttering = JSON.parse(
-          this.favAll.content.split("::")[14]
+        this.isPauseAfterFirstDone = JSON.parse(
+          this.contentAll.content.split("::")[14]
         );
-        this.autoPlay = JSON.parse(this.favAll.content.split("::")[15]);
+        this.autoPlay = JSON.parse(this.contentAll.content.split("::")[15]);
         this.isPlayFullFavList = JSON.parse(
-          this.favAll.content.split("::")[16]
+          this.contentAll.content.split("::")[16]
         );
-        this.isSystemTTS = JSON.parse(this.favAll.content.split("::")[17]);
-        this.TTSurl = JSON.parse(this.favAll.content.split("::")[18]);
-        this.isAutoDetectLang = JSON.parse(this.favAll.content.split("::")[13]);
+        this.isSystemTTS = JSON.parse(this.contentAll.content.split("::")[17]);
+        this.TTSurl = JSON.parse(this.contentAll.content.split("::")[18]);
+        this.showNotes = JSON.parse(this.contentAll.content.split("::")[19]);
+        this.isAutoDetectLang = JSON.parse(
+          this.contentAll.content.split("::")[13]
+        );
         if (!this.isAutoDetectLang) {
           this.isUtterTransLine = JSON.parse(
-            this.favAll.content.split("::")[7]
+            this.contentAll.content.split("::")[7]
           );
           this.langInTransLine = JSON.parse(
-            this.favAll.content.split("::")[11]
+            this.contentAll.content.split("::")[11]
           );
           this.lineNumOfTrans = Number(
-            JSON.parse(this.favAll.content.split("::")[12])
+            JSON.parse(this.contentAll.content.split("::")[12])
           );
         } else {
           this.autoDetectLangInTrans();
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
-        if (this.isMount && this.favAll.content.includes("lastStatus::")) {
-          var readLastStatus = this.favAll.content.split("lastStatus::")[1];
+        if (
+          this.isMount &&
+          !this.isFavOnPlay &&
+          this.contentAll.content.includes("lastStatus::")
+        ) {
+          this.isMount = false;
+          var readLastStatus = this.contentAll.content.split("lastStatus::")[1];
           this.isAutoDetectLang = JSON.parse(readLastStatus.split("::")[0]);
           if (!this.isAutoDetectLang) {
             this.langInTransLine = JSON.parse(readLastStatus.split("::")[1]);
@@ -1085,7 +1175,12 @@ export default {
           this.autoPlay = JSON.parse(readLastStatus.split("::")[6]);
           this.lastStatus = "";
         }
-        this.favList = JSON.parse(this.favAll.content.split("Subtitle:")[1]);
+        this.favList = JSON.parse(
+          this.contentAll.content.split("Subtitle:")[1].split("noteList:")[0]
+        );
+        this.noteList = JSON.parse(
+          this.contentAll.content.split("noteList:")[1]
+        );
         if (this.currentFileFavList) {
           for (var i = 0; i < this.currentFileFavList.length; ++i) {
             if (
@@ -1096,15 +1191,16 @@ export default {
             }
           }
         }
+        var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+        var singleNoteList = this.noteList.filter(function (item) {
+          return item.startTime == nowStartTime && item.endTime == nowEndTime;
+        });
+        if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
+        else this.note = "";
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
-        if (this.isMediaType == 1) {
-          this.currentMedia = document.getElementById("myAudio");
-        } else if (this.isMediaType == 2) {
-          this.currentMedia = document.getElementById("myVideo");
-        }
-        this.isMount = false;
         this.currentMedia.play();
         this.currentMedia.muted = true;
         setTimeout(() => {
@@ -1143,6 +1239,7 @@ export default {
     },
     singleModePlay() {
       this.cleanUp();
+      if (!this.isReadyToPlay) return;
       if (this.isUtterTransLine && this.isUtterTransLineFirstly) {
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -1212,9 +1309,9 @@ export default {
       if (
         this.isUtterTransLine &&
         this.isUtterTransLineFirstly &&
-        this.isPauseAfterUttering
+        this.isPauseAfterFirstDone
       ) {
-        this.pausingAfterUttering = true;
+        this.pauseAfterFirstDone = true;
         return;
       } else if (
         !this.autoPlayNext &&
@@ -1248,6 +1345,8 @@ export default {
         this.subtitleLang = "line1";
       } else if (this.subtitleLang == "line1") {
         this.subtitleLang = "line2";
+      } else if (this.subtitleLang == "line2") {
+        this.subtitleLang = "none";
       } else {
         this.subtitleLang = "both";
       }
@@ -1259,9 +1358,13 @@ export default {
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
+      if (
+        document.getElementById("noteArea") &&
+        document.getElementById("noteArea").contains(document.activeElement)
+      )
+        document.getElementById("noteArea").blur();
       if (this.audio) this.audio.pause();
       this.playCount = 0;
-      if (this.notSuportSpeechSynthesis) this.notSuportSpeechSynthesis = false;
       if (this.intervalId) {
         clearInterval(this.intervalId);
       }
@@ -1355,6 +1458,9 @@ export default {
           this.save();
         } else {
           //remove a fav
+          if (this.isFavOnPlay) {
+            this.cleanUp();
+          }
           var nowStartTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
           this.favList = this.favList.filter(function (item) {
@@ -1362,7 +1468,6 @@ export default {
           });
           this.save();
           if (this.isFavOnPlay) {
-            this.cleanUp();
             if (this.srtSubtitles.length < 1) {
               this.isFavOnPlay = false;
               return;
@@ -1371,10 +1476,12 @@ export default {
               this.sentenceIndex = this.sentenceIndex - 1;
             }
             this.isFav = true;
-            if (!this.isPlayFullFavList) this.singleModePlay();
           }
         }
       }
+    },
+    switchShowNotes() {
+      this.showNotes = !this.showNotes;
     },
     showConfirm() {
       var userConfirmation = window.confirm(
@@ -1382,7 +1489,19 @@ export default {
       );
       if (userConfirmation) {
         this.favList = [];
+        this.noteList = [];
         if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+        if (!this.hasSpeechSynthesis) {
+          this.isSystemTTS = "No";
+        }
+        this.save();
+        this.isMount = false;
+        this.currentMedia.play();
+        this.currentMedia.muted = true;
+        setTimeout(() => {
+          this.currentMedia.muted = false;
+          this.currentMedia.pause();
+        }, 1);
       } else {
         this.cleanUp();
         this.close();
@@ -1419,75 +1538,127 @@ export default {
 
       return;
     },
-    click: function () {
-      if (this.isFirstClick) this.firstClick();
-      this.cleanUp();
-      setTimeout(() => {
-        if (this.touches == 1) {
-          if (this.isSingle) {
-            setTimeout(() => {
-              if (this.pausingAfterUttering) {
-                this.pausingAfterUttering = false;
-                this.loopPlay();
-              } else {
-                this.singleModePlay();
-              }
-            }, 1);
-          } else {
-            setTimeout(() => {
-              this.regularPlay();
-              this.currentMedia.currentTime =
-                this.srtSubtitles[this.sentenceIndex - 1].startTime;
-            }, 1);
+    click: function (event) {
+      if (
+        !this.isSingle ||
+        !document.getElementById("noteArea") ||
+        !document.getElementById("noteArea").contains(event.target)
+      ) {
+        if (this.isFirstClick) this.firstClick();
+        this.cleanUp();
+        setTimeout(() => {
+          if (this.touches == 1) {
+            if (this.isSingle) {
+              setTimeout(() => {
+                if (this.pauseAfterFirstDone) {
+                  this.pauseAfterFirstDone = false;
+                  if (this.isUtterTransLineFirstly) this.loopPlay();
+                  else this.utterTransLine();
+                } else {
+                  this.singleModePlay();
+                }
+              }, 1);
+            } else {
+              setTimeout(() => {
+                this.regularPlay();
+                this.currentMedia.currentTime =
+                  this.srtSubtitles[this.sentenceIndex - 1].startTime;
+              }, 1);
+            }
           }
-        }
-        this.touches = 0;
-      }, 300);
+          this.touches = 0;
+        }, 300);
 
-      this.touches++;
-      if (this.touches > 1) {
-        //double click
-        this.touches = 0;
-        return;
+        this.touches++;
+        if (this.touches > 1) {
+          //double click
+          this.touches = 0;
+          return;
+        }
+      } else {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        if (this.currentMedia) this.currentMedia.pause();
+        if (this.audio) this.audio.pause();
+        this.playCount = 0;
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
+        if (this.timeOutId) clearTimeout(this.timeOutId);
+        if (this.currentMedia && this.currentMedia.removeEventListener) {
+          this.currentMedia.removeEventListener("timeupdate", this.syncSub);
+        }
       }
     },
 
     startDrag(event) {
-      event.preventDefault();
+      if (
+        !this.isSingle ||
+        !document.getElementById("noteArea") ||
+        !document.getElementById("noteArea").contains(event.target)
+      ) {
+        event.preventDefault();
+      }
       this.isSetting = false;
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
       this.startY = event.clientY;
     },
     endDrag(event) {
-      event.preventDefault();
+      if (
+        !this.isSingle ||
+        !document.getElementById("noteArea") ||
+        !document.getElementById("noteArea").contains(event.target)
+      ) {
+        event.preventDefault();
+      }
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
-
-      if (this.timeDiff < 300 && Math.abs(this.distanceX) > 100) {
+      this.distanceY = event.clientY - this.startY;
+      if (
+        this.isReadyToPlay &&
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
+        Math.abs(this.distanceX) > 100
+      ) {
         this.checkNav(this.distanceX, "SWITCHIMG");
         return;
       }
-      this.distanceY = event.clientY - this.startY;
-      if (this.timeDiff < 300 && Math.abs(this.distanceY) > 100) {
+      if (
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
+        Math.abs(this.distanceY) > 100
+      ) {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      this.click(event);
     },
     startTouch(event) {
-      event.preventDefault();
+      if (
+        !this.isSingle ||
+        !document.getElementById("noteArea") ||
+        !document.getElementById("noteArea").contains(event.target)
+      ) {
+        event.preventDefault();
+      }
       this.isSetting = false;
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
     },
     endTouch(event) {
-      event.preventDefault();
+      if (
+        !this.isSingle ||
+        !document.getElementById("noteArea") ||
+        !document.getElementById("noteArea").contains(event.target)
+      ) {
+        event.preventDefault();
+      }
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       this.distanceY = event.changedTouches[0].clientY - this.startY;
       if (
+        this.isReadyToPlay &&
         this.timeDiff < 300 &&
         Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
         Math.abs(this.distanceX) > 30
@@ -1503,7 +1674,7 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      this.click(event);
     },
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex > 1) {
@@ -1512,8 +1683,6 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           this.singleModePlay();
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp();
@@ -1537,8 +1706,6 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           this.singleModePlay();
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp();
@@ -1553,6 +1720,7 @@ export default {
         }
         return;
       } else if (
+        this.isReadyToPlay &&
         x < 0 &&
         mode == "VERTICAL" &&
         ((!this.isFavOnPlay && !this.isFav) || (this.isFavOnPlay && this.isFav))
@@ -1567,6 +1735,7 @@ export default {
 
     regularPlay() {
       this.isSingle = false;
+      if (!this.isReadyToPlay) return;
       const media = this.currentMedia;
       if (media) {
         media.playbackRate = 1.0;
@@ -1617,6 +1786,7 @@ export default {
       if (media && media.removeEventListener) {
         media.removeEventListener("timeupdate", this.syncSub);
       }
+      if (!this.isReadyToPlay) return;
       if (media) {
         let realIndex = this.sentenceIndex - 1;
         media.play();
@@ -1637,6 +1807,14 @@ export default {
         media.pause();
         if (this.playCount >= this.repeatTimes) {
           this.cleanUp();
+          if (
+            this.isUtterTransLine &&
+            !this.isUtterTransLineFirstly &&
+            this.isPauseAfterFirstDone
+          ) {
+            this.pauseAfterFirstDone = true;
+            return;
+          }
           this.timeOutId = setTimeout(() => {
             if (this.isUtterTransLine && !this.isUtterTransLineFirstly) {
               this.utterTransLine();
@@ -1657,8 +1835,6 @@ export default {
         } else {
           if (window.speechSynthesis) window.speechSynthesis.cancel();
           if (this.currentMedia) this.currentMedia.pause();
-          if (this.notSuportSpeechSynthesis)
-            this.notSuportSpeechSynthesis = false;
           if (this.timeOutId) clearTimeout(this.timeOutId);
           if (this.currentMedia && this.currentMedia.removeEventListener) {
             this.currentMedia.removeEventListener("timeupdate", this.syncSub);
@@ -1722,7 +1898,7 @@ export default {
         "::" +
         JSON.stringify(this.isAutoDetectLang) +
         "::" +
-        JSON.stringify(this.isPauseAfterUttering) +
+        JSON.stringify(this.isPauseAfterFirstDone) +
         "::" +
         JSON.stringify(this.autoPlay) +
         "::" +
@@ -1731,13 +1907,16 @@ export default {
         JSON.stringify(this.isSystemTTS) +
         "::" +
         JSON.stringify(this.TTSurl) +
+        "::" +
+        JSON.stringify(this.showNotes) +
         "::";
-
       let favContent =
         customConfig +
         this.lastStatus +
         "Subtitle:" +
-        JSON.stringify(this.favList);
+        JSON.stringify(this.favList) +
+        "noteList:" +
+        JSON.stringify(this.noteList);
       const path = url.removeLastDir(this.$route.path);
       try {
         await api.post(path + "/!pdj!favorite.txt", favContent, true);
@@ -1764,13 +1943,14 @@ export default {
     },
 
     key(event) {
-      this.cleanUp();
+      if (!this.isReadyToPlay) return;
       if (
         event.which === 39 &&
         this.sentenceIndex < this.srtSubtitles.length &&
         !this.isSetting
       ) {
         // right arrow
+        this.cleanUp();
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isSingle) {
           this.singleModePlay();
@@ -1785,6 +1965,7 @@ export default {
         !this.isSetting
       ) {
         // left arrow
+        this.cleanUp();
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isSingle) {
           this.singleModePlay();
@@ -1798,10 +1979,12 @@ export default {
         this.cleanUp(); //stop play
       } else if (event.which === 40 && !this.isSetting) {
         // down arrow
+        this.cleanUp();
         if (this.isSingle) {
-          if (this.pausingAfterUttering) {
-            this.pausingAfterUttering = false;
-            this.loopPlay();
+          if (this.pauseAfterFirstDone) {
+            this.pauseAfterFirstDone = false;
+            if (this.isUtterTransLineFirstly) this.loopPlay();
+            else this.utterTransLine();
           } else {
             this.singleModePlay();
           }
@@ -1847,7 +2030,7 @@ export default {
   overflow: hidden;
 }
 #repeater .repeater {
-  padding-top: 8em;
+  padding-top: 5em;
   text-align: center;
   height: 100%;
   margin: 0 1em 0 1em;
