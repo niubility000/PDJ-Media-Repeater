@@ -459,6 +459,9 @@
             </p>
             <p style="text-align: justify">{{ $t("repeater.instruction6") }}</p>
             <p style="text-align: justify">
+              {{ $t("repeater.instruction14") }}
+            </p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">repeat_one</i
               >{{ $t("repeater.instruction7") }}
@@ -477,6 +480,11 @@
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">folder_special</i
               >{{ $t("repeater.instruction10") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickButton") }}
+              <i style="color: white" class="material-icons">wysiwyg</i
+              >{{ $t("repeater.instruction13") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
@@ -566,6 +574,7 @@
         </p>
         <span
           v-if="srtSubtitles && isReadyToPlay"
+          id="subtitleArea"
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -610,7 +619,7 @@
           <textarea
             v-if="showNotes && !isEmpty"
             id="noteArea"
-            rows="4"
+            rows="3"
             v-model="note"
             placeholder="......"
             style="
@@ -900,6 +909,20 @@ export default {
     isEnglish() {
       let str = this.srtSubtitles[0].content.split("\r\n")[0];
       return /^[a-zA-Z]/.test(str);
+    },
+
+    isTouchDevice() {
+      return (
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0 ||
+        navigator.msMaxTouchPoints > 0
+      );
+    },
+    isNoteArea() {
+      return document.getElementById("noteArea");
+    },
+    isSubtitleArea() {
+      return document.getElementById("subtitleArea");
     },
   },
   watch: {
@@ -1366,22 +1389,18 @@ export default {
     cleanUp() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
-      if (
-        document.getElementById("noteArea") &&
-        document.getElementById("noteArea").contains(document.activeElement)
-      )
-        document.getElementById("noteArea").blur();
+      if (this.isNoteArea && this.isNoteArea.contains(document.activeElement))
+        this.isNoteArea.blur();
+      if (window.getSelection().toString() && this.touches < 2)
+        window.getSelection().removeAllRanges();
       if (this.audio) this.audio.pause();
       this.playCount = 0;
-      if (this.intervalId) {
-        clearInterval(this.intervalId);
-      }
+      if (this.intervalId) clearInterval(this.intervalId);
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
     },
-
     playFavList() {
       this.cleanUp();
       if (!this.isFavOnPlay) {
@@ -1548,13 +1567,38 @@ export default {
     },
     click: function (event) {
       if (
-        !this.isSingle ||
-        !document.getElementById("noteArea") ||
-        !document.getElementById("noteArea").contains(event.target)
+        !(
+          this.isSingle &&
+          this.isNoteArea &&
+          this.isNoteArea.contains(event.target)
+        )
       ) {
         if (this.isFirstClick) this.firstClick();
-        this.cleanUp();
+        this.touches++;
         setTimeout(() => {
+          if (
+            this.isSubtitleArea.contains(event.target) &&
+            window.getSelection().toString()
+          ) {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            if (this.currentMedia) this.currentMedia.pause();
+            if (this.audio) this.audio.pause();
+            this.playCount = 0;
+            if (this.intervalId) {
+              clearInterval(this.intervalId);
+            }
+            if (this.timeOutId) clearTimeout(this.timeOutId);
+            if (this.currentMedia && this.currentMedia.removeEventListener) {
+              this.currentMedia.removeEventListener("timeupdate", this.syncSub);
+            }
+            if (
+              this.isNoteArea &&
+              this.isNoteArea.contains(document.activeElement)
+            )
+              this.isNoteArea.blur();
+            return;
+          }
+          this.cleanUp();
           if (this.touches == 1) {
             if (this.isSingle) {
               setTimeout(() => {
@@ -1576,10 +1620,9 @@ export default {
           }
           this.touches = 0;
         }, 300);
-
-        this.touches++;
-        if (this.touches > 1) {
+        if (this.touches == 2) {
           //double click
+          this.cleanUp();
           this.touches = 0;
           return;
         }
@@ -1597,12 +1640,14 @@ export default {
         }
       }
     },
-
     startDrag(event) {
+      if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
       if (
-        !this.isSingle ||
-        !document.getElementById("noteArea") ||
-        !document.getElementById("noteArea").contains(event.target)
+        !(
+          this.isSingle &&
+          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
+            this.isSubtitleArea.contains(event.target))
+        )
       ) {
         event.preventDefault();
       }
@@ -1612,10 +1657,13 @@ export default {
       this.startY = event.clientY;
     },
     endDrag(event) {
+      if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
       if (
-        !this.isSingle ||
-        !document.getElementById("noteArea") ||
-        !document.getElementById("noteArea").contains(event.target)
+        !(
+          this.isSingle &&
+          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
+            this.isSubtitleArea.contains(event.target))
+        )
       ) {
         event.preventDefault();
       }
@@ -1643,9 +1691,11 @@ export default {
     },
     startTouch(event) {
       if (
-        !this.isSingle ||
-        !document.getElementById("noteArea") ||
-        !document.getElementById("noteArea").contains(event.target)
+        !(
+          this.isSingle &&
+          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
+            this.isSubtitleArea.contains(event.target))
+        )
       ) {
         event.preventDefault();
       }
@@ -1656,9 +1706,11 @@ export default {
     },
     endTouch(event) {
       if (
-        !this.isSingle ||
-        !document.getElementById("noteArea") ||
-        !document.getElementById("noteArea").contains(event.target)
+        !(
+          this.isSingle &&
+          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
+            this.isSubtitleArea.contains(event.target))
+        )
       ) {
         event.preventDefault();
       }
@@ -1685,8 +1737,9 @@ export default {
       this.click(event);
     },
     checkNav(x, mode) {
-      if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex > 1) {
+      if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
         this.cleanUp();
+        if (this.sentenceIndex == 1) return;
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
@@ -1707,9 +1760,10 @@ export default {
       } else if (
         x < 0 &&
         mode == "SWITCHIMG" &&
-        this.sentenceIndex < this.srtSubtitles.length
+        this.sentenceIndex <= this.srtSubtitles.length
       ) {
         this.cleanUp();
+        if (this.sentenceIndex == this.srtSubtitles.length) return;
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
