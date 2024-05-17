@@ -202,7 +202,7 @@ Unzip it, and put the filebrowser folder into c:\go\src\
 
 cd c:\go\src\filebrowser\frontend
 
-npm config set registry http://registry.npm.taobao.org  // run it if necessary.
+npm config set registry https://registry.npmjs.org/  // run it if necessary.
 
 npm install
 
