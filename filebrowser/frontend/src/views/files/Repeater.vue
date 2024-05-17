@@ -21,7 +21,9 @@
         </title>
         <span
           @click="isShowSubtitleList()"
-          :disabled="loading || isSetting || !isSingle"
+          :style="{
+            pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
+          }"
         >
           <span
             class="headSubject"
@@ -139,8 +141,8 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 4em;
-          bottom: 2em;
+          top: 3.5em;
+          bottom: 1.5em;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
@@ -1031,7 +1033,7 @@ export default {
     },
     isSetting: function () {
       if (
-        !this.issetting &&
+        !this.isSetting &&
         this.isSystemTTS == "Yes" &&
         !this.hasSpeechSynthesis
       ) {
@@ -2277,8 +2279,8 @@ header {
   width: 65%;
   left: 50%;
   transform: translate(-50%, 0);
-  top: 5em;
-  bottom: 1em;
+  top: 4.5em;
+  bottom: 0.5em;
   justify-content: center;
   align-items: center;
   z-index: 1006;
