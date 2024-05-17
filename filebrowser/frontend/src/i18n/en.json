@@ -28,7 +28,6 @@
     "speedOfUttering": "Speed Of Uttering:",	  
     "utterTransFirstly": "Utter Subtitle's Translation Line Firstly",
     "autoPauseAfterFirstDone": "AutoPause After Uttering Translation Line or Playing Current Sentence Firstly, And Click To Continue.",
-    "playFullFavList": "Play All Favorite Sentenses in Current Folder When Playing Favorite List (In this mode, autoPlay current sentence is not allowed due to browser's restriction.)",
     "instructions": "INSTRUCTIONS",
     "instruction1": "Click in Non-annotation area (DOWN arrow key on keyboard): replay current sentence",    
     "instruction2": "DoubleClick (UP arrow key on keyboard): stop playing",
