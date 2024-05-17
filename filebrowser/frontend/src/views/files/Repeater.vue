@@ -19,13 +19,10 @@
         <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
           {{ mediaName }}
         </title>
-        <span>
-          <input
-            style="text-align: right; border: none; padding: 0; margin: 0"
-            class="input input--headSubject"
-            type="text"
-            v-model.number="sentenceIndex"
-          />
+        <span
+          @click="isShowSubtitleList()"
+          :disabled="loading || isSetting || !isSingle"
+        >
           <span
             class="headSubject"
             style="
@@ -34,7 +31,15 @@
               padding: 0;
               margin: 0 0.5em 0 0;
             "
-            >/{{ srtSubtitles.length }}</span
+            :style="{
+              color:
+                isSetting || !isSingle
+                  ? 'grey'
+                  : showSubtitleList
+                  ? 'red'
+                  : 'blue',
+            }"
+            >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
           >
         </span>
         <button
@@ -54,14 +59,19 @@
         </button>
 
         <button
-          :disabled="loading || isSetting"
+          :disabled="loading || isSetting || showSubtitleList"
           class="action"
           @click="switchShowNotes"
           :title="$t('repeater.showNotes')"
         >
           <i
             :style="{
-              color: loading || isSetting ? 'grey' : showNotes ? 'red' : 'blue',
+              color:
+                loading || isSetting || showSubtitleList
+                  ? 'grey'
+                  : showNotes
+                  ? 'red'
+                  : 'blue',
             }"
             class="material-icons"
             >wysiwyg</i
@@ -78,20 +88,27 @@
         </button>
 
         <button
-          :disabled="loading || !isSingle"
+          :disabled="loading || !isSingle || showSubtitleList"
           class="action"
           @click="onSetting"
           :title="$t('repeater.settings')"
         >
           <i
-            :style="{ color: !isSingle ? 'grey' : isSetting ? 'red' : 'blue' }"
+            :style="{
+              color:
+                !isSingle || showSubtitleList
+                  ? 'grey'
+                  : isSetting
+                  ? 'red'
+                  : 'blue',
+            }"
             class="material-icons"
             >settings</i
           >
         </button>
 
         <button
-          :disabled="loading || isSetting"
+          :disabled="loading || isSetting || showSubtitleList"
           class="action"
           @click="switchSubtitle"
           :title="$t('repeater.switchsubtitleLanguages')"
@@ -100,7 +117,7 @@
         </button>
 
         <button
-          :disabled="loading || isFavOnPlay || isSetting"
+          :disabled="loading || isFavOnPlay || isSetting || showSubtitleList"
           class="action"
           @click="onSingle"
           :title="
@@ -112,6 +129,55 @@
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
       </header-bar>
+
+      <div
+        v-if="showSubtitleList"
+        style="
+          color: whitesmoke;
+          z-index: 1006;
+          display: flex;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          top: 4em;
+          bottom: 2em;
+        "
+        :style="{
+          width: isMobile ? '100%' : '65%',
+        }"
+      >
+        <ul
+          style="
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 1em;
+            border-radius: 10px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: grey;
+            list-style-type: none;
+          "
+        >
+          <li
+            v-for="(subtitle, index) in srtSubtitles"
+            :key="index"
+            :id="index + 1"
+            @click="chooseSentence(index)"
+          >
+            <p
+              :style="{
+                color: sentenceIndex == index + 1 ? 'blue' : 'white',
+              }"
+            >
+              {{ index + 1 }}. {{ subtitle.content.split("\r\n")[0] }} -
+              {{ subtitle.content.split("\r\n")[1] }}
+            </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+          </li>
+        </ul>
+      </div>
+
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
           <p style="text-align: justify; text-align-last: left; color: white">
@@ -494,7 +560,7 @@
             <p style="text-align: justify">
               {{ $t("repeater.clickandInput") }}
               <span style="color: white"
-                >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
+                >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
               >{{ $t("repeater.instruction12") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -617,7 +683,7 @@
           "
         >
           <textarea
-            v-if="showNotes && !isEmpty"
+            v-show="showNotes && !isEmpty"
             id="noteArea"
             rows="3"
             v-model="note"
@@ -721,7 +787,9 @@ export default {
       isMount: true,
       contentAll: null,
       note: "",
+      confirmType: "",
       showNotes: false,
+      showSubtitleList: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -752,7 +820,7 @@ export default {
       }
     },
     subSwitch() {
-      if (this.isSetting) return { color: "grey" };
+      if (this.isSetting || this.showSubtitleList) return { color: "grey" };
       if (this.subtitleLang == "both") {
         return { color: "blue" };
       } else if (this.subtitleLang == "line1") {
@@ -764,7 +832,7 @@ export default {
       }
     },
     playMode() {
-      if (this.isFavOnPlay || this.isSetting) {
+      if (this.isFavOnPlay || this.isSetting || this.showSubtitleList) {
         return { color: "grey" };
       } else if (this.isSingle) {
         return { color: "red" };
@@ -797,7 +865,6 @@ export default {
               parseFloat(startMM) * 60 +
               parseFloat(startSS) +
               (parseFloat(startMS) + this.timeStampChange) / 1000;
-
             var endTimeUnformat = textSubtitle[1].split(" --> ")[1];
             var endHH = endTimeUnformat.split(":")[0];
             var endMM = endTimeUnformat.split(":")[1];
@@ -953,6 +1020,11 @@ export default {
       });
       if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
       else this.note = "";
+      if (this.showSubtitleList) {
+        document
+          .getElementById(this.sentenceIndex)
+          .scrollIntoView({ block: "center", behavior: "smooth" });
+      }
     },
     isMount: function () {
       if (!this.isMount && !this.isFavOnPlay) this.autoPlay = true;
@@ -1131,6 +1203,7 @@ export default {
         const pathf = url.removeLastDir(this.$route.path);
         vm.contentAll = await api.fetch(pathf + "/!pdj!favorite.txt");
       } catch (e) {
+        this.confirmType = "fetch";
         this.showConfirm();
       }
       if (this.contentAll !== null) {
@@ -1277,6 +1350,51 @@ export default {
         this.utterTransLine();
       } else this.loopPlay();
     },
+    chooseSentence(index) {
+      this.sentenceIndex = index + 1;
+      if (this.isFirstClick) this.firstClick();
+      this.touches++;
+      setTimeout(() => {
+        this.cleanUp();
+        if (this.touches == 1) {
+          if (this.isSingle) {
+            setTimeout(() => {
+              if (this.pauseAfterFirstDone) {
+                this.pauseAfterFirstDone = false;
+                if (this.isUtterTransLineFirstly) this.loopPlay();
+                else this.utterTransLine();
+              } else {
+                this.singleModePlay();
+              }
+            }, 1);
+          } else {
+            setTimeout(() => {
+              this.regularPlay();
+              this.currentMedia.currentTime =
+                this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            }, 1);
+          }
+        }
+        this.touches = 0;
+      }, 300);
+      if (this.touches == 2) {
+        //double click
+        this.cleanUp();
+        this.touches = 0;
+        return;
+      }
+    },
+    isShowSubtitleList() {
+      this.showSubtitleList = !this.showSubtitleList;
+      if (this.showSubtitleList) {
+        setTimeout(() => {
+          document
+            .getElementById(this.sentenceIndex)
+            .scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 100);
+      }
+    },
+
     testTTSurl() {
       let transLineContent =
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
@@ -1511,27 +1629,34 @@ export default {
       this.showNotes = !this.showNotes;
     },
     showConfirm() {
-      var userConfirmation = window.confirm(
-        this.$t("repeater.favoriteClearConfirm")
-      );
-      if (userConfirmation) {
-        this.favList = [];
-        this.noteList = [];
-        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
-        if (!this.hasSpeechSynthesis) {
-          this.isSystemTTS = "No";
+      if (this.confirmType == "fetch") {
+        var userConfirmation = window.confirm(
+          this.$t("repeater.favoriteClearConfirm")
+        );
+        if (userConfirmation) {
+          this.favList = [];
+          this.noteList = [];
+          if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+          if (!this.hasSpeechSynthesis) {
+            this.isSystemTTS = "No";
+          }
+          this.save();
+          this.isMount = false;
+          this.currentMedia.play();
+          this.currentMedia.muted = true;
+          setTimeout(() => {
+            this.currentMedia.muted = false;
+            this.currentMedia.pause();
+          }, 1);
+        } else {
+          this.cleanUp();
+          this.close();
         }
-        this.save();
-        this.isMount = false;
-        this.currentMedia.play();
-        this.currentMedia.muted = true;
-        setTimeout(() => {
-          this.currentMedia.muted = false;
-          this.currentMedia.pause();
-        }, 1);
-      } else {
-        this.cleanUp();
-        this.close();
+      }
+      if (this.confirmType == "save") {
+        alert(
+          "Error! Can't save change to !pdj!favorite.txt. Please retry later."
+        );
       }
     },
     onSingle() {
@@ -1983,7 +2108,8 @@ export default {
       try {
         await api.post(path + "/!pdj!favorite.txt", favContent, true);
       } catch (error) {
-        console.log(error);
+        this.confirmType = "save";
+        this.showConfirm();
       }
     },
 
