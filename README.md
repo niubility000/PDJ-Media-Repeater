@@ -202,7 +202,7 @@ Unzip it, and put the filebrowser folder into c:\go\src\
 
 cd c:\go\src\filebrowser\frontend
 
-npm config set registry https://registry.npmjs.org/  // run it if necessary.
+npm config set registry https://registry.npmjs.org/      // run it if necessary.
 
 npm install
 
@@ -212,7 +212,7 @@ cd c:\go\src\filebrowser
 
 go env -w GO111MODULE=on   // only run it at the first time.
 
-go env -w GOPROXY=https://goproxy.cn,direct    // run it if necessary, only run it at the first time.
+go env -w GOPROXY=https://goproxy.cn,direct      // run it if necessary, only run it at the first time.
 
 go env -w GOOS=windows   
 
