@@ -62,7 +62,7 @@
         </button>
 
         <button
-          :disabled="loading || isSetting || showSubtitleList"
+          :disabled="loading || isSetting || showSubtitleList || !isSingle"
           class="action"
           @click="switchShowNotes"
           :title="$t('repeater.showNotes')"
@@ -70,7 +70,7 @@
           <i
             :style="{
               color:
-                loading || isSetting || showSubtitleList
+                loading || isSetting || showSubtitleList || !isSingle
                   ? 'grey'
                   : showNotes
                   ? 'red'
@@ -784,11 +784,11 @@ export default {
       if (this.subtitleLang == "both") {
         return { color: "blue" };
       } else if (this.subtitleLang == "line1") {
-        return { color: "red" };
-      } else if (this.subtitleLang == "line2") {
         return { color: "green" };
-      } else {
+      } else if (this.subtitleLang == "line2") {
         return { color: "black" };
+      } else {
+        return { color: "grey" };
       }
     },
     playMode() {
@@ -1404,6 +1404,7 @@ export default {
       }
       this.isFavOnPlay = !this.isFavOnPlay;
       if (this.isFavOnPlay) {
+        this.isFav = true;
         this.sentenceIndex = 1;
       } else {
         this.sentenceIndex = Number(
@@ -1419,12 +1420,7 @@ export default {
         if (this.isFav) {
           //add a fav
           var fav = {
-            langUsed: this.langInTransLine,
-            lineNum: this.lineNumOfTrans,
-            isUtter: this.isUtterTransLine,
-            tsChange: this.timeStampChange,
             rawPath: this.mediaName,
-            originalRawPath: this.raw.split("?")[0].split("/raw/")[1],
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
             endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
             content: this.srtSubtitles[this.sentenceIndex - 1].content,
@@ -2083,11 +2079,6 @@ span.subject {
 span.headSubject {
   display: inline;
   color: black;
-}
-input.input.input--headSubject {
-  display: inline;
-  color: blue;
-  width: 2.2em;
 }
 
 header {
