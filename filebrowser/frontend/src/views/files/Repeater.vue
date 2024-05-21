@@ -132,6 +132,20 @@
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
       </header-bar>
+      <div
+        v-if="isSlowInternet"
+        style="
+          z-index: 1007;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 2.5em;
+        "
+      >
+        <p style="color: white; background-color: red">
+          Slow Internet! Replay...
+        </p>
+      </div>
 
       <div
         v-if="showSubtitleList"
@@ -720,6 +734,8 @@ export default {
       repeatTimes: 3,
       interval: 2,
       playCount: 0,
+      utterInProcess: false,
+      playInProcess: false,
       timeOutId: null,
       intervalId: null,
       autoPlayNext: true,
@@ -760,6 +776,8 @@ export default {
       confirmType: "",
       showNotes: false,
       showSubtitleList: false,
+      sessionLength: null,
+      isSlowInternet: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -768,6 +786,9 @@ export default {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
     isMobile() {
       return window.innerWidth < 736;
+    },
+    favFileName() {
+      return "!pdj!user" + this.user.id + "-favorite.txt";
     },
     favListStatus() {
       if (this.isSetting || !this.isSingle) return { color: "grey" };
@@ -1065,11 +1086,6 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
-    raw: function () {
-      this.isReadyToPlay = false;
-      this.playCount = 0;
-      this.isFirstClick = true;
-    },
     note: function () {
       //add or renew a note
       var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -1098,7 +1114,7 @@ export default {
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
     window.removeEventListener("resize", this.handleResize);
-    this.cleanUp();
+    this.cleanUp1();
   },
   methods: {
     async readyStatus() {
@@ -1106,7 +1122,7 @@ export default {
       let vm = this;
       try {
         const pathf = url.removeLastDir(this.$route.path);
-        vm.contentAll = await api.fetch(pathf + "/!pdj!favorite.txt");
+        vm.contentAll = await api.fetch(pathf + "/" + this.favFileName);
       } catch (e) {
         this.confirmType = "fetch";
         this.showConfirm();
@@ -1209,7 +1225,8 @@ export default {
       setTimeout(() => {
         this.currentMedia.muted = false;
         if (this.audio) this.audio.muted = false;
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         if (
           this.currentMedia.currentTime < 0.9 ||
           this.currentMedia.currentTime > 1.2
@@ -1220,9 +1237,14 @@ export default {
       }, 1);
     },
     singleModePlay() {
-      this.cleanUp();
+      this.cleanUp1();
       if (!this.isReadyToPlay) return;
-      if (this.isUtterTransLine && this.isUtterTransLineFirstly) {
+      if (
+        (this.isUtterTransLine &&
+          this.isUtterTransLineFirstly &&
+          !this.playInProcess) ||
+        this.utterInProcess
+      ) {
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.utterTransLine();
@@ -1233,7 +1255,8 @@ export default {
       if (this.isFirstClick) this.firstClick();
       this.touches++;
       setTimeout(() => {
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         if (this.touches == 1) {
           if (this.isSingle) {
             setTimeout(() => {
@@ -1257,7 +1280,7 @@ export default {
       }, 300);
       if (this.touches == 2) {
         //double click
-        this.cleanUp();
+        this.cleanUp1();
         this.touches = 0;
         return;
       }
@@ -1293,9 +1316,11 @@ export default {
     },
     endTestUtter() {
       this.audio.removeEventListener("ended", this.endTestUtter, false);
-      this.cleanUp();
+      this.cleanUp2();
+      this.cleanUp1();
     },
     utterTransLine() {
+      this.utterInProcess = true;
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         let transLineContent =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
@@ -1339,16 +1364,19 @@ export default {
         this.isPauseAfterFirstDone
       ) {
         this.pauseAfterFirstDone = true;
+        this.utterInProcess = false;
         return;
       } else if (
         !this.autoPlayNext &&
         this.isUtterTransLine &&
         !this.isUtterTransLineFirstly
       ) {
-        this.cleanUp();
+        this.utterInProcess = false;
+        this.cleanUp1();
         return;
       } else {
         this.timeOutId = setTimeout(() => {
+          this.utterInProcess = false;
           if (
             this.isUtterTransLine &&
             !this.isUtterTransLineFirstly &&
@@ -1356,7 +1384,7 @@ export default {
           ) {
             this.sentenceIndex = this.sentenceIndex + 1;
             if (!this.autoPlay) {
-              this.cleanUp();
+              this.cleanUp1();
               return;
             }
             this.singleModePlay();
@@ -1382,7 +1410,7 @@ export default {
       this.TTSurl =
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
     },
-    cleanUp() {
+    cleanUp1() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
       if (this.isNoteArea && this.isNoteArea.contains(document.activeElement))
@@ -1390,15 +1418,22 @@ export default {
       if (window.getSelection().toString() && this.touches < 2)
         window.getSelection().removeAllRanges();
       if (this.audio) this.audio.pause();
-      this.playCount = 0;
       if (this.intervalId) clearInterval(this.intervalId);
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
     },
+    cleanUp2() {
+      if (this.pauseAfterFirstDone) this.pauseAfterFirstDone = false;
+      if (this.playInProcess) this.playInProcess = false;
+      if (this.utterInProcess) this.utterInProcess = false;
+      this.playCount = 0;
+    },
+
     playFavList() {
-      this.cleanUp();
+      this.cleanUp2();
+      this.cleanUp1();
       if (!this.isFavOnPlay) {
         window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
       }
@@ -1430,7 +1465,8 @@ export default {
         } else {
           //remove a fav
           if (this.isFavOnPlay) {
-            this.cleanUp();
+            this.cleanUp2();
+            this.cleanUp1();
           }
           var nowStartTime =
             this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -1457,7 +1493,9 @@ export default {
     showConfirm() {
       if (this.confirmType == "fetch") {
         var userConfirmation = window.confirm(
-          this.$t("repeater.favoriteClearConfirm")
+          this.$t("repeater.favoriteClearConfirm", {
+            favFileName: this.favFileName,
+          })
         );
         if (userConfirmation) {
           this.favList = [];
@@ -1474,25 +1512,27 @@ export default {
             this.currentMedia.pause();
           }, 1);
         } else {
-          this.cleanUp();
+          this.cleanUp1();
           this.close();
         }
       }
       if (this.confirmType == "save") {
         alert(
-          "Error! Can't save change to !pdj!favorite.txt. Please retry later."
+          "Error! Can't save change to your favorite file. Please retry later."
         );
       }
     },
     onSingle() {
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         this.regularPlay();
         this.currentMedia.currentTime = 0;
         this.currentMedia.addEventListener("focus", this.removeFocus);
       }
       if (this.isSingle) {
+        this.cleanUp2();
         this.isEmpty = false;
         this.singleModePlay();
         this.currentMedia.currentTime =
@@ -1506,9 +1546,12 @@ export default {
 
     onSetting() {
       this.isSetting = !this.isSetting;
-      if (this.isSetting) this.cleanUp();
-      else {
+      if (this.isSetting) {
+        this.cleanUp2();
+        this.cleanUp1();
+      } else {
         setTimeout(() => {
+          this.cleanUp2();
           this.singleModePlay();
         }, 1);
       }
@@ -1533,7 +1576,6 @@ export default {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (this.currentMedia) this.currentMedia.pause();
             if (this.audio) this.audio.pause();
-            this.playCount = 0;
             if (this.intervalId) {
               clearInterval(this.intervalId);
             }
@@ -1548,7 +1590,7 @@ export default {
               this.isNoteArea.blur();
             return;
           }
-          this.cleanUp();
+          this.cleanUp1();
           if (this.touches == 1) {
             if (this.isSingle) {
               setTimeout(() => {
@@ -1572,7 +1614,7 @@ export default {
         }, 300);
         if (this.touches == 2) {
           //double click
-          this.cleanUp();
+          this.cleanUp1();
           this.touches = 0;
           return;
         }
@@ -1580,7 +1622,6 @@ export default {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         if (this.currentMedia) this.currentMedia.pause();
         if (this.audio) this.audio.pause();
-        this.playCount = 0;
         if (this.intervalId) {
           clearInterval(this.intervalId);
         }
@@ -1591,6 +1632,7 @@ export default {
       }
     },
     startDrag(event) {
+      if (!this.isReadyToPlay) return;
       if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
       if (
         !(
@@ -1607,6 +1649,7 @@ export default {
       this.startY = event.clientY;
     },
     endDrag(event) {
+      if (!this.isReadyToPlay) return;
       if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
       if (
         !(
@@ -1640,6 +1683,7 @@ export default {
       this.click(event);
     },
     startTouch(event) {
+      if (!this.isReadyToPlay) return;
       if (
         !(
           this.isSingle &&
@@ -1655,6 +1699,7 @@ export default {
       this.startY = event.touches[0].clientY;
     },
     endTouch(event) {
+      if (!this.isReadyToPlay) return;
       if (
         !(
           this.isSingle &&
@@ -1688,14 +1733,15 @@ export default {
     },
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         if (this.sentenceIndex == 1) return;
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isSingle) {
           this.singleModePlay();
           if (!this.autoPlay) {
             setTimeout(() => {
-              this.cleanUp();
+              this.cleanUp1();
             }, 1);
           }
         } else {
@@ -1711,14 +1757,15 @@ export default {
         mode == "SWITCHIMG" &&
         this.sentenceIndex <= this.srtSubtitles.length
       ) {
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         if (this.sentenceIndex == this.srtSubtitles.length) return;
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isSingle) {
           this.singleModePlay();
           if (!this.autoPlay) {
             setTimeout(() => {
-              this.cleanUp();
+              this.cleanUp1();
             }, 1);
           }
         } else {
@@ -1792,40 +1839,70 @@ export default {
     },
 
     playSection() {
-      const media = this.currentMedia;
-      if (media && media.removeEventListener) {
-        media.removeEventListener("timeupdate", this.syncSub);
+      if (this.currentMedia && this.currentMedia.removeEventListener) {
+        this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
       if (!this.isReadyToPlay) return;
-      if (media) {
-        let realIndex = this.sentenceIndex - 1;
-        media.play();
-        media.currentTime = this.srtSubtitles[realIndex].startTime;
+      if (this.currentMedia) {
+        this.currentMedia.play();
+        if (this.currentSpeed.split(",")[this.playCount]) {
+          this.currentMedia.playbackRate = Number(
+            this.currentSpeed.split(",")[this.playCount]
+          );
+        } else {
+          this.currentMedia.playbackRate = 1;
+        }
+        this.sessionLength =
+          (this.srtSubtitles[this.sentenceIndex - 1].endTime -
+            this.srtSubtitles[this.sentenceIndex - 1].startTime +
+            2) /
+          this.currentMedia.playbackRate;
+        this.currentMedia.currentTime =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.startTime = new Date().getTime();
         this.intervalId = setInterval(() => {
           this.sessionEnd();
-        }, 10);
+        }, 100);
       }
     },
 
     sessionEnd() {
-      const media = this.currentMedia;
-      let realIndex = this.sentenceIndex - 1;
-      if (media.currentTime >= this.srtSubtitles[realIndex].endTime) {
+      this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
+      if (this.timeDiff > this.sessionLength) {
         if (this.intervalId) {
           clearInterval(this.intervalId);
         }
-        media.pause();
-        if (this.playCount >= this.repeatTimes) {
-          this.cleanUp();
+        this.isSlowInternet = true;
+        setTimeout(() => {
+          this.isSlowInternet = false;
+        }, 2000);
+        this.currentMedia.pause();
+        this.playSection();
+        return;
+      }
+      if (
+        this.currentMedia.currentTime >=
+        this.srtSubtitles[this.sentenceIndex - 1].endTime
+      ) {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
+        this.currentMedia.pause();
+        if (this.playCount >= this.repeatTimes - 1) {
+          this.cleanUp1();
           if (
             this.isUtterTransLine &&
             !this.isUtterTransLineFirstly &&
             this.isPauseAfterFirstDone
           ) {
+            this.playCount = 0;
+            this.playInProcess = false;
             this.pauseAfterFirstDone = true;
             return;
           }
           this.timeOutId = setTimeout(() => {
+            this.playCount = 0;
+            this.playInProcess = false;
             if (this.isUtterTransLine && !this.isUtterTransLineFirstly) {
               this.utterTransLine();
             } else {
@@ -1835,7 +1912,7 @@ export default {
               ) {
                 this.sentenceIndex = this.sentenceIndex + 1;
                 if (!this.autoPlay) {
-                  this.cleanUp();
+                  this.cleanUp1();
                   return;
                 }
                 this.singleModePlay();
@@ -1850,6 +1927,7 @@ export default {
             this.currentMedia.removeEventListener("timeupdate", this.syncSub);
           }
           this.timeOutId = setTimeout(() => {
+            this.playCount++;
             this.loopPlay();
           }, this.interval * 1000);
         }
@@ -1858,17 +1936,10 @@ export default {
 
     loopPlay() {
       this.isSingle = true;
+      this.playInProcess = true;
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia) this.currentMedia.pause();
       this.playSection();
-      if (this.currentSpeed.split(",")[this.playCount]) {
-        this.currentMedia.playbackRate = Number(
-          this.currentSpeed.split(",")[this.playCount]
-        );
-      } else {
-        this.currentMedia.playbackRate = 1;
-      }
-      this.playCount++;
     },
     autoDetectLangInTrans() {
       if (this.isEnglish && !this.srtSubtitles[0].content.split("\r\n")[1])
@@ -1926,7 +1997,7 @@ export default {
         JSON.stringify(this.noteList);
       const path = url.removeLastDir(this.$route.path);
       try {
-        await api.post(path + "/!pdj!favorite.txt", favContent, true);
+        await api.post(path + "/" + this.favFileName, favContent, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
@@ -1958,7 +2029,8 @@ export default {
         !this.isSetting
       ) {
         // right arrow
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isSingle) {
           this.singleModePlay();
@@ -1973,7 +2045,8 @@ export default {
         !this.isSetting
       ) {
         // left arrow
-        this.cleanUp();
+        this.cleanUp2();
+        this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isSingle) {
           this.singleModePlay();
@@ -1984,10 +2057,10 @@ export default {
         }
       } else if (event.which === 38) {
         // up arrow
-        this.cleanUp(); //stop play
+        this.cleanUp1(); //stop play
       } else if (event.which === 40 && !this.isSetting) {
         // down arrow
-        this.cleanUp();
+        this.cleanUp1();
         if (this.isSingle) {
           if (this.pauseAfterFirstDone) {
             this.pauseAfterFirstDone = false;
@@ -2012,7 +2085,7 @@ export default {
       this.resized = true;
     },
     close() {
-      this.cleanUp();
+      this.cleanUp1();
       this.$store.commit("updateRequest", {});
       let uri = url.removeLastDir(this.$route.path) + "/";
       if (this.resized) {
