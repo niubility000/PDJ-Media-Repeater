@@ -45,6 +45,7 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
           >
         </span>
+
         <button
           v-if="srtSubtitles"
           :disabled="loading || isSetting || !isSingle"
@@ -58,26 +59,6 @@
             }"
             class="material-icons"
             >grade</i
-          >
-        </button>
-
-        <button
-          :disabled="loading || isSetting || showSubtitleList || !isSingle"
-          class="action"
-          @click="switchShowNotes"
-          :title="$t('repeater.showNotes')"
-        >
-          <i
-            :style="{
-              color:
-                loading || isSetting || showSubtitleList || !isSingle
-                  ? 'grey'
-                  : showNotes
-                  ? 'red'
-                  : 'blue',
-            }"
-            class="material-icons"
-            >wysiwyg</i
           >
         </button>
 
@@ -111,6 +92,29 @@
         </button>
 
         <button
+          v-if="srtSubtitles"
+          :disabled="
+            loading || isSetting || !isSingle || showSubtitleList || isFavOnPlay
+          "
+          class="action"
+          @click="switchEditSubandNote"
+          :title="$t('repeater.editSubandNote')"
+        >
+          <i
+            :style="{
+              color:
+                isSetting || !isSingle || showSubtitleList || isFavOnPlay
+                  ? 'grey'
+                  : isEditSubandNotes
+                  ? 'red'
+                  : 'blue',
+            }"
+            class="material-icons"
+            >edit</i
+          >
+        </button>
+
+        <button
           :disabled="loading || isSetting || showSubtitleList"
           class="action"
           @click="switchSubtitle"
@@ -135,7 +139,7 @@
       <div
         v-if="isSlowInternet"
         style="
-          z-index: 1007;
+          z-index: 1011;
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
@@ -151,7 +155,7 @@
         v-if="showSubtitleList"
         style="
           color: whitesmoke;
-          z-index: 1006;
+          z-index: 1010;
           display: flex;
           position: fixed;
           left: 50%;
@@ -626,8 +630,7 @@
           Loading Media...
         </p>
         <span
-          v-if="srtSubtitles && isReadyToPlay"
-          id="subtitleArea"
+          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes && !isEmpty"
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -638,26 +641,20 @@
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
           <p v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'">
-            {{
-              !isEmpty
-                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
-                : "   "
-            }}
+            {{ srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0] }}
           </p>
           <p v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'">
-            {{
-              !isEmpty
-                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
-                : "   "
-            }}
+            {{ srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1] }}
           </p>
         </span>
+
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
           folder, or the .srt file is incorrect.
         </p>
+
         <span
-          v-if="srtSubtitles && isReadyToPlay"
+          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes && !isEmpty"
           style="
             color: white;
             width: 100%;
@@ -669,12 +666,8 @@
             overflow: auto;
           "
         >
-          <textarea
-            v-show="showNotes && !isEmpty"
-            id="noteArea"
-            rows="3"
-            v-model="note"
-            placeholder="......"
+          <div
+            v-show="!isEmpty"
             style="
               width: 100%;
               background-color: black;
@@ -683,7 +676,25 @@
               resize: none;
               text-align: center;
             "
-          ></textarea>
+          >
+            {{ note }}
+          </div>
+        </span>
+
+        <span
+          v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
+          id="editArea"
+          style="
+            color: white;
+            width: 100%;
+            font-size: 1em;
+            margin: auto;
+            left: 0;
+            right: 0;
+            flex-grow: 1;
+            overflow: auto;
+          "
+        >
         </span>
       </div>
       <audio
@@ -703,6 +714,61 @@
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
+      <span
+        v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
+        style="
+          color: yellow;
+          overflow-wrap: break-word;
+          width: 100%;
+          margin: 0;
+          font-size: 1em;
+          z-index: 1009;
+          position: fixed;
+        "
+        :style="{ top: isMobile ? '40%' : '65%' }"
+      >
+        <p>
+          <input
+            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+            v-model="subFirstLine"
+            style="
+              width: 100%;
+              text-align: center;
+              background-color: black;
+              color: white;
+              border: none;
+            "
+          />
+        </p>
+        <p>
+          <input
+            v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'"
+            v-model="subSecLine"
+            style="
+              width: 100%;
+              text-align: center;
+              background-color: black;
+              color: white;
+              border: none;
+            "
+          />
+        </p>
+        <textarea
+          v-show="!isEmpty"
+          rows="2"
+          v-model="note"
+          placeholder="...NOTES..."
+          style="
+            width: 100%;
+            font-size: 0.8em;
+            background-color: black;
+            color: whitesmoke;
+            border: none;
+            resize: none;
+            text-align: center;
+          "
+        ></textarea>
+      </span>
     </template>
   </div>
 </template>
@@ -774,10 +840,12 @@ export default {
       contentAll: null,
       note: "",
       confirmType: "",
-      showNotes: false,
       showSubtitleList: false,
       sessionLength: null,
       isSlowInternet: false,
+      isEditSubandNotes: false,
+      subFirstLine: null,
+      subSecLine: null,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -865,6 +933,7 @@ export default {
             }
             var subtitle = {
               sn: sn,
+              textSubtitle: textSubtitle[1],
               startTime: startTime,
               endTime: endTime,
               content: content,
@@ -934,18 +1003,27 @@ export default {
         navigator.msMaxTouchPoints > 0
       );
     },
-    isNoteArea() {
-      return document.getElementById("noteArea");
-    },
-    isSubtitleArea() {
-      return document.getElementById("subtitleArea");
+    isEditArea() {
+      return document.getElementById("editArea");
     },
   },
   watch: {
     $route: function () {
       this.updatePreview();
     },
+    subFirstLine: function () {
+      this.saveSub();
+    },
+    subSecLine: function () {
+      this.saveSub();
+    },
     sentenceIndex: function () {
+      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      var singleNoteList = this.noteList.filter(function (item) {
+        return item.startTime == nowStartTime;
+      });
+      if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
+      else this.note = "";
       if (this.isFavOnPlay) {
         this.isFav = true;
       } else if (this.currentFileFavList) {
@@ -963,17 +1041,15 @@ export default {
       } else {
         this.isFav = false;
       }
-      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-      var singleNoteList = this.noteList.filter(function (item) {
-        return item.startTime == nowStartTime;
-      });
-      if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
-      else this.note = "";
       if (this.showSubtitleList) {
         document
           .getElementById(this.sentenceIndex)
           .scrollIntoView({ block: "center", behavior: "smooth" });
       }
+      this.subFirstLine =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+      this.subSecLine =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
     },
     isSetting: function () {
       if (
@@ -983,9 +1059,6 @@ export default {
       ) {
         this.isSystemTTS = "No";
       }
-    },
-    showNotes: function () {
-      this.save();
     },
     repeatTimes: function () {
       this.save();
@@ -1155,7 +1228,6 @@ export default {
         this.autoPlay = JSON.parse(this.contentAll.content.split("::")[15]);
         this.isSystemTTS = JSON.parse(this.contentAll.content.split("::")[16]);
         this.TTSurl = JSON.parse(this.contentAll.content.split("::")[17]);
-        this.showNotes = JSON.parse(this.contentAll.content.split("::")[18]);
         this.isAutoDetectLang = JSON.parse(
           this.contentAll.content.split("::")[13]
         );
@@ -1358,6 +1430,11 @@ export default {
 
     endUtter() {
       this.audio.removeEventListener("ended", this.endUtter, false);
+      if (this.isEditSubandNotes && !this.isUtterTransLineFirstly) {
+        this.cleanUp1();
+        this.cleanUp2();
+        return;
+      }
       if (
         this.isUtterTransLine &&
         this.isUtterTransLineFirstly &&
@@ -1413,8 +1490,6 @@ export default {
     cleanUp1() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
-      if (this.isNoteArea && this.isNoteArea.contains(document.activeElement))
-        this.isNoteArea.blur();
       if (window.getSelection().toString() && this.touches < 2)
         window.getSelection().removeAllRanges();
       if (this.audio) this.audio.pause();
@@ -1487,9 +1562,19 @@ export default {
         }
       }
     },
-    switchShowNotes() {
-      this.showNotes = !this.showNotes;
+
+    switchEditSubandNote() {
+      this.isEditSubandNotes = !this.isEditSubandNotes;
+      if (this.isEditSubandNotes) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.subFirstLine =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+        this.subSecLine =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+      }
     },
+
     showConfirm() {
       if (this.confirmType == "fetch") {
         var userConfirmation = window.confirm(
@@ -1525,6 +1610,7 @@ export default {
     onSingle() {
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
+        this.isEditSubandNotes = false;
         this.cleanUp2();
         this.cleanUp1();
         this.regularPlay();
@@ -1555,111 +1641,52 @@ export default {
           this.singleModePlay();
         }, 1);
       }
-
       return;
     },
-    click: function (event) {
-      if (
-        !(
-          this.isSingle &&
-          this.isNoteArea &&
-          this.isNoteArea.contains(event.target)
-        )
-      ) {
-        if (this.isFirstClick) this.firstClick();
-        this.touches++;
-        setTimeout(() => {
-          if (
-            this.isSubtitleArea.contains(event.target) &&
-            window.getSelection().toString()
-          ) {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            if (this.currentMedia) this.currentMedia.pause();
-            if (this.audio) this.audio.pause();
-            if (this.intervalId) {
-              clearInterval(this.intervalId);
-            }
-            if (this.timeOutId) clearTimeout(this.timeOutId);
-            if (this.currentMedia && this.currentMedia.removeEventListener) {
-              this.currentMedia.removeEventListener("timeupdate", this.syncSub);
-            }
-            if (
-              this.isNoteArea &&
-              this.isNoteArea.contains(document.activeElement)
-            )
-              this.isNoteArea.blur();
-            return;
+    click: function () {
+      if (this.isFirstClick) this.firstClick();
+      this.touches++;
+      setTimeout(() => {
+        this.cleanUp1();
+        if (this.touches == 1) {
+          if (this.isSingle) {
+            setTimeout(() => {
+              if (this.pauseAfterFirstDone) {
+                this.pauseAfterFirstDone = false;
+                if (this.isUtterTransLineFirstly) this.loopPlay();
+                else this.utterTransLine();
+              } else {
+                this.singleModePlay();
+              }
+            }, 1);
+          } else {
+            setTimeout(() => {
+              this.regularPlay();
+              this.currentMedia.currentTime =
+                this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            }, 1);
           }
-          this.cleanUp1();
-          if (this.touches == 1) {
-            if (this.isSingle) {
-              setTimeout(() => {
-                if (this.pauseAfterFirstDone) {
-                  this.pauseAfterFirstDone = false;
-                  if (this.isUtterTransLineFirstly) this.loopPlay();
-                  else this.utterTransLine();
-                } else {
-                  this.singleModePlay();
-                }
-              }, 1);
-            } else {
-              setTimeout(() => {
-                this.regularPlay();
-                this.currentMedia.currentTime =
-                  this.srtSubtitles[this.sentenceIndex - 1].startTime;
-              }, 1);
-            }
-          }
-          this.touches = 0;
-        }, 300);
-        if (this.touches == 2) {
-          //double click
-          this.cleanUp1();
-          this.touches = 0;
-          return;
         }
-      } else {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        if (this.currentMedia) this.currentMedia.pause();
-        if (this.audio) this.audio.pause();
-        if (this.intervalId) {
-          clearInterval(this.intervalId);
-        }
-        if (this.timeOutId) clearTimeout(this.timeOutId);
-        if (this.currentMedia && this.currentMedia.removeEventListener) {
-          this.currentMedia.removeEventListener("timeupdate", this.syncSub);
-        }
+        this.touches = 0;
+      }, 300);
+      if (this.touches == 2) {
+        //double click
+        this.cleanUp1();
+        this.touches = 0;
+        return;
       }
     },
     startDrag(event) {
-      if (!this.isReadyToPlay) return;
-      if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
-      if (
-        !(
-          this.isSingle &&
-          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
-            this.isSubtitleArea.contains(event.target))
-        )
-      ) {
-        event.preventDefault();
-      }
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
+      event.preventDefault();
       this.isSetting = false;
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
       this.startY = event.clientY;
     },
     endDrag(event) {
-      if (!this.isReadyToPlay) return;
-      if (this.isTouchDevice && !this.isNoteArea.contains(event.target)) return;
-      if (
-        !(
-          this.isSingle &&
-          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
-            this.isSubtitleArea.contains(event.target))
-        )
-      ) {
-        event.preventDefault();
-      }
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
+      event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
       this.distanceY = event.clientY - this.startY;
@@ -1680,19 +1707,11 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click(event);
+      this.click();
     },
     startTouch(event) {
       if (!this.isReadyToPlay) return;
-      if (
-        !(
-          this.isSingle &&
-          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
-            this.isSubtitleArea.contains(event.target))
-        )
-      ) {
-        event.preventDefault();
-      }
+      event.preventDefault();
       this.isSetting = false;
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
@@ -1700,15 +1719,7 @@ export default {
     },
     endTouch(event) {
       if (!this.isReadyToPlay) return;
-      if (
-        !(
-          this.isSingle &&
-          ((this.isNoteArea && this.isNoteArea.contains(event.target)) ||
-            this.isSubtitleArea.contains(event.target))
-        )
-      ) {
-        event.preventDefault();
-      }
+      event.preventDefault();
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       this.distanceY = event.changedTouches[0].clientY - this.startY;
@@ -1729,7 +1740,7 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click(event);
+      this.click();
     },
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
@@ -1908,6 +1919,7 @@ export default {
             } else {
               if (
                 this.autoPlayNext &&
+                !this.isEditSubandNotes &&
                 this.sentenceIndex < this.srtSubtitles.length
               ) {
                 this.sentenceIndex = this.sentenceIndex + 1;
@@ -1986,8 +1998,6 @@ export default {
         JSON.stringify(this.isSystemTTS) +
         "::" +
         JSON.stringify(this.TTSurl) +
-        "::" +
-        JSON.stringify(this.showNotes) +
         "::";
       let favContent =
         customConfig +
@@ -1998,6 +2008,37 @@ export default {
       const path = url.removeLastDir(this.$route.path);
       try {
         await api.post(path + "/" + this.favFileName, favContent, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+    },
+
+    async saveSub() {
+      var tempContent = this.req.content;
+      this.req.content =
+        tempContent.split(
+          this.srtSubtitles[this.sentenceIndex - 1].textSubtitle
+        )[0] +
+        this.srtSubtitles[this.sentenceIndex - 1].textSubtitle +
+        tempContent
+          .split(this.srtSubtitles[this.sentenceIndex - 1].textSubtitle)[1]
+          .replace(
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0],
+            this.subFirstLine
+          )
+          .replace(
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1],
+            this.subSecLine
+          );
+      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] =
+        this.subFirstLine;
+      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] =
+        this.subSubLine;
+
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, this.req.content, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
@@ -2029,6 +2070,7 @@ export default {
         !this.isSetting
       ) {
         // right arrow
+        if (this.isEditSubandNotes) return;
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex + 1;
@@ -2045,6 +2087,7 @@ export default {
         !this.isSetting
       ) {
         // left arrow
+        if (this.isEditSubandNotes) return;
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex - 1;
@@ -2169,7 +2212,7 @@ header {
   bottom: 0.5em;
   justify-content: center;
   align-items: center;
-  z-index: 1006;
+  z-index: 1010;
 }
 
 #settingBox {
