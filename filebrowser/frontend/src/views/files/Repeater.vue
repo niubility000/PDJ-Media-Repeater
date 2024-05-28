@@ -516,9 +516,6 @@
             </p>
             <p style="text-align: justify">{{ $t("repeater.instruction6") }}</p>
             <p style="text-align: justify">
-              {{ $t("repeater.instruction14") }}
-            </p>
-            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">repeat_one</i
               >{{ $t("repeater.instruction7") }}
@@ -530,6 +527,11 @@
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
+              <i style="color: white" class="material-icons">edit</i
+              >{{ $t("repeater.instruction13") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">settings</i
               >{{ $t("repeater.instruction9") }}
             </p>
@@ -537,11 +539,6 @@
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">folder_special</i
               >{{ $t("repeater.instruction10") }}
-            </p>
-            <p style="text-align: justify">
-              {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">wysiwyg</i
-              >{{ $t("repeater.instruction13") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
