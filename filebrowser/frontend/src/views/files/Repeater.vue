@@ -22,7 +22,8 @@
         <span
           @click="isShowSubtitleList()"
           :style="{
-            pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
+            pointerEvents:
+              isSetting || !isSingle || isEditSubandNotes ? 'none' : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -36,7 +37,7 @@
             "
             :style="{
               color:
-                isSetting || !isSingle
+                isSetting || !isSingle || isEditSubandNotes
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
@@ -63,7 +64,13 @@
         </button>
 
         <button
-          :disabled="loading || favList.length == 0 || isSetting || !isSingle"
+          :disabled="
+            loading ||
+            favList.length == 0 ||
+            isSetting ||
+            !isSingle ||
+            isEditSubandNotes
+          "
           class="action"
           @click="playFavList"
           :title="$t('repeater.playFavoriteList')"
@@ -124,7 +131,13 @@
         </button>
 
         <button
-          :disabled="loading || isFavOnPlay || isSetting || showSubtitleList"
+          :disabled="
+            loading ||
+            isFavOnPlay ||
+            isSetting ||
+            showSubtitleList ||
+            isEditSubandNotes
+          "
           class="action"
           @click="onSingle"
           :title="
@@ -627,7 +640,7 @@
           Loading Media...
         </p>
         <span
-          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes && !isEmpty"
+          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -638,10 +651,18 @@
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
           <p v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'">
-            {{ srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0] }}
+            {{
+              !isEmpty
+                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
+                : "   "
+            }}
           </p>
           <p v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'">
-            {{ srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1] }}
+            {{
+              !isEmpty
+                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
+                : "   "
+            }}
           </p>
         </span>
 
@@ -651,7 +672,7 @@
         </p>
 
         <span
-          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes && !isEmpty"
+          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
           style="
             color: white;
             width: 100%;
@@ -677,10 +698,8 @@
             {{ note }}
           </div>
         </span>
-
         <span
           v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
-          id="editArea"
           style="
             color: white;
             width: 100%;
@@ -718,38 +737,45 @@
           overflow-wrap: break-word;
           width: 100%;
           margin: 0;
-          font-size: 1em;
+          font-size: 1.2em;
           z-index: 1009;
           position: fixed;
+          padding: 0;
         "
-        :style="{ top: isMobile ? '40%' : '65%' }"
+        :style="{ top: isMobile ? '50%' : '65%' }"
       >
-        <p>
-          <input
-            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
-            v-model="subFirstLine"
-            style="
-              width: 100%;
-              text-align: center;
-              background-color: black;
-              color: white;
-              border: none;
-            "
-          />
-        </p>
-        <p>
-          <input
-            v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'"
-            v-model="subSecLine"
-            style="
-              width: 100%;
-              text-align: center;
-              background-color: black;
-              color: white;
-              border: none;
-            "
-          />
-        </p>
+        <textarea
+          v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+          v-model="subFirstLine"
+          rows="2"
+          style="
+            width: 100%;
+            text-align: center;
+            background-color: black;
+            color: white;
+            border: none;
+            resize: none;
+            padding: 0;
+          "
+        ></textarea>
+        <textarea
+          v-if="
+            subtitleLang !== 'line1' &&
+            subtitleLang !== 'none' &&
+            subSecLine !== undefined
+          "
+          v-model="subSecLine"
+          rows="2"
+          style="
+            width: 100%;
+            text-align: center;
+            background-color: black;
+            color: white;
+            border: none;
+            resize: none;
+            padding: 0.5em 0;
+          "
+        ></textarea>
         <textarea
           v-show="!isEmpty"
           rows="2"
@@ -763,6 +789,7 @@
             border: none;
             resize: none;
             text-align: center;
+            padding: 0;
           "
         ></textarea>
       </span>
@@ -841,8 +868,8 @@ export default {
       sessionLength: null,
       isSlowInternet: false,
       isEditSubandNotes: false,
-      subFirstLine: null,
-      subSecLine: null,
+      subFirstLine: " ",
+      subSecLine: " ",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -856,7 +883,8 @@ export default {
       return "!pdj!user" + this.user.id + "-favorite.txt";
     },
     favListStatus() {
-      if (this.isSetting || !this.isSingle) return { color: "grey" };
+      if (this.isSetting || !this.isSingle || this.isEditSubandNotes)
+        return { color: "grey" };
       if (this.currentFileFavList.length == 0) {
         return { color: "grey" };
       } else if (this.isFavOnPlay) {
@@ -878,7 +906,12 @@ export default {
       }
     },
     playMode() {
-      if (this.isFavOnPlay || this.isSetting || this.showSubtitleList) {
+      if (
+        this.isFavOnPlay ||
+        this.isSetting ||
+        this.showSubtitleList ||
+        this.isEditSubandNotes
+      ) {
         return { color: "grey" };
       } else if (this.isSingle) {
         return { color: "red" };
@@ -1000,18 +1033,19 @@ export default {
         navigator.msMaxTouchPoints > 0
       );
     },
-    isEditArea() {
-      return document.getElementById("editArea");
-    },
   },
   watch: {
     $route: function () {
       this.updatePreview();
     },
     subFirstLine: function () {
+      if (!this.isEditSubandNotes) return;
+      if (this.subFirstLine == "") this.subFirstLine = " ";
       this.saveSub();
     },
     subSecLine: function () {
+      if (!this.isEditSubandNotes) return;
+      if (this.subSecLine == "") this.subSecLine = " ";
       this.saveSub();
     },
     sentenceIndex: function () {
@@ -1021,6 +1055,12 @@ export default {
       });
       if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
       else this.note = "";
+      if (this.isEditSubandNotes) {
+        this.subFirstLine =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+        this.subSecLine =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+      }
       if (this.isFavOnPlay) {
         this.isFav = true;
       } else if (this.currentFileFavList) {
@@ -1043,10 +1083,6 @@ export default {
           .getElementById(this.sentenceIndex)
           .scrollIntoView({ block: "center", behavior: "smooth" });
       }
-      this.subFirstLine =
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
-      this.subSecLine =
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
     },
     isSetting: function () {
       if (
@@ -2039,6 +2075,12 @@ export default {
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
+      }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
       }
     },
 
