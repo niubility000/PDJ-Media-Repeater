@@ -733,7 +733,6 @@
       <span
         v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
         style="
-          color: yellow;
           overflow-wrap: break-word;
           width: 100%;
           margin: 0;
@@ -746,6 +745,7 @@
       >
         <textarea
           v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+          id="editArea1"
           v-model="subFirstLine"
           rows="2"
           style="
@@ -764,6 +764,7 @@
             subtitleLang !== 'none' &&
             subSecLine !== undefined
           "
+          id="editArea2"
           v-model="subSecLine"
           rows="2"
           style="
@@ -778,6 +779,7 @@
         ></textarea>
         <textarea
           v-show="!isEmpty"
+          id="editArea3"
           rows="2"
           v-model="note"
           placeholder="...NOTES..."
@@ -1681,6 +1683,23 @@ export default {
       this.touches++;
       setTimeout(() => {
         this.cleanUp1();
+        if (
+          document.getElementById("editArea1") &&
+          document.getElementById("editArea1").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea1").blur();
+        } else if (
+          document.getElementById("editArea2") &&
+          document.getElementById("editArea2").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea2").blur();
+        } else if (
+          document.getElementById("editArea3") &&
+          document.getElementById("editArea3").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea3").blur();
+        }
+
         if (this.touches == 1) {
           if (this.isSingle) {
             setTimeout(() => {
@@ -2109,7 +2128,21 @@ export default {
         !this.isSetting
       ) {
         // right arrow
-        if (this.isEditSubandNotes) return;
+        if (
+          (document.getElementById("editArea1") &&
+            document
+              .getElementById("editArea1")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea2") &&
+            document
+              .getElementById("editArea2")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea3") &&
+            document
+              .getElementById("editArea3")
+              .contains(document.activeElement))
+        )
+          return;
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex + 1;
@@ -2126,7 +2159,21 @@ export default {
         !this.isSetting
       ) {
         // left arrow
-        if (this.isEditSubandNotes) return;
+        if (
+          (document.getElementById("editArea1") &&
+            document
+              .getElementById("editArea1")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea2") &&
+            document
+              .getElementById("editArea2")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea3") &&
+            document
+              .getElementById("editArea3")
+              .contains(document.activeElement))
+        )
+          return;
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex - 1;
