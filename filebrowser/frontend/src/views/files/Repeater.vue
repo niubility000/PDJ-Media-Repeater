@@ -604,16 +604,13 @@
           </div>
         </div>
       </div>
-      <div
-        class="repeater"
-        @mousedown="startDrag"
-        @mouseup="endDrag"
-        @touchstart="startTouch"
-        @touchend="endTouch"
-        style="display: flex"
-      >
+      <div class="repeater" style="display: flex">
         <video
-          style="max-height: 60%; max-width: 100%"
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
+          style="max-height: 60%; max-width: 100%; padding-bottom: 1em"
           v-if="isMediaType == 2 && !browserHiJack"
           id="myVideo"
           :src="raw"
@@ -640,6 +637,10 @@
           Loading Media...
         </p>
         <span
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
           v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
           style="
             color: yellow;
@@ -650,7 +651,10 @@
           "
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
-          <p v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'">
+          <p
+            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+            style="margin-top: 0"
+          >
             {{
               !isEmpty
                 ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
@@ -672,6 +676,10 @@
         </p>
 
         <span
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
           v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
           style="
             color: white;
@@ -680,7 +688,6 @@
             margin: auto;
             left: 0;
             right: 0;
-            flex-grow: 1;
             overflow: auto;
           "
         >
@@ -698,18 +705,78 @@
             {{ note }}
           </div>
         </span>
+
         <span
           v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
           style="
-            color: white;
+            overflow-wrap: break-word;
             width: 100%;
-            font-size: 1em;
-            margin: auto;
-            left: 0;
-            right: 0;
-            flex-grow: 1;
-            overflow: auto;
+            margin: 0;
+            font-size: 1.2em;
+            background-color: black;
           "
+          :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
+        >
+          <textarea
+            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+            id="editArea1"
+            v-model="subFirstLine"
+            rows="2"
+            style="
+              width: 100%;
+              text-align: center;
+              background-color: black;
+              color: white;
+              border: none;
+              resize: none;
+              padding: 0;
+            "
+          ></textarea>
+          <textarea
+            v-if="
+              subtitleLang !== 'line1' &&
+              subtitleLang !== 'none' &&
+              subSecLine !== undefined
+            "
+            id="editArea2"
+            v-model="subSecLine"
+            rows="2"
+            style="
+              width: 100%;
+              text-align: center;
+              background-color: black;
+              color: white;
+              border: none;
+              resize: none;
+              padding: 0.5em 0;
+            "
+          ></textarea>
+          <textarea
+            v-show="!isEmpty"
+            id="editArea3"
+            rows="2"
+            v-model="note"
+            placeholder="...NOTES..."
+            style="
+              width: 100%;
+              font-size: 0.8em;
+              background-color: black;
+              color: whitesmoke;
+              border: none;
+              resize: none;
+              text-align: center;
+              padding: 0;
+            "
+          ></textarea>
+        </span>
+
+        <span
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
+          v-if="srtSubtitles && isReadyToPlay"
+          style="width: 100%; flex-grow: 1"
         >
         </span>
       </div>
@@ -730,71 +797,6 @@
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
-      <span
-        v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
-        style="
-          overflow-wrap: break-word;
-          width: 100%;
-          margin: 0;
-          font-size: 1.2em;
-          z-index: 1009;
-          position: fixed;
-          padding: 0;
-        "
-        :style="{ top: isMobile ? '50%' : '65%' }"
-      >
-        <textarea
-          v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
-          id="editArea1"
-          v-model="subFirstLine"
-          rows="2"
-          style="
-            width: 100%;
-            text-align: center;
-            background-color: black;
-            color: white;
-            border: none;
-            resize: none;
-            padding: 0;
-          "
-        ></textarea>
-        <textarea
-          v-if="
-            subtitleLang !== 'line1' &&
-            subtitleLang !== 'none' &&
-            subSecLine !== undefined
-          "
-          id="editArea2"
-          v-model="subSecLine"
-          rows="2"
-          style="
-            width: 100%;
-            text-align: center;
-            background-color: black;
-            color: white;
-            border: none;
-            resize: none;
-            padding: 0.5em 0;
-          "
-        ></textarea>
-        <textarea
-          v-show="!isEmpty"
-          id="editArea3"
-          rows="2"
-          v-model="note"
-          placeholder="...NOTES..."
-          style="
-            width: 100%;
-            font-size: 0.8em;
-            background-color: black;
-            color: whitesmoke;
-            border: none;
-            resize: none;
-            text-align: center;
-            padding: 0;
-          "
-        ></textarea>
-      </span>
     </template>
   </div>
 </template>
