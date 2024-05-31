@@ -1317,12 +1317,12 @@ export default {
       }
     },
     firstClick() {
-      this.isFirstClick = false;
       if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
         this.utterTransLine();
       if (this.audio) this.audio.muted = true;
       this.currentMedia.play();
-      this.currentMedia.currentTime = 1;
+      this.currentMedia.currentTime =
+        this.srtSubtitles[this.sentenceIndex - 1].startTime;
       this.currentMedia.muted = true;
       setTimeout(() => {
         this.currentMedia.muted = false;
@@ -1330,13 +1330,16 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         if (
-          this.currentMedia.currentTime < 0.9 ||
-          this.currentMedia.currentTime > 1.2
+          this.currentMedia.currentTime <
+            this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.2 ||
+          this.currentMedia.currentTime >
+            this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2
         ) {
           window.sessionStorage.setItem("isBrowserHiJack", true);
           location.reload();
         }
       }, 1);
+      this.isFirstClick = false;
     },
     singleModePlay() {
       this.cleanUp1();
@@ -1432,6 +1435,7 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
+        if (this.isFirstClick) this.utterThis.text = "n";
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
         window.speechSynthesis.speak(this.utterThis);
@@ -1447,6 +1451,7 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
+        if (this.isFirstClick) text = "n";
         let ttsFullUrl = this.TTSurl + text;
         fetch(ttsFullUrl)
           .then(() => {
@@ -1552,6 +1557,7 @@ export default {
           window.sessionStorage.getItem("lastSentenceIndex")
         );
       }
+      if (this.isFirstClick) this.firstClick();
       this.singleModePlay();
     },
 
@@ -1651,6 +1657,7 @@ export default {
       if (this.isSingle) {
         this.cleanUp2();
         this.isEmpty = false;
+        if (this.isFirstClick) this.firstClick();
         this.singleModePlay();
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -1669,6 +1676,7 @@ export default {
       } else {
         setTimeout(() => {
           this.cleanUp2();
+          if (this.isFirstClick) this.firstClick();
           this.singleModePlay();
         }, 1);
       }
@@ -1797,6 +1805,7 @@ export default {
         if (this.sentenceIndex == 1) return;
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isSingle) {
+          if (this.isFirstClick) return;
           this.singleModePlay();
           if (!this.autoPlay) {
             setTimeout(() => {
@@ -1821,6 +1830,7 @@ export default {
         if (this.sentenceIndex == this.srtSubtitles.length) return;
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isSingle) {
+          if (this.isFirstClick) return;
           this.singleModePlay();
           if (!this.autoPlay) {
             setTimeout(() => {
