@@ -64,13 +64,7 @@
         </button>
 
         <button
-          :disabled="
-            loading ||
-            favList.length == 0 ||
-            isSetting ||
-            !isSingle ||
-            isEditSubandNotes
-          "
+          :disabled="loading || favList.length == 0 || isSetting || !isSingle"
           class="action"
           @click="playFavList"
           :title="$t('repeater.playFavoriteList')"
@@ -887,8 +881,7 @@ export default {
       return "!pdj!user" + this.user.id + "-favorite.txt";
     },
     favListStatus() {
-      if (this.isSetting || !this.isSingle || this.isEditSubandNotes)
-        return { color: "grey" };
+      if (this.isSetting || !this.isSingle) return { color: "grey" };
       if (this.currentFileFavList.length == 0) {
         return { color: "grey" };
       } else if (this.isFavOnPlay) {
@@ -1324,7 +1317,6 @@ export default {
       }
     },
     firstClick() {
-      this.isFirstClick = false;
       if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
         this.utterTransLine();
       if (this.audio) this.audio.muted = true;
@@ -1344,6 +1336,7 @@ export default {
           location.reload();
         }
       }, 1);
+      this.isFirstClick = false;
     },
     singleModePlay() {
       this.cleanUp1();
@@ -1439,6 +1432,7 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
+        if (this.isFirstClick) this.utterThis.text = "n";
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
         window.speechSynthesis.speak(this.utterThis);
@@ -1454,6 +1448,7 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
+        if (this.isFirstClick) text = "n";
         let ttsFullUrl = this.TTSurl + text;
         fetch(ttsFullUrl)
           .then(() => {
@@ -1551,6 +1546,7 @@ export default {
       }
       this.isFavOnPlay = !this.isFavOnPlay;
       if (this.isFavOnPlay) {
+        if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
         this.sentenceIndex = 1;
       } else {
