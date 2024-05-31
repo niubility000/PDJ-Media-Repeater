@@ -1317,6 +1317,7 @@ export default {
       }
     },
     firstClick() {
+      this.isFirstClick = false;
       if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
         this.utterTransLine();
       if (this.audio) this.audio.muted = true;
@@ -1336,7 +1337,6 @@ export default {
           location.reload();
         }
       }, 1);
-      this.isFirstClick = false;
     },
     singleModePlay() {
       this.cleanUp1();
@@ -1432,7 +1432,6 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
-        if (this.isFirstClick) this.utterThis.text = "n";
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
         window.speechSynthesis.speak(this.utterThis);
@@ -1448,7 +1447,6 @@ export default {
           transLineContent !== undefined
             ? transLineContent
             : "no translation line";
-        if (this.isFirstClick) text = "n";
         let ttsFullUrl = this.TTSurl + text;
         fetch(ttsFullUrl)
           .then(() => {
