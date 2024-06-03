@@ -919,16 +919,9 @@ export default {
     srtSubtitles() {
       if (!this.isFavOnPlay) {
         var subtitles = [];
-        var textSubtitles;
-        if (this.req.content.includes("\r\n\r\n")) {
-          textSubtitles = this.req.content.split("\r\n\r\n");
-        } else if (this.req.content.includes("\n\n")) {
-          textSubtitles = this.req.content.split("\n\n");
-        } else textSubtitles = this.req.content.split("\n");
-
+        var textSubtitles = this.req.content.split("\n\n");
         for (var i = 0; i < textSubtitles.length; ++i) {
           var textSubtitle = textSubtitles[i].split("\n");
-
           if (textSubtitle.length >= 2) {
             var sn = textSubtitle[0];
             var startTimeUnformat = textSubtitle[1].split(" --> ")[0];
@@ -951,7 +944,6 @@ export default {
               parseFloat(endMM) * 60 +
               parseFloat(endSS) +
               (parseFloat(endMS) + this.timeStampChange - 1) / 1000;
-
             var content = textSubtitle[2];
             if (textSubtitle.length > 2) {
               for (var j = 3; j < textSubtitle.length; j++) {
@@ -1213,6 +1205,8 @@ export default {
     this.listing = this.oldReq.items;
     this.updatePreview();
     this.initUtter();
+    if (this.req.content.includes("\r\n"))
+      this.req.content = this.req.content.replaceAll("\r\n", "\n");
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
