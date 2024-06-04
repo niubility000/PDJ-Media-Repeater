@@ -22,8 +22,7 @@
         <span
           @click="isShowSubtitleList()"
           :style="{
-            pointerEvents:
-              isSetting || !isSingle || isEditSubandNotes ? 'none' : 'auto',
+            pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -37,7 +36,7 @@
             "
             :style="{
               color:
-                isSetting || !isSingle || isEditSubandNotes
+                isSetting || !isSingle
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
