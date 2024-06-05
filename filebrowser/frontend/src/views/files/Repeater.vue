@@ -2067,6 +2067,8 @@ export default {
 
     async saveSub() {
       var tempContent = this.req.content;
+      this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
+      this.subSecLine = this.subSecLine.replaceAll("\n", "");
       this.req.content =
         tempContent.split(
           this.srtSubtitles[this.sentenceIndex - 1].textSubtitle
