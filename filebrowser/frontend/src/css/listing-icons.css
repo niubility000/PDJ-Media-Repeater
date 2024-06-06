@@ -46,6 +46,11 @@
 .file-icons [aria-label$=".rtf"] i::before
 { content: 'description' }
 
+/* pdj media repeater */
+
+.file-icons [aria-label$=".srt"] i::before
+{ content: 'subtitles' }
+
 /* #999 - Code */
 
 .file-icons [aria-label$=".c"] i::before,
@@ -137,6 +142,12 @@
 .file-icons [aria-label$=".rb"] i,
 .file-icons [data-type=pdf] i
 { color: var(--icon-red) }
+
+/* pdj media repeater */
+.file-icons [aria-label$=".srt"] i,
+.file-icons [data-type=pdj] i
+{ color: var(--icon-yellow) }
+
 
 /* #f90 - Image/Presentation */
 

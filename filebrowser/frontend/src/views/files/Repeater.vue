@@ -1729,6 +1729,7 @@ export default {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       event.preventDefault();
       this.isSetting = false;
+      this.showSubtitleList = false;
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
       this.startY = event.clientY;
@@ -1762,6 +1763,7 @@ export default {
       if (!this.isReadyToPlay) return;
       event.preventDefault();
       this.isSetting = false;
+      this.showSubtitleList = false;
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
