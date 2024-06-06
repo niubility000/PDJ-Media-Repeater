@@ -18,15 +18,15 @@ Updated: 06-06-2024
 
 2.16 add function to edit subtitle
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/15599036/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/15603192/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/15599040/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/15603209/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/15599043/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/15603217/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/15599057/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/15603219/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

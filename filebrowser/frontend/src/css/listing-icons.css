@@ -175,6 +175,7 @@
 .file-icons [aria-label$=".go"] i,
 .file-icons [aria-label$=".ods"] i,
 .file-icons [aria-label$=".xls"] i,
+.file-icons [aria-label$="favorite.txt"] i,
 .file-icons [aria-label$=".xlsx"] i
 { color: var(--icon-green) }
 

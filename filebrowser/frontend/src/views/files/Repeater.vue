@@ -877,7 +877,7 @@ export default {
       return window.innerWidth < 736;
     },
     favFileName() {
-      return "!pdj!user" + this.user.id + "-favorite.txt";
+      return "PDJ-user" + this.user.id + "-favorite.txt";
     },
     favListStatus() {
       if (this.isSetting || !this.isSingle) return { color: "grey" };
