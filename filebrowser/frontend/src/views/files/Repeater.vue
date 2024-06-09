@@ -644,21 +644,18 @@
           "
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
-          <p
-            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
-            style="margin-top: 0"
-          >
+          <p v-if="isShowLine1" style="margin-top: 0">
             {{
               !isEmpty
                 ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
-                : "   "
+                : "     "
             }}
           </p>
-          <p v-if="subtitleLang !== 'line1' && subtitleLang !== 'none'">
+          <p v-if="isShowLine2">
             {{
               !isEmpty
                 ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
-                : "   "
+                : "     "
             }}
           </p>
         </span>
@@ -695,10 +692,36 @@
               text-align: center;
             "
           >
-            {{ note }}
+            <p v-if="isShowLine3">
+              {{
+                !isEmpty
+                  ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[2]
+                  : "     "
+              }}
+            </p>
           </div>
         </span>
 
+        <span
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
+          v-if="
+            srtSubtitles &&
+            isReadyToPlay &&
+            isEditSubandNotes &&
+            !isEmpty &&
+            isMediaType == 1
+          "
+          style="
+            width: 100%;
+            margin: 0;
+            background-color: black;
+            padding-top: 6em;
+          "
+        >
+        </span>
         <span
           v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
           style="
@@ -707,13 +730,14 @@
             margin: 0;
             font-size: 1.2em;
             background-color: black;
+            padding-top: 0;
           "
-          :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
           <textarea
-            v-if="subtitleLang !== 'line2' && subtitleLang !== 'none'"
+            v-if="isShowLine1"
             id="editArea1"
             v-model="subFirstLine"
+            placeholder="...Subtitle's First Line..."
             rows="2"
             style="
               width: 100%;
@@ -726,13 +750,10 @@
             "
           ></textarea>
           <textarea
-            v-if="
-              subtitleLang !== 'line1' &&
-              subtitleLang !== 'none' &&
-              subSecLine !== undefined
-            "
+            v-if="isShowLine2"
             id="editArea2"
             v-model="subSecLine"
+            placeholder="...Subtitle's Second Line..."
             rows="2"
             style="
               width: 100%;
@@ -745,7 +766,7 @@
             "
           ></textarea>
           <textarea
-            v-show="!isEmpty"
+            v-show="!isEmpty && isShowLine3"
             id="editArea3"
             rows="2"
             v-model="note"
@@ -834,11 +855,13 @@ export default {
       isEmpty: false,
       isSingle: true,
       favList: [],
-      noteList: [],
       isFav: false,
       isFavOnPlay: false,
       isReadyToPlay: false,
-      subtitleLang: "both",
+      subtitleLang: 1,
+      isShowLine1: true,
+      isShowLine2: true,
+      isShowLine3: true,
       isUtterTransLine: true,
       pauseTimeTransLine: 3,
       speedOfUtter: 1,
@@ -859,14 +882,14 @@ export default {
       audio: null,
       isSystemTTS: "Yes",
       contentAll: null,
-      note: "",
+      note: "     ",
       confirmType: "",
       showSubtitleList: false,
       sessionLength: null,
       isSlowInternet: false,
       isEditSubandNotes: false,
-      subFirstLine: " ",
-      subSecLine: " ",
+      subFirstLine: "     ",
+      subSecLine: "     ",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -891,14 +914,20 @@ export default {
     },
     subSwitch() {
       if (this.isSetting || this.showSubtitleList) return { color: "grey" };
-      if (this.subtitleLang == "both") {
+      if (this.subtitleLang == 1) {
         return { color: "blue" };
-      } else if (this.subtitleLang == "line1") {
+      } else if (this.subtitleLang == 2) {
+        return { color: "red" };
+      } else if (
+        this.subtitleLang == 3 ||
+        this.subtitleLang == 4 ||
+        this.subtitleLang == 5 ||
+        this.subtitleLang == 6 ||
+        this.subtitleLang == 7
+      ) {
         return { color: "green" };
-      } else if (this.subtitleLang == "line2") {
-        return { color: "black" };
       } else {
-        return { color: "grey" };
+        return { color: "black" };
       }
     },
     playMode() {
@@ -943,15 +972,23 @@ export default {
               parseFloat(endMM) * 60 +
               parseFloat(endSS) +
               (parseFloat(endMS) + this.timeStampChange - 1) / 1000;
-            var content = textSubtitle[2];
-            if (textSubtitle.length > 2) {
-              for (var j = 3; j < textSubtitle.length; j++) {
-                content += "\r\n" + textSubtitle[j];
+            var content = "";
+            if (textSubtitle.length >= 3) {
+              content = textSubtitle[2]
+                .replace(/^\s\s*/, "")
+                .replace(/\s\s*$/, "");
+              if (content == "") content = " ";
+              if (textSubtitle.length > 3) {
+                for (var j = 3; j < textSubtitle.length; j++) {
+                  content +=
+                    "\r\n" +
+                    textSubtitle[j].replace(/^\s\s*/, "").replace(/\s\s*$/, "");
+                }
               }
             }
             var subtitle = {
               sn: sn,
-              textSubtitle: textSubtitle[1],
+              timeStamp: textSubtitle[1],
               startTime: startTime,
               endTime: endTime,
               content: content,
@@ -1010,7 +1047,10 @@ export default {
       }
     },
     isEnglish() {
-      let str = this.srtSubtitles[0].content.split("\r\n")[0];
+      let str = this.srtSubtitles[0].content
+        .split("\r\n")[0]
+        .replace(/^\s\s*/, "")
+        .replace(/\s\s*$/, "");
       return /^[a-zA-Z]/.test(str);
     },
 
@@ -1021,6 +1061,13 @@ export default {
         navigator.msMaxTouchPoints > 0
       );
     },
+    canUtter() {
+      let hasContent =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfTrans - 1
+        ];
+      return hasContent !== undefined && hasContent !== " ";
+    },
   },
   watch: {
     $route: function () {
@@ -1028,26 +1075,25 @@ export default {
     },
     subFirstLine: function () {
       if (!this.isEditSubandNotes) return;
-      if (this.subFirstLine == "") this.subFirstLine = " ";
       this.saveSub();
     },
     subSecLine: function () {
       if (!this.isEditSubandNotes) return;
-      if (this.subSecLine == "") this.subSecLine = " ";
       this.saveSub();
     },
+    note: function () {
+      if (!this.isEditSubandNotes) return;
+      this.saveSub();
+    },
+
     sentenceIndex: function () {
-      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-      var singleNoteList = this.noteList.filter(function (item) {
-        return item.startTime == nowStartTime;
-      });
-      if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
-      else this.note = "";
       if (this.isEditSubandNotes) {
         this.subFirstLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
         this.subSecLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+        this.note =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
       }
       if (this.isFavOnPlay) {
         this.isFav = true;
@@ -1180,22 +1226,6 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
-    note: function () {
-      //add or renew a note
-      var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-      var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
-      this.noteList = this.noteList.filter(function (item) {
-        return item.startTime !== nowStartTime && item.endTime !== nowEndTime;
-      });
-      var sentenceNote = {
-        rawPath: this.mediaName,
-        startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
-        endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
-        content: this.note,
-      };
-      this.noteList.push(sentenceNote);
-      this.save();
-    },
   },
 
   async mounted() {
@@ -1269,10 +1299,7 @@ export default {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
         this.favList = JSON.parse(
-          this.contentAll.content.split("Subtitle:")[1].split("noteList:")[0]
-        );
-        this.noteList = JSON.parse(
-          this.contentAll.content.split("noteList:")[1]
+          this.contentAll.content.split("Subtitle:")[1]
         );
         if (this.currentFileFavList) {
           for (var i = 0; i < this.currentFileFavList.length; ++i) {
@@ -1284,13 +1311,6 @@ export default {
             }
           }
         }
-        var nowStartTime = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
-        var singleNoteList = this.noteList.filter(function (item) {
-          return item.startTime == nowStartTime && item.endTime == nowEndTime;
-        });
-        if (singleNoteList.length > 0) this.note = singleNoteList[0].content;
-        else this.note = "";
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
@@ -1340,6 +1360,7 @@ export default {
       if (
         (this.isUtterTransLine &&
           this.isUtterTransLineFirstly &&
+          this.canUtter &&
           !this.playInProcess) ||
         this.utterInProcess
       ) {
@@ -1400,9 +1421,9 @@ export default {
           this.lineNumOfTrans - 1
         ];
       let text =
-        transLineContent !== undefined
+        transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
-          : "no translation line";
+          : "no content";
       let ttsFullUrl = this.TTSurl + text;
       fetch(ttsFullUrl)
         .then(() => {
@@ -1425,9 +1446,9 @@ export default {
             this.lineNumOfTrans - 1
           ];
         this.utterThis.text =
-          transLineContent !== undefined
+          transLineContent !== undefined && transLineContent !== " "
             ? transLineContent
-            : "no translation line";
+            : "no content";
         if (this.isFirstClick) this.utterThis.text = "n";
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
@@ -1441,9 +1462,9 @@ export default {
             this.lineNumOfTrans - 1
           ];
         let text =
-          transLineContent !== undefined
+          transLineContent !== undefined && transLineContent !== " "
             ? transLineContent
-            : "no translation line";
+            : "no content";
         if (this.isFirstClick) text = "n";
         let ttsFullUrl = this.TTSurl + text;
         fetch(ttsFullUrl)
@@ -1501,14 +1522,40 @@ export default {
     },
 
     switchSubtitle() {
-      if (this.subtitleLang == "both") {
-        this.subtitleLang = "line1";
-      } else if (this.subtitleLang == "line1") {
-        this.subtitleLang = "line2";
-      } else if (this.subtitleLang == "line2") {
-        this.subtitleLang = "none";
-      } else {
-        this.subtitleLang = "both";
+      this.subtitleLang = this.subtitleLang + 1;
+      if (this.subtitleLang == 9) this.subtitleLang = 1;
+      if (this.subtitleLang == 1) {
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
+        this.isShowLine3 = true;
+      } else if (this.subtitleLang == 2) {
+        this.isShowLine1 = false;
+        this.isShowLine2 = false;
+        this.isShowLine3 = true;
+      } else if (this.subtitleLang == 3) {
+        this.isShowLine1 = true;
+        this.isShowLine2 = false;
+        this.isShowLine3 = true;
+      } else if (this.subtitleLang == 4) {
+        this.isShowLine1 = false;
+        this.isShowLine2 = true;
+        this.isShowLine3 = true;
+      } else if (this.subtitleLang == 5) {
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
+        this.isShowLine3 = false;
+      } else if (this.subtitleLang == 6) {
+        this.isShowLine1 = true;
+        this.isShowLine2 = false;
+        this.isShowLine3 = false;
+      } else if (this.subtitleLang == 7) {
+        this.isShowLine1 = false;
+        this.isShowLine2 = true;
+        this.isShowLine3 = false;
+      } else if (this.subtitleLang == 8) {
+        this.isShowLine1 = false;
+        this.isShowLine2 = false;
+        this.isShowLine3 = false;
       }
     },
     resetTTSurl() {
@@ -1602,6 +1649,8 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
         this.subSecLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+        this.note =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
       }
     },
 
@@ -1614,7 +1663,6 @@ export default {
         );
         if (userConfirmation) {
           this.favList = [];
-          this.noteList = [];
           if (this.isAutoDetectLang) this.autoDetectLangInTrans();
           if (!this.hasSpeechSynthesis) {
             this.isSystemTTS = "No";
@@ -1967,7 +2015,11 @@ export default {
           this.timeOutId = setTimeout(() => {
             this.playCount = 0;
             this.playInProcess = false;
-            if (this.isUtterTransLine && !this.isUtterTransLineFirstly) {
+            if (
+              this.isUtterTransLine &&
+              !this.isUtterTransLineFirstly &&
+              this.canUtter
+            ) {
               this.utterTransLine();
             } else {
               if (
@@ -2007,10 +2059,18 @@ export default {
       this.playSection();
     },
     autoDetectLangInTrans() {
-      if (this.isEnglish && !this.srtSubtitles[0].content.split("\r\n")[1])
+      if (
+        this.isEnglish &&
+        (!this.srtSubtitles[0].content.split("\r\n")[1] ||
+          this.srtSubtitles[0].content.split("\r\n")[1] == " ")
+      )
         this.isUtterTransLine = false;
       else this.isUtterTransLine = true;
-      if (this.isEnglish && this.srtSubtitles[0].content.split("\r\n")[1]) {
+      if (
+        this.isUtterTransLine &&
+        this.isEnglish &&
+        this.srtSubtitles[0].content.split("\r\n")[1]
+      ) {
         this.lineNumOfTrans = 2;
       } else this.lineNumOfTrans = 1;
     },
@@ -2053,11 +2113,7 @@ export default {
         JSON.stringify(this.TTSurl) +
         "::";
       let favContent =
-        customConfig +
-        "Subtitle:" +
-        JSON.stringify(this.favList) +
-        "noteList:" +
-        JSON.stringify(this.noteList);
+        customConfig + "Subtitle:" + JSON.stringify(this.favList);
       const path = url.removeLastDir(this.$route.path);
       try {
         await api.post(path + "/" + this.favFileName, favContent, true);
@@ -2069,27 +2125,50 @@ export default {
 
     async saveSub() {
       var tempContent = this.req.content;
-      this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
-      this.subSecLine = this.subSecLine.replaceAll("\n", "");
-      this.req.content =
-        tempContent.split(
-          this.srtSubtitles[this.sentenceIndex - 1].textSubtitle
-        )[0] +
-        this.srtSubtitles[this.sentenceIndex - 1].textSubtitle +
+      var newContent = this.srtSubtitles[this.sentenceIndex - 1].timeStamp;
+
+      if (this.subFirstLine !== undefined) {
+        this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
+        if (
+          this.subFirstLine == "" &&
+          ((this.subSecLine !== undefined && this.subSecLine !== "") ||
+            (this.note !== undefined && this.note !== ""))
+        )
+          this.subFirstLine = " ";
+        if (this.subFirstLine !== "")
+          newContent = newContent + "\n" + this.subFirstLine;
+      }
+      if (this.subSecLine !== undefined) {
+        this.subSecLine = this.subSecLine.replaceAll("\n", "");
+        if (this.subSecLine !== "")
+          newContent = newContent + "\n" + this.subSecLine;
+      }
+      if (
+        (this.subSecLine == "" || this.subSecLine == undefined) &&
+        this.note !== undefined &&
+        this.note !== ""
+      )
+        newContent = newContent + "\n ";
+
+      if (this.note !== undefined) {
+        this.note = this.note.replaceAll("\n", "");
+        if (this.note !== "") newContent = newContent + "\n" + this.note;
+      }
+
+      var oldContent =
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp +
         tempContent
-          .split(this.srtSubtitles[this.sentenceIndex - 1].textSubtitle)[1]
-          .replace(
-            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0],
-            this.subFirstLine
-          )
-          .replace(
-            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1],
-            this.subSecLine
-          );
+          .split(this.srtSubtitles[this.sentenceIndex - 1].timeStamp)[1]
+          .split("\n\n")[0];
+
+      this.req.content = tempContent.replace(oldContent, newContent);
+
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] =
         this.subFirstLine;
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] =
-        this.subSubLine;
+        this.subSecLine;
+      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
+        this.note;
 
       const path = url.removeLastDir(this.$route.path);
       try {
