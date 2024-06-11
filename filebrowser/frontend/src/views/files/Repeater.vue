@@ -1236,6 +1236,10 @@ export default {
     this.initUtter();
     if (this.req.content.includes("\r\n"))
       this.req.content = this.req.content.replaceAll("\r\n", "\n");
+    if (this.req.content.includes("\n\n\n"))
+      this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
+    if (this.req.content.includes("\n\n\n\n"))
+      this.req.content = this.req.content.replaceAll("\n\n\n\n", "\n\n");
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -2140,6 +2144,12 @@ export default {
       }
       if (this.subSecLine !== undefined) {
         this.subSecLine = this.subSecLine.replaceAll("\n", "");
+        if (
+          this.subSectLine == "" &&
+          this.note !== undefined &&
+          this.note !== ""
+        )
+          this.subSecLine = " ";
         if (this.subSecLine !== "")
           newContent = newContent + "\n" + this.subSecLine;
       }
