@@ -11,7 +11,10 @@
       <header-bar v-if="srtSubtitles" style="padding: 0.5em">
         <action
           :disabled="isSetting"
-          :style="{ color: isSetting ? 'grey' : 'blue' }"
+          :style="{
+            color: isSetting ? 'grey' : 'blue',
+            flexGrow: isMobile ? '1' : '0',
+          }"
           icon="close"
           :label="$t('buttons.close')"
           @action="close()"
@@ -232,8 +235,8 @@
             <input
               class="input input--repeater"
               type="number"
-              min="1"
-              max="100"
+              min="0"
+              max="1000"
               v-model="repeatTimes"
             />
           </div>
@@ -255,8 +258,8 @@
             </span>
             <input
               class="input input--repeater"
-              type="text"
-              v-model.number="timeStampChange"
+              type="number"
+              v-model="timeStampChange"
             />
           </div>
           <div style="display: block">
@@ -1133,12 +1136,15 @@ export default {
       }
     },
     repeatTimes: function () {
+      if (this.repeatTimes < 0) this.repeatTimes = 0;
+      this.repeatTimes = Math.floor(this.repeatTimes);
       this.save();
     },
     replayFromStart: function () {
       this.save();
     },
     interval: function () {
+      if (this.interval < 0) this.interval = 0;
       this.save();
     },
     autoPlayNext: function () {
@@ -1151,6 +1157,7 @@ export default {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
+      this.timeStampChange = Math.floor(this.timeStampChange);
       this.timeOutId = setTimeout(() => {
         this.save();
         clearTimeout(this.timeOutId);
@@ -1175,17 +1182,17 @@ export default {
       if (this.isSystemTTS == "No" && !this.hasSpeechSynthesis) {
         this.alertNotSuportSpeechSynthesis = false;
       }
-
       this.save();
     },
     TTSurl: function () {
       this.save();
     },
-
     pauseTimeTransLine: function () {
+      if (this.pauseTimeTransLine < 0) this.pauseTimeTransLine = 0;
       this.save();
     },
     speedOfUtter: function () {
+      if (this.speedOfUtter < 0.1) this.speedOfUtter = 0.1;
       this.save();
     },
     isUtterTransLineFirstly: function () {
@@ -1204,6 +1211,9 @@ export default {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
+      if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
+      if (this.lineNumOfTrans > 2) this.lineNumOfTrans = 2;
+      this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       this.timeOutId = setTimeout(() => {
         this.save();
         clearTimeout(this.timeOutId);
@@ -2085,6 +2095,46 @@ export default {
       this.playInProcess = true;
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia) this.currentMedia.pause();
+      if (this.repeatTimes < 1) {
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
+        if (this.replayFromStart) this.playCount = 0;
+        this.cleanUp1();
+        if (
+          this.isUtterTransLine &&
+          !this.isUtterTransLineFirstly &&
+          this.isPauseAfterFirstDone
+        ) {
+          this.playCount = 0;
+          this.playInProcess = false;
+          this.pauseAfterFirstDone = true;
+          return;
+        }
+        this.playCount = 0;
+        this.playInProcess = false;
+        if (
+          this.isUtterTransLine &&
+          !this.isUtterTransLineFirstly &&
+          this.canUtter
+        ) {
+          this.utterTransLine();
+        } else {
+          if (
+            this.autoPlayNext &&
+            !this.isEditSubandNotes &&
+            this.sentenceIndex < this.srtSubtitles.length
+          ) {
+            this.sentenceIndex = this.sentenceIndex + 1;
+            if (!this.autoPlay) {
+              this.cleanUp1();
+              return;
+            }
+            this.singleModePlay();
+          }
+        }
+        return;
+      }
       this.playSection();
     },
     autoDetectLangInTrans() {
