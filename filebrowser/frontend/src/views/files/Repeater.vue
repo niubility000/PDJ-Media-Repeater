@@ -278,6 +278,10 @@
               <input type="checkbox" v-model="autoPlayNext" />
               {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
+            <p style="color: white">
+              <input type="checkbox" v-model="replayFromStart" />
+              {{ $t("repeater.replayFromStart") }}
+            </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p>
               <span style="color: white">
@@ -844,6 +848,7 @@ export default {
       playCount: 0,
       utterInProcess: false,
       playInProcess: false,
+      replayFromStart: false,
       timeOutId: null,
       intervalId: null,
       autoPlayNext: true,
@@ -1130,6 +1135,9 @@ export default {
     repeatTimes: function () {
       this.save();
     },
+    replayFromStart: function () {
+      this.save();
+    },
     interval: function () {
       this.save();
     },
@@ -1285,6 +1293,9 @@ export default {
         this.autoPlay = JSON.parse(this.contentAll.content.split("::")[15]);
         this.isSystemTTS = JSON.parse(this.contentAll.content.split("::")[16]);
         this.TTSurl = JSON.parse(this.contentAll.content.split("::")[17]);
+        this.replayFromStart = JSON.parse(
+          this.contentAll.content.split("::")[18]
+        );
         this.isAutoDetectLang = JSON.parse(
           this.contentAll.content.split("::")[13]
         );
@@ -1361,17 +1372,30 @@ export default {
     singleModePlay() {
       this.cleanUp1();
       if (!this.isReadyToPlay) return;
-      if (
-        (this.isUtterTransLine &&
+
+      if (this.replayFromStart) {
+        if (
+          this.isUtterTransLine &&
           this.isUtterTransLineFirstly &&
-          this.canUtter &&
-          !this.playInProcess) ||
-        this.utterInProcess
-      ) {
-        this.currentMedia.currentTime =
-          this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        this.utterTransLine();
-      } else this.loopPlay();
+          this.canUtter
+        ) {
+          this.currentMedia.currentTime =
+            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          this.utterTransLine();
+        } else this.loopPlay();
+      } else {
+        if (
+          (this.isUtterTransLine &&
+            this.isUtterTransLineFirstly &&
+            this.canUtter &&
+            !this.playInProcess) ||
+          this.utterInProcess
+        ) {
+          this.currentMedia.currentTime =
+            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          this.utterTransLine();
+        } else this.loopPlay();
+      }
     },
     chooseSentence(index) {
       this.sentenceIndex = index + 1;
@@ -2005,6 +2029,7 @@ export default {
         }
         this.currentMedia.pause();
         if (this.playCount >= this.repeatTimes - 1) {
+          if (this.replayFromStart) this.playCount = 0;
           this.cleanUp1();
           if (
             this.isUtterTransLine &&
@@ -2115,6 +2140,8 @@ export default {
         JSON.stringify(this.isSystemTTS) +
         "::" +
         JSON.stringify(this.TTSurl) +
+        "::" +
+        JSON.stringify(this.replayFromStart) +
         "::";
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
