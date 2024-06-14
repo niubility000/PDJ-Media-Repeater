@@ -1258,6 +1258,9 @@ export default {
       this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
     if (this.req.content.includes("\n\n\n\n"))
       this.req.content = this.req.content.replaceAll("\n\n\n\n", "\n\n");
+
+    if (this.req.content.includes("\t\t"))
+      this.req.content = this.req.content.replaceAll("\t\t", "\n");
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
