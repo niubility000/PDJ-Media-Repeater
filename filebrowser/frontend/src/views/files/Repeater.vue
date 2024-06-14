@@ -1484,7 +1484,9 @@ export default {
             this.lineNumOfTrans - 1
           ];
         this.utterThis.text =
-          transLineContent !== undefined && transLineContent !== " "
+          transLineContent !== undefined &&
+          transLineContent !== " " &&
+          transLineContent !== ""
             ? transLineContent
             : "no content";
         if (this.isFirstClick) this.utterThis.text = "n";
@@ -1500,7 +1502,9 @@ export default {
             this.lineNumOfTrans - 1
           ];
         let text =
-          transLineContent !== undefined && transLineContent !== " "
+          transLineContent !== undefined &&
+          transLineContent !== " " &&
+          transLineContent !== ""
             ? transLineContent
             : "no content";
         if (this.isFirstClick) text = "n";

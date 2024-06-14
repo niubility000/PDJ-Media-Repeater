@@ -18,15 +18,15 @@ Updated: 06-10-2024
 
 2.18 save notes in .srt file.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/15825111/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/15831034/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/15825115/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/15831036/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/15825130/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/15831038/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/15825132/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/15831041/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
