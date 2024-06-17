@@ -208,6 +208,21 @@
         </ul>
       </div>
 
+      <div
+        v-if="ShowSwitchSubtitle"
+        style="
+          color: green;
+          z-index: 1010;
+          position: fixed;
+          width: 100%;
+          margin: 0 auto;
+          text-align: center;
+          bottom: 1.5em;
+        "
+      >
+        <p style="text-align: center">{{ indicateSub }}</p>
+      </div>
+
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
           <p style="text-align: justify; text-align-last: left; color: white">
@@ -637,6 +652,7 @@
           Loading Media...
         </p>
         <span
+          v-html="subtitleContent"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
@@ -651,20 +667,6 @@
           "
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
-          <p v-if="isShowLine1" style="margin-top: 0">
-            {{
-              !isEmpty
-                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[0]
-                : "     "
-            }}
-          </p>
-          <p v-if="isShowLine2">
-            {{
-              !isEmpty
-                ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[1]
-                : "     "
-            }}
-          </p>
         </span>
 
         <p v-if="isMediaType == 0" style="color: red">
@@ -681,6 +683,7 @@
           style="
             color: white;
             width: 100%;
+            overflow-wrap: break-word;
             font-size: 1em;
             margin: auto;
             left: 0;
@@ -777,7 +780,7 @@
             id="editArea3"
             rows="2"
             v-model="note"
-            placeholder="...NOTES..."
+            placeholder="...NOTES..., use [XXX] to HighLight a Word or Phrase."
             style="
               width: 100%;
               font-size: 0.8em;
@@ -787,6 +790,7 @@
               resize: none;
               text-align: center;
               padding: 0;
+              white-space: pre-wrap;
             "
           ></textarea>
         </span>
@@ -854,6 +858,7 @@ export default {
       replayFromStart: false,
       timeOutId: null,
       intervalId: null,
+      intervalId1: null,
       autoPlayNext: true,
       autoPlay: true,
       timeStampChange: -100,
@@ -898,6 +903,7 @@ export default {
       isEditSubandNotes: false,
       subFirstLine: "     ",
       subSecLine: "     ",
+      ShowSwitchSubtitle: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -938,6 +944,25 @@ export default {
         return { color: "black" };
       }
     },
+    indicateSub() {
+      if (this.subtitleLang == 1) {
+        return "show ALL";
+      } else if (this.subtitleLang == 2) {
+        return "show Note Line only";
+      } else if (this.subtitleLang == 3) {
+        return "show Subtitle's First Line and Note Line";
+      } else if (this.subtitleLang == 4) {
+        return "show Subtitle's Second Line and Note Line";
+      } else if (this.subtitleLang == 5) {
+        return "show Subtitle's First Line and Second Line";
+      } else if (this.subtitleLang == 6) {
+        return "show Subtitle's First Line only";
+      } else if (this.subtitleLang == 7) {
+        return "show Subtitle's Second Line only";
+      } else {
+        return "show NONE";
+      }
+    },
     playMode() {
       if (
         this.isFavOnPlay ||
@@ -954,8 +979,19 @@ export default {
     },
     srtSubtitles() {
       if (!this.isFavOnPlay) {
+        var formatContent = this.req.content;
+        if (formatContent.includes("\r\n"))
+          formatContent = formatContent.replaceAll("\r\n", "\n");
+        if (formatContent.includes("\n\n\n\n"))
+          formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+        if (formatContent.includes("\n\n\n"))
+          formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
+
+        if (formatContent.includes("\t\t"))
+          formatContent = formatContent.replaceAll("\t\t", "\n");
+
         var subtitles = [];
-        var textSubtitles = this.req.content.split("\n\n");
+        var textSubtitles = formatContent.split("\n\n");
         for (var i = 0; i < textSubtitles.length; ++i) {
           var textSubtitle = textSubtitles[i].split("\n");
           if (textSubtitle.length >= 2) {
@@ -1054,12 +1090,80 @@ export default {
         return "";
       }
     },
-    isEnglish() {
+
+    subtitleContent() {
+      var contentLine1 =
+        !this.isEmpty &&
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] !==
+          undefined
+          ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0]
+          : " ";
+      var contentLine2 =
+        !this.isEmpty &&
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] !==
+          undefined
+          ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1]
+          : " ";
+      var contentAll = "    ";
+      if (this.isShowLine1 && this.isShowLine2) {
+        contentAll =
+          "<p style='margin-top: 0px'>" +
+          contentLine1 +
+          "</p><p>" +
+          contentLine2 +
+          "</p>";
+      } else if (this.isShowLine1 && !this.isShowLine2) {
+        contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
+      } else if (!this.isShowLine1 && this.isShowLine2) {
+        contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
+      } else {
+        contentAll = " ";
+      }
+      var highLightWord = "";
+      if (
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
+        this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")[2]
+          .includes("[")
+      ) {
+        for (
+          var i = 1;
+          i <
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")[2]
+            .split("[").length;
+          ++i
+        ) {
+          highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")[2]
+            .split("[")
+            [i].split("]")[0];
+          var reg = new RegExp("(" + highLightWord + ")", "g");
+          contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
+        }
+      }
+      return contentAll;
+    },
+    isEnglishLine1() {
       let str = this.srtSubtitles[0].content
         .split("\r\n")[0]
         .replace(/^\s\s*/, "")
         .replace(/\s\s*$/, "");
       return /^[a-zA-Z]/.test(str);
+    },
+    isEnglishLine2() {
+      if (
+        !this.srtSubtitles[0].content.split("\r\n")[1] ||
+        this.srtSubtitles[0].content.split("\r\n")[1] == " "
+      )
+        return false;
+      else {
+        let str = this.srtSubtitles[0].content
+          .split("\r\n")[1]
+          .replace(/^\s\s*/, "")
+          .replace(/\s\s*$/, "");
+        return /^[a-zA-Z]/.test(str);
+      }
     },
 
     isTouchDevice() {
@@ -1254,10 +1358,10 @@ export default {
     this.initUtter();
     if (this.req.content.includes("\r\n"))
       this.req.content = this.req.content.replaceAll("\r\n", "\n");
-    if (this.req.content.includes("\n\n\n"))
-      this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
     if (this.req.content.includes("\n\n\n\n"))
       this.req.content = this.req.content.replaceAll("\n\n\n\n", "\n\n");
+    if (this.req.content.includes("\n\n\n"))
+      this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
 
     if (this.req.content.includes("\t\t"))
       this.req.content = this.req.content.replaceAll("\t\t", "\n");
@@ -1567,6 +1671,8 @@ export default {
     },
 
     switchSubtitle() {
+      this.ShowSwitchSubtitle = true;
+      if (this.intervalId1) clearInterval(this.intervalId1);
       this.subtitleLang = this.subtitleLang + 1;
       if (this.subtitleLang == 9) this.subtitleLang = 1;
       if (this.subtitleLang == 1) {
@@ -1602,6 +1708,9 @@ export default {
         this.isShowLine2 = false;
         this.isShowLine3 = false;
       }
+      this.intervalId1 = setTimeout(() => {
+        this.ShowSwitchSubtitle = false;
+      }, 3000);
     },
     resetTTSurl() {
       this.TTSurl =
@@ -2146,19 +2255,26 @@ export default {
     },
     autoDetectLangInTrans() {
       if (
-        this.isEnglish &&
-        (!this.srtSubtitles[0].content.split("\r\n")[1] ||
-          this.srtSubtitles[0].content.split("\r\n")[1] == " ")
-      )
-        this.isUtterTransLine = false;
-      else this.isUtterTransLine = true;
-      if (
-        this.isUtterTransLine &&
-        this.isEnglish &&
-        this.srtSubtitles[0].content.split("\r\n")[1]
+        !this.isEnglishLine1 &&
+        !(
+          !this.srtSubtitles[0].content.split("\r\n")[0] ||
+          this.srtSubtitles[0].content.split("\r\n")[0] == " "
+        )
       ) {
+        console.log("1");
+        this.isUtterTransLine = true;
+        this.lineNumOfTrans = 1;
+      } else if (
+        !this.isEnglishLine2 &&
+        !(
+          !this.srtSubtitles[0].content.split("\r\n")[1] ||
+          this.srtSubtitles[0].content.split("\r\n")[1] == " "
+        )
+      ) {
+        console.log("2");
+        this.isUtterTransLine = true;
         this.lineNumOfTrans = 2;
-      } else this.lineNumOfTrans = 1;
+      } else this.isUtterTransLine = false;
     },
     async save() {
       let customConfig =
@@ -2298,6 +2414,7 @@ export default {
 
     key(event) {
       if (!this.isReadyToPlay) return;
+      if (this.isFirstClick) this.firstClick();
       if (
         event.which === 39 &&
         this.sentenceIndex < this.srtSubtitles.length &&
