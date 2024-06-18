@@ -23,7 +23,7 @@
           {{ mediaName }}
         </title>
         <span
-          @click="isShowSubtitleList()"
+          @click="isShowList()"
           :style="{
             pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
           }"
@@ -43,6 +43,8 @@
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
+                  : showNewWordList
+                  ? 'black'
                   : 'blue',
             }"
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
@@ -75,7 +77,9 @@
         </button>
 
         <button
-          :disabled="loading || !isSingle || showSubtitleList"
+          :disabled="
+            loading || !isSingle || showSubtitleList || showNewWordList
+          "
           class="action"
           @click="onSetting"
           :title="$t('repeater.settings')"
@@ -83,7 +87,7 @@
           <i
             :style="{
               color:
-                !isSingle || showSubtitleList
+                !isSingle || showSubtitleList || showNewWordList
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -97,7 +101,12 @@
         <button
           v-if="srtSubtitles"
           :disabled="
-            loading || isSetting || !isSingle || showSubtitleList || isFavOnPlay
+            loading ||
+            isSetting ||
+            !isSingle ||
+            showSubtitleList ||
+            showNewWordList ||
+            isFavOnPlay
           "
           class="action"
           @click="switchEditSubandNote"
@@ -106,7 +115,11 @@
           <i
             :style="{
               color:
-                isSetting || !isSingle || showSubtitleList || isFavOnPlay
+                isSetting ||
+                !isSingle ||
+                showSubtitleList ||
+                showNewWordList ||
+                isFavOnPlay
                   ? 'grey'
                   : isEditSubandNotes
                   ? 'red'
@@ -118,7 +131,9 @@
         </button>
 
         <button
-          :disabled="loading || isSetting || showSubtitleList"
+          :disabled="
+            loading || isSetting || showSubtitleList || showNewWordList
+          "
           class="action"
           @click="switchSubtitle"
           :title="$t('repeater.switchsubtitleLanguages')"
@@ -132,6 +147,7 @@
             isFavOnPlay ||
             isSetting ||
             showSubtitleList ||
+            showNewWordList ||
             isEditSubandNotes
           "
           class="action"
@@ -206,6 +222,65 @@
             <hr style="border: none; border-top: 1px solid black; height: 0" />
           </li>
         </ul>
+      </div>
+
+      <div
+        v-if="showNewWordList"
+        style="
+          color: whitesmoke;
+          z-index: 1010;
+          display: flex;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          top: 3.5em;
+          bottom: 1.5em;
+        "
+        :style="{
+          width: isMobile ? '100%' : '65%',
+        }"
+      >
+        <ul
+          v-if="newWordList.length > 0"
+          style="
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 1em;
+            border-radius: 10px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: grey;
+            list-style-type: none;
+          "
+        >
+          <li
+            v-for="(newWord, index) in newWordList"
+            :key="index"
+            :id="index + 1"
+            @click="chooseSentence(newWord.num)"
+          >
+            <p style="color: white">{{ index + 1 }}. {{ newWord.content }}</p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+          </li>
+        </ul>
+        <div
+          v-if="newWordList.length == 0"
+          style="
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 1em;
+            border-radius: 10px;
+            background: grey;
+          "
+        >
+          <p>No New Words defined!</p>
+          <p>
+            Add a new word or phrase in sentence's note line in Edit Mode with
+            format [Original Text:Translation].
+          </p>
+        </div>
       </div>
 
       <div
@@ -671,7 +746,10 @@
 
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
-          folder, or the .srt file is incorrect.
+          folder, or the .srt file's format is incorrect.
+        </p>
+        <p v-if="srtSubtitles == null" style="color: red">
+          This .srt file's format is incorrect.
         </p>
 
         <span
@@ -780,7 +858,7 @@
             id="editArea3"
             rows="2"
             v-model="note"
-            placeholder="...NOTES..., use [XXX] to HighLight a Word or Phrase."
+            placeholder="...NOTES..., use format [Original Text: Translation] to add a New Word or Phrase."
             style="
               width: 100%;
               font-size: 0.8em;
@@ -898,6 +976,7 @@ export default {
       note: "     ",
       confirmType: "",
       showSubtitleList: false,
+      showNewWordList: false,
       sessionLength: null,
       isSlowInternet: false,
       isEditSubandNotes: false,
@@ -927,7 +1006,8 @@ export default {
       }
     },
     subSwitch() {
-      if (this.isSetting || this.showSubtitleList) return { color: "grey" };
+      if (this.isSetting || this.showSubtitleList || this.showNewWordList)
+        return { color: "grey" };
       if (this.subtitleLang == 1) {
         return { color: "blue" };
       } else if (this.subtitleLang == 2) {
@@ -946,21 +1026,21 @@ export default {
     },
     indicateSub() {
       if (this.subtitleLang == 1) {
-        return "show ALL";
+        return "1. show ALL";
       } else if (this.subtitleLang == 2) {
-        return "show Note Line only";
+        return "2. show Note Line only";
       } else if (this.subtitleLang == 3) {
-        return "show Subtitle's First Line and Note Line";
+        return "3. show Subtitle's First Line and Note Line";
       } else if (this.subtitleLang == 4) {
-        return "show Subtitle's Second Line and Note Line";
+        return "4. show Subtitle's Second Line and Note Line";
       } else if (this.subtitleLang == 5) {
-        return "show Subtitle's First Line and Second Line";
+        return "5. show Subtitle's First Line and Second Line";
       } else if (this.subtitleLang == 6) {
-        return "show Subtitle's First Line only";
+        return "6. show Subtitle's First Line only";
       } else if (this.subtitleLang == 7) {
-        return "show Subtitle's Second Line only";
+        return "7. show Subtitle's Second Line only";
       } else {
-        return "show NONE";
+        return "8. show NONE";
       }
     },
     playMode() {
@@ -968,6 +1048,7 @@ export default {
         this.isFavOnPlay ||
         this.isSetting ||
         this.showSubtitleList ||
+        this.showNewWordList ||
         this.isEditSubandNotes
       ) {
         return { color: "grey" };
@@ -1007,6 +1088,7 @@ export default {
               parseFloat(startSS) +
               (parseFloat(startMS) + this.timeStampChange) / 1000;
             var endTimeUnformat = textSubtitle[1].split(" --> ")[1];
+            if (!endTimeUnformat) return null;
             var endHH = endTimeUnformat.split(":")[0];
             var endMM = endTimeUnformat.split(":")[1];
             var endSS = endTimeUnformat.split(":")[2];
@@ -1045,6 +1127,36 @@ export default {
         return this.currentFileFavList;
       }
     },
+    newWordList() {
+      var wordList = [];
+      var newWord = "";
+      var sIndex = this.sentenceIndex - 1;
+      for (var i = 0; i < this.srtSubtitles.length; ++i) {
+        if (
+          this.srtSubtitles[i].content.split("\r\n")[2] &&
+          this.srtSubtitles[i].content.split("\r\n")[2].includes("[")
+        ) {
+          for (
+            var j = 1;
+            j < this.srtSubtitles[i].content.split("\r\n")[2].split("[").length;
+            ++j
+          ) {
+            newWord = this.srtSubtitles[i].content
+              .split("\r\n")[2]
+              .split("[")
+              [j].split("]")[0];
+            sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
+            var newWordItem = {
+              num: sIndex,
+              content: newWord,
+            };
+            wordList.push(newWordItem);
+          }
+        }
+      }
+      return wordList;
+    },
+
     isMediaType() {
       if (this.listing && this.req.name) {
         for (var i = 0; i < this.listing.length; ++i) {
@@ -1134,10 +1246,22 @@ export default {
             .split("[").length;
           ++i
         ) {
-          highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
-            .split("\r\n")[2]
-            .split("[")
-            [i].split("]")[0];
+          if (
+            this.srtSubtitles[this.sentenceIndex - 1].content
+              .split("\r\n")[2]
+              .split("[")
+              [i].includes(":")
+          ) {
+            highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
+              .split("\r\n")[2]
+              .split("[")
+              [i].split(":")[0];
+          } else {
+            highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
+              .split("\r\n")[2]
+              .split("[")
+              [i].split("]")[0];
+          }
           var reg = new RegExp("(" + highLightWord + ")", "g");
           contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
         }
@@ -1549,8 +1673,15 @@ export default {
         return;
       }
     },
-    isShowSubtitleList() {
-      this.showSubtitleList = !this.showSubtitleList;
+    isShowList() {
+      if (!this.showSubtitleList && !this.showNewWordList) {
+        this.showSubtitleList = true;
+      } else if (this.showSubtitleList && !this.showNewWordList) {
+        this.showSubtitleList = false;
+        this.showNewWordList = true;
+      } else if (!this.showSubtitleList && this.showNewWordList) {
+        this.showNewWordList = false;
+      }
       if (this.showSubtitleList) {
         setTimeout(() => {
           document
@@ -2261,7 +2392,6 @@ export default {
           this.srtSubtitles[0].content.split("\r\n")[0] == " "
         )
       ) {
-        console.log("1");
         this.isUtterTransLine = true;
         this.lineNumOfTrans = 1;
       } else if (
@@ -2271,7 +2401,6 @@ export default {
           this.srtSubtitles[0].content.split("\r\n")[1] == " "
         )
       ) {
-        console.log("2");
         this.isUtterTransLine = true;
         this.lineNumOfTrans = 2;
       } else this.isUtterTransLine = false;
