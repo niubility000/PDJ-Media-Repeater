@@ -16,7 +16,7 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-Updated: 06-10-2024
+Updated: 06-18-2024
 
 2.19 add function to highlight new words in subtitles
 
