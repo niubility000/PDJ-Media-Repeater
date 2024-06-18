@@ -273,6 +273,7 @@
             padding: 1em;
             border-radius: 10px;
             background: grey;
+            top: 1em;
           "
         >
           <p>No New Words defined!</p>
