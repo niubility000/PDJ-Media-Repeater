@@ -364,7 +364,11 @@
             />
           </div>
           <div style="display: block">
-            <p style="color: white">
+            <p
+              :style="{
+                color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
+              }"
+            >
               <input type="checkbox" v-model="autoPlay" />
               {{ $t("repeater.autoPlayCurrentSentence") }}
             </p>
@@ -597,6 +601,20 @@
                 v-model="isPauseAfterFirstDone"
               />
               {{ $t("repeater.autoPauseAfterFirstDone") }}
+            </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <p
+              :style="{
+                color: !isFavOnPlay ? 'white' : '#bbbaba',
+              }"
+              style="text-align: justify; text-align-last: left"
+            >
+              <input
+                :disabled="isFavOnPlay"
+                type="checkbox"
+                v-model="isPlayFullFavList"
+              />
+              {{ $t("repeater.playFullFavList") }}
             </p>
           </div>
           <div style="color: white">
@@ -971,6 +989,7 @@ export default {
       hasSpeechSynthesis:
         !!window.speechSynthesis || "speechSynthesis" in window,
       utterThis: null,
+      isPlayFullFavList: false,
       audio: null,
       isSystemTTS: "Yes",
       contentAll: null,
@@ -984,6 +1003,7 @@ export default {
       subFirstLine: "     ",
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
+      firstMount: true,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -998,12 +1018,22 @@ export default {
     },
     favListStatus() {
       if (this.isSetting || !this.isSingle) return { color: "grey" };
-      if (this.currentFileFavList.length == 0) {
-        return { color: "grey" };
-      } else if (this.isFavOnPlay) {
-        return { color: "red" };
+      if (!this.isPlayFullFavList) {
+        if (this.currentFileFavList.length == 0) {
+          return { color: "grey" };
+        } else if (this.isFavOnPlay) {
+          return { color: "red" };
+        } else {
+          return { color: "blue" };
+        }
       } else {
-        return { color: "blue" };
+        if (this.favList.length == 0) {
+          return { color: "grey" };
+        } else if (this.isFavOnPlay) {
+          return { color: "red" };
+        } else {
+          return { color: "blue" };
+        }
       }
     },
     subSwitch() {
@@ -1124,6 +1154,8 @@ export default {
           }
         }
         return subtitles;
+      } else if (this.isPlayFullFavList) {
+        return this.favList;
       } else {
         return this.currentFileFavList;
       }
@@ -1159,27 +1191,47 @@ export default {
     },
 
     isMediaType() {
-      if (this.listing && this.req.name) {
-        for (var i = 0; i < this.listing.length; ++i) {
-          if (this.listing[i].name == this.req.name.replace(".srt", ".mp4")) {
-            return 2;
-          } else if (
-            this.listing[i].name == this.req.name.replace(".srt", ".mp3")
-          ) {
-            return 1;
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1].rawPath.includes(".mp4")
+        ) {
+          return 2;
+        } else return 1;
+      } else {
+        if (this.listing && this.req.name) {
+          for (var i = 0; i < this.listing.length; ++i) {
+            if (this.listing[i].name == this.req.name.replace(".srt", ".mp4")) {
+              return 2;
+            } else if (
+              this.listing[i].name == this.req.name.replace(".srt", ".mp3")
+            ) {
+              return 1;
+            }
           }
-        }
-        return 0;
-      } else return -1;
+          return 0;
+        } else return -1;
+      }
     },
 
     raw() {
       let srtUrl = api.getDownloadURL(this.req, true);
-      if (srtUrl && this.isMediaType == 1) {
-        return srtUrl.replace(".srt", ".mp3");
-      } else if (srtUrl && this.isMediaType == 2) {
-        return srtUrl.replace(".srt", ".mp4");
-      } else return "";
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        return (
+          srtUrl.split("/raw/")[0] +
+          "/raw/" +
+          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
+            "?"
+          )[0] +
+          "?" +
+          srtUrl.split("?")[1]
+        );
+      } else {
+        if (srtUrl && this.isMediaType == 1) {
+          return srtUrl.replace(".srt", ".mp3");
+        } else if (srtUrl && this.isMediaType == 2) {
+          return srtUrl.replace(".srt", ".mp4");
+        } else return "";
+      }
     },
     currentMedia() {
       if (this.isMediaType == 1) {
@@ -1270,7 +1322,7 @@ export default {
       return contentAll;
     },
     isEnglishLine1() {
-      let str = this.srtSubtitles[0].content
+      let str = this.srtSubtitles[this.sentenceIndex - 1].content
         .split("\r\n")[0]
         .replace(/^\s\s*/, "")
         .replace(/\s\s*$/, "");
@@ -1278,12 +1330,13 @@ export default {
     },
     isEnglishLine2() {
       if (
-        !this.srtSubtitles[0].content.split("\r\n")[1] ||
-        this.srtSubtitles[0].content.split("\r\n")[1] == " "
+        !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ==
+          " "
       )
         return false;
       else {
-        let str = this.srtSubtitles[0].content
+        let str = this.srtSubtitles[this.sentenceIndex - 1].content
           .split("\r\n")[1]
           .replace(/^\s\s*/, "")
           .replace(/\s\s*$/, "");
@@ -1473,6 +1526,24 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+    isPlayFullFavList: function () {
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.save();
+        clearTimeout(this.timeOutId);
+      }, 1);
+    },
+
+    raw: function () {
+      this.isReadyToPlay = false;
+      this.playCount = 0;
+      this.firstMount = false;
+      this.isFirstClick = true;
+      if (this.isFavOnPlay && this.isAutoDetectLang)
+        this.autoDetectLangInTrans();
+    },
   },
 
   async mounted() {
@@ -1538,6 +1609,9 @@ export default {
         this.replayFromStart = JSON.parse(
           this.contentAll.content.split("::")[18]
         );
+        this.isPlayFullFavList = JSON.parse(
+          this.contentAll.content.split("::")[19]
+        );
         this.isAutoDetectLang = JSON.parse(
           this.contentAll.content.split("::")[13]
         );
@@ -1600,10 +1674,11 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         if (
-          this.currentMedia.currentTime <
+          this.firstMount &&
+          (this.currentMedia.currentTime <
             this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.2 ||
-          this.currentMedia.currentTime >
-            this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2
+            this.currentMedia.currentTime >
+              this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2)
         ) {
           window.sessionStorage.setItem("isBrowserHiJack", true);
           location.reload();
@@ -1790,7 +1865,10 @@ export default {
             this.sentenceIndex < this.srtSubtitles.length
           ) {
             this.sentenceIndex = this.sentenceIndex + 1;
-            if (!this.autoPlay) {
+            if (
+              !this.autoPlay ||
+              (this.isFavOnPlay && this.isPlayFullFavList)
+            ) {
               this.cleanUp1();
               return;
             }
@@ -1878,13 +1956,19 @@ export default {
         if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
         this.sentenceIndex = 1;
+        if (!this.isPlayFullFavList) {
+          this.singleModePlay();
+        }
       } else {
-        this.sentenceIndex = Number(
-          window.sessionStorage.getItem("lastSentenceIndex")
-        );
+        if (this.isPlayFullFavList) {
+          this.sentenceIndex = Number(
+            window.sessionStorage.getItem("lastSentenceIndex")
+          );
+        } else {
+          if (this.isFirstClick) this.firstClick();
+          this.singleModePlay();
+        }
       }
-      if (this.isFirstClick) this.firstClick();
-      this.singleModePlay();
     },
 
     switchIsFav() {
@@ -1894,6 +1978,7 @@ export default {
           //add a fav
           var fav = {
             rawPath: this.mediaName,
+            originalRawPath: this.raw.split("?")[0].split("/raw/")[1],
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
             endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
             content: this.srtSubtitles[this.sentenceIndex - 1].content,
@@ -2133,6 +2218,7 @@ export default {
         this.cleanUp1();
         if (this.sentenceIndex == 1) return;
         this.sentenceIndex = this.sentenceIndex - 1;
+        if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.singleModePlay();
@@ -2158,6 +2244,7 @@ export default {
         this.cleanUp1();
         if (this.sentenceIndex == this.srtSubtitles.length) return;
         this.sentenceIndex = this.sentenceIndex + 1;
+        if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.singleModePlay();
@@ -2315,7 +2402,10 @@ export default {
                 this.sentenceIndex < this.srtSubtitles.length
               ) {
                 this.sentenceIndex = this.sentenceIndex + 1;
-                if (!this.autoPlay) {
+                if (
+                  !this.autoPlay ||
+                  (this.isFavOnPlay && this.isPlayFullFavList)
+                ) {
                   this.cleanUp1();
                   return;
                 }
@@ -2374,7 +2464,10 @@ export default {
             this.sentenceIndex < this.srtSubtitles.length
           ) {
             this.sentenceIndex = this.sentenceIndex + 1;
-            if (!this.autoPlay) {
+            if (
+              !this.autoPlay ||
+              (this.isFavOnPlay && this.isPlayFullFavList)
+            ) {
               this.cleanUp1();
               return;
             }
@@ -2389,8 +2482,9 @@ export default {
       if (
         !this.isEnglishLine1 &&
         !(
-          !this.srtSubtitles[0].content.split("\r\n")[0] ||
-          this.srtSubtitles[0].content.split("\r\n")[0] == " "
+          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ||
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ==
+            " "
         )
       ) {
         this.isUtterTransLine = true;
@@ -2398,8 +2492,9 @@ export default {
       } else if (
         !this.isEnglishLine2 &&
         !(
-          !this.srtSubtitles[0].content.split("\r\n")[1] ||
-          this.srtSubtitles[0].content.split("\r\n")[1] == " "
+          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ==
+            " "
         )
       ) {
         this.isUtterTransLine = true;
@@ -2445,6 +2540,8 @@ export default {
         JSON.stringify(this.TTSurl) +
         "::" +
         JSON.stringify(this.replayFromStart) +
+        "::" +
+        JSON.stringify(this.isPlayFullFavList) +
         "::";
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
@@ -2544,7 +2641,6 @@ export default {
 
     key(event) {
       if (!this.isReadyToPlay) return;
-      if (this.isFirstClick) this.firstClick();
       if (
         event.which === 39 &&
         this.sentenceIndex < this.srtSubtitles.length &&
@@ -2569,13 +2665,23 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex + 1;
+        if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
+          if (this.isFirstClick) return;
           this.singleModePlay();
+          if (!this.autoPlay) {
+            setTimeout(() => {
+              this.cleanUp1();
+            }, 1);
+          }
         } else {
-          this.regularPlay();
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          setTimeout(() => {
+            this.regularPlay();
+            this.currentMedia.currentTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          }, 1);
         }
+        return;
       } else if (
         event.which === 37 &&
         this.sentenceIndex > 1 &&
@@ -2600,27 +2706,40 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex - 1;
+        if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
+          if (this.isFirstClick) return;
           this.singleModePlay();
+          if (!this.autoPlay) {
+            setTimeout(() => {
+              this.cleanUp1();
+            }, 1);
+          }
         } else {
-          this.regularPlay();
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          setTimeout(() => {
+            this.regularPlay();
+            this.currentMedia.currentTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          }, 1);
         }
+        return;
       } else if (event.which === 38) {
         // up arrow
         this.cleanUp1(); //stop play
       } else if (event.which === 40 && !this.isSetting) {
         // down arrow
         this.cleanUp1();
+        if (this.isFirstClick) this.firstClick();
         if (this.isSingle) {
-          if (this.pauseAfterFirstDone) {
-            this.pauseAfterFirstDone = false;
-            if (this.isUtterTransLineFirstly) this.loopPlay();
-            else this.utterTransLine();
-          } else {
-            this.singleModePlay();
-          }
+          setTimeout(() => {
+            if (this.pauseAfterFirstDone) {
+              this.pauseAfterFirstDone = false;
+              if (this.isUtterTransLineFirstly) this.loopPlay();
+              else this.utterTransLine();
+            } else {
+              this.singleModePlay();
+            }
+          }, 1);
         } else {
           setTimeout(() => {
             this.regularPlay();

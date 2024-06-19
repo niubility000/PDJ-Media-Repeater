@@ -30,6 +30,7 @@
     "replayFromStart": "单击时从第一遍重播当前句",   
     "utterTransFirstly": "先朗读译文",	    
     "autoPauseAfterFirstDone": "先朗读译文或先播放当前句之后自动暂停，单击后继续",
+    "playFullFavList": "播放收藏列表时播放当前文件夹内所有收藏的句子。（此模式下，由于浏览器的限制，自动播放当前句将被禁用）",
     "instructions": "操作指南",
     "instruction1": "单击或键盘向下键： 重播当前句",    
     "instruction2": "双击或键盘向上键： 停止播放",
