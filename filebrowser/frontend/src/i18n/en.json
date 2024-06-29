@@ -25,6 +25,8 @@
     "notSystemTTSnote": "The default TTS API address maybe invalid. You can change it to any other online TTS API address (Test it firstly). ",
     "langInTransLine": "Language Used In translation Line:",
     "lineNumOfTrans": "Line Number Of Translation In Subtitle:",
+    "testTTSVoice": "Voice Test",
+    "voice": "Voice (Your browser has {totalvoices} voices for this language, including online voices):",
     "pauseTime": "Pause Time (in second):",    
     "speedOfUttering": "Speed Of Uttering:",
     "replayFromStart": "SingleClick to Replay Current Sentence from the First Time",

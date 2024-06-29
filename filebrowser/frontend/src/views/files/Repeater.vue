@@ -328,7 +328,7 @@
               type="number"
               min="0"
               max="1000"
-              v-model="repeatTimes"
+              v-model.number="repeatTimes"
             />
           </div>
           <div style="display: block">
@@ -350,7 +350,7 @@
             <input
               class="input input--repeater"
               type="number"
-              v-model="timeStampChange"
+              v-model.number="timeStampChange"
             />
           </div>
           <div style="display: block">
@@ -502,24 +502,6 @@
                 {{ $t("repeater.notSystemTTSnote") }}
               </p>
             </div>
-
-            <div style="display: block">
-              <span
-                :style="{
-                  color: isUtterTransLine ? 'white' : '#bbbaba',
-                }"
-                style="margin-left: 1em"
-                class="subject"
-              >
-                {{ $t("repeater.langInTransLine") }}
-              </span>
-              <input
-                :disabled="!(isUtterTransLine && !isAutoDetectLang)"
-                class="input input--repeater"
-                type="text"
-                v-model="langInTransLine"
-              />
-            </div>
             <div style="display: block">
               <span
                 :style="{
@@ -538,6 +520,73 @@
                 max="2"
                 v-model="lineNumOfTrans"
               />
+            </div>
+            <div style="display: block">
+              <span
+                :style="{
+                  color:
+                    !isUtterTransLine || isSystemTTS == 'No'
+                      ? '#bbbaba'
+                      : 'white',
+                }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                {{ $t("repeater.langInTransLine") }}
+              </span>
+              <input
+                :disabled="
+                  !isUtterTransLine || isSystemTTS == 'No' || isAutoDetectLang
+                "
+                class="input input--repeater"
+                type="text"
+                placeholder="zh"
+                v-model="langInTransLine"
+              />
+            </div>
+            <div style="display: block">
+              <span
+                :style="{
+                  color:
+                    !isUtterTransLine || isSystemTTS == 'No'
+                      ? '#bbbaba'
+                      : 'white',
+                }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                {{
+                  $t("repeater.voice", {
+                    totalvoices: totalreaders,
+                  })
+                }}
+              </span>
+              <input
+                :disabled="!isUtterTransLine || isSystemTTS == 'No'"
+                class="input input--repeater"
+                type="number"
+                v-model.number="reader"
+                :style="{
+                  width: isMobile ? '3em' : '6em',
+                }"
+              />
+              <button
+                :disabled="isSystemTTS == 'No' || !isUtterTransLine"
+                class="action"
+                @click="testTTSVoice"
+                :title="$t('repeater.testTTSVoice')"
+              >
+                <i
+                  :style="{
+                    color:
+                      isSystemTTS == 'No' || !isUtterTransLine
+                        ? '#bbbaba'
+                        : 'blue',
+                  }"
+                  class="material-icons"
+                  >play_circle_outline</i
+                >
+              </button>
             </div>
             <div style="display: block">
               <span
@@ -947,7 +996,7 @@ export default {
       timeDiff: null,
       distanceX: null,
       distanceY: null,
-      repeatTimes: 3,
+      repeatTimes: 4,
       interval: 2,
       playCount: 0,
       utterInProcess: false,
@@ -958,8 +1007,8 @@ export default {
       intervalId1: null,
       autoPlayNext: true,
       autoPlay: true,
-      timeStampChange: -100,
-      currentSpeed: "0.8, 0.5",
+      timeStampChange: 0,
+      currentSpeed: "1, 0.8, 0.5",
       listing: null,
       isSetting: false,
       isEmpty: false,
@@ -975,7 +1024,7 @@ export default {
       isUtterTransLine: true,
       pauseTimeTransLine: 3,
       speedOfUtter: 1,
-      isUtterTransLineFirstly: true,
+      isUtterTransLineFirstly: false,
       langInTransLine: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
@@ -1004,6 +1053,7 @@ export default {
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
       firstMount: true,
+      reader: 1,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1035,6 +1085,15 @@ export default {
           return { color: "blue" };
         }
       }
+    },
+    totalreaders() {
+      let voices = window.speechSynthesis.getVoices();
+      let formattedLang =
+        this.langInTransLine.substring(0, 3) +
+        this.langInTransLine.substring(3).toUpperCase();
+      return voices.filter(function (voice) {
+        return voice.lang.includes(formattedLang);
+      }).length;
     },
     subSwitch() {
       if (this.isSetting || this.showSubtitleList || this.showNewWordList)
@@ -1178,12 +1237,14 @@ export default {
               .split("\r\n")[2]
               .split("[")
               [j].split("]")[0];
-            sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
-            var newWordItem = {
-              num: sIndex,
-              content: newWord,
-            };
-            wordList.push(newWordItem);
+            if (newWord !== ":" && newWord !== "") {
+              sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
+              var newWordItem = {
+                num: sIndex,
+                content: newWord,
+              };
+              wordList.push(newWordItem);
+            }
           }
         }
       }
@@ -1316,7 +1377,8 @@ export default {
               [i].split("]")[0];
           }
           var reg = new RegExp("(" + highLightWord + ")", "g");
-          contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
+          if (highLightWord !== "" && highLightWord !== " ")
+            contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
         }
       }
       return contentAll;
@@ -1439,7 +1501,6 @@ export default {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
-      this.timeStampChange = Math.floor(this.timeStampChange);
       this.timeOutId = setTimeout(() => {
         this.save();
         clearTimeout(this.timeOutId);
@@ -1785,6 +1846,34 @@ export default {
         })
         .catch((error) => console.error("Error Uttering Trans Line:", error));
     },
+    testTTSVoice() {
+      if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
+        let transLineContent =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfTrans - 1
+          ];
+        this.utterThis.text =
+          transLineContent !== undefined &&
+          transLineContent !== " " &&
+          transLineContent !== ""
+            ? transLineContent
+            : "no content";
+        this.utterThis.lang = this.langInTransLine;
+        this.utterThis.rate = this.speedOfUtter;
+        let voices = window.speechSynthesis.getVoices();
+        let formattedLang =
+          this.langInTransLine.substring(0, 3) +
+          this.langInTransLine.substring(3).toUpperCase();
+        this.utterThis.voice = voices.filter(function (voice) {
+          return voice.lang.includes(formattedLang);
+        })[this.reader - 1];
+        window.speechSynthesis.speak(this.utterThis);
+        this.utterThis.onend = () => {
+          this.cleanUp2();
+          this.cleanUp1();
+        };
+      }
+    },
     endTestUtter() {
       this.audio.removeEventListener("ended", this.endTestUtter, false);
       this.cleanUp2();
@@ -1806,6 +1895,13 @@ export default {
         if (this.isFirstClick) this.utterThis.text = "n";
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
+        let voices = window.speechSynthesis.getVoices();
+        let formattedLang =
+          this.langInTransLine.substring(0, 3) +
+          this.langInTransLine.substring(3).toUpperCase();
+        this.utterThis.voice = voices.filter(function (voice) {
+          return voice.lang.includes(formattedLang);
+        })[this.reader - 1];
         window.speechSynthesis.speak(this.utterThis);
         this.utterThis.onend = () => {
           this.endUtter();
