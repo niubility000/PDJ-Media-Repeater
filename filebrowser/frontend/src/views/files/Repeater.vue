@@ -19,7 +19,16 @@
           :label="$t('buttons.close')"
           @action="close()"
         />
-        <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
+        <title
+          style="flex-grow: 1; white-space: nowrap"
+          v-if="!isMobile && isFavOnPlay"
+        >
+          {{ srtSubtitles[this.sentenceIndex - 1].mediaName }}
+        </title>
+        <title
+          style="flex-grow: 1; white-space: nowrap"
+          v-if="!isMobile && !isFavOnPlay"
+        >
           {{ mediaName }}
         </title>
         <span
@@ -50,7 +59,6 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
           >
         </span>
-
         <button
           v-if="srtSubtitles"
           :disabled="loading || isSetting || !isSingle"
@@ -66,7 +74,6 @@
             >grade</i
           >
         </button>
-
         <button
           :disabled="loading || favList.length == 0 || isSetting || !isSingle"
           class="action"
@@ -75,7 +82,6 @@
         >
           <i :style="favListStatus" class="material-icons">folder_special</i>
         </button>
-
         <button
           :disabled="
             loading || !isSingle || showSubtitleList || showNewWordList
@@ -97,7 +103,6 @@
             >settings</i
           >
         </button>
-
         <button
           v-if="srtSubtitles"
           :disabled="
@@ -129,7 +134,6 @@
             >edit</i
           >
         </button>
-
         <button
           :disabled="
             loading || isSetting || showSubtitleList || showNewWordList
@@ -140,8 +144,8 @@
         >
           <i :style="subSwitch" class="material-icons">closed_caption</i>
         </button>
-
         <button
+          v-if="isSingle"
           :disabled="
             loading ||
             isFavOnPlay ||
@@ -152,13 +156,18 @@
           "
           class="action"
           @click="onSingle"
-          :title="
-            isSingle
-              ? $t('repeater.singleSentenceRepetitionMode')
-              : $t('repeater.regularMode')
-          "
+          :title="$t('repeater.singleSentenceRepetitionMode')"
         >
           <i :style="playMode" class="material-icons">repeat_one</i>
+        </button>
+        <button
+          v-if="!isSingle"
+          :disabled="loading"
+          class="action"
+          @click="onSingle"
+          :title="$t('repeater.regularMode')"
+        >
+          <i :style="playMode" class="material-icons">repeat</i>
         </button>
       </header-bar>
       <div
@@ -175,7 +184,20 @@
           Slow Internet! Replay...
         </p>
       </div>
-
+      <div
+        v-if="ShowSwitchSubtitle"
+        style="
+          z-index: 1011;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 2.5em;
+        "
+      >
+        <p style="color: white; background-color: blueviolet">
+          {{ indicateSub }}
+        </p>
+      </div>
       <div
         v-if="showSubtitleList"
         style="
@@ -223,7 +245,6 @@
           </li>
         </ul>
       </div>
-
       <div
         v-if="showNewWordList"
         style="
@@ -283,22 +304,6 @@
           </p>
         </div>
       </div>
-
-      <div
-        v-if="ShowSwitchSubtitle"
-        style="
-          color: green;
-          z-index: 1010;
-          position: fixed;
-          width: 100%;
-          margin: 0 auto;
-          text-align: center;
-          bottom: 1.5em;
-        "
-      >
-        <p style="text-align: center">{{ indicateSub }}</p>
-      </div>
-
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
           <p style="text-align: justify; text-align-last: left; color: white">
@@ -395,7 +400,6 @@
                 {{ $t("repeater.autoDetect") }})
               </span>
             </p>
-
             <div
               :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
               :disabled="!isUtterTransLine"
@@ -416,7 +420,6 @@
               >
                 {{ $t("repeater.speechsynthesisAlert") }}
               </p>
-
               <p
                 style="margin: 0.5em 0 1em 2em"
                 :style="{
@@ -665,6 +668,17 @@
               />
               {{ $t("repeater.playFullFavList") }}
             </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <p style="color: white; text-align: justify; text-align-last: left">
+              <input type="checkbox" v-model="allowCacheTemp" />
+              {{ $t("repeater.allowCache") }}
+            </p>
+            <p style="color: white; text-align: justify; text-align-last: left">
+              {{ $t("repeater.savedfiles", { numOfKeys: numOfKeys }) }}
+              <button @click="cacheCleanUp">
+                {{ $t("repeater.cleanUpCache") }}
+              </button>
+            </p>
           </div>
           <div style="color: white">
             <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -811,7 +825,6 @@
           :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
         >
         </span>
-
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
           folder, or the .srt file's format is incorrect.
@@ -819,7 +832,6 @@
         <p v-if="srtSubtitles == null" style="color: red">
           This .srt file's format is incorrect.
         </p>
-
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -857,7 +869,6 @@
             </p>
           </div>
         </span>
-
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -940,7 +951,6 @@
             "
           ></textarea>
         </span>
-
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -980,6 +990,7 @@ import url from "@/utils/url";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
 import { setTimeout } from "core-js";
+import localforage from "localforage";
 
 export default {
   name: "repeater",
@@ -1053,7 +1064,14 @@ export default {
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
       firstMount: true,
-      reader: 1,
+      reader:
+        window.localStorage.getItem("reader") == null
+          ? 1
+          : Number(window.localStorage.getItem("reader")),
+      allowCache: Number(window.localStorage.getItem("cacheOn")) == 1,
+      allowCacheTemp: Number(window.localStorage.getItem("cacheOn")) == 1,
+      numOfKeys: 0,
+      playFromCache: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1135,14 +1153,14 @@ export default {
     },
     playMode() {
       if (
-        this.isFavOnPlay ||
+        this.loading ||
         this.isSetting ||
         this.showSubtitleList ||
         this.showNewWordList ||
         this.isEditSubandNotes
       ) {
         return { color: "grey" };
-      } else if (this.isSingle) {
+      } else if (this.playFromCache) {
         return { color: "red" };
       } else {
         return { color: "blue" };
@@ -1254,7 +1272,7 @@ export default {
     isMediaType() {
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         if (
-          this.srtSubtitles[this.sentenceIndex - 1].rawPath.includes(".mp4")
+          this.srtSubtitles[this.sentenceIndex - 1].mediaName.includes(".mp4")
         ) {
           return 2;
         } else return 1;
@@ -1274,26 +1292,6 @@ export default {
       }
     },
 
-    raw() {
-      let srtUrl = api.getDownloadURL(this.req, true);
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        return (
-          srtUrl.split("/raw/")[0] +
-          "/raw/" +
-          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
-            "?"
-          )[0] +
-          "?" +
-          srtUrl.split("?")[1]
-        );
-      } else {
-        if (srtUrl && this.isMediaType == 1) {
-          return srtUrl.replace(".srt", ".mp3");
-        } else if (srtUrl && this.isMediaType == 2) {
-          return srtUrl.replace(".srt", ".mp4");
-        } else return "";
-      }
-    },
     currentMedia() {
       if (this.isMediaType == 1) {
         return document.getElementById("myAudio");
@@ -1302,7 +1300,7 @@ export default {
       } else return null;
     },
     currentFileFavList() {
-      let currentMediaName = this.mediaName;
+      let currentMediaName = this.req.name;
       return this.favList.filter(function (item) {
         return item.rawPath == currentMediaName;
       });
@@ -1406,6 +1404,27 @@ export default {
       }
     },
 
+    raw() {
+      let srtUrl = api.getDownloadURL(this.req, true);
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        return (
+          srtUrl.split("/raw/")[0] +
+          "/raw/" +
+          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
+            "?"
+          )[0] +
+          "?" +
+          srtUrl.split("?")[1]
+        );
+      } else {
+        if (srtUrl && this.isMediaType == 1) {
+          return srtUrl.replace(".srt", ".mp3");
+        } else if (srtUrl && this.isMediaType == 2) {
+          return srtUrl.replace(".srt", ".mp4");
+        } else return "";
+      }
+    },
+
     isTouchDevice() {
       return (
         "ontouchstart" in window ||
@@ -1437,8 +1456,9 @@ export default {
       if (!this.isEditSubandNotes) return;
       this.saveSub();
     },
-
     sentenceIndex: function () {
+      if (this.isFavOnPlay && this.isPlayFullFavList && this.allowCache)
+        this.getCacheMedia();
       if (this.isEditSubandNotes) {
         this.subFirstLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
@@ -1481,7 +1501,6 @@ export default {
     },
     repeatTimes: function () {
       if (this.repeatTimes < 0) this.repeatTimes = 0;
-      this.repeatTimes = Math.floor(this.repeatTimes);
       this.save();
     },
     replayFromStart: function () {
@@ -1535,7 +1554,7 @@ export default {
       this.save();
     },
     speedOfUtter: function () {
-      if (this.speedOfUtter < 0.1) this.speedOfUtter = 0.1;
+      if (this.speedOfUtter < 0) this.speedOfUtter = 0.1;
       this.save();
     },
     isUtterTransLineFirstly: function () {
@@ -1554,9 +1573,6 @@ export default {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
-      if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
-      if (this.lineNumOfTrans > 2) this.lineNumOfTrans = 2;
-      this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       this.timeOutId = setTimeout(() => {
         this.save();
         clearTimeout(this.timeOutId);
@@ -1596,7 +1612,16 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
-
+    allowCacheTemp() {
+      if (this.allowCacheTemp) window.localStorage.setItem("cacheOn", 1);
+      else window.localStorage.setItem("cacheOn", 0);
+      setTimeout(() => {
+        this.close();
+      }, 300);
+    },
+    reader() {
+      window.localStorage.setItem("reader", this.reader);
+    },
     raw: function () {
       this.isReadyToPlay = false;
       this.playCount = 0;
@@ -1619,9 +1644,9 @@ export default {
       this.req.content = this.req.content.replaceAll("\n\n\n\n", "\n\n");
     if (this.req.content.includes("\n\n\n"))
       this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
-
     if (this.req.content.includes("\t\t"))
       this.req.content = this.req.content.replaceAll("\t\t", "\n");
+    if (this.allowCache) this.getCacheMedia();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -1713,6 +1738,54 @@ export default {
           this.currentMedia.pause();
         }, 1);
       }
+    },
+    cacheMedia() {
+      let srtUrl = this.req.name;
+      fetch(this.raw)
+        .then((response) => response.blob()) // 将响应转换为Blob对象
+        .then((blob) => {
+          localforage
+            .setItem(srtUrl, blob)
+            .then(function () {})
+            .catch(function (err) {
+              console.log(err);
+            });
+        })
+        .catch((error) => {
+          console.error("Error fetching or converting URL:", error);
+        });
+    },
+
+    getCacheMedia() {
+      setTimeout(() => {
+        let srtUrl;
+        if (this.isFavOnPlay && this.isPlayFullFavList) {
+          srtUrl = this.srtSubtitles[this.sentenceIndex - 1].rawPath;
+        } else srtUrl = this.req.name;
+        let vm = this;
+        localforage
+          .getItem(srtUrl)
+          .then(function (value) {
+            vm.raw = URL.createObjectURL(value);
+            vm.playFromCache = true;
+          })
+          .catch(function () {
+            vm.playFromCache = false;
+            vm.cacheMedia();
+          });
+      }, 50);
+    },
+
+    cachedNumber() {
+      let vm = this;
+      localforage
+        .length()
+        .then(function (numberOfKeys) {
+          vm.numOfKeys = numberOfKeys;
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
     },
 
     initUtter() {
@@ -1969,6 +2042,13 @@ export default {
               return;
             }
             this.singleModePlay();
+          } else if (
+            this.isUtterTransLine &&
+            !this.isUtterTransLineFirstly &&
+            this.sentenceIndex == this.srtSubtitles.length
+          ) {
+            this.cleanUp1();
+            return;
           } else {
             this.loopPlay();
           }
@@ -2048,6 +2128,7 @@ export default {
         window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
       }
       this.isFavOnPlay = !this.isFavOnPlay;
+      if (this.allowCache) this.getCacheMedia();
       if (this.isFavOnPlay) {
         if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
@@ -2068,13 +2149,21 @@ export default {
     },
 
     switchIsFav() {
+      let srtUrl = api.getDownloadURL(this.req, true);
+      let originRaw = "";
+      if (srtUrl && this.isMediaType == 1) {
+        originRaw = srtUrl.replace(".srt", ".mp3");
+      } else if (srtUrl && this.isMediaType == 2) {
+        originRaw = srtUrl.replace(".srt", ".mp4");
+      } else originRaw = "";
       if (this.isReadyToPlay) {
         this.isFav = !this.isFav;
         if (this.isFav) {
           //add a fav
           var fav = {
-            rawPath: this.mediaName,
-            originalRawPath: this.raw.split("?")[0].split("/raw/")[1],
+            rawPath: this.req.name,
+            mediaName: this.mediaName,
+            originalRawPath: originRaw.split("?")[0].split("/raw/")[1],
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
             endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
             content: this.srtSubtitles[this.sentenceIndex - 1].content,
@@ -2175,8 +2264,20 @@ export default {
     removeFocus() {
       this.currentMedia.blur();
     },
+    cacheCleanUp() {
+      localforage
+        .clear()
+        .then(function () {
+          console.log("Database is now empty.");
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+      this.cachedNumber();
+    },
 
     onSetting() {
+      this.cachedNumber();
       this.isSetting = !this.isSetting;
       if (this.isSetting) {
         this.cleanUp2();

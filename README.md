@@ -18,17 +18,17 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 Updated: 06-18-2024
 
-2.20 allow to play all favorite sentences in current folder, allow to choose TTS voice:
+2.21 enable to save media file in browser's cache:
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16041104/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16056191/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16041105/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16056193/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16041107/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16056197/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16041108/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16056200/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -115,23 +115,9 @@ Modified:
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Files.vue
 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot6.jpg)
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot7.jpg)
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot8.jpg)
-
-
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/root.go
 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot9.jpg)
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot10.jpg)
-
-
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/version/version.go
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot11.jpg)
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/en.json
 
@@ -146,6 +132,10 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/auth.go
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/css/listing-icons.css
+
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package.json
+
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package-lock.json
 
 <span id="lable"> </span>
 ## Filebrowser Settings with command lines
