@@ -185,6 +185,21 @@
         </p>
       </div>
       <div
+        v-if="savedToSrt"
+        style="
+          z-index: 1011;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 0.5em;
+          font-size: 1.5em;
+        "
+      >
+        <p style="color: blue; background-color: grey; padding: 0.3em">
+          Saved to {{ req.name }}
+        </p>
+      </div>
+      <div
         v-if="ShowSwitchSubtitle"
         style="
           z-index: 1011;
@@ -333,7 +348,7 @@
               type="number"
               min="0"
               max="1000"
-              v-model.number="repeatTimes"
+              v-model.number.lazy="repeatTimes"
             />
           </div>
           <div style="display: block">
@@ -345,7 +360,7 @@
               type="number"
               min="0"
               max="1000"
-              v-model.number="interval"
+              v-model.number.lazy="interval"
             />
           </div>
           <div style="display: block">
@@ -355,7 +370,7 @@
             <input
               class="input input--repeater"
               type="number"
-              v-model.number="timeStampChange"
+              v-model.number.lazy="timeStampChange"
             />
           </div>
           <div style="display: block">
@@ -365,7 +380,8 @@
             <input
               class="input input--repeater"
               type="text"
-              v-model="currentSpeed"
+              placeholder="1, 0.8, 0.5"
+              v-model.lazy="currentSpeed"
             />
           </div>
           <div style="display: block">
@@ -484,7 +500,7 @@
                 :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                 class="input input--repeater"
                 type="text"
-                v-model="TTSurl"
+                v-model.lazy="TTSurl"
               />
               <p
                 style="
@@ -521,14 +537,16 @@
                 type="number"
                 min="1"
                 max="2"
-                v-model="lineNumOfTrans"
+                v-model.number.lazy="lineNumOfTrans"
               />
             </div>
             <div style="display: block">
               <span
                 :style="{
                   color:
-                    !isUtterTransLine || isSystemTTS == 'No'
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    !hasSpeechSynthesis
                       ? '#bbbaba'
                       : 'white',
                 }"
@@ -539,19 +557,24 @@
               </span>
               <input
                 :disabled="
-                  !isUtterTransLine || isSystemTTS == 'No' || isAutoDetectLang
+                  !isUtterTransLine ||
+                  isSystemTTS == 'No' ||
+                  isAutoDetectLang ||
+                  !hasSpeechSynthesis
                 "
                 class="input input--repeater"
                 type="text"
                 placeholder="zh"
-                v-model="langInTransLine"
+                v-model.lazy="langInTransLine"
               />
             </div>
             <div style="display: block">
               <span
                 :style="{
                   color:
-                    !isUtterTransLine || isSystemTTS == 'No'
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    !hasSpeechSynthesis
                       ? '#bbbaba'
                       : 'white',
                 }"
@@ -560,21 +583,29 @@
               >
                 {{
                   $t("repeater.voice", {
-                    totalvoices: totalreaders,
+                    totalvoices: totalReaders,
                   })
                 }}
               </span>
               <input
-                :disabled="!isUtterTransLine || isSystemTTS == 'No'"
+                :disabled="
+                  !isUtterTransLine ||
+                  isSystemTTS == 'No' ||
+                  !hasSpeechSynthesis
+                "
                 class="input input--repeater"
                 type="number"
-                v-model.number="reader"
+                v-model.number.lazy="reader"
                 :style="{
                   width: isMobile ? '3em' : '6em',
                 }"
               />
               <button
-                :disabled="isSystemTTS == 'No' || !isUtterTransLine"
+                :disabled="
+                  isSystemTTS == 'No' ||
+                  !isUtterTransLine ||
+                  !hasSpeechSynthesis
+                "
                 class="action"
                 @click="testTTSVoice"
                 :title="$t('repeater.testTTSVoice')"
@@ -605,14 +636,16 @@
                 type="number"
                 min="0"
                 max="1000"
-                v-model="pauseTimeTransLine"
+                v-model.lazy="pauseTimeTransLine"
               />
             </div>
             <div style="display: block">
               <span
                 :style="{
                   color:
-                    !isUtterTransLine || isSystemTTS == 'No'
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    !hasSpeechSynthesis
                       ? '#bbbaba'
                       : 'white',
                 }"
@@ -622,10 +655,14 @@
                 {{ $t("repeater.speedOfUttering") }}
               </span>
               <input
-                :disabled="!isUtterTransLine || isSystemTTS == 'No'"
+                :disabled="
+                  !isUtterTransLine ||
+                  isSystemTTS == 'No' ||
+                  !hasSpeechSynthesis
+                "
                 class="input input--repeater"
                 type="text"
-                v-model.number="speedOfUtter"
+                v-model.number.lazy="speedOfUtter"
               />
             </div>
             <p :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }">
@@ -827,10 +864,12 @@
         </span>
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
-          folder, or the .srt file's format is incorrect.
+          folder. Or the .srt file's format is incorrect, it should be encoded
+          using UTF-8.
         </p>
         <p v-if="srtSubtitles == null" style="color: red">
-          This .srt file's format is incorrect.
+          This .srt file's format is incorrect. It should be encoded using
+          UTF-8.
         </p>
         <span
           @mousedown="startDrag"
@@ -900,10 +939,31 @@
             padding-top: 0;
           "
         >
+          <p style="font-size: 1em; padding: 0; margin: 0 0 1.5em 0">
+            <input
+              class="input input--repeater"
+              type="number"
+              min="0"
+              v-model.number.lazy="startTimeTemp"
+              step="0.01"
+              id="editArea0"
+              style="font-size: 1em; padding: 0; margin: 0; width: 6em"
+            />
+            ---------
+            <input
+              class="input input--repeater"
+              type="number"
+              min="0"
+              v-model.number.lazy="endTimeTemp"
+              step="0.01"
+              id="editArea00"
+              style="font-size: 1em; padding: 0; margin: 0; width: 6em"
+            />
+          </p>
           <textarea
             v-if="isShowLine1"
             id="editArea1"
-            v-model="subFirstLine"
+            v-model.lazy="subFirstLine"
             placeholder="...Subtitle's First Line..."
             rows="2"
             style="
@@ -919,7 +979,7 @@
           <textarea
             v-if="isShowLine2"
             id="editArea2"
-            v-model="subSecLine"
+            v-model.lazy="subSecLine"
             placeholder="...Subtitle's Second Line..."
             rows="2"
             style="
@@ -936,7 +996,7 @@
             v-show="!isEmpty && isShowLine3"
             id="editArea3"
             rows="2"
-            v-model="note"
+            v-model.lazy="note"
             placeholder="...NOTES..., use format [Original Text: Translation] to add a New Word or Phrase."
             style="
               width: 100%;
@@ -1061,17 +1121,18 @@ export default {
       isSlowInternet: false,
       isEditSubandNotes: false,
       subFirstLine: "     ",
+      startTimeTemp: 0,
+      endTimeTemp: 0,
+      noSave: false,
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
       firstMount: true,
-      reader:
-        window.localStorage.getItem("reader") == null
-          ? 1
-          : Number(window.localStorage.getItem("reader")),
       allowCache: Number(window.localStorage.getItem("cacheOn")) == 1,
       allowCacheTemp: Number(window.localStorage.getItem("cacheOn")) == 1,
       numOfKeys: 0,
       playFromCache: false,
+      savedToSrt: false,
+      reader: 0,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1104,14 +1165,16 @@ export default {
         }
       }
     },
-    totalreaders() {
-      let voices = window.speechSynthesis.getVoices();
-      let formattedLang =
-        this.langInTransLine.substring(0, 3) +
-        this.langInTransLine.substring(3).toUpperCase();
-      return voices.filter(function (voice) {
-        return voice.lang.includes(formattedLang);
-      }).length;
+    totalReaders() {
+      if (this.hasSpeechSynthesis) {
+        let voices = window.speechSynthesis.getVoices();
+        let formattedLang =
+          this.langInTransLine.substring(0, 3) +
+          this.langInTransLine.substring(3).toUpperCase();
+        return voices.filter(function (voice) {
+          return voice.lang.includes(formattedLang);
+        }).length;
+      } else return 0;
     },
     subSwitch() {
       if (this.isSetting || this.showSubtitleList || this.showNewWordList)
@@ -1444,22 +1507,79 @@ export default {
     $route: function () {
       this.updatePreview();
     },
+    startTimeTemp: function () {
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
+      this.saveSub1();
+    },
+    endTimeTemp: function () {
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
+      this.saveSub2();
+    },
     subFirstLine: function () {
-      if (!this.isEditSubandNotes) return;
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
       this.saveSub();
     },
     subSecLine: function () {
-      if (!this.isEditSubandNotes) return;
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
       this.saveSub();
     },
     note: function () {
-      if (!this.isEditSubandNotes) return;
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
       this.saveSub();
     },
     sentenceIndex: function () {
       if (this.isFavOnPlay && this.isPlayFullFavList && this.allowCache)
         this.getCacheMedia();
       if (this.isEditSubandNotes) {
+        this.noSave = true;
+        this.startTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
         this.subFirstLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
         this.subSecLine =
@@ -1501,6 +1621,7 @@ export default {
     },
     repeatTimes: function () {
       if (this.repeatTimes < 0) this.repeatTimes = 0;
+      this.repeatTimes = Math.floor(this.repeatTimes);
       this.save();
     },
     replayFromStart: function () {
@@ -1508,15 +1629,18 @@ export default {
     },
     interval: function () {
       if (this.interval < 0) this.interval = 0;
+      this.interval = Math.floor(this.interval);
       this.save();
     },
     autoPlayNext: function () {
       this.save();
     },
     currentSpeed: function () {
+      if (this.currentSpeed == "") this.currentSpeed = "1, 0.8, 0.5";
       this.save();
     },
     timeStampChange: function () {
+      this.timeStampChange = Math.floor(this.timeStampChange);
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1551,16 +1675,21 @@ export default {
     },
     pauseTimeTransLine: function () {
       if (this.pauseTimeTransLine < 0) this.pauseTimeTransLine = 0;
+      this.pauseTimeTransLine = Math.floor(this.pauseTimeTransLine);
       this.save();
     },
     speedOfUtter: function () {
-      if (this.speedOfUtter < 0) this.speedOfUtter = 0.1;
+      if (this.speedOfUtter < 0.1) this.speedOfUtter = 0.1;
       this.save();
     },
     isUtterTransLineFirstly: function () {
       this.save();
     },
     langInTransLine: function () {
+      if (this.langInTransLine == "") {
+        let fullLangInTransLine = navigator.language || navigator.userLanguage;
+        this.langInTransLine = fullLangInTransLine.toString(0, 2);
+      }
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1570,6 +1699,9 @@ export default {
       }, 1);
     },
     lineNumOfTrans: function () {
+      this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
+      if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
+      if (this.lineNumOfTrans > 2) this.lineNumOfTrans = 2;
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1620,7 +1752,11 @@ export default {
       }, 300);
     },
     reader() {
-      window.localStorage.setItem("reader", this.reader);
+      if (this.hasSpeechSynthesis) {
+        if (this.reader < 1) this.reader = 1;
+        this.reader = Math.floor(this.reader);
+        window.localStorage.setItem("reader", this.reader);
+      } else this.reader = 0;
     },
     raw: function () {
       this.isReadyToPlay = false;
@@ -1638,6 +1774,11 @@ export default {
     this.listing = this.oldReq.items;
     this.updatePreview();
     this.initUtter();
+    if (this.req.content == undefined) {
+      alert(
+        "Can't read content of .srt. The .srt file should be encoded using UTF-8!"
+      );
+    }
     if (this.req.content.includes("\r\n"))
       this.req.content = this.req.content.replaceAll("\r\n", "\n");
     if (this.req.content.includes("\n\n\n\n"))
@@ -1756,6 +1897,22 @@ export default {
         });
     },
 
+    convertToHMS(milliseconds) {
+      var hours = Math.floor(milliseconds / 3600000);
+      milliseconds = milliseconds % 3600000;
+      var minutes = Math.floor(milliseconds / 60000);
+      milliseconds = milliseconds % 60000;
+      var seconds = Math.floor(milliseconds / 1000);
+      milliseconds = milliseconds % 1000;
+
+      return {
+        hours: ("0" + hours).slice(-2),
+        minutes: ("0" + minutes).slice(-2),
+        seconds: ("0" + seconds).slice(-2),
+        milliseconds: ("0" + milliseconds).slice(-3),
+      };
+    },
+
     getCacheMedia() {
       setTimeout(() => {
         let srtUrl;
@@ -1787,7 +1944,11 @@ export default {
           console.log(err);
         });
     },
-
+    getReader() {
+      if (!this.hasSpeechSynthesis) this.reader = 0;
+      if (window.localStorage.getItem("reader") == null) this.reader = 1;
+      else this.reader = Number(window.localStorage.getItem("reader"));
+    },
     initUtter() {
       this.audio = new Audio();
       if (this.hasSpeechSynthesis) {
@@ -1921,6 +2082,8 @@ export default {
     },
     testTTSVoice() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
+        this.cleanUp1();
+        this.cleanUp2();
         let transLineContent =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
@@ -2199,8 +2362,12 @@ export default {
     switchEditSubandNote() {
       this.isEditSubandNotes = !this.isEditSubandNotes;
       if (this.isEditSubandNotes) {
+        this.noSave = true;
         this.cleanUp1();
         this.cleanUp2();
+        this.startTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
         this.subFirstLine =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
         this.subSecLine =
@@ -2278,6 +2445,7 @@ export default {
 
     onSetting() {
       this.cachedNumber();
+      this.getReader();
       this.isSetting = !this.isSetting;
       if (this.isSetting) {
         this.cleanUp2();
@@ -2297,6 +2465,16 @@ export default {
       setTimeout(() => {
         this.cleanUp1();
         if (
+          document.getElementById("editArea0") &&
+          document.getElementById("editArea0").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea0").blur();
+        } else if (
+          document.getElementById("editArea00") &&
+          document.getElementById("editArea00").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea00").blur();
+        } else if (
           document.getElementById("editArea1") &&
           document.getElementById("editArea1").contains(document.activeElement)
         ) {
@@ -2817,6 +2995,120 @@ export default {
           this.switchIsFav();
         }, 10);
       }
+      this.savedToSrt = true;
+      setTimeout(() => {
+        this.savedToSrt = false;
+      }, 1500);
+    },
+
+    async saveSub1() {
+      this.startTimeTemp = this.startTimeTemp.toFixed(3);
+      if (
+        this.sentenceIndex > 1 &&
+        this.startTimeTemp <= this.srtSubtitles[this.sentenceIndex - 2].endTime
+      )
+        this.startTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 2].endTime + 0.001;
+      if (
+        this.startTimeTemp >= this.srtSubtitles[this.sentenceIndex - 1].endTime
+      )
+        this.startTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 1].endTime - 0.001;
+      var tempContent = this.req.content;
+      var oldContent =
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
+        " --> ";
+      var time = this.convertToHMS(
+        this.startTimeTemp * 1000 - this.timeStampChange
+      );
+      var newContent =
+        time.hours +
+        ":" +
+        time.minutes +
+        ":" +
+        time.seconds +
+        "," +
+        time.milliseconds +
+        " --> ";
+
+      this.req.content = tempContent.replace(oldContent, newContent);
+
+      this.srtSubtitles[this.sentenceIndex - 1].startTime = this.startTimeTemp;
+      this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
+        this.sentenceIndex - 1
+      ].timeStamp.replace(oldContent, newContent);
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, this.req.content, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
+      this.savedToSrt = true;
+      setTimeout(() => {
+        this.savedToSrt = false;
+      }, 1500);
+    },
+
+    async saveSub2() {
+      this.endTimeTemp = this.endTimeTemp.toFixed(3);
+      if (
+        this.endTimeTemp <= this.srtSubtitles[this.sentenceIndex - 1].startTime
+      )
+        this.endTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.001;
+      if (
+        this.sentenceIndex < this.srtSubtitles.length &&
+        this.endTimeTemp >= this.srtSubtitles[this.sentenceIndex].startTime
+      )
+        this.endTimeTemp =
+          this.srtSubtitles[this.sentenceIndex].startTime - 0.001;
+      var tempContent = this.req.content;
+      var oldContent =
+        " --> " +
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[1];
+      var time = this.convertToHMS(
+        this.endTimeTemp * 1000 - this.timeStampChange + 1
+      );
+      var newContent =
+        " --> " +
+        time.hours +
+        ":" +
+        time.minutes +
+        ":" +
+        time.seconds +
+        "," +
+        time.milliseconds;
+
+      this.req.content = tempContent.replace(oldContent, newContent);
+
+      this.srtSubtitles[this.sentenceIndex - 1].endTime = this.endTimeTemp;
+      this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
+        this.sentenceIndex - 1
+      ].timeStamp.replace(oldContent, newContent);
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, this.req.content, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
+      this.savedToSrt = true;
+      setTimeout(() => {
+        this.savedToSrt = false;
+      }, 1500);
     },
 
     async updatePreview() {
@@ -2845,6 +3137,14 @@ export default {
       ) {
         // right arrow
         if (
+          (document.getElementById("editArea0") &&
+            document
+              .getElementById("editArea0")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea00") &&
+            document
+              .getElementById("editArea00")
+              .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document
               .getElementById("editArea1")
@@ -2886,6 +3186,14 @@ export default {
       ) {
         // left arrow
         if (
+          (document.getElementById("editArea0") &&
+            document
+              .getElementById("editArea0")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea00") &&
+            document
+              .getElementById("editArea00")
+              .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document
               .getElementById("editArea1")
