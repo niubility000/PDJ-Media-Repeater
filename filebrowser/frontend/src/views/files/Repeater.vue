@@ -10,11 +10,10 @@
     <template v-else>
       <header-bar v-if="srtSubtitles" style="padding: 0.5em">
         <action
-          :disabled="isSetting"
           :style="{
-            color: isSetting ? 'grey' : 'blue',
             flexGrow: isMobile ? '1' : '0',
           }"
+          style="color: blue"
           icon="close"
           :label="$t('buttons.close')"
           @action="close()"
@@ -32,7 +31,7 @@
           {{ mediaName }}
         </title>
         <span
-          @click="isShowList()"
+          @click="switchShowList()"
           :style="{
             pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
           }"
@@ -136,7 +135,11 @@
         </button>
         <button
           :disabled="
-            loading || isSetting || showSubtitleList || showNewWordList
+            loading ||
+            isSetting ||
+            showSubtitleList ||
+            showNewWordList ||
+            isEditSubandNotes
           "
           class="action"
           @click="switchSubtitle"
@@ -195,9 +198,7 @@
           font-size: 1.5em;
         "
       >
-        <p style="color: blue; background-color: grey; padding: 0.3em">
-          Saved to {{ req.name }}
-        </p>
+        <p style="color: blue; background-color: grey; padding: 0.3em">Saved</p>
       </div>
       <div
         v-if="ShowSwitchSubtitle"
@@ -278,6 +279,8 @@
       >
         <ul
           v-if="newWordList.length > 0"
+          id="myWordList"
+          @click="highLightItem"
           style="
             position: relative;
             width: 100%;
@@ -294,9 +297,17 @@
             v-for="(newWord, index) in newWordList"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(newWord.num)"
+            @click="chooseSentence(newWord.num, index)"
           >
-            <p style="color: white">{{ index + 1 }}. {{ newWord.content }}</p>
+            <p v-if="!newWord.showTrans && !withTrans" style="color: white">
+              {{ index + 1 }}. {{ newWord.origin }}
+            </p>
+            <p v-if="newWord.showTrans && !withTrans" style="color: white">
+              {{ index + 1 }}. {{ newWord.origin }} : {{ newWord.trans }}
+            </p>
+            <p v-if="withTrans" style="color: white !important">
+              {{ index + 1 }}. {{ newWord.origin }} : {{ newWord.trans }}
+            </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
           </li>
         </ul>
@@ -564,8 +575,8 @@
                 "
                 class="input input--repeater"
                 type="text"
-                placeholder="zh"
-                v-model.lazy="langInTransLine"
+                :placeholder="langInTransLinedefault"
+                v-model="langInTransLine"
               />
             </div>
             <div style="display: block">
@@ -789,25 +800,33 @@
               {{ $t("repeater.updatesandComments") }}
             </p>
             <p>
+              {{ $t("repeater.github") }}
               <a
                 href="https://github.com/niubility000/PDJ-Media-Repeater"
                 target="_blank"
                 style="color: blue"
-                >{{
-                  $t("repeater.github")
-                }}
+              >
                 https://github.com/niubility000/PDJ-Media-Repeater</a
               >
             </p>
             <p>
+              {{ $t("repeater.youdao") }}
               <a
                 href="https://note.youdao.com/s/MI81scdr"
                 target="_blank"
                 style="color: blue"
-                >{{
-                  $t("repeater.youdao")
-                }}
+              >
                 https://note.youdao.com/s/MI81scdr</a
+              >
+            </p>
+            <p>
+              {{ $t("repeater.baiduyun") }}
+              <a
+                href="https://pan.baidu.com/s/1EMm3C3rcWnqqxutBV9W0Mw?pwd=s0wa"
+                target="_blank"
+                style="color: blue"
+              >
+                Baidu NetDisk</a
               >
             </p>
           </div>
@@ -819,7 +838,12 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          style="max-height: 60%; max-width: 100%; padding-bottom: 1em"
+          style="
+            max-height: 60%;
+            max-width: 100%;
+            padding-bottom: 1em;
+            padding-top: 0.2em;
+          "
           v-if="isMediaType == 2 && !browserHiJack"
           id="myVideo"
           :src="raw"
@@ -846,11 +870,28 @@
           Loading Media...
         </p>
         <span
-          v-html="subtitleContent"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
+          v-if="srtSubtitles && isReadyToPlay && isMediaType == 1"
+          style="
+            width: 100%;
+            margin: 0;
+            background-color: black;
+            top: 0;
+            height: 10em;
+          "
+        >
+        </span>
+        <span
+          v-html="subtitleContent"
+          id="subArea"
+          @mousedown="startDragS"
+          @mouseup="endDragS"
+          @touchstart="startTouchS"
+          @touchend="endTouchS"
+          @dblclick="dblClick"
           v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
           style="
             color: yellow;
@@ -859,7 +900,7 @@
             font-size: 1.5em;
             margin: 0;
           "
-          :style="{ paddingTop: isMediaType == 1 ? '6em' : 0 }"
+          :style="{ top: isMediaType == 1 ? 0 : '4em' }"
         >
         </span>
         <p v-if="isMediaType == 0" style="color: red">
@@ -907,26 +948,6 @@
               }}
             </p>
           </div>
-        </span>
-        <span
-          @mousedown="startDrag"
-          @mouseup="endDrag"
-          @touchstart="startTouch"
-          @touchend="endTouch"
-          v-if="
-            srtSubtitles &&
-            isReadyToPlay &&
-            isEditSubandNotes &&
-            !isEmpty &&
-            isMediaType == 1
-          "
-          style="
-            width: 100%;
-            margin: 0;
-            background-color: black;
-            padding-top: 6em;
-          "
-        >
         </span>
         <span
           v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
@@ -1011,15 +1032,14 @@
             "
           ></textarea>
         </span>
-        <span
+        <div
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
           v-if="srtSubtitles && isReadyToPlay"
           style="width: 100%; flex-grow: 1"
-        >
-        </span>
+        ></div>
       </div>
       <audio
         style="
@@ -1038,6 +1058,50 @@
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
+      <div
+        v-if="showAddNew"
+        :disabled="loading || isSetting || !isSingle"
+        style="z-index: 1011; position: fixed; bottom: 2.5em; right: 1em"
+      >
+        <button
+          v-if="!showEditNew"
+          class="action"
+          @click="addANewWord"
+          :title="$t('repeater.fav')"
+        >
+          <i style="color: white" class="material-icons">add_circle</i>
+        </button>
+        <div
+          v-if="showEditNew"
+          style="border-radius: 10px; background: grey; padding: 0.3em"
+        >
+          <p style="text-align: justify; text-align-last: left; color: white">
+            <span style="width: 8em"> New word/phrase: </span>
+            <input
+              style="padding: 0.2em; width: 9em"
+              class="input input--repeater"
+              type="text"
+              v-model="newWord"
+            />
+          </p>
+          <p style="text-align: justify; color: white">
+            <input
+              style="width: 15.5em; padding: 0.2em; margin-right: 0.5em"
+              class="input input--repeater"
+              type="text"
+              placeholder="Translation"
+              v-model="newTranslation"
+            />
+            <button class="action" @click="saveWordToSRT">
+              <i
+                style="color: blue; width: 1em; padding: 0"
+                class="material-icons"
+                >save</i
+              >
+            </button>
+          </p>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -1091,12 +1155,13 @@ export default {
       subtitleLang: 1,
       isShowLine1: true,
       isShowLine2: true,
-      isShowLine3: true,
+      isShowLine3: false,
       isUtterTransLine: true,
       pauseTimeTransLine: 3,
       speedOfUtter: 1,
       isUtterTransLineFirstly: false,
       langInTransLine: navigator.language || navigator.userLanguage,
+      langInTransLinedefault: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
       isAutoDetectLang: true,
       touches: 0,
@@ -1133,6 +1198,11 @@ export default {
       playFromCache: false,
       savedToSrt: false,
       reader: 0,
+      showAddNew: false,
+      showEditNew: false,
+      newWord: " ",
+      newTranslation: "",
+      withTrans: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1177,14 +1247,18 @@ export default {
       } else return 0;
     },
     subSwitch() {
-      if (this.isSetting || this.showSubtitleList || this.showNewWordList)
+      if (
+        this.isSetting ||
+        this.showSubtitleList ||
+        this.showNewWordList ||
+        this.isEditSubandNotes
+      )
         return { color: "grey" };
-      if (this.subtitleLang == 1) {
+      if (this.subtitleLang == 1 || this.subtitleLang == 2) {
         return { color: "blue" };
-      } else if (this.subtitleLang == 2) {
+      } else if (this.subtitleLang == 3) {
         return { color: "red" };
       } else if (
-        this.subtitleLang == 3 ||
         this.subtitleLang == 4 ||
         this.subtitleLang == 5 ||
         this.subtitleLang == 6 ||
@@ -1197,19 +1271,19 @@ export default {
     },
     indicateSub() {
       if (this.subtitleLang == 1) {
-        return "1. show ALL";
+        return "1. show Subtitle's First Line and Second Line";
       } else if (this.subtitleLang == 2) {
-        return "2. show Note Line only";
+        return "2. show ALL";
       } else if (this.subtitleLang == 3) {
-        return "3. show Subtitle's First Line and Note Line";
+        return "3. show Note Line onlyshow Subtitle's First Line only";
       } else if (this.subtitleLang == 4) {
-        return "4. show Subtitle's Second Line and Note Line";
+        return "4. show Subtitle's First Line only";
       } else if (this.subtitleLang == 5) {
-        return "5. show Subtitle's First Line and Second Line";
+        return "5. show Subtitle's Second Line only";
       } else if (this.subtitleLang == 6) {
-        return "6. show Subtitle's First Line only";
+        return "6. show Subtitle's First Line and Note Line";
       } else if (this.subtitleLang == 7) {
-        return "7. show Subtitle's Second Line only";
+        return "7. show Subtitle's Second Line and Note Line";
       } else {
         return "8. show NONE";
       }
@@ -1302,7 +1376,8 @@ export default {
     },
     newWordList() {
       var wordList = [];
-      var newWord = "";
+      var origin = "";
+      var trans = "";
       var sIndex = this.sentenceIndex - 1;
       for (var i = 0; i < this.srtSubtitles.length; ++i) {
         if (
@@ -1314,15 +1389,23 @@ export default {
             j < this.srtSubtitles[i].content.split("\r\n")[2].split("[").length;
             ++j
           ) {
-            newWord = this.srtSubtitles[i].content
+            origin = this.srtSubtitles[i].content
               .split("\r\n")[2]
               .split("[")
-              [j].split("]")[0];
-            if (newWord !== ":" && newWord !== "") {
+              [j].split(":")[0];
+            trans = this.srtSubtitles[i].content
+              .split("\r\n")[2]
+              .split("[")
+              [j].split(":")[1]
+              .split("]")[0];
+
+            if (origin !== "") {
               sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
               var newWordItem = {
                 num: sIndex,
-                content: newWord,
+                showTrans: false,
+                origin: origin,
+                trans: trans,
               };
               wordList.push(newWordItem);
             }
@@ -1686,10 +1769,6 @@ export default {
       this.save();
     },
     langInTransLine: function () {
-      if (this.langInTransLine == "") {
-        let fullLangInTransLine = navigator.language || navigator.userLanguage;
-        this.langInTransLine = fullLangInTransLine.toString(0, 2);
-      }
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1818,6 +1897,7 @@ export default {
         );
         this.currentSpeed = JSON.parse(this.contentAll.content.split("::")[5]);
         this.subtitleLang = JSON.parse(this.contentAll.content.split("::")[6]);
+        this.switchSubtitleMini();
         this.pauseTimeTransLine = Number(
           JSON.parse(this.contentAll.content.split("::")[8])
         );
@@ -1944,6 +2024,29 @@ export default {
           console.log(err);
         });
     },
+    addANewWord() {
+      this.showEditNew = true;
+    },
+    saveWordToSRT() {
+      let newphrase = "[" + this.newWord + ":" + this.newTranslation + "]; ";
+      this.noSave = true;
+      this.cleanUp1();
+      this.cleanUp2();
+      this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+      this.subFirstLine =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+      this.subSecLine =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+      this.note =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
+      if (this.note == undefined) this.note = "";
+      this.note = this.note + newphrase;
+      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
+        this.note;
+      this.saveSub();
+      this.click();
+    },
     getReader() {
       if (!this.hasSpeechSynthesis) this.reader = 0;
       if (window.localStorage.getItem("reader") == null) this.reader = 1;
@@ -2009,49 +2112,35 @@ export default {
         } else this.loopPlay();
       }
     },
-    chooseSentence(index) {
+    chooseSentence(index, indexWordList) {
+      this.sentenceIndex = index;
       this.sentenceIndex = index + 1;
-      if (this.isFirstClick) this.firstClick();
-      this.touches++;
-      setTimeout(() => {
-        this.cleanUp2();
-        this.cleanUp1();
-        if (this.touches == 1) {
-          if (this.isSingle) {
-            setTimeout(() => {
-              if (this.pauseAfterFirstDone) {
-                this.pauseAfterFirstDone = false;
-                if (this.isUtterTransLineFirstly) this.loopPlay();
-                else this.utterTransLine();
-              } else {
-                this.singleModePlay();
-              }
-            }, 1);
-          } else {
-            setTimeout(() => {
-              this.regularPlay();
-              this.currentMedia.currentTime =
-                this.srtSubtitles[this.sentenceIndex - 1].startTime;
-            }, 1);
-          }
-        }
-        this.touches = 0;
-      }, 300);
-      if (this.touches == 2) {
-        //double click
-        this.cleanUp1();
-        this.touches = 0;
-        return;
+      if (this.showNewWordList && !this.withTrans) {
+        this.newWordList[indexWordList].showTrans = true;
       }
+      this.cleanUp1();
+      this.cleanUp2();
+      this.click();
     },
-    isShowList() {
+    switchShowList() {
       if (!this.showSubtitleList && !this.showNewWordList) {
         this.showSubtitleList = true;
       } else if (this.showSubtitleList && !this.showNewWordList) {
         this.showSubtitleList = false;
         this.showNewWordList = true;
-      } else if (!this.showSubtitleList && this.showNewWordList) {
+      } else if (
+        !this.showSubtitleList &&
+        this.showNewWordList &&
+        !this.withTrans
+      ) {
+        this.withTrans = true;
+      } else if (
+        !this.showSubtitleList &&
+        this.showNewWordList &&
+        this.withTrans
+      ) {
         this.showNewWordList = false;
+        this.withTrans = false;
       }
       if (this.showSubtitleList) {
         setTimeout(() => {
@@ -2094,6 +2183,9 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
+        if (this.langInTransLine == "") {
+          this.langInTransLine = navigator.language || navigator.userLanguage;
+        }
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
         let voices = window.speechSynthesis.getVoices();
@@ -2129,6 +2221,9 @@ export default {
             ? transLineContent
             : "no content";
         if (this.isFirstClick) this.utterThis.text = "n";
+        if (this.langInTransLine == "") {
+          this.langInTransLine = navigator.language || navigator.userLanguage;
+        }
         this.utterThis.lang = this.langInTransLine;
         this.utterThis.rate = this.speedOfUtter;
         let voices = window.speechSynthesis.getVoices();
@@ -2181,7 +2276,7 @@ export default {
         this.utterInProcess = false;
         return;
       } else if (
-        !this.autoPlayNext &&
+        (!this.autoPlayNext || this.showNewWordList) &&
         this.isUtterTransLine &&
         !this.isUtterTransLineFirstly
       ) {
@@ -2224,43 +2319,47 @@ export default {
       if (this.intervalId1) clearInterval(this.intervalId1);
       this.subtitleLang = this.subtitleLang + 1;
       if (this.subtitleLang == 9) this.subtitleLang = 1;
+      this.switchSubtitleMini();
+      this.intervalId1 = setTimeout(() => {
+        this.ShowSwitchSubtitle = false;
+      }, 3000);
+    },
+    switchSubtitleMini() {
       if (this.subtitleLang == 1) {
         this.isShowLine1 = true;
         this.isShowLine2 = true;
-        this.isShowLine3 = true;
+        this.isShowLine3 = false;
       } else if (this.subtitleLang == 2) {
-        this.isShowLine1 = false;
-        this.isShowLine2 = false;
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
         this.isShowLine3 = true;
       } else if (this.subtitleLang == 3) {
-        this.isShowLine1 = true;
+        this.isShowLine1 = false;
         this.isShowLine2 = false;
         this.isShowLine3 = true;
       } else if (this.subtitleLang == 4) {
-        this.isShowLine1 = false;
-        this.isShowLine2 = true;
-        this.isShowLine3 = true;
-      } else if (this.subtitleLang == 5) {
         this.isShowLine1 = true;
+        this.isShowLine2 = false;
+        this.isShowLine3 = false;
+      } else if (this.subtitleLang == 5) {
+        this.isShowLine1 = false;
         this.isShowLine2 = true;
         this.isShowLine3 = false;
       } else if (this.subtitleLang == 6) {
         this.isShowLine1 = true;
         this.isShowLine2 = false;
-        this.isShowLine3 = false;
+        this.isShowLine3 = true;
       } else if (this.subtitleLang == 7) {
         this.isShowLine1 = false;
         this.isShowLine2 = true;
-        this.isShowLine3 = false;
+        this.isShowLine3 = true;
       } else if (this.subtitleLang == 8) {
         this.isShowLine1 = false;
         this.isShowLine2 = false;
         this.isShowLine3 = false;
       }
-      this.intervalId1 = setTimeout(() => {
-        this.ShowSwitchSubtitle = false;
-      }, 3000);
     },
+
     resetTTSurl() {
       this.TTSurl =
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
@@ -2268,20 +2367,27 @@ export default {
     cleanUp1() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
-      if (window.getSelection().toString() && this.touches < 2)
-        window.getSelection().removeAllRanges();
       if (this.audio) this.audio.pause();
       if (this.intervalId) clearInterval(this.intervalId);
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
+      this.showAddNew = false;
+      this.showEditNew = false;
+      this.newTranslation = "";
     },
     cleanUp2() {
       if (this.pauseAfterFirstDone) this.pauseAfterFirstDone = false;
       if (this.playInProcess) this.playInProcess = false;
       if (this.utterInProcess) this.utterInProcess = false;
       this.playCount = 0;
+    },
+
+    highLightItem(event) {
+      if (event.target && event.target.nodeName == "P") {
+        event.target.style.color = "blue";
+      }
     },
 
     playFavList() {
@@ -2365,6 +2471,9 @@ export default {
         this.noSave = true;
         this.cleanUp1();
         this.cleanUp2();
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
+        this.isShowLine3 = true;
         this.startTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
@@ -2374,7 +2483,7 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
-      }
+      } else this.switchSubtitleMini();
     },
 
     showConfirm() {
@@ -2464,33 +2573,44 @@ export default {
       this.touches++;
       setTimeout(() => {
         this.cleanUp1();
-        if (
-          document.getElementById("editArea0") &&
-          document.getElementById("editArea0").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea0").blur();
-        } else if (
-          document.getElementById("editArea00") &&
-          document.getElementById("editArea00").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea00").blur();
-        } else if (
-          document.getElementById("editArea1") &&
-          document.getElementById("editArea1").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea1").blur();
-        } else if (
-          document.getElementById("editArea2") &&
-          document.getElementById("editArea2").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea2").blur();
-        } else if (
-          document.getElementById("editArea3") &&
-          document.getElementById("editArea3").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea3").blur();
+        if (this.isEditSubandNotes) {
+          if (
+            document.getElementById("editArea0") &&
+            document
+              .getElementById("editArea0")
+              .contains(document.activeElement)
+          ) {
+            document.getElementById("editArea0").blur();
+          } else if (
+            document.getElementById("editArea00") &&
+            document
+              .getElementById("editArea00")
+              .contains(document.activeElement)
+          ) {
+            document.getElementById("editArea00").blur();
+          } else if (
+            document.getElementById("editArea1") &&
+            document
+              .getElementById("editArea1")
+              .contains(document.activeElement)
+          ) {
+            document.getElementById("editArea1").blur();
+          } else if (
+            document.getElementById("editArea2") &&
+            document
+              .getElementById("editArea2")
+              .contains(document.activeElement)
+          ) {
+            document.getElementById("editArea2").blur();
+          } else if (
+            document.getElementById("editArea3") &&
+            document
+              .getElementById("editArea3")
+              .contains(document.activeElement)
+          ) {
+            document.getElementById("editArea3").blur();
+          }
         }
-
         if (this.touches == 1) {
           if (this.isSingle) {
             setTimeout(() => {
@@ -2519,18 +2639,33 @@ export default {
         return;
       }
     },
+
+    dblClick() {
+      this.cleanUp1();
+      this.touches = 0;
+      return;
+    },
+
     startDrag(event) {
-      if (!this.isReadyToPlay || this.isTouchDevice) return;
       event.preventDefault();
+      this.startDragS(event);
+    },
+    startDragS(event) {
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.isSetting = false;
       this.showSubtitleList = false;
+      this.showNewWordList = false;
+      this.withTrans = false;
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
       this.startY = event.clientY;
     },
     endDrag(event) {
-      if (!this.isReadyToPlay || this.isTouchDevice) return;
       event.preventDefault();
+      this.endDragS(event);
+    },
+    endDragS(event) {
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
       this.distanceY = event.clientY - this.startY;
@@ -2551,20 +2686,45 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      if (
+        window.getSelection().toString() &&
+        window.getSelection().toString() !== "" &&
+        window.getSelection().toString() !== " " &&
+        document.getElementById("subArea") &&
+        document.getElementById("subArea").contains(event.target)
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.newWord = window.getSelection().toString();
+        this.showAddNew = true;
+      } else {
+        window.getSelection().removeAllRanges();
+        this.showAddNew = false;
+        this.showEditNew = false;
+        this.click();
+      }
     },
+
     startTouch(event) {
-      if (!this.isReadyToPlay) return;
       event.preventDefault();
+      this.startTouchS(event);
+    },
+    startTouchS(event) {
+      if (!this.isReadyToPlay) return;
       this.isSetting = false;
       this.showSubtitleList = false;
+      this.showNewWordList = false;
+      this.withTrans = false;
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
     },
     endTouch(event) {
-      if (!this.isReadyToPlay) return;
       event.preventDefault();
+      this.endTouchS(event);
+    },
+    endTouchS(event) {
+      if (!this.isReadyToPlay) return;
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       this.distanceY = event.changedTouches[0].clientY - this.startY;
@@ -2585,8 +2745,25 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      if (
+        window.getSelection().toString() &&
+        window.getSelection().toString() !== "" &&
+        window.getSelection().toString() !== " " &&
+        document.getElementById("subArea") &&
+        document.getElementById("subArea").contains(event.target)
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.newWord = window.getSelection().toString();
+        this.showAddNew = true;
+      } else {
+        window.getSelection().removeAllRanges();
+        this.showAddNew = false;
+        this.showEditNew = false;
+        this.click();
+      }
     },
+
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
         this.cleanUp2();
@@ -2774,6 +2951,7 @@ export default {
               if (
                 this.autoPlayNext &&
                 !this.isEditSubandNotes &&
+                !this.showNewWordList &&
                 this.sentenceIndex < this.srtSubtitles.length
               ) {
                 this.sentenceIndex = this.sentenceIndex + 1;
@@ -2802,7 +2980,6 @@ export default {
         }
       }
     },
-
     loopPlay() {
       this.isSingle = true;
       this.playInProcess = true;
@@ -2836,6 +3013,7 @@ export default {
           if (
             this.autoPlayNext &&
             !this.isEditSubandNotes &&
+            !this.showNewWordList &&
             this.sentenceIndex < this.srtSubtitles.length
           ) {
             this.sentenceIndex = this.sentenceIndex + 1;
@@ -2947,7 +3125,7 @@ export default {
       if (this.subSecLine !== undefined) {
         this.subSecLine = this.subSecLine.replaceAll("\n", "");
         if (
-          this.subSectLine == "" &&
+          this.subSecLine == "" &&
           this.note !== undefined &&
           this.note !== ""
         )
@@ -2998,7 +3176,7 @@ export default {
       this.savedToSrt = true;
       setTimeout(() => {
         this.savedToSrt = false;
-      }, 1500);
+      }, 400);
     },
 
     async saveSub1() {
@@ -3053,7 +3231,7 @@ export default {
       this.savedToSrt = true;
       setTimeout(() => {
         this.savedToSrt = false;
-      }, 1500);
+      }, 400);
     },
 
     async saveSub2() {
@@ -3108,7 +3286,7 @@ export default {
       this.savedToSrt = true;
       setTimeout(() => {
         this.savedToSrt = false;
-      }, 1500);
+      }, 400);
     },
 
     async updatePreview() {
@@ -3261,6 +3439,10 @@ export default {
       this.resized = true;
     },
     close() {
+      if (this.isSetting) {
+        this.onSetting();
+        return;
+      }
       this.cleanUp1();
       this.$store.commit("updateRequest", {});
       let uri = url.removeLastDir(this.$route.path) + "/";
@@ -3287,7 +3469,7 @@ export default {
   overflow: hidden;
 }
 #repeater .repeater {
-  padding-top: 5em;
+  padding-top: 4em;
   text-align: center;
   height: 100%;
   margin: 0 1em 0 1em;
