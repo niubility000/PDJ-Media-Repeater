@@ -254,7 +254,8 @@
                 color: sentenceIndex == index + 1 ? 'blue' : 'white',
               }"
             >
-              {{ index + 1 }}. {{ subtitle.content.split("\r\n")[0] }} -
+              {{ index + 1 }}.
+              {{ subtitle.content.split("\r\n")[0] }}&nbsp;&nbsp; -
               {{ subtitle.content.split("\r\n")[1] }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
@@ -303,10 +304,16 @@
               {{ index + 1 }}. {{ newWord.origin }}
             </p>
             <p v-if="newWord.showTrans && !withTrans" style="color: white">
-              {{ index + 1 }}. {{ newWord.origin }} : {{ newWord.trans }}
+              {{ index + 1 }}.
+              {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
+                newWord.trans
+              }}
             </p>
             <p v-if="withTrans" style="color: white !important">
-              {{ index + 1 }}. {{ newWord.origin }} : {{ newWord.trans }}
+              {{ index + 1 }}.
+              {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
+                newWord.trans
+              }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
           </li>
@@ -961,6 +968,26 @@
           "
         >
           <p style="font-size: 1em; padding: 0; margin: 0 0 1.5em 0">
+            <span
+              @click="startTimeAdd()"
+              v-if="isMobile"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#916;</span
+              >
+            </span>
             <input
               class="input input--repeater"
               type="number"
@@ -968,9 +995,49 @@
               v-model.number.lazy="startTimeTemp"
               step="0.01"
               id="editArea0"
-              style="font-size: 1em; padding: 0; margin: 0; width: 6em"
+              style="font-size: 1em; padding: 0; margin: 0; width: 5em"
             />
+            <span
+              @click="startTimeMinus()"
+              v-if="isMobile"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8711;</span
+              >
+            </span>
             ---------
+            <span
+              @click="endTimeAdd()"
+              v-if="isMobile"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#916;</span
+              >
+            </span>
             <input
               class="input input--repeater"
               type="number"
@@ -978,8 +1045,28 @@
               v-model.number.lazy="endTimeTemp"
               step="0.01"
               id="editArea00"
-              style="font-size: 1em; padding: 0; margin: 0; width: 6em"
+              style="font-size: 1em; padding: 0; margin: 0; width: 5em"
             />
+            <span
+              @click="endTimeMinus()"
+              v-if="isMobile"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8711;</span
+              >
+            </span>
           </p>
           <textarea
             v-if="isShowLine1"
@@ -1069,7 +1156,9 @@
           @click="addANewWord"
           :title="$t('repeater.fav')"
         >
-          <i style="color: white" class="material-icons">add_circle</i>
+          <i style="color: white; font-size: 2.5em" class="material-icons"
+            >add_circle</i
+          >
         </button>
         <div
           v-if="showEditNew"
@@ -1866,6 +1955,7 @@ export default {
       this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
     if (this.req.content.includes("\t\t"))
       this.req.content = this.req.content.replaceAll("\t\t", "\n");
+    this.req.content = this.req.content.replace(/^\s*\r?\n|\r?\n\s*$/g, "");
     if (this.allowCache) this.getCacheMedia();
   },
   beforeDestroy() {
@@ -1958,6 +2048,13 @@ export default {
           this.currentMedia.muted = false;
           this.currentMedia.pause();
         }, 1);
+        const path = url.removeLastDir(this.$route.path);
+        try {
+          await api.post(path + "/" + this.req.name, this.req.content, true);
+        } catch (error) {
+          this.confirmType = "save";
+          this.showConfirm();
+        }
       }
     },
     cacheMedia() {
@@ -1978,6 +2075,7 @@ export default {
     },
 
     convertToHMS(milliseconds) {
+      milliseconds = Math.round(milliseconds);
       var hours = Math.floor(milliseconds / 3600000);
       milliseconds = milliseconds % 3600000;
       var minutes = Math.floor(milliseconds / 60000);
@@ -2486,6 +2584,29 @@ export default {
       } else this.switchSubtitleMini();
     },
 
+    startTimeAdd() {
+      let temp = (this.startTimeTemp + 0.01).toFixed(3);
+      this.startTimeTemp = parseFloat(temp);
+      this.saveSub1();
+    },
+
+    startTimeMinus() {
+      let temp = (this.startTimeTemp - 0.01).toFixed(3);
+      this.startTimeTemp = parseFloat(temp);
+      this.saveSub1();
+    },
+
+    endTimeAdd() {
+      let temp = (this.endTimeTemp + 0.01).toFixed(3);
+      this.endTimeTemp = parseFloat(temp);
+      this.saveSub2();
+    },
+    endTimeMinus() {
+      let temp = (this.endTimeTemp - 0.01).toFixed(3);
+      this.endTimeTemp = parseFloat(temp);
+      this.saveSub2();
+    },
+
     showConfirm() {
       if (this.confirmType == "fetch") {
         var userConfirmation = window.confirm(
@@ -2640,7 +2761,8 @@ export default {
       }
     },
 
-    dblClick() {
+    dblClick(event) {
+      event.preventDefault();
       this.cleanUp1();
       this.touches = 0;
       return;
@@ -3180,7 +3302,7 @@ export default {
     },
 
     async saveSub1() {
-      this.startTimeTemp = this.startTimeTemp.toFixed(3);
+      this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
       if (
         this.sentenceIndex > 1 &&
         this.startTimeTemp <= this.srtSubtitles[this.sentenceIndex - 2].endTime
@@ -3235,7 +3357,7 @@ export default {
     },
 
     async saveSub2() {
-      this.endTimeTemp = this.endTimeTemp.toFixed(3);
+      this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
       if (
         this.endTimeTemp <= this.srtSubtitles[this.sentenceIndex - 1].startTime
       )
