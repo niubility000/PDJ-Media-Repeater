@@ -388,7 +388,21 @@
             <input
               class="input input--repeater"
               type="number"
-              v-model.number.lazy="timeStampChange"
+              placeholder="-100"
+              step="100"
+              v-model.number.lazy="timeStampChangeStart"
+            />
+          </div>
+          <div style="display: block">
+            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+              >{{ $t("repeater.timestampMoveEnd") }}
+            </span>
+            <input
+              class="input input--repeater"
+              type="number"
+              placeholder="100"
+              step="100"
+              v-model.number.lazy="timeStampChangeEnd"
             />
           </div>
           <div style="display: block">
@@ -1231,7 +1245,8 @@ export default {
       intervalId1: null,
       autoPlayNext: true,
       autoPlay: true,
-      timeStampChange: 0,
+      timeStampChangeStart: 0,
+      timeStampChangeEnd: 0,
       currentSpeed: "1, 0.8, 0.5",
       listing: null,
       isSetting: false,
@@ -1420,7 +1435,7 @@ export default {
               parseFloat(startHH) * 3600 +
               parseFloat(startMM) * 60 +
               parseFloat(startSS) +
-              (parseFloat(startMS) + this.timeStampChange) / 1000;
+              (parseFloat(startMS) + this.timeStampChangeStart) / 1000;
             var endTimeUnformat = textSubtitle[1].split(" --> ")[1];
             if (!endTimeUnformat) return null;
             var endHH = endTimeUnformat.split(":")[0];
@@ -1431,7 +1446,7 @@ export default {
               parseFloat(endHH) * 3600 +
               parseFloat(endMM) * 60 +
               parseFloat(endSS) +
-              (parseFloat(endMS) + this.timeStampChange - 1) / 1000;
+              (parseFloat(endMS) + this.timeStampChangeEnd - 1) / 1000;
             var content = "";
             if (textSubtitle.length >= 3) {
               content = textSubtitle[2]
@@ -1811,8 +1826,18 @@ export default {
       if (this.currentSpeed == "") this.currentSpeed = "1, 0.8, 0.5";
       this.save();
     },
-    timeStampChange: function () {
-      this.timeStampChange = Math.floor(this.timeStampChange);
+    timeStampChangeStart: function () {
+      this.timeStampChangeStart = Math.floor(this.timeStampChangeStart);
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.save();
+        clearTimeout(this.timeOutId);
+      }, 1);
+    },
+    timeStampChangeEnd: function () {
+      this.timeStampChangeEnd = Math.floor(this.timeStampChangeEnd);
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -1955,7 +1980,7 @@ export default {
       this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
     if (this.req.content.includes("\t\t"))
       this.req.content = this.req.content.replaceAll("\t\t", "\n");
-    this.req.content = this.req.content.replace(/^\s*\r?\n|\r?\n\s*$/g, "");
+    this.req.content = this.req.content.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
     if (this.allowCache) this.getCacheMedia();
   },
   beforeDestroy() {
@@ -1982,8 +2007,11 @@ export default {
           JSON.parse(this.contentAll.content.split("::")[2])
         );
         this.autoPlayNext = JSON.parse(this.contentAll.content.split("::")[3]);
-        this.timeStampChange = Number(
+        this.timeStampChangeStart = Number(
           JSON.parse(this.contentAll.content.split("::")[4])
+        );
+        this.timeStampChangeEnd = Number(
+          JSON.parse(this.contentAll.content.split("::")[20])
         );
         this.currentSpeed = JSON.parse(this.contentAll.content.split("::")[5]);
         this.subtitleLang = JSON.parse(this.contentAll.content.split("::")[6]);
@@ -3186,7 +3214,7 @@ export default {
         "::" +
         JSON.stringify(this.autoPlayNext) +
         "::" +
-        JSON.stringify(this.timeStampChange) +
+        JSON.stringify(this.timeStampChangeStart) +
         "::" +
         JSON.stringify(this.currentSpeed) +
         "::" +
@@ -3217,7 +3245,10 @@ export default {
         JSON.stringify(this.replayFromStart) +
         "::" +
         JSON.stringify(this.isPlayFullFavList) +
+        "::" +
+        JSON.stringify(this.timeStampChangeEnd) +
         "::";
+
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       const path = url.removeLastDir(this.$route.path);
@@ -3319,7 +3350,7 @@ export default {
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
         " --> ";
       var time = this.convertToHMS(
-        this.startTimeTemp * 1000 - this.timeStampChange
+        this.startTimeTemp * 1000 - this.timeStampChangeStart
       );
       var newContent =
         time.hours +
@@ -3374,7 +3405,7 @@ export default {
         " --> " +
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[1];
       var time = this.convertToHMS(
-        this.endTimeTemp * 1000 - this.timeStampChange + 1
+        this.endTimeTemp * 1000 - this.timeStampChangeEnd + 1
       );
       var newContent =
         " --> " +
