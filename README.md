@@ -24,15 +24,15 @@ Updated: 07-06-2024
 
 2.23 select a word and add to word list. In word list, add a recitation mode, and other small fixes.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16202715/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16114256/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16202719/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16114257/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16202721/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16114258/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16202724/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16114259/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
