@@ -412,7 +412,7 @@
             <input
               class="input input--repeater"
               type="text"
-              placeholder="1, 0.8, 0.5"
+              placeholder="0.8, 0.5"
               v-model.lazy="currentSpeed"
             />
           </div>
@@ -981,7 +981,10 @@
             padding-top: 0;
           "
         >
-          <p style="font-size: 1em; padding: 0; margin: 0 0 1.5em 0">
+          <p
+            style="font-size: 1em; padding: 0"
+            :style="{ margin: isTimeLineEdit ? '0 0 0.5em 0' : '0 0 1.5em 0' }"
+          >
             <span
               @click="startTimeAdd()"
               v-if="isMobile"
@@ -1031,7 +1034,36 @@
                 >&#8711;</span
               >
             </span>
-            ---------
+            -----
+            <span
+              v-if="!isTimeLineEdit"
+              @click="showTimeLineEdit"
+              style="
+                cursor: pointer;
+                font-size: 1em;
+                color: red;
+                padding: 0;
+                margin: 0;
+                text-align: center;
+              "
+            >
+              &#8744;
+            </span>
+            <span
+              v-if="isTimeLineEdit"
+              @click="showTimeLineEdit"
+              style="
+                cursor: pointer;
+                font-size: 1em;
+                color: red;
+                padding: 0;
+                margin: 0;
+                text-align: center;
+              "
+            >
+              &#8743;
+            </span>
+            -----
             <span
               @click="endTimeAdd()"
               v-if="isMobile"
@@ -1079,6 +1111,125 @@
                   color: white;
                 "
                 >&#8711;</span
+              >
+            </span>
+          </p>
+          <p
+            v-if="isTimeLineEdit"
+            style="
+              font-size: 0.8em;
+              color: red;
+              padding: 0;
+              margin: 0;
+              text-align: center;
+            "
+          >
+            {{ $t("repeater.timestampChange") }}
+          </p>
+          <p
+            v-if="isTimeLineEdit"
+            style="
+              font-size: 0.8em;
+              color: red;
+              padding: 0;
+              margin: 0 0 1.5em 0;
+              text-align: center;
+            "
+          >
+            startTime:
+            <span
+              @click="startTimeMoveSave(-1)"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8656;</span
+              >
+            </span>
+            <input
+              class="input input--repeater"
+              type="number"
+              min="0"
+              v-model.number.lazy="startTimeMove"
+              step="0.01"
+              id="editArea0"
+              style="font-size: 1em; padding: 0; margin: 0; width: 3em"
+            />
+            <span
+              @click="startTimeMoveSave(1)"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8658;</span
+              >
+            </span>
+            &nbsp;&nbsp;endTime:
+            <span
+              @click="endTimeMoveSave(-1)"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8656;</span
+              >
+            </span>
+            <input
+              class="input input--repeater"
+              type="number"
+              min="0"
+              v-model.number.lazy="endTimeMove"
+              step="0.01"
+              id="editArea0"
+              style="font-size: 1em; padding: 0; margin: 0; width: 3em"
+            />
+            <span
+              @click="endTimeMoveSave(1)"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none"
+            >
+              <span
+                class="headSubject"
+                style="
+                  text-align: right;
+                  border: none;
+                  padding: 0;
+                  margin: 0;
+                  color: white;
+                "
+                >&#8658;</span
               >
             </span>
           </p>
@@ -1234,8 +1385,8 @@ export default {
       timeDiff: null,
       distanceX: null,
       distanceY: null,
-      repeatTimes: 4,
-      interval: 2,
+      repeatTimes: 3,
+      interval: 3,
       playCount: 0,
       utterInProcess: false,
       playInProcess: false,
@@ -1247,7 +1398,7 @@ export default {
       autoPlay: true,
       timeStampChangeStart: 0,
       timeStampChangeEnd: 0,
-      currentSpeed: "1, 0.8, 0.5",
+      currentSpeed: "0.8, 0.5",
       listing: null,
       isSetting: false,
       isEmpty: false,
@@ -1307,6 +1458,9 @@ export default {
       newWord: " ",
       newTranslation: "",
       withTrans: false,
+      startTimeMove: 0.1,
+      endTimeMove: 0.1,
+      isTimeLineEdit: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1823,7 +1977,7 @@ export default {
       this.save();
     },
     currentSpeed: function () {
-      if (this.currentSpeed == "") this.currentSpeed = "1, 0.8, 0.5";
+      if (this.currentSpeed == "") this.currentSpeed = "0.8, 0.5";
       this.save();
     },
     timeStampChangeStart: function () {
@@ -2502,6 +2656,7 @@ export default {
       this.showAddNew = false;
       this.showEditNew = false;
       this.newTranslation = "";
+      this.isTimeLineEdit = false;
     },
     cleanUp2() {
       if (this.pauseAfterFirstDone) this.pauseAfterFirstDone = false;
@@ -3204,6 +3359,11 @@ export default {
         this.lineNumOfTrans = 2;
       } else this.isUtterTransLine = false;
     },
+
+    showTimeLineEdit() {
+      this.isTimeLineEdit = !this.isTimeLineEdit;
+    },
+
     async save() {
       let customConfig =
         "customConfig" +
@@ -3260,7 +3420,7 @@ export default {
       }
     },
 
-    async saveSub() {
+    saveSub() {
       var tempContent = this.req.content;
       var newContent = this.srtSubtitles[this.sentenceIndex - 1].timeStamp;
 
@@ -3312,27 +3472,10 @@ export default {
         this.subSecLine;
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
         this.note;
-
-      const path = url.removeLastDir(this.$route.path);
-      try {
-        await api.post(path + "/" + this.req.name, this.req.content, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
-      }
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
-      this.savedToSrt = true;
-      setTimeout(() => {
-        this.savedToSrt = false;
-      }, 400);
+      this.saveSubNow();
     },
 
-    async saveSub1() {
+    saveSub1() {
       this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
       if (
         this.sentenceIndex > 1 &&
@@ -3368,26 +3511,10 @@ export default {
       this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
         this.sentenceIndex - 1
       ].timeStamp.replace(oldContent, newContent);
-      const path = url.removeLastDir(this.$route.path);
-      try {
-        await api.post(path + "/" + this.req.name, this.req.content, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
-      }
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
-      this.savedToSrt = true;
-      setTimeout(() => {
-        this.savedToSrt = false;
-      }, 400);
+      this.saveSubNow();
     },
 
-    async saveSub2() {
+    saveSub2() {
       this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
       if (
         this.endTimeTemp <= this.srtSubtitles[this.sentenceIndex - 1].startTime
@@ -3423,6 +3550,95 @@ export default {
       this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
         this.sentenceIndex - 1
       ].timeStamp.replace(oldContent, newContent);
+      this.saveSubNow();
+    },
+
+    startTimeMoveSave: function (direction) {
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
+      for (var i = 0; i < this.srtSubtitles.length; ++i) {
+        let startTemp;
+        if (direction == 1)
+          startTemp = this.srtSubtitles[i].startTime + this.startTimeMove;
+        else startTemp = this.srtSubtitles[i].startTime - this.startTimeMove;
+        var tempContent = this.req.content;
+        var oldContent =
+          this.srtSubtitles[i].timeStamp.split(" --> ")[0] + " --> ";
+        var time = this.convertToHMS(
+          startTemp * 1000 - this.timeStampChangeStart
+        );
+        var newContent =
+          time.hours +
+          ":" +
+          time.minutes +
+          ":" +
+          time.seconds +
+          "," +
+          time.milliseconds +
+          " --> ";
+        this.req.content = tempContent.replace(oldContent, newContent);
+        this.srtSubtitles[i].startTime = startTemp;
+        this.srtSubtitles[i].timeStamp = this.srtSubtitles[i].timeStamp.replace(
+          oldContent,
+          newContent
+        );
+      }
+      this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+      this.saveSubNow();
+    },
+    endTimeMoveSave: function (direction) {
+      if (!this.isEditSubandNotes || this.noSave) {
+        if (this.timeOutId) {
+          clearTimeout(this.timeOutId);
+        }
+        this.timeOutId = setTimeout(() => {
+          this.noSave = false;
+          clearTimeout(this.timeOutId);
+        }, 10);
+        return;
+      }
+      for (var i = 0; i < this.srtSubtitles.length; ++i) {
+        let endTemp;
+        if (direction == 1)
+          endTemp = this.srtSubtitles[i].endTime + this.endTimeMove;
+        else endTemp = this.srtSubtitles[i].endTime - this.endTimeMove;
+        var tempContent = this.req.content;
+        var oldContent =
+          " --> " + this.srtSubtitles[i].timeStamp.split(" --> ")[1];
+        var time = this.convertToHMS(
+          endTemp * 1000 - this.timeStampChangeEnd + 1
+        );
+
+        var newContent =
+          " --> " +
+          time.hours +
+          ":" +
+          time.minutes +
+          ":" +
+          time.seconds +
+          "," +
+          time.milliseconds;
+        this.req.content = tempContent.replace(oldContent, newContent);
+
+        this.srtSubtitles[i].endTime = endTemp;
+        this.srtSubtitles[i].timeStamp = this.srtSubtitles[i].timeStamp.replace(
+          oldContent,
+          newContent
+        );
+      }
+      this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+      this.saveSubNow();
+    },
+
+    async saveSubNow() {
       const path = url.removeLastDir(this.$route.path);
       try {
         await api.post(path + "/" + this.req.name, this.req.content, true);

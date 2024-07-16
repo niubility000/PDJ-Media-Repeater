@@ -14,6 +14,7 @@
     "interval": "Interval (in second):",
     "timestampMove": "Move of StartTime for all subtitles (in ms):",
     "timestampMoveEnd": "Move of EndTime for all subtitles (in ms):",  
+    "timestampChange": "Whole Subtitles Timestamp Move (Be careful, Backup first!)", 
     "speedEachTime": "Speed Each Time (default:1):",
     "autoPlayCurrentSentence": "Auto Play Current Sentence",
     "autoSwitchtoNextSentence": "Auto Switch to Next Sentence (Disabled while editing)",    
