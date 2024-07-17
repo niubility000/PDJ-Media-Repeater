@@ -926,8 +926,8 @@
         </span>
         <p v-if="isMediaType == 0" style="color: red">
           Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
-          folder. Or the .srt file's format is incorrect, it should be encoded
-          using UTF-8.
+          folder (Note: .MP3/MP4 is not acceptable.) Or the .srt file's format
+          is incorrect, it should be encoded using UTF-8.
         </p>
         <p v-if="srtSubtitles == null" style="color: red">
           This .srt file's format is incorrect. It should be encoded using
@@ -1010,7 +1010,7 @@
               type="number"
               min="0"
               v-model.number.lazy="startTimeTemp"
-              step="0.01"
+              step="0.1"
               id="editArea0"
               style="font-size: 1em; padding: 0; margin: 0; width: 5em"
             />
@@ -1089,7 +1089,7 @@
               type="number"
               min="0"
               v-model.number.lazy="endTimeTemp"
-              step="0.01"
+              step="0.1"
               id="editArea00"
               style="font-size: 1em; padding: 0; margin: 0; width: 5em"
             />
@@ -1161,7 +1161,7 @@
               type="number"
               min="0"
               v-model.number.lazy="startTimeMove"
-              step="0.01"
+              step="0.1"
               id="editArea0"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
@@ -1209,7 +1209,7 @@
               type="number"
               min="0"
               v-model.number.lazy="endTimeMove"
-              step="0.01"
+              step="0.1"
               id="editArea0"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
@@ -3478,12 +3478,6 @@ export default {
     saveSub1() {
       this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
       if (
-        this.sentenceIndex > 1 &&
-        this.startTimeTemp <= this.srtSubtitles[this.sentenceIndex - 2].endTime
-      )
-        this.startTimeTemp =
-          this.srtSubtitles[this.sentenceIndex - 2].endTime + 0.001;
-      if (
         this.startTimeTemp >= this.srtSubtitles[this.sentenceIndex - 1].endTime
       )
         this.startTimeTemp =
@@ -3521,12 +3515,6 @@ export default {
       )
         this.endTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.001;
-      if (
-        this.sentenceIndex < this.srtSubtitles.length &&
-        this.endTimeTemp >= this.srtSubtitles[this.sentenceIndex].startTime
-      )
-        this.endTimeTemp =
-          this.srtSubtitles[this.sentenceIndex].startTime - 0.001;
       var tempContent = this.req.content;
       var oldContent =
         " --> " +
