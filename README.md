@@ -16,7 +16,7 @@
 [![Version](https://img.shields.io/github/release/filebrowser/filebrowser.svg?style=flat-square)](https://github.com/filebrowser/filebrowser/releases/latest)
 [![Chat IRC](https://img.shields.io/badge/freenode-%23filebrowser-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23filebrowser)
 
-PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language learning. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
+PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for English or any other language learning. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
 
 ## Assets Download
 
@@ -46,7 +46,7 @@ PDJ Media Repeater is a green standalone software.
 
 In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin (If you can't run filebrowser.exe in this way, use <a href="#lable">command line instead</a>.)
 
-**WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack <video> and <audio> tags.**
+**WARNING: Please use standard browsers: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater works correctly. Other browsers may not fully comply with HTML5 standard and may hijack media tags.**
 
 Double click **the .srt file** in the webpage to launch PDJ Media Repeater. 
 
