@@ -20,19 +20,19 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for language 
 
 ## Assets Download
 
-Updated: 07-18-2024
+Updated: 07-19-2024
 
-2.23 select a word and add to word list. In word list, add a recitation mode, and other small fixes.
+2.25 add a func to delete sentence in .srt file
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16275790/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16314192/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16275791/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16314193/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16275795/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16314195/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16275799/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16314196/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

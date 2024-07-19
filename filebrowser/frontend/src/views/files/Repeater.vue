@@ -1119,7 +1119,7 @@
             style="
               font-size: 0.8em;
               color: red;
-              padding: 0;
+              padding: 1em;
               margin: 0;
               text-align: center;
             "
@@ -1131,7 +1131,7 @@
             style="
               font-size: 0.8em;
               color: red;
-              padding: 0;
+              padding: 1em;
               margin: 0 0 1.5em 0;
               text-align: center;
             "
@@ -1234,7 +1234,7 @@
             </span>
           </p>
           <textarea
-            v-if="isShowLine1"
+            v-if="isShowLine1 && !isTimeLineEdit"
             id="editArea1"
             v-model.lazy="subFirstLine"
             placeholder="...Subtitle's First Line..."
@@ -1250,7 +1250,7 @@
             "
           ></textarea>
           <textarea
-            v-if="isShowLine2"
+            v-if="isShowLine2 && !isTimeLineEdit"
             id="editArea2"
             v-model.lazy="subSecLine"
             placeholder="...Subtitle's Second Line..."
@@ -1266,7 +1266,7 @@
             "
           ></textarea>
           <textarea
-            v-show="!isEmpty && isShowLine3"
+            v-show="!isEmpty && isShowLine3 && !isTimeLineEdit"
             id="editArea3"
             rows="2"
             v-model.lazy="note"
@@ -1283,6 +1283,16 @@
               white-space: pre-wrap;
             "
           ></textarea>
+          <button
+            v-if="!isTimeLineEdit"
+            class="action"
+            @click="confirmDelete"
+            title="Delete Current Sentence"
+          >
+            <i style="color: red; font-size: 1.5em" class="material-icons"
+              >delete</i
+            >
+          </button>
         </span>
         <div
           @mousedown="startDrag"
@@ -2820,6 +2830,16 @@ export default {
           "Error! Can't save change to your favorite file. Please retry later."
         );
       }
+      if (this.confirmType == "delete") {
+        var userConfirmationDelete = window.confirm(
+          "Are you sure to delete Current Sentence in .srt File?"
+        );
+        if (userConfirmationDelete) {
+          this.deleteSentence();
+        } else {
+          return;
+        }
+      }
     },
     onSingle() {
       this.isSingle = !this.isSingle;
@@ -3624,6 +3644,54 @@ export default {
       }
       this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
       this.saveSubNow();
+    },
+
+    confirmDelete() {
+      this.confirmType = "delete";
+      this.showConfirm();
+    },
+
+    async deleteSentence() {
+      this.req.content = this.req.content.replace(/\n\n$/, "");
+      var formatContent = this.req.content;
+
+      if (formatContent.includes("\r\n"))
+        formatContent = formatContent.replaceAll("\r\n", "\n");
+      if (formatContent.includes("\n\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      if (formatContent.includes("\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
+      if (formatContent.includes("\t\t"))
+        formatContent = formatContent.replaceAll("\t\t", "\n");
+
+      var textSubtitles = formatContent.split("\n\n");
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex - 1],
+        ""
+      );
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, formatContent, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      this.cleanUp1();
+      this.cleanUp2();
+      this.req.content = formatContent;
+      if (this.sentenceIndex == 1) {
+        this.sentenceIndex = this.sentenceIndex + 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+      } else {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex + 1;
+        }, 10);
+      }
     },
 
     async saveSubNow() {
