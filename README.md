@@ -24,15 +24,15 @@ Updated: 07-19-2024
 
 2.25 add a func to delete sentence in .srt file
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16314192/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16314609/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16314193/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16314613/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16314195/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16314616/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16314196/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16314617/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

@@ -14,7 +14,7 @@
     "interval": "Interval (in second):",
     "timestampMove": "Move of StartTime for all subtitles (in ms):",
     "timestampMoveEnd": "Move of EndTime for all subtitles (in ms):",  
-    "timestampChange": "Whole Subtitles Timestamp Move (Be careful, Backup first!)", 
+    "timestampChange": "Whole Subtitles Timestamp Move (Be careful, Backup first! For example, to move all the subtitle timestamps backward by 10 seconds, please move the endtime backward by 10 seconds first, and then move the starttime backward by 10 seconds. Because in PDJ, the starttime is not allowed to be greater than the endtime in the same sentence. Moving starttime first may make a mess.)", 
     "speedEachTime": "Speed Each Time (default:1):",
     "autoPlayCurrentSentence": "Auto Play Current Sentence",
     "autoSwitchtoNextSentence": "Auto Switch to Next Sentence (Disabled while editing)",    

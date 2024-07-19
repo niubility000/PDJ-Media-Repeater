@@ -14,7 +14,7 @@
     "interval": "暂停时间（秒）：",
     "timestampMove": "每句字幕播放起始时间提前(-)或推后(+)毫秒数：",
     "timestampMoveEnd": "每句字幕播放结束时间提前(-)或推后(+)毫秒数：",
-    "timestampChange": "全文字幕时间戳平移（小心，请先做备份！）",
+    "timestampChange": "全文字幕时间戳平移（小心，请先做备份！例如：将全文字幕时间戳全部向后移动10秒，请先将endtime向后移动10秒，再将starttime向后移动10秒。因为在PDJ中，同一句的starttime不允许大于endtime。先移动starttime会造成混乱。）",
     "speedEachTime": "各次复读速度（默认：1）：",
     "autoPlayCurrentSentence": "自动播放当前句",
     "autoSwitchtoNextSentence": "自动切换到下一句（编辑模式下将禁用）",    
