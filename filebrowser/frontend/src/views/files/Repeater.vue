@@ -1293,7 +1293,30 @@
               >delete</i
             >
           </button>
+
+          <button
+            v-if="!isTimeLineEdit"
+            class="action"
+            @click="confirmMerge"
+            title="Merge Current Sentence to Next Sentence"
+          >
+            <i style="color: red; font-size: 1.5em" class="material-icons"
+              >merge</i
+            >
+          </button>
+
+          <button
+            v-if="!isTimeLineEdit"
+            class="action"
+            @click="confirmAdd"
+            title="Add a New Sentence after Current Sentence"
+          >
+            <i style="color: red; font-size: 1.5em" class="material-icons"
+              >add_card</i
+            >
+          </button>
         </span>
+
         <div
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -1480,9 +1503,11 @@ export default {
     isMobile() {
       return window.innerWidth < 736;
     },
+
     favFileName() {
       return "PDJ-user" + this.user.id + "-favorite.txt";
     },
+
     favListStatus() {
       if (this.isSetting || !this.isSingle) return { color: "grey" };
       if (!this.isPlayFullFavList) {
@@ -1503,6 +1528,7 @@ export default {
         }
       }
     },
+
     totalReaders() {
       if (this.hasSpeechSynthesis) {
         let voices = window.speechSynthesis.getVoices();
@@ -1514,6 +1540,7 @@ export default {
         }).length;
       } else return 0;
     },
+
     subSwitch() {
       if (
         this.isSetting ||
@@ -1537,6 +1564,7 @@ export default {
         return { color: "black" };
       }
     },
+
     indicateSub() {
       if (this.subtitleLang == 1) {
         return "1. show Subtitle's First Line and Second Line";
@@ -1556,6 +1584,7 @@ export default {
         return "8. show NONE";
       }
     },
+
     playMode() {
       if (
         this.loading ||
@@ -1571,6 +1600,7 @@ export default {
         return { color: "blue" };
       }
     },
+
     srtSubtitles() {
       if (!this.isFavOnPlay) {
         var formatContent = this.req.content;
@@ -1642,6 +1672,7 @@ export default {
         return this.currentFileFavList;
       }
     },
+
     newWordList() {
       var wordList = [];
       var origin = "";
@@ -1713,12 +1744,14 @@ export default {
         return document.getElementById("myVideo");
       } else return null;
     },
+
     currentFileFavList() {
       let currentMediaName = this.req.name;
       return this.favList.filter(function (item) {
         return item.rawPath == currentMediaName;
       });
     },
+
     mediaName() {
       if (this.isMediaType == 1) {
         return this.req.name.replace(".srt", ".mp3");
@@ -1795,6 +1828,7 @@ export default {
       }
       return contentAll;
     },
+
     isEnglishLine1() {
       let str = this.srtSubtitles[this.sentenceIndex - 1].content
         .split("\r\n")[0]
@@ -1802,6 +1836,7 @@ export default {
         .replace(/\s\s*$/, "");
       return /^[a-zA-Z]/.test(str);
     },
+
     isEnglishLine2() {
       if (
         !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
@@ -1846,6 +1881,7 @@ export default {
         navigator.msMaxTouchPoints > 0
       );
     },
+
     canUtter() {
       let hasContent =
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
@@ -1858,6 +1894,7 @@ export default {
     $route: function () {
       this.updatePreview();
     },
+
     startTimeTemp: function () {
       if (!this.isEditSubandNotes || this.noSave) {
         if (this.timeOutId) {
@@ -1871,6 +1908,7 @@ export default {
       }
       this.saveSub1();
     },
+
     endTimeTemp: function () {
       if (!this.isEditSubandNotes || this.noSave) {
         if (this.timeOutId) {
@@ -1884,6 +1922,7 @@ export default {
       }
       this.saveSub2();
     },
+
     subFirstLine: function () {
       if (!this.isEditSubandNotes || this.noSave) {
         if (this.timeOutId) {
@@ -1897,6 +1936,7 @@ export default {
       }
       this.saveSub();
     },
+
     subSecLine: function () {
       if (!this.isEditSubandNotes || this.noSave) {
         if (this.timeOutId) {
@@ -1910,6 +1950,7 @@ export default {
       }
       this.saveSub();
     },
+
     note: function () {
       if (!this.isEditSubandNotes || this.noSave) {
         if (this.timeOutId) {
@@ -1923,6 +1964,7 @@ export default {
       }
       this.saveSub();
     },
+
     sentenceIndex: function () {
       if (this.isFavOnPlay && this.isPlayFullFavList && this.allowCache)
         this.getCacheMedia();
@@ -1961,6 +2003,7 @@ export default {
           .scrollIntoView({ block: "center", behavior: "smooth" });
       }
     },
+
     isSetting: function () {
       if (
         !this.isSetting &&
@@ -1970,26 +2013,32 @@ export default {
         this.isSystemTTS = "No";
       }
     },
+
     repeatTimes: function () {
       if (this.repeatTimes < 0) this.repeatTimes = 0;
       this.repeatTimes = Math.floor(this.repeatTimes);
       this.save();
     },
+
     replayFromStart: function () {
       this.save();
     },
+
     interval: function () {
       if (this.interval < 0) this.interval = 0;
       this.interval = Math.floor(this.interval);
       this.save();
     },
+
     autoPlayNext: function () {
       this.save();
     },
+
     currentSpeed: function () {
       if (this.currentSpeed == "") this.currentSpeed = "0.8, 0.5";
       this.save();
     },
+
     timeStampChangeStart: function () {
       this.timeStampChangeStart = Math.floor(this.timeStampChangeStart);
       if (this.timeOutId) {
@@ -2000,6 +2049,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     timeStampChangeEnd: function () {
       this.timeStampChangeEnd = Math.floor(this.timeStampChangeEnd);
       if (this.timeOutId) {
@@ -2010,9 +2060,11 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     subtitleLang: function () {
       this.save();
     },
+
     isUtterTransLine: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2022,6 +2074,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     isSystemTTS: function () {
       if (this.isSystemTTS == "Yes" && !this.hasSpeechSynthesis) {
         this.alertNotSuportSpeechSynthesis = true;
@@ -2031,21 +2084,26 @@ export default {
       }
       this.save();
     },
+
     TTSurl: function () {
       this.save();
     },
+
     pauseTimeTransLine: function () {
       if (this.pauseTimeTransLine < 0) this.pauseTimeTransLine = 0;
       this.pauseTimeTransLine = Math.floor(this.pauseTimeTransLine);
       this.save();
     },
+
     speedOfUtter: function () {
       if (this.speedOfUtter < 0.1) this.speedOfUtter = 0.1;
       this.save();
     },
+
     isUtterTransLineFirstly: function () {
       this.save();
     },
+
     langInTransLine: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2055,6 +2113,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     lineNumOfTrans: function () {
       this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
@@ -2067,6 +2126,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     isAutoDetectLang: function () {
       if (this.isAutoDetectLang) {
         this.langInTransLine = navigator.language || navigator.userLanguage;
@@ -2080,9 +2140,11 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     isPauseAfterFirstDone: function () {
       this.save();
     },
+
     autoPlay: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2092,6 +2154,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     isPlayFullFavList: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2101,6 +2164,7 @@ export default {
         clearTimeout(this.timeOutId);
       }, 1);
     },
+
     allowCacheTemp() {
       if (this.allowCacheTemp) window.localStorage.setItem("cacheOn", 1);
       else window.localStorage.setItem("cacheOn", 0);
@@ -2108,6 +2172,7 @@ export default {
         this.close();
       }, 300);
     },
+
     reader() {
       if (this.hasSpeechSynthesis) {
         if (this.reader < 1) this.reader = 1;
@@ -2115,6 +2180,7 @@ export default {
         window.localStorage.setItem("reader", this.reader);
       } else this.reader = 0;
     },
+
     raw: function () {
       this.isReadyToPlay = false;
       this.playCount = 0;
@@ -2249,6 +2315,7 @@ export default {
         }
       }
     },
+
     cacheMedia() {
       let srtUrl = this.req.name;
       fetch(this.raw)
@@ -2314,9 +2381,11 @@ export default {
           console.log(err);
         });
     },
+
     addANewWord() {
       this.showEditNew = true;
     },
+
     saveWordToSRT() {
       let newphrase = "[" + this.newWord + ":" + this.newTranslation + "]; ";
       this.noSave = true;
@@ -2337,17 +2406,20 @@ export default {
       this.saveSub();
       this.click();
     },
+
     getReader() {
       if (!this.hasSpeechSynthesis) this.reader = 0;
       if (window.localStorage.getItem("reader") == null) this.reader = 1;
       else this.reader = Number(window.localStorage.getItem("reader"));
     },
+
     initUtter() {
       this.audio = new Audio();
       if (this.hasSpeechSynthesis) {
         this.utterThis = new SpeechSynthesisUtterance();
       }
     },
+
     firstClick() {
       if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
         this.utterTransLine();
@@ -2374,6 +2446,7 @@ export default {
       }, 1);
       this.isFirstClick = false;
     },
+
     singleModePlay() {
       this.cleanUp1();
       if (!this.isReadyToPlay) return;
@@ -2402,6 +2475,7 @@ export default {
         } else this.loopPlay();
       }
     },
+
     chooseSentence(index, indexWordList) {
       this.sentenceIndex = index;
       this.sentenceIndex = index + 1;
@@ -2412,6 +2486,7 @@ export default {
       this.cleanUp2();
       this.click();
     },
+
     switchShowList() {
       if (!this.showSubtitleList && !this.showNewWordList) {
         this.showSubtitleList = true;
@@ -2832,10 +2907,30 @@ export default {
       }
       if (this.confirmType == "delete") {
         var userConfirmationDelete = window.confirm(
-          "Are you sure to delete Current Sentence in .srt File?"
+          "Are you sure to delete Current Sentence?"
         );
         if (userConfirmationDelete) {
           this.deleteSentence();
+        } else {
+          return;
+        }
+      }
+      if (this.confirmType == "merge") {
+        var userConfirmationMerge = window.confirm(
+          "Are you sure to merge Current Sentence to Next Sentence?"
+        );
+        if (userConfirmationMerge) {
+          this.mergeSentence();
+        } else {
+          return;
+        }
+      }
+      if (this.confirmType == "add") {
+        var userConfirmationAdd = window.confirm(
+          "Are you sure to add a New Sentence after Current Sentence?"
+        );
+        if (userConfirmationAdd) {
+          this.addSentence();
         } else {
           return;
         }
@@ -3647,7 +3742,23 @@ export default {
     },
 
     confirmDelete() {
+      this.cleanUp1();
+      this.cleanUp2();
       this.confirmType = "delete";
+      this.showConfirm();
+    },
+
+    confirmMerge() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "merge";
+      this.showConfirm();
+    },
+
+    confirmAdd() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "add";
       this.showConfirm();
     },
 
@@ -3692,6 +3803,143 @@ export default {
           this.sentenceIndex = this.sentenceIndex + 1;
         }, 10);
       }
+    },
+
+    async mergeSentence() {
+      this.req.content = this.req.content.replace(/\n\n$/, "");
+      var formatContent = this.req.content;
+
+      if (formatContent.includes("\r\n"))
+        formatContent = formatContent.replaceAll("\r\n", "\n");
+      if (formatContent.includes("\n\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      if (formatContent.includes("\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
+      if (formatContent.includes("\t\t"))
+        formatContent = formatContent.replaceAll("\t\t", "\n");
+
+      var textSubtitles = formatContent.split("\n\n");
+      var line1 = textSubtitles[this.sentenceIndex].split("\n")[0];
+      var line2 =
+        textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[0] +
+        " --> " +
+        textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[1];
+      var line3 = " ";
+      var line4 = " ";
+      var line5 = " ";
+      if (
+        textSubtitles[this.sentenceIndex - 1].split("\n").length > 2 ||
+        textSubtitles[this.sentenceIndex].split("\n").length > 2
+      )
+        line3 =
+          textSubtitles[this.sentenceIndex - 1].split("\n")[2] +
+          " " +
+          textSubtitles[this.sentenceIndex].split("\n")[2];
+      if (
+        textSubtitles[this.sentenceIndex - 1].split("\n").length > 3 ||
+        textSubtitles[this.sentenceIndex].split("\n").length > 3
+      )
+        line4 =
+          textSubtitles[this.sentenceIndex - 1].split("\n")[3] +
+          " " +
+          textSubtitles[this.sentenceIndex].split("\n")[3];
+      if (
+        textSubtitles[this.sentenceIndex - 1].split("\n").length > 4 ||
+        textSubtitles[this.sentenceIndex].split("\n").length > 4
+      )
+        line5 =
+          textSubtitles[this.sentenceIndex - 1].split("\n")[4] +
+          " " +
+          textSubtitles[this.sentenceIndex].split("\n")[4];
+      let newOne =
+        line1 +
+        "\n" +
+        line2 +
+        "\n" +
+        line3.replace("undefined", "") +
+        "\n" +
+        line4.replace("undefined", "") +
+        "\n" +
+        line5.replace("undefined", "");
+
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex - 1],
+        ""
+      );
+
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex],
+        newOne
+      );
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, formatContent, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      this.cleanUp1();
+      this.cleanUp2();
+      this.req.content = formatContent;
+      if (this.sentenceIndex == 1) {
+        this.sentenceIndex = this.sentenceIndex + 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+      } else {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex + 1;
+        }, 10);
+      }
+    },
+
+    async addSentence() {
+      this.req.content = this.req.content.replace(/\n\n$/, "");
+      var formatContent = this.req.content;
+
+      if (formatContent.includes("\r\n"))
+        formatContent = formatContent.replaceAll("\r\n", "\n");
+      if (formatContent.includes("\n\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      if (formatContent.includes("\n\n\n"))
+        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
+      if (formatContent.includes("\t\t"))
+        formatContent = formatContent.replaceAll("\t\t", "\n");
+
+      var textSubtitles = formatContent.split("\n\n");
+      var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
+      var line2 =
+        textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[1] +
+        " --> " +
+        textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
+      var line3 = " ";
+      var line4 = " ";
+      let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
+      let newOne = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex - 1],
+        newOne
+      );
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      const path = url.removeLastDir(this.$route.path);
+      try {
+        await api.post(path + "/" + this.req.name, formatContent, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      this.cleanUp1();
+      this.cleanUp2();
+      this.req.content = formatContent;
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex + 1;
+      }, 10);
     },
 
     async saveSubNow() {
