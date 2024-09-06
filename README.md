@@ -20,19 +20,19 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for English o
 
 ## Assets Download
 
-Updated: 07-19-2024
+Updated: 09-06-2024
 
-2.25 able to delete, add, merge sentences in .srt file
+3.01: add a review function
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16318956/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16907745/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16318957/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16907773/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16318958/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16907798/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16318959/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16907813/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -50,7 +50,7 @@ In windows, just double click the filebrowser.exe, then you can visit it at your
 
 Double click **the .srt file** with yellow icon in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "PDJ-userX-favorite.txt" file in current folder. 
+Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "PDJ-userX-favorite.txt" file in current user's root folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
 And the following account permission settings in filebrowser will not allow the account user to change the settings and add/remove a favorite sentence in PDJ media repeater.
