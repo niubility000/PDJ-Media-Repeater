@@ -11,9 +11,18 @@
       <header-bar v-if="srtSubtitles" style="padding: 0.5em">
         <action
           :style="{
-            flexGrow: isMobile ? '1' : '0',
+            color:
+              isSetting ||
+              onRevision ||
+              isEditSubandNotes ||
+              isFavOnPlay ||
+              showSubtitleList ||
+              showNewWordList ||
+              withTrans ||
+              showRevision
+                ? 'red'
+                : 'blue',
           }"
-          style="color: blue"
           icon="close"
           :label="$t('buttons.close')"
           @action="close()"
@@ -31,9 +40,17 @@
           {{ mediaName }}
         </title>
         <span
+          :style="{
+            flexGrow: isMobile ? '1' : '0',
+          }"
+        >
+        </span>
+
+        <span
           @click="switchShowList()"
           :style="{
-            pointerEvents: isSetting || !isSingle ? 'none' : 'auto',
+            pointerEvents:
+              isSetting || !isSingle || showRevision ? 'none' : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -47,7 +64,7 @@
             "
             :style="{
               color:
-                isSetting || !isSingle
+                isSetting || !isSingle || showRevision
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
@@ -58,23 +75,15 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
           >
         </span>
+
         <button
-          v-if="srtSubtitles"
-          :disabled="loading || isSetting || !isSingle"
-          class="action"
-          @click="switchIsFav"
-          :title="$t('repeater.fav')"
-        >
-          <i
-            :style="{
-              color: isSetting || !isSingle ? 'grey' : isFav ? 'red' : 'blue',
-            }"
-            class="material-icons"
-            >grade</i
-          >
-        </button>
-        <button
-          :disabled="loading || favList.length == 0 || isSetting || !isSingle"
+          :disabled="
+            loading ||
+            favList.length == 0 ||
+            isSetting ||
+            !isSingle ||
+            showRevision
+          "
           class="action"
           @click="playFavList"
           :title="$t('repeater.playFavoriteList')"
@@ -83,7 +92,11 @@
         </button>
         <button
           :disabled="
-            loading || !isSingle || showSubtitleList || showNewWordList
+            loading ||
+            !isSingle ||
+            showSubtitleList ||
+            showNewWordList ||
+            showRevision
           "
           class="action"
           @click="onSetting"
@@ -92,7 +105,7 @@
           <i
             :style="{
               color:
-                !isSingle || showSubtitleList || showNewWordList
+                !isSingle || showSubtitleList || showNewWordList || showRevision
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -102,6 +115,7 @@
             >settings</i
           >
         </button>
+
         <button
           v-if="srtSubtitles"
           :disabled="
@@ -110,7 +124,8 @@
             !isSingle ||
             showSubtitleList ||
             showNewWordList ||
-            isFavOnPlay
+            isFavOnPlay ||
+            showRevision
           "
           class="action"
           @click="switchEditSubandNote"
@@ -123,7 +138,8 @@
                 !isSingle ||
                 showSubtitleList ||
                 showNewWordList ||
-                isFavOnPlay
+                isFavOnPlay ||
+                showRevision
                   ? 'grey'
                   : isEditSubandNotes
                   ? 'red'
@@ -133,13 +149,15 @@
             >edit</i
           >
         </button>
+
         <button
           :disabled="
             loading ||
             isSetting ||
             showSubtitleList ||
             showNewWordList ||
-            isEditSubandNotes
+            isEditSubandNotes ||
+            showRevision
           "
           class="action"
           @click="switchSubtitle"
@@ -155,7 +173,8 @@
             isSetting ||
             showSubtitleList ||
             showNewWordList ||
-            isEditSubandNotes
+            isEditSubandNotes ||
+            showRevision
           "
           class="action"
           @click="onSingle"
@@ -165,12 +184,48 @@
         </button>
         <button
           v-if="!isSingle"
-          :disabled="loading"
+          :disabled="loading || showRevision"
           class="action"
           @click="onSingle"
           :title="$t('repeater.regularMode')"
         >
           <i :style="playMode" class="material-icons">repeat</i>
+        </button>
+
+        <button
+          :disabled="
+            loading ||
+            isSetting ||
+            !isSingle ||
+            isFavOnPlay ||
+            showSubtitleList ||
+            showNewWordList ||
+            isEditSubandNotes
+          "
+          class="action"
+          @click="switchRevisePlan"
+          :title="$t('repeater.revise')"
+        >
+          <i
+            :style="{
+              color:
+                loading ||
+                isSetting ||
+                !isSingle ||
+                isFavOnPlay ||
+                showSubtitleList ||
+                showNewWordList ||
+                isEditSubandNotes
+                  ? 'grey'
+                  : showRevision
+                  ? 'red'
+                  : onRevision
+                  ? 'black'
+                  : 'blue',
+            }"
+            class="material-icons"
+            >add_alert</i
+          >
         </button>
       </header-bar>
       <div
@@ -187,30 +242,162 @@
           Slow Internet! Replay...
         </p>
       </div>
+
       <div
-        v-if="savedToSrt"
+        v-if="showRevision"
         style="
-          z-index: 1011;
+          background-color: gray;
+          color: white;
+          z-index: 1010;
+          display: flex;
+          flex-direction: column;
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          bottom: 0.5em;
-          font-size: 1.5em;
+          top: 4.2em;
+          bottom: 0.2em;
+          border-radius: 10px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         "
+        :style="{
+          width: isMobile ? '100%' : '65%',
+        }"
       >
-        <p style="color: blue; background-color: grey; padding: 0.3em">Saved</p>
+        <p style="padding: 0 1em; color: blue">
+          {{ $t("repeater.revise") }}&nbsp;&nbsp;&nbsp;{{ getDateAfterDays(0) }}
+        </p>
+
+        <p style="padding: 0 1em">
+          {{ $t("repeater.revise1") }}:&nbsp; {{ mediaName }}
+        </p>
+
+        <p style="padding: 0 1em">
+          {{ $t("repeater.revise4") }}&nbsp;
+          <input
+            class="input input--repeater"
+            style="width: 3.5em; margin: 0; padding: 0"
+            type="number"
+            min="1"
+            v-model.number="indexS"
+          />
+          &nbsp;to&nbsp;
+
+          <input
+            class="input input--repeater"
+            style="width: 3.5em; margin: 0; padding: 0"
+            type="number"
+            min="1"
+            v-model.number="indexE"
+          />
+        </p>
+
+        <p style="padding: 0 1em">
+          {{ $t("repeater.revise2") }}&nbsp;
+          <input
+            class="input input--repeater"
+            style="width: 10em; margin: 0; padding: 0"
+            type="text"
+            v-model="revisePlan"
+          />
+        </p>
+
+        <p style="padding: 0 1em; margin: 0">
+          {{ $t("repeater.revise3") }}
+          <button
+            class="action"
+            style="color: blue"
+            @click="addNewRevision"
+            :title="$t('repeater.revise3')"
+          >
+            <i class="material-icons">add_card</i>
+          </button>
+        </p>
+
+        <div>
+          <ul
+            style="
+              position: relative;
+              width: 100%;
+              height: 100%;
+              padding: 1em;
+              overflow-y: auto;
+              -webkit-overflow-scrolling: touch;
+              list-style-type: none;
+            "
+          >
+            <li
+              v-for="(item, index) in reviseData"
+              :key="index"
+              :id="index + 1"
+            >
+              <hr
+                style="border: none; border-top: 1px solid black; height: 0"
+              />
+              <p style="line-height: 2em">
+                <span
+                  style="color: blue; cursor: pointer"
+                  @click="
+                    revisionPlay(
+                      item.name,
+                      item.reqname,
+                      item.startIndex,
+                      item.oRawPath
+                    )
+                  "
+                >
+                  {{ index + 1 }}. {{ item.name }}&nbsp;(
+                  {{ item.startIndex }} -- {{ item.endIndex }})&nbsp;:
+                </span>
+                &nbsp;&nbsp;
+                <span v-for="(itm, i) in item.date" :key="i" :id="i + 1">
+                  <span
+                    style="cursor: pointer"
+                    @click="switchDateReviseStatus(index, i)"
+                    :style="{
+                      color:
+                        itm.split('^^')[1].split('**')[0] == '1'
+                          ? 'white'
+                          : itm.split('**')[1] == '1'
+                          ? 'red'
+                          : 'black',
+                      pointerEvents:
+                        itm.split('^^')[1].split('**')[0] == '1' ||
+                        itm.split('**')[1] == '0'
+                          ? 'none'
+                          : 'auto',
+                    }"
+                  >
+                    {{ itm.split("^^")[0] }} &nbsp;&nbsp;
+                  </span>
+                </span>
+
+                <button
+                  class="action"
+                  @click="delRevision(index)"
+                  :title="$t('repeater.delThisRevision')"
+                >
+                  <i class="material-icons">delete</i>
+                </button>
+              </p>
+            </li>
+          </ul>
+        </div>
       </div>
+
       <div
         v-if="ShowSwitchSubtitle"
         style="
           z-index: 1011;
           position: fixed;
+          text-align: center;
+          width: 100%;
           left: 50%;
           transform: translate(-50%, 0);
           bottom: 2.5em;
         "
       >
-        <p style="color: white; background-color: blueviolet">
+        <p style="color: yellow">
           {{ indicateSub }}
         </p>
       </div>
@@ -223,8 +410,8 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 3.5em;
-          bottom: 1.5em;
+          top: 3.2em;
+          bottom: 1.2em;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
@@ -265,19 +452,31 @@
       <div
         v-if="showNewWordList"
         style="
+          background-color: gray;
+
           color: whitesmoke;
           z-index: 1010;
           display: flex;
+          flex-direction: column;
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 3.5em;
-          bottom: 1.5em;
+          top: 4.2em;
+          bottom: 0.2em;
+          border-radius: 10px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
         }"
       >
+        <p v-if="!this.withTrans" style="padding: 0 1em; color: yellow">
+          New Words Test
+        </p>
+        <p v-if="this.withTrans" style="padding: 0 1em; color: yellow">
+          New Words List
+        </p>
         <ul
           v-if="newWordList.length > 0"
           id="myWordList"
@@ -286,11 +485,9 @@
             position: relative;
             width: 100%;
             height: 100%;
-            padding: 1em;
-            border-radius: 10px;
+            padding: 0 1em;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            background: grey;
             list-style-type: none;
           "
         >
@@ -743,6 +940,14 @@
               {{ $t("repeater.allowCache") }}
             </p>
             <p style="color: white; text-align: justify; text-align-last: left">
+              {{ $t("max num of latest files to cache") }}
+              <input
+                style="width: 4em"
+                type="number"
+                v-model.lazy="maxCacheNum"
+              />
+            </p>
+            <p style="color: white; text-align: justify; text-align-last: left">
               {{ $t("repeater.savedfiles", { numOfKeys: numOfKeys }) }}
               <button @click="cacheCleanUp">
                 {{ $t("repeater.cleanUpCache") }}
@@ -878,12 +1083,14 @@
           playsinline="true"
           x5-video-orientation="landscape|portrait"
         ></video>
+
         <p
           v-if="isMediaType > 0 && browserHiJack"
           style="color: red; font-size: 1.2em; padding-top: 4em"
         >
           {{ $t("repeater.warning1") }}
         </p>
+
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
           style="color: white"
@@ -901,10 +1108,36 @@
             margin: 0;
             background-color: black;
             top: 0;
-            height: 10em;
+            height: 20%;
           "
         >
         </span>
+        <div v-if="srtSubtitles && !isEmpty && isReadyToPlay">
+          <button
+            v-if="isFav"
+            class="action"
+            @click="switchIsFav"
+            :title="$t('repeater.fav')"
+          >
+            <i
+              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
+              class="material-icons"
+              >star</i
+            >
+          </button>
+          <button
+            v-if="!isFav"
+            class="action"
+            @click="switchIsFav"
+            :title="$t('repeater.fav')"
+          >
+            <i
+              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
+              class="material-icons"
+              >star_outline</i
+            >
+          </button>
+        </div>
         <span
           v-html="subtitleContent"
           id="subArea"
@@ -925,14 +1158,16 @@
         >
         </span>
         <p v-if="isMediaType == 0" style="color: red">
-          Can't find {{ req.name.replace(".srt", ".mp4/.mp3") }} in current
-          folder (Note: .MP3/MP4 is not acceptable.) Or the .srt file's format
-          is incorrect, it should be encoded using UTF-8.
+          Can't find media file: {{ reqF.name.replace(".srt", ".mp4/.mp3") }}.
+          (Note: .mp3/mp4 is case sensitive, .srt and .mp3/mp4 files should be
+          in the same folder). Or the .srt file's format is incorrect, it should
+          be encoded using UTF-8.
         </p>
         <p v-if="srtSubtitles == null" style="color: red">
           This .srt file's format is incorrect. It should be encoded using
           UTF-8.
         </p>
+
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -986,8 +1221,7 @@
             :style="{ margin: isTimeLineEdit ? '0 0 0.5em 0' : '0 0 1.5em 0' }"
           >
             <span
-              @click="startTimeAdd()"
-              v-if="isMobile"
+              @click="startTimeMinus()"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1002,21 +1236,25 @@
                   margin: 0;
                   color: white;
                 "
-                >&#916;</span
+                ><font color="yellow" size="5">&#8711;</font
+                ><font color="black">-</font></span
               >
             </span>
+            &#32;
             <input
               class="input input--repeater"
               type="number"
-              min="0"
               v-model.number.lazy="startTimeTemp"
-              step="0.1"
               id="editArea0"
-              style="font-size: 1em; padding: 0; margin: 0; width: 5em"
+              step="0.1"
+              style="font-size: 1em; padding: 0; margin: 0"
+              :style="{
+                width: isMobile ? '4.5em' : '5.2em',
+              }"
             />
+            &#32;
             <span
-              @click="startTimeMinus()"
-              v-if="isMobile"
+              @click="startTimeAdd()"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1031,7 +1269,8 @@
                   margin: 0;
                   color: white;
                 "
-                >&#8711;</span
+                ><font color="black">-</font
+                ><font color="yellow" size="5">&#916;</font></span
               >
             </span>
             -----
@@ -1065,8 +1304,7 @@
             </span>
             -----
             <span
-              @click="endTimeAdd()"
-              v-if="isMobile"
+              @click="endTimeMinus()"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1081,21 +1319,25 @@
                   margin: 0;
                   color: white;
                 "
-                >&#916;</span
+                ><font color="yellow" size="5">&#8711;</font
+                ><font color="black">-</font></span
               >
             </span>
+            &#32;
             <input
               class="input input--repeater"
               type="number"
-              min="0"
               v-model.number.lazy="endTimeTemp"
               step="0.1"
               id="editArea00"
-              style="font-size: 1em; padding: 0; margin: 0; width: 5em"
+              style="font-size: 1em; padding: 0; margin: 0"
+              :style="{
+                width: isMobile ? '4.5em' : '5.2em',
+              }"
             />
+            &#32;
             <span
-              @click="endTimeMinus()"
-              v-if="isMobile"
+              @click="endTimeAdd()"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1110,7 +1352,8 @@
                   margin: 0;
                   color: white;
                 "
-                >&#8711;</span
+                ><font color="black">-</font
+                ><font color="yellow" size="5">&#916;</font></span
               >
             </span>
           </p>
@@ -1156,6 +1399,7 @@
                 >&#8656;</span
               >
             </span>
+            &#32;
             <input
               class="input input--repeater"
               type="number"
@@ -1165,6 +1409,7 @@
               id="editArea0"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
+            &#32;
             <span
               @click="startTimeMoveSave(1)"
               :style="{
@@ -1204,6 +1449,7 @@
                 >&#8656;</span
               >
             </span>
+            &#32;
             <input
               class="input input--repeater"
               type="number"
@@ -1213,6 +1459,7 @@
               id="editArea0"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
+            &#32;
             <span
               @click="endTimeMoveSave(1)"
               :style="{
@@ -1238,7 +1485,7 @@
             id="editArea1"
             v-model.lazy="subFirstLine"
             placeholder="...Subtitle's First Line..."
-            rows="2"
+            rows="1"
             style="
               width: 100%;
               text-align: center;
@@ -1254,7 +1501,7 @@
             id="editArea2"
             v-model.lazy="subSecLine"
             placeholder="...Subtitle's Second Line..."
-            rows="2"
+            rows="1"
             style="
               width: 100%;
               text-align: center;
@@ -1312,7 +1559,40 @@
             title="Add a New Sentence after Current Sentence"
           >
             <i style="color: red; font-size: 1.5em" class="material-icons"
-              >add_card</i
+              >call_split</i
+            >
+          </button>
+
+          <button
+            :disabled="loading || historyIndex < 1"
+            class="action"
+            @click="changeUndo"
+            title="Undo"
+          >
+            <i
+              :style="{
+                color: loading || historyIndex < 1 ? 'grey' : 'red',
+              }"
+              style="font-size: 1.5em"
+              class="material-icons"
+              >undo</i
+            >
+          </button>
+
+          <button
+            :disabled="loading || historyIndex >= changeNew.length"
+            class="action"
+            @click="changeRedo"
+            title="Redo"
+          >
+            <i
+              :style="{
+                color:
+                  loading || historyIndex >= changeNew.length ? 'grey' : 'red',
+              }"
+              style="font-size: 1.5em"
+              class="material-icons"
+              >redo</i
             >
           </button>
         </span>
@@ -1326,10 +1606,27 @@
           style="width: 100%; flex-grow: 1"
         ></div>
       </div>
+
+      <div
+        v-if="markRevised"
+        style="
+          z-index: 1011;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 0.5em;
+          font-size: 1.5em;
+        "
+      >
+        <p style="color: blue; background-color: grey; padding: 0.3em">
+          {{ $t("repeater.revise5") }}
+        </p>
+      </div>
+
       <audio
         style="
           position: fixed;
-          bottom: 5%;
+          bottom: 10%;
           width: 85%;
           left: 0;
           right: 0;
@@ -1476,7 +1773,6 @@ export default {
       subFirstLine: "     ",
       startTimeTemp: 0,
       endTimeTemp: 0,
-      noSave: false,
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
       firstMount: true,
@@ -1484,7 +1780,6 @@ export default {
       allowCacheTemp: Number(window.localStorage.getItem("cacheOn")) == 1,
       numOfKeys: 0,
       playFromCache: false,
-      savedToSrt: false,
       reader: 0,
       showAddNew: false,
       showEditNew: false,
@@ -1494,6 +1789,25 @@ export default {
       startTimeMove: 0.1,
       endTimeMove: 0.1,
       isTimeLineEdit: false,
+      changeOld: [],
+      changeNew: [],
+      historyIndex: 0,
+      tempOldContent: "",
+      onRUdo: false,
+      onEdit: false,
+      showRevision: false,
+      revisePlan: "0 1 3 7 15 30 60",
+      reviseData: [],
+      onRevision: false,
+      oReq: null,
+      indexS: 1,
+      indexE: 10,
+      tempSentenceIndex: 1,
+      markRevised: false,
+      reviseType: 0,
+      srtRevisePath: "",
+      maxCacheNum: Number(window.localStorage.getItem("max")) || 3,
+      cachedKeys: "",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1508,8 +1822,14 @@ export default {
       return "PDJ-user" + this.user.id + "-favorite.txt";
     },
 
+    reqF() {
+      if (this.onRevision) return this.oReq;
+      else return this.req;
+    },
+
     favListStatus() {
-      if (this.isSetting || !this.isSingle) return { color: "grey" };
+      if (this.isSetting || !this.isSingle || this.showRevision)
+        return { color: "grey" };
       if (!this.isPlayFullFavList) {
         if (this.currentFileFavList.length == 0) {
           return { color: "grey" };
@@ -1546,7 +1866,8 @@ export default {
         this.isSetting ||
         this.showSubtitleList ||
         this.showNewWordList ||
-        this.isEditSubandNotes
+        this.isEditSubandNotes ||
+        this.showRevision
       )
         return { color: "grey" };
       if (this.subtitleLang == 1 || this.subtitleLang == 2) {
@@ -1571,7 +1892,7 @@ export default {
       } else if (this.subtitleLang == 2) {
         return "2. show ALL";
       } else if (this.subtitleLang == 3) {
-        return "3. show Note Line onlyshow Subtitle's First Line only";
+        return "3. show Note Line only";
       } else if (this.subtitleLang == 4) {
         return "4. show Subtitle's First Line only";
       } else if (this.subtitleLang == 5) {
@@ -1591,7 +1912,8 @@ export default {
         this.isSetting ||
         this.showSubtitleList ||
         this.showNewWordList ||
-        this.isEditSubandNotes
+        this.isEditSubandNotes ||
+        this.showRevision
       ) {
         return { color: "grey" };
       } else if (this.playFromCache) {
@@ -1603,23 +1925,15 @@ export default {
 
     srtSubtitles() {
       if (!this.isFavOnPlay) {
-        var formatContent = this.req.content;
-        if (formatContent.includes("\r\n"))
-          formatContent = formatContent.replaceAll("\r\n", "\n");
-        if (formatContent.includes("\n\n\n\n"))
-          formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
-        if (formatContent.includes("\n\n\n"))
-          formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
-
-        if (formatContent.includes("\t\t"))
-          formatContent = formatContent.replaceAll("\t\t", "\n");
+        var formatContent = this.reqF.content;
+        formatContent = this.formatAll(formatContent);
 
         var subtitles = [];
         var textSubtitles = formatContent.split("\n\n");
         for (var i = 0; i < textSubtitles.length; ++i) {
           var textSubtitle = textSubtitles[i].split("\n");
           if (textSubtitle.length >= 2) {
-            var sn = textSubtitle[0];
+            var sn = i + 1;
             var startTimeUnformat = textSubtitle[1].split(" --> ")[0];
             var startHH = startTimeUnformat.split(":")[0];
             var startMM = startTimeUnformat.split(":")[1];
@@ -1722,12 +2036,17 @@ export default {
           return 2;
         } else return 1;
       } else {
-        if (this.listing && this.req.name) {
+        if (this.onRevision) {
+          return this.reviseType;
+        }
+        if (this.listing && this.reqF.name) {
           for (var i = 0; i < this.listing.length; ++i) {
-            if (this.listing[i].name == this.req.name.replace(".srt", ".mp4")) {
+            if (
+              this.listing[i].name == this.reqF.name.replace(".srt", ".mp4")
+            ) {
               return 2;
             } else if (
-              this.listing[i].name == this.req.name.replace(".srt", ".mp3")
+              this.listing[i].name == this.reqF.name.replace(".srt", ".mp3")
             ) {
               return 1;
             }
@@ -1746,7 +2065,7 @@ export default {
     },
 
     currentFileFavList() {
-      let currentMediaName = this.req.name;
+      let currentMediaName = this.reqF.name;
       return this.favList.filter(function (item) {
         return item.rawPath == currentMediaName;
       });
@@ -1754,79 +2073,81 @@ export default {
 
     mediaName() {
       if (this.isMediaType == 1) {
-        return this.req.name.replace(".srt", ".mp3");
+        return this.reqF.name.replace(".srt", ".mp3");
       } else if (this.isMediaType == 2) {
-        return this.req.name.replace(".srt", ".mp4");
+        return this.reqF.name.replace(".srt", ".mp4");
       } else {
         return "";
       }
     },
 
     subtitleContent() {
-      var contentLine1 =
-        !this.isEmpty &&
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] !==
-          undefined
-          ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0]
-          : " ";
-      var contentLine2 =
-        !this.isEmpty &&
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] !==
-          undefined
-          ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1]
-          : " ";
-      var contentAll = "    ";
-      if (this.isShowLine1 && this.isShowLine2) {
-        contentAll =
-          "<p style='margin-top: 0px'>" +
-          contentLine1 +
-          "</p><p>" +
-          contentLine2 +
-          "</p>";
-      } else if (this.isShowLine1 && !this.isShowLine2) {
-        contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
-      } else if (!this.isShowLine1 && this.isShowLine2) {
-        contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
-      } else {
-        contentAll = " ";
-      }
-      var highLightWord = "";
-      if (
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
-        this.srtSubtitles[this.sentenceIndex - 1].content
-          .split("\r\n")[2]
-          .includes("[")
-      ) {
-        for (
-          var i = 1;
-          i <
+      if (this.srtSubtitles[this.sentenceIndex - 1].content) {
+        var contentLine1 =
+          !this.isEmpty &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] !==
+            undefined
+            ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0]
+            : " ";
+        var contentLine2 =
+          !this.isEmpty &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] !==
+            undefined
+            ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1]
+            : " ";
+        var contentAll = "    ";
+        if (this.isShowLine1 && this.isShowLine2) {
+          contentAll =
+            "<p style='margin-top: 0px'>" +
+            contentLine1 +
+            "</p><p>" +
+            contentLine2 +
+            "</p>";
+        } else if (this.isShowLine1 && !this.isShowLine2) {
+          contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
+        } else if (!this.isShowLine1 && this.isShowLine2) {
+          contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
+        } else {
+          contentAll = " ";
+        }
+        var highLightWord = "";
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
           this.srtSubtitles[this.sentenceIndex - 1].content
             .split("\r\n")[2]
-            .split("[").length;
-          ++i
+            .includes("[")
         ) {
-          if (
+          for (
+            var i = 1;
+            i <
             this.srtSubtitles[this.sentenceIndex - 1].content
               .split("\r\n")[2]
-              .split("[")
-              [i].includes(":")
+              .split("[").length;
+            ++i
           ) {
-            highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
-              .split("\r\n")[2]
-              .split("[")
-              [i].split(":")[0];
-          } else {
-            highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
-              .split("\r\n")[2]
-              .split("[")
-              [i].split("]")[0];
+            if (
+              this.srtSubtitles[this.sentenceIndex - 1].content
+                .split("\r\n")[2]
+                .split("[")
+                [i].includes(":")
+            ) {
+              highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
+                .split("\r\n")[2]
+                .split("[")
+                [i].split(":")[0];
+            } else {
+              highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
+                .split("\r\n")[2]
+                .split("[")
+                [i].split("]")[0];
+            }
+            var reg = new RegExp("(" + highLightWord + ")", "g");
+            if (highLightWord !== "" && highLightWord !== " ")
+              contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
           }
-          var reg = new RegExp("(" + highLightWord + ")", "g");
-          if (highLightWord !== "" && highLightWord !== " ")
-            contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
         }
-      }
-      return contentAll;
+        return contentAll;
+      } else return "";
     },
 
     isEnglishLine1() {
@@ -1854,7 +2175,7 @@ export default {
     },
 
     raw() {
-      let srtUrl = api.getDownloadURL(this.req, true);
+      let srtUrl = api.getDownloadURL(this.reqF, true);
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         return (
           srtUrl.split("/raw/")[0] +
@@ -1889,79 +2210,53 @@ export default {
         ];
       return hasContent !== undefined && hasContent !== " ";
     },
+    isIphone() {
+      return /iPhone/i.test(navigator.userAgent);
+    },
   },
   watch: {
     $route: function () {
       this.updatePreview();
     },
-
+    maxCacheNum: function () {
+      if (this.maxCacheNum < Number(window.localStorage.getItem("max")))
+        this.cacheCleanUp();
+      window.localStorage.setItem("max", this.maxCacheNum);
+    },
     startTimeTemp: function () {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
-        return;
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
       }
-      this.saveSub1();
+      this.timeOutId = setTimeout(() => {
+        this.onEdit = true;
+        this.saveSub1();
+        clearTimeout(this.timeOutId);
+      }, 300);
     },
 
     endTimeTemp: function () {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
-        return;
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
       }
-      this.saveSub2();
+      this.timeOutId = setTimeout(() => {
+        this.onEdit = true;
+        this.saveSub2();
+        clearTimeout(this.timeOutId);
+      }, 300);
     },
 
     subFirstLine: function () {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
-        return;
-      }
+      this.onEdit = true;
       this.saveSub();
     },
 
     subSecLine: function () {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
-        return;
-      }
+      this.onEdit = true;
       this.saveSub();
     },
 
     note: function () {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
-        return;
-      }
+      this.onEdit = true;
       this.saveSub();
     },
 
@@ -1969,7 +2264,6 @@ export default {
       if (this.isFavOnPlay && this.isPlayFullFavList && this.allowCache)
         this.getCacheMedia();
       if (this.isEditSubandNotes) {
-        this.noSave = true;
         this.startTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
@@ -2018,6 +2312,20 @@ export default {
       if (this.repeatTimes < 0) this.repeatTimes = 0;
       this.repeatTimes = Math.floor(this.repeatTimes);
       this.save();
+    },
+
+    reviseData: function () {
+      this.save();
+    },
+
+    revisePlan: function () {
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.save();
+        clearTimeout(this.timeOutId);
+      }, 300);
     },
 
     replayFromStart: function () {
@@ -2197,20 +2505,12 @@ export default {
     this.listing = this.oldReq.items;
     this.updatePreview();
     this.initUtter();
-    if (this.req.content == undefined) {
+    if (this.reqF.content == undefined) {
       alert(
         "Can't read content of .srt. The .srt file should be encoded using UTF-8!"
       );
     }
-    if (this.req.content.includes("\r\n"))
-      this.req.content = this.req.content.replaceAll("\r\n", "\n");
-    if (this.req.content.includes("\n\n\n\n"))
-      this.req.content = this.req.content.replaceAll("\n\n\n\n", "\n\n");
-    if (this.req.content.includes("\n\n\n"))
-      this.req.content = this.req.content.replaceAll("\n\n\n", "\n\n");
-    if (this.req.content.includes("\t\t"))
-      this.req.content = this.req.content.replaceAll("\t\t", "\n");
-    this.req.content = this.req.content.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+    this.reqF.content = this.formatAll(this.reqF.content);
     if (this.allowCache) this.getCacheMedia();
   },
   beforeDestroy() {
@@ -2220,11 +2520,9 @@ export default {
   },
   methods: {
     async readyStatus() {
-      this.isReadyToPlay = true;
       let vm = this;
       try {
-        const pathf = url.removeLastDir(this.$route.path);
-        vm.contentAll = await api.fetch(pathf + "/" + this.favFileName);
+        vm.contentAll = await api.fetch("/files/" + this.favFileName);
       } catch (e) {
         this.confirmType = "fetch";
         this.showConfirm();
@@ -2267,6 +2565,8 @@ export default {
         this.isPlayFullFavList = JSON.parse(
           this.contentAll.content.split("::")[19]
         );
+        this.reviseData = JSON.parse(this.contentAll.content.split("::")[21]);
+        this.revisePlan = JSON.parse(this.contentAll.content.split("::")[22]);
         this.isAutoDetectLang = JSON.parse(
           this.contentAll.content.split("::")[13]
         );
@@ -2306,31 +2606,135 @@ export default {
           this.currentMedia.muted = false;
           this.currentMedia.pause();
         }, 1);
+        var srtFullPath = "";
         const path = url.removeLastDir(this.$route.path);
+        if (this.onRevision) srtFullPath = this.srtRevisePath;
+        else srtFullPath = path + "/" + this.reqF.name;
         try {
-          await api.post(path + "/" + this.req.name, this.req.content, true);
+          await api.post(srtFullPath, this.reqF.content, true);
         } catch (error) {
           this.confirmType = "save";
           this.showConfirm();
         }
       }
+      this.isReadyToPlay = true;
     },
 
     cacheMedia() {
-      let srtUrl = this.req.name;
+      let srtUrl = this.reqF.name;
+      if (window.localStorage.getItem("cKeys") == null)
+        window.localStorage.setItem("cKeys", this.cachedKeys);
+      else this.cachedKeys = window.localStorage.getItem("cKeys");
+      var vmcachedKeys = this.cachedKeys;
+      var vmmax = this.maxCacheNum + 1;
       fetch(this.raw)
         .then((response) => response.blob()) // 将响应转换为Blob对象
         .then((blob) => {
-          localforage
-            .setItem(srtUrl, blob)
-            .then(function () {})
-            .catch(function (err) {
-              console.log(err);
-            });
+          localforage.setItem(srtUrl, blob, function () {
+            // Do other things once the value has been saved.
+            vmcachedKeys = vmcachedKeys + ";;" + srtUrl;
+            window.localStorage.setItem("cKeys", vmcachedKeys);
+            var ck = vmcachedKeys.split(";;");
+            if (ck.length > vmmax) {
+              var keyName = ck[1];
+              localforage.removeItem(keyName, function () {
+                console.log("we just removed: " + keyName);
+                localforage.getItem(keyName, function (err, value) {
+                  console.log(value);
+                  // Null result as somekey was removed.
+                });
+              });
+              vmcachedKeys = vmcachedKeys.replace(ck[1] + ";;", "");
+              window.localStorage.setItem("cKeys", vmcachedKeys);
+            }
+          });
         })
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
         });
+      this.cachedKeys = vmcachedKeys;
+    },
+
+    getDateAfterDays(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return date.toISOString().split("T")[0];
+    },
+
+    compareDates(date) {
+      const d1 = new Date();
+      const d2 = new Date(date);
+      if (d1.getTime() < d2.getTime()) {
+        return 1;
+      } else {
+        return 0;
+      }
+    },
+
+    addNewRevision() {
+      if (this.indexS >= this.indexE) {
+        this.indexE = this.indexS + 1;
+      }
+      let reviseDate = [];
+      let reviseTemp1 = this.revisePlan.split(" ");
+      let srtUrl = api.getDownloadURL(this.reqF, true);
+      let reviseTemp2 = "";
+      for (var i = 0; i < reviseTemp1.length; ++i) {
+        if (i == 0 && parseInt(reviseTemp1[0]) == 0) {
+          reviseTemp2 =
+            this.getDateAfterDays(parseInt(reviseTemp1[i])) +
+            "^^" +
+            "0" +
+            "**" +
+            "1";
+        } else {
+          reviseTemp2 =
+            this.getDateAfterDays(parseInt(reviseTemp1[i])) +
+            "^^" +
+            "1" +
+            "**" +
+            "1";
+        }
+        reviseDate.push(reviseTemp2);
+      }
+      var reviseItem = {
+        oRawPath: srtUrl.split("?")[0].split("/raw/")[1],
+        name: this.mediaName,
+        reqname: this.reqF.name,
+        startIndex: this.indexS,
+        endIndex: this.indexE,
+        date: reviseDate,
+      };
+      for (var ii = 0; ii < this.reviseData.length; ++ii) {
+        if (
+          srtUrl.split("?")[0].split("/raw/")[1] ==
+            this.reviseData[ii].oRawPath &&
+          this.indexS == this.reviseData[ii].startIndex &&
+          this.indexE == this.reviseData[ii].endIndex
+        ) {
+          let iii = ii + 1;
+          alert("Already existed in Review Plan, Item " + iii + ".");
+          return;
+        }
+      }
+      this.reviseData.unshift(reviseItem);
+    },
+
+    async revisionPlay(name, reqname, startIndex, oRawPath) {
+      this.srtRevisePath = "/files/" + oRawPath;
+      try {
+        var m = await api.fetch(this.srtRevisePath);
+      } catch (e) {
+        this.confirmType = "fetch";
+        this.showConfirm();
+      }
+      if (name.endsWith(".mp3")) this.reviseType = 1;
+      else this.reviseType = 2;
+      this.oReq = m;
+      this.onRevision = true;
+      this.tempSentenceIndex = this.sentenceIndex;
+      this.sentenceIndex = startIndex;
+      this.showRevision = false;
     },
 
     convertToHMS(milliseconds) {
@@ -2355,7 +2759,7 @@ export default {
         let srtUrl;
         if (this.isFavOnPlay && this.isPlayFullFavList) {
           srtUrl = this.srtSubtitles[this.sentenceIndex - 1].rawPath;
-        } else srtUrl = this.req.name;
+        } else srtUrl = this.reqF.name;
         let vm = this;
         localforage
           .getItem(srtUrl)
@@ -2388,7 +2792,6 @@ export default {
 
     saveWordToSRT() {
       let newphrase = "[" + this.newWord + ":" + this.newTranslation + "]; ";
-      this.noSave = true;
       this.cleanUp1();
       this.cleanUp2();
       this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -2403,8 +2806,8 @@ export default {
       this.note = this.note + newphrase;
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
         this.note;
+      this.onEdit = true;
       this.saveSub();
-      this.click();
     },
 
     getReader() {
@@ -2424,7 +2827,11 @@ export default {
       if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
         this.utterTransLine();
       if (this.audio) this.audio.muted = true;
-      this.currentMedia.play();
+      if (this.isIphone) {
+        setTimeout(() => {
+          this.currentMedia.play();
+        }, 20);
+      } else this.currentMedia.play();
       this.currentMedia.currentTime =
         this.srtSubtitles[this.sentenceIndex - 1].startTime;
       this.currentMedia.muted = true;
@@ -2627,7 +3034,11 @@ export default {
 
     endUtter() {
       this.audio.removeEventListener("ended", this.endUtter, false);
-      if (this.isEditSubandNotes && !this.isUtterTransLineFirstly) {
+      if (
+        this.isEditSubandNotes &&
+        this.isUtterTransLine &&
+        !this.isUtterTransLineFirstly
+      ) {
         this.cleanUp1();
         this.cleanUp2();
         return;
@@ -2782,9 +3193,18 @@ export default {
         }
       }
     },
-
+    formatAll(x) {
+      x = x.replace(/\n\n$/, "");
+      if (x.includes("\r\n")) x = x.replaceAll("\r\n", "\n");
+      if (x.includes("\n\n\n\n")) x = x.replaceAll("\n\n\n\n", "\n\n");
+      if (x.includes("\n\n\n")) x = x.replaceAll("\n\n\n", "\n\n");
+      if (x.includes("\t\t")) x = x.replaceAll("\t\t", "\n");
+      x = x.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      x = x.replace(/^\n+|\n+$/g, "");
+      return x;
+    },
     switchIsFav() {
-      let srtUrl = api.getDownloadURL(this.req, true);
+      let srtUrl = api.getDownloadURL(this.reqF, true);
       let originRaw = "";
       if (srtUrl && this.isMediaType == 1) {
         originRaw = srtUrl.replace(".srt", ".mp3");
@@ -2796,7 +3216,7 @@ export default {
         if (this.isFav) {
           //add a fav
           var fav = {
-            rawPath: this.req.name,
+            rawPath: this.reqF.name,
             mediaName: this.mediaName,
             originalRawPath: originRaw.split("?")[0].split("/raw/")[1],
             startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
@@ -2834,7 +3254,7 @@ export default {
     switchEditSubandNote() {
       this.isEditSubandNotes = !this.isEditSubandNotes;
       if (this.isEditSubandNotes) {
-        this.noSave = true;
+        this.onRUdo = true;
         this.cleanUp1();
         this.cleanUp2();
         this.isShowLine1 = true;
@@ -2853,26 +3273,22 @@ export default {
     },
 
     startTimeAdd() {
-      let temp = (this.startTimeTemp + 0.01).toFixed(3);
+      let temp = (this.startTimeTemp + 0.05).toFixed(3);
       this.startTimeTemp = parseFloat(temp);
-      this.saveSub1();
     },
 
     startTimeMinus() {
-      let temp = (this.startTimeTemp - 0.01).toFixed(3);
+      let temp = (this.startTimeTemp - 0.05).toFixed(3);
       this.startTimeTemp = parseFloat(temp);
-      this.saveSub1();
     },
 
     endTimeAdd() {
-      let temp = (this.endTimeTemp + 0.01).toFixed(3);
+      let temp = (this.endTimeTemp + 0.05).toFixed(3);
       this.endTimeTemp = parseFloat(temp);
-      this.saveSub2();
     },
     endTimeMinus() {
-      let temp = (this.endTimeTemp - 0.01).toFixed(3);
+      let temp = (this.endTimeTemp - 0.05).toFixed(3);
       this.endTimeTemp = parseFloat(temp);
-      this.saveSub2();
     },
 
     showConfirm() {
@@ -2963,12 +3379,13 @@ export default {
       localforage
         .clear()
         .then(function () {
+          this.cachedNumber();
+          window.localStorage.removeItem("cKeys");
           console.log("Database is now empty.");
         })
         .catch(function (err) {
           console.log(err);
         });
-      this.cachedNumber();
     },
 
     onSetting() {
@@ -2990,73 +3407,63 @@ export default {
     click: function () {
       if (this.isFirstClick) this.firstClick();
       this.touches++;
-      setTimeout(() => {
-        this.cleanUp1();
-        if (this.isEditSubandNotes) {
-          if (
-            document.getElementById("editArea0") &&
-            document
-              .getElementById("editArea0")
-              .contains(document.activeElement)
-          ) {
-            document.getElementById("editArea0").blur();
-          } else if (
-            document.getElementById("editArea00") &&
-            document
-              .getElementById("editArea00")
-              .contains(document.activeElement)
-          ) {
-            document.getElementById("editArea00").blur();
-          } else if (
-            document.getElementById("editArea1") &&
-            document
-              .getElementById("editArea1")
-              .contains(document.activeElement)
-          ) {
-            document.getElementById("editArea1").blur();
-          } else if (
-            document.getElementById("editArea2") &&
-            document
-              .getElementById("editArea2")
-              .contains(document.activeElement)
-          ) {
-            document.getElementById("editArea2").blur();
-          } else if (
-            document.getElementById("editArea3") &&
-            document
-              .getElementById("editArea3")
-              .contains(document.activeElement)
-          ) {
-            document.getElementById("editArea3").blur();
-          }
+      this.cleanUp1();
+      if (this.isEditSubandNotes) {
+        if (
+          document.getElementById("editArea0") &&
+          document.getElementById("editArea0").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea0").blur();
+        } else if (
+          document.getElementById("editArea00") &&
+          document.getElementById("editArea00").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea00").blur();
+        } else if (
+          document.getElementById("editArea1") &&
+          document.getElementById("editArea1").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea1").blur();
+        } else if (
+          document.getElementById("editArea2") &&
+          document.getElementById("editArea2").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea2").blur();
+        } else if (
+          document.getElementById("editArea3") &&
+          document.getElementById("editArea3").contains(document.activeElement)
+        ) {
+          document.getElementById("editArea3").blur();
         }
-        if (this.touches == 1) {
-          if (this.isSingle) {
-            setTimeout(() => {
-              if (this.pauseAfterFirstDone) {
-                this.pauseAfterFirstDone = false;
-                if (this.isUtterTransLineFirstly) this.loopPlay();
-                else this.utterTransLine();
-              } else {
-                this.singleModePlay();
-              }
-            }, 1);
-          } else {
-            setTimeout(() => {
-              this.regularPlay();
-              this.currentMedia.currentTime =
-                this.srtSubtitles[this.sentenceIndex - 1].startTime;
-            }, 1);
-          }
+      }
+      if (this.touches == 1) {
+        if (this.isSingle) {
+          setTimeout(() => {
+            if (this.pauseAfterFirstDone) {
+              this.pauseAfterFirstDone = false;
+              if (this.isUtterTransLineFirstly) this.loopPlay();
+              else this.utterTransLine();
+            } else {
+              this.singleModePlay();
+            }
+          }, 10);
+        } else {
+          setTimeout(() => {
+            this.regularPlay();
+            this.currentMedia.currentTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+          }, 1);
+        }
+      }
+      setTimeout(() => {
+        if (this.touches == 2) {
+          //double click
+          this.cleanUp1();
+          this.touches = 0;
+          return;
         }
         this.touches = 0;
       }, 300);
-      if (this.touches == 2) {
-        //double click
-        this.cleanUp1();
-        this.touches = 0;
-        return;
-      }
     },
 
     dblClick(event) {
@@ -3073,6 +3480,7 @@ export default {
     startDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.isSetting = false;
+      this.showRevision = false;
       this.showSubtitleList = false;
       this.showNewWordList = false;
       this.withTrans = false;
@@ -3132,6 +3540,7 @@ export default {
     startTouchS(event) {
       if (!this.isReadyToPlay) return;
       this.isSetting = false;
+      this.showRevision = false;
       this.showSubtitleList = false;
       this.showNewWordList = false;
       this.withTrans = false;
@@ -3193,7 +3602,7 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
-          this.singleModePlay();
+          this.click();
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp1();
@@ -3219,7 +3628,7 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
-          this.singleModePlay();
+          this.click();
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp1();
@@ -3301,7 +3710,11 @@ export default {
       }
       if (!this.isReadyToPlay) return;
       if (this.currentMedia) {
-        this.currentMedia.play();
+        if (this.isIphone) {
+          setTimeout(() => {
+            this.currentMedia.play();
+          }, 20);
+        } else this.currentMedia.play();
         if (this.currentSpeed.split(",")[this.playCount]) {
           this.currentMedia.playbackRate = Number(
             this.currentSpeed.split(",")[this.playCount]
@@ -3312,15 +3725,25 @@ export default {
         this.sessionLength =
           (this.srtSubtitles[this.sentenceIndex - 1].endTime -
             this.srtSubtitles[this.sentenceIndex - 1].startTime +
-            2) /
+            4) /
           this.currentMedia.playbackRate;
+        let playLength =
+          (this.srtSubtitles[this.sentenceIndex - 1].endTime -
+            this.srtSubtitles[this.sentenceIndex - 1].startTime) /
+            this.currentMedia.playbackRate -
+          0.2;
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.startTime = new Date().getTime();
-        this.intervalId = setInterval(() => {
-          this.sessionEnd();
-        }, 100);
+        this.timeOutId = setTimeout(() => {
+          this.isEnd();
+        }, playLength * 1000);
       }
+    },
+    isEnd() {
+      this.intervalId = setInterval(() => {
+        this.sessionEnd();
+      }, 10);
     },
 
     sessionEnd() {
@@ -3480,6 +3903,7 @@ export default {
     },
 
     async save() {
+      if (!this.isReadyToPlay && this.confirmType != "fetch") return;
       let customConfig =
         "customConfig" +
         "::" +
@@ -3522,13 +3946,16 @@ export default {
         JSON.stringify(this.isPlayFullFavList) +
         "::" +
         JSON.stringify(this.timeStampChangeEnd) +
+        "::" +
+        JSON.stringify(this.reviseData) +
+        "::" +
+        JSON.stringify(this.revisePlan) +
         "::";
 
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
-      const path = url.removeLastDir(this.$route.path);
       try {
-        await api.post(path + "/" + this.favFileName, favContent, true);
+        await api.post("/files/" + this.favFileName, favContent, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
@@ -3536,7 +3963,16 @@ export default {
     },
 
     saveSub() {
-      var tempContent = this.req.content;
+      if (this.onRUdo) {
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 100);
+        return;
+      }
+      if (!this.onEdit) return;
+      this.onEdit = false;
+      this.tempOldContent = this.reqF.content;
+      var tempContent = this.reqF.content;
       var newContent = this.srtSubtitles[this.sentenceIndex - 1].timeStamp;
 
       if (this.subFirstLine !== undefined) {
@@ -3579,25 +4015,47 @@ export default {
           .split(this.srtSubtitles[this.sentenceIndex - 1].timeStamp)[1]
           .split("\n\n")[0];
 
-      this.req.content = tempContent.replace(oldContent, newContent);
-
-      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] =
-        this.subFirstLine;
-      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] =
-        this.subSecLine;
-      this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
-        this.note;
+      this.reqF.content = tempContent.replace(oldContent, newContent);
       this.saveSubNow();
     },
 
     saveSub1() {
-      this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
+      if (this.onRUdo) {
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 100);
+        return;
+      }
+      if (!this.onEdit) return;
+      this.onEdit = false;
+      this.tempOldContent = this.reqF.content;
+      if (
+        this.sentenceIndex > 1 &&
+        this.startTimeTemp <= this.srtSubtitles[this.sentenceIndex - 2].endTime
+      )
+        this.srtSubtitles[this.sentenceIndex - 2].endTime =
+          this.startTimeTemp - 0.001;
+
+      if (
+        this.sentenceIndex > 1 &&
+        this.srtSubtitles[this.sentenceIndex - 2].endTime <=
+          this.srtSubtitles[this.sentenceIndex - 2].startTime
+      ) {
+        this.srtSubtitles[this.sentenceIndex - 2].endTime =
+          this.srtSubtitles[this.sentenceIndex - 2].startTime + 0.001;
+        this.startTimeTemp =
+          this.srtSubtitles[this.sentenceIndex - 2].endTime + 0.001;
+      }
+      if (this.sentenceIndex == 1 && this.startTimeTemp < 0)
+        this.startTimeTemp = 0;
       if (
         this.startTimeTemp >= this.srtSubtitles[this.sentenceIndex - 1].endTime
       )
         this.startTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].endTime - 0.001;
-      var tempContent = this.req.content;
+
+      this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
+      var tempContent = this.reqF.content;
       var oldContent =
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
         " --> ";
@@ -3613,24 +4071,73 @@ export default {
         "," +
         time.milliseconds +
         " --> ";
+      tempContent = tempContent.replace(oldContent, newContent);
 
-      this.req.content = tempContent.replace(oldContent, newContent);
-
-      this.srtSubtitles[this.sentenceIndex - 1].startTime = this.startTimeTemp;
-      this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
-        this.sentenceIndex - 1
-      ].timeStamp.replace(oldContent, newContent);
+      if (this.sentenceIndex > 1) {
+        this.srtSubtitles[this.sentenceIndex - 2].endTime = parseFloat(
+          this.srtSubtitles[this.sentenceIndex - 2].endTime.toFixed(3)
+        );
+        var oldContent1 =
+          " --> " +
+          this.srtSubtitles[this.sentenceIndex - 2].timeStamp.split(" --> ")[1];
+        var time1 = this.convertToHMS(
+          this.srtSubtitles[this.sentenceIndex - 2].endTime * 1000 -
+            this.timeStampChangeEnd +
+            1
+        );
+        var newContent1 =
+          " --> " +
+          time1.hours +
+          ":" +
+          time1.minutes +
+          ":" +
+          time1.seconds +
+          "," +
+          time1.milliseconds;
+        tempContent = tempContent.replace(oldContent1, newContent1);
+      }
+      this.reqF.content = tempContent;
       this.saveSubNow();
     },
 
     saveSub2() {
-      this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
+      if (this.onRUdo) {
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 100);
+        return;
+      }
+      if (!this.onEdit) return;
+      this.onEdit = false;
+      this.tempOldContent = this.reqF.content;
+
+      if (
+        this.sentenceIndex <= this.srtSubtitles.length - 1 &&
+        this.endTimeTemp >= this.srtSubtitles[this.sentenceIndex].startTime
+      )
+        this.srtSubtitles[this.sentenceIndex].startTime =
+          this.endTimeTemp + 0.001;
+
+      if (
+        this.sentenceIndex <= this.srtSubtitles.length - 1 &&
+        this.srtSubtitles[this.sentenceIndex].startTime >=
+          this.srtSubtitles[this.sentenceIndex].endTime
+      ) {
+        this.srtSubtitles[this.sentenceIndex].startTime =
+          this.srtSubtitles[this.sentenceIndex].endTime - 0.001;
+        this.endTimeTemp =
+          this.srtSubtitles[this.sentenceIndex].startTime - 0.001;
+      }
+
       if (
         this.endTimeTemp <= this.srtSubtitles[this.sentenceIndex - 1].startTime
       )
         this.endTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.001;
-      var tempContent = this.req.content;
+
+      this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
+
+      var tempContent = this.reqF.content;
       var oldContent =
         " --> " +
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[1];
@@ -3647,32 +4154,49 @@ export default {
         "," +
         time.milliseconds;
 
-      this.req.content = tempContent.replace(oldContent, newContent);
+      tempContent = tempContent.replace(oldContent, newContent);
 
-      this.srtSubtitles[this.sentenceIndex - 1].endTime = this.endTimeTemp;
-      this.srtSubtitles[this.sentenceIndex - 1].timeStamp = this.srtSubtitles[
-        this.sentenceIndex - 1
-      ].timeStamp.replace(oldContent, newContent);
+      if (this.sentenceIndex <= this.srtSubtitles.length - 1) {
+        this.srtSubtitles[this.sentenceIndex].startTime = parseFloat(
+          this.srtSubtitles[this.sentenceIndex].startTime.toFixed(3)
+        );
+        var oldContent1 =
+          this.srtSubtitles[this.sentenceIndex].timeStamp.split(" --> ")[0] +
+          " --> ";
+        var time1 = this.convertToHMS(
+          this.srtSubtitles[this.sentenceIndex].startTime * 1000 -
+            this.timeStampChangeStart
+        );
+        var newContent1 =
+          time1.hours +
+          ":" +
+          time1.minutes +
+          ":" +
+          time1.seconds +
+          "," +
+          time1.milliseconds +
+          " --> ";
+        tempContent = tempContent.replace(oldContent1, newContent1);
+      }
+      this.reqF.content = tempContent;
       this.saveSubNow();
     },
 
     startTimeMoveSave: function (direction) {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
+      if (this.onRUdo) {
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 100);
         return;
       }
+      this.tempOldContent = this.reqF.content;
+
       for (var i = 0; i < this.srtSubtitles.length; ++i) {
         let startTemp;
         if (direction == 1)
           startTemp = this.srtSubtitles[i].startTime + this.startTimeMove;
         else startTemp = this.srtSubtitles[i].startTime - this.startTimeMove;
-        var tempContent = this.req.content;
+        var tempContent = this.reqF.content;
         var oldContent =
           this.srtSubtitles[i].timeStamp.split(" --> ")[0] + " --> ";
         var time = this.convertToHMS(
@@ -3687,33 +4211,26 @@ export default {
           "," +
           time.milliseconds +
           " --> ";
-        this.req.content = tempContent.replace(oldContent, newContent);
-        this.srtSubtitles[i].startTime = startTemp;
-        this.srtSubtitles[i].timeStamp = this.srtSubtitles[i].timeStamp.replace(
-          oldContent,
-          newContent
-        );
+        this.reqF.content = tempContent.replace(oldContent, newContent);
       }
       this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
       this.saveSubNow();
     },
     endTimeMoveSave: function (direction) {
-      if (!this.isEditSubandNotes || this.noSave) {
-        if (this.timeOutId) {
-          clearTimeout(this.timeOutId);
-        }
-        this.timeOutId = setTimeout(() => {
-          this.noSave = false;
-          clearTimeout(this.timeOutId);
-        }, 10);
+      if (this.onRUdo) {
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 100);
         return;
       }
+      this.tempOldContent = this.reqF.content;
+
       for (var i = 0; i < this.srtSubtitles.length; ++i) {
         let endTemp;
         if (direction == 1)
           endTemp = this.srtSubtitles[i].endTime + this.endTimeMove;
         else endTemp = this.srtSubtitles[i].endTime - this.endTimeMove;
-        var tempContent = this.req.content;
+        var tempContent = this.reqF.content;
         var oldContent =
           " --> " + this.srtSubtitles[i].timeStamp.split(" --> ")[1];
         var time = this.convertToHMS(
@@ -3729,13 +4246,7 @@ export default {
           time.seconds +
           "," +
           time.milliseconds;
-        this.req.content = tempContent.replace(oldContent, newContent);
-
-        this.srtSubtitles[i].endTime = endTemp;
-        this.srtSubtitles[i].timeStamp = this.srtSubtitles[i].timeStamp.replace(
-          oldContent,
-          newContent
-        );
+        this.reqF.content = tempContent.replace(oldContent, newContent);
       }
       this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
       this.saveSubNow();
@@ -3763,17 +4274,9 @@ export default {
     },
 
     async deleteSentence() {
-      this.req.content = this.req.content.replace(/\n\n$/, "");
-      var formatContent = this.req.content;
-
-      if (formatContent.includes("\r\n"))
-        formatContent = formatContent.replaceAll("\r\n", "\n");
-      if (formatContent.includes("\n\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
-      if (formatContent.includes("\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
-      if (formatContent.includes("\t\t"))
-        formatContent = formatContent.replaceAll("\t\t", "\n");
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
 
       var textSubtitles = formatContent.split("\n\n");
       formatContent = formatContent.replace(
@@ -3783,15 +4286,30 @@ export default {
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       const path = url.removeLastDir(this.$route.path);
+      this.changeNew[this.historyIndex] = formatContent;
+
+      if (this.changeNew.length > this.historyIndex + 1) {
+        this.changeNew.splice(
+          this.historyIndex + 1,
+          this.changeNew.length - this.historyIndex - 1
+        );
+        this.changeOld.splice(
+          this.historyIndex + 1,
+          this.changeOld.length - this.historyIndex - 1
+        );
+      }
+
+      this.historyIndex = this.historyIndex + 1;
+
       try {
-        await api.post(path + "/" + this.req.name, formatContent, true);
+        await api.post(path + "/" + this.reqF.name, formatContent, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
       }
       this.cleanUp1();
       this.cleanUp2();
-      this.req.content = formatContent;
+      this.reqF.content = formatContent;
       if (this.sentenceIndex == 1) {
         this.sentenceIndex = this.sentenceIndex + 1;
         setTimeout(() => {
@@ -3806,18 +4324,9 @@ export default {
     },
 
     async mergeSentence() {
-      this.req.content = this.req.content.replace(/\n\n$/, "");
-      var formatContent = this.req.content;
-
-      if (formatContent.includes("\r\n"))
-        formatContent = formatContent.replaceAll("\r\n", "\n");
-      if (formatContent.includes("\n\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
-      if (formatContent.includes("\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
-      if (formatContent.includes("\t\t"))
-        formatContent = formatContent.replaceAll("\t\t", "\n");
-
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
       var textSubtitles = formatContent.split("\n\n");
       var line1 = textSubtitles[this.sentenceIndex].split("\n")[0];
       var line2 =
@@ -3874,16 +4383,34 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.changeNew[this.historyIndex] = formatContent;
+
+      if (this.changeNew.length > this.historyIndex + 1) {
+        this.changeNew.splice(
+          this.historyIndex + 1,
+          this.changeNew.length - this.historyIndex - 1
+        );
+        this.changeOld.splice(
+          this.historyIndex + 1,
+          this.changeOld.length - this.historyIndex - 1
+        );
+      }
+
+      this.historyIndex = this.historyIndex + 1;
+
       try {
-        await api.post(path + "/" + this.req.name, formatContent, true);
+        await api.post(srtFullPath, formatContent, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
       }
       this.cleanUp1();
       this.cleanUp2();
-      this.req.content = formatContent;
+      this.reqF.content = formatContent;
       if (this.sentenceIndex == 1) {
         this.sentenceIndex = this.sentenceIndex + 1;
         setTimeout(() => {
@@ -3898,17 +4425,9 @@ export default {
     },
 
     async addSentence() {
-      this.req.content = this.req.content.replace(/\n\n$/, "");
-      var formatContent = this.req.content;
-
-      if (formatContent.includes("\r\n"))
-        formatContent = formatContent.replaceAll("\r\n", "\n");
-      if (formatContent.includes("\n\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
-      if (formatContent.includes("\n\n\n"))
-        formatContent = formatContent.replaceAll("\n\n\n", "\n\n");
-      if (formatContent.includes("\t\t"))
-        formatContent = formatContent.replaceAll("\t\t", "\n");
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
 
       var textSubtitles = formatContent.split("\n\n");
       var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
@@ -3927,25 +4446,75 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.changeNew[this.historyIndex] = formatContent;
+
+      if (this.changeNew.length > this.historyIndex + 1) {
+        this.changeNew.splice(
+          this.historyIndex + 1,
+          this.changeNew.length - this.historyIndex - 1
+        );
+        this.changeOld.splice(
+          this.historyIndex + 1,
+          this.changeOld.length - this.historyIndex - 1
+        );
+      }
+      this.historyIndex = this.historyIndex + 1;
+
       try {
-        await api.post(path + "/" + this.req.name, formatContent, true);
+        await api.post(srtFullPath, formatContent, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
       }
       this.cleanUp1();
       this.cleanUp2();
-      this.req.content = formatContent;
+      this.reqF.content = formatContent;
       setTimeout(() => {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
     },
 
     async saveSubNow() {
+      if (this.tempOldContent == this.reqF.content) return;
+      var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.changeOld[this.historyIndex] = this.tempOldContent;
+      this.changeNew[this.historyIndex] = this.reqF.content;
+
+      if (this.changeNew.length > this.historyIndex + 1) {
+        this.changeNew.splice(
+          this.historyIndex + 1,
+          this.changeNew.length - this.historyIndex - 1
+        );
+        this.changeOld.splice(
+          this.historyIndex + 1,
+          this.changeOld.length - this.historyIndex - 1
+        );
+      }
+      this.historyIndex = this.historyIndex + 1;
+
+      for (var i = 0; i < this.reqF.content.split("\n\n").length; ++i) {
+        var ni = i + 1;
+        let nCont = this.reqF.content
+          .split("\n\n")
+          [i].replace(
+            this.reqF.content.split("\n\n")[i].split("\n")[0] + "\n",
+            ni + "\n"
+          );
+        this.reqF.content = this.reqF.content.replace(
+          this.reqF.content.split("\n\n")[i],
+          nCont
+        );
+      }
+
       try {
-        await api.post(path + "/" + this.req.name, this.req.content, true);
+        await api.post(srtFullPath, this.reqF.content, true);
       } catch (error) {
         this.confirmType = "save";
         this.showConfirm();
@@ -3956,10 +4525,144 @@ export default {
           this.switchIsFav();
         }, 10);
       }
-      this.savedToSrt = true;
+    },
+
+    async changeUndo() {
+      this.onRUdo = true;
+      var srtFullPath = "";
+      const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.historyIndex = this.historyIndex - 1;
+      this.reqF.content = this.changeOld[this.historyIndex];
+      this.cleanUp1();
+      this.cleanUp2();
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
+
       setTimeout(() => {
-        this.savedToSrt = false;
-      }, 400);
+        if (this.sentenceIndex > this.srtSubtitles.length)
+          this.sentenceIndex = this.sentenceIndex - 1;
+      }, 5);
+
+      if (this.sentenceIndex == 1) {
+        this.sentenceIndex = this.sentenceIndex + 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+      } else {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex + 1;
+        }, 10);
+      }
+    },
+
+    async changeRedo() {
+      this.onRUdo = true;
+      var srtFullPath = "";
+      const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.reqF.content = this.changeNew[this.historyIndex];
+      this.historyIndex = this.historyIndex + 1;
+      this.cleanUp1();
+      this.cleanUp2();
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+      } catch (error) {
+        this.confirmType = "save";
+        this.showConfirm();
+      }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
+      setTimeout(() => {
+        if (this.sentenceIndex > this.srtSubtitles.length)
+          this.sentenceIndex = this.sentenceIndex - 1;
+      }, 5);
+      if (this.sentenceIndex == 1) {
+        this.sentenceIndex = this.sentenceIndex + 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+      } else {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex + 1;
+        }, 10);
+      }
+    },
+    switchRevisePlan() {
+      this.cleanUp1();
+      this.cleanUp2();
+      if (this.onRevision) {
+        this.sentenceIndex = this.tempSentenceIndex;
+        this.onRevision = false;
+        this.showRevision = true;
+        return;
+      }
+      this.showRevision = !this.showRevision;
+      if (this.showRevision) {
+        if (this.sentenceIndex > 1) this.indexE = this.sentenceIndex;
+        var tempData = this.reviseData;
+        for (var i = 0; i < this.reviseData.length; ++i) {
+          for (var ii = 0; ii < this.reviseData[i].date.length; ++ii) {
+            let afterToday = this.compareDates(
+              this.reviseData[i].date[ii].split("^^")[0]
+            );
+            if (afterToday == 0) {
+              tempData[i].date[ii] = tempData[i].date[ii].replace(
+                tempData[i].date[ii].split("**")[0],
+                tempData[i].date[ii].split("^^")[0] + "^^" + afterToday
+              );
+            }
+          }
+        }
+        this.reviseData = tempData;
+        this.save();
+      }
+    },
+    switchDateReviseStatus(index, i) {
+      this.$set(
+        this.reviseData[index],
+        this.reviseData[index].date[i],
+        this.reviseData[index].date[i].split("**")[0] + "**0"
+      );
+      this.reviseData[index].date[i] =
+        this.reviseData[index].date[i].split("**")[0] + "**0";
+      this.save();
+      this.markRevised = true;
+      setTimeout(() => {
+        this.markRevised = false;
+      }, 1500);
+    },
+
+    delRevision(index) {
+      this.cleanUp1();
+      this.cleanUp2();
+
+      var userConfirmationDelete = window.confirm(
+        "Are you sure to delete this clip's revision?"
+      );
+      if (userConfirmationDelete) {
+        this.reviseData.splice(index, 1);
+      } else {
+        return;
+      }
     },
 
     async updatePreview() {
@@ -4016,7 +4719,7 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
-          this.singleModePlay();
+          this.click();
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp1();
@@ -4065,7 +4768,7 @@ export default {
         if (this.isFavOnPlay && this.isPlayFullFavList) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
-          this.singleModePlay();
+          this.click();
           if (!this.autoPlay) {
             setTimeout(() => {
               this.cleanUp1();
@@ -4093,7 +4796,7 @@ export default {
               if (this.isUtterTransLineFirstly) this.loopPlay();
               else this.utterTransLine();
             } else {
-              this.singleModePlay();
+              this.click();
             }
           }, 1);
         } else {
@@ -4114,6 +4817,32 @@ export default {
     close() {
       if (this.isSetting) {
         this.onSetting();
+        return;
+      }
+      if (this.isEditSubandNotes) {
+        this.switchEditSubandNote();
+        return;
+      }
+      if (this.isFavOnPlay) {
+        this.playFavList();
+        return;
+      }
+      if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
+        this.showSubtitleList = false;
+        this.showNewWordList = false;
+        this.withTrans = false;
+        return;
+      }
+      if (this.showRevision) {
+        this.switchRevisePlan();
+        return;
+      }
+      if (this.onRevision) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.sentenceIndex = this.tempSentenceIndex;
+        this.onRevision = false;
+        this.showRevision = true;
         return;
       }
       this.cleanUp1();
@@ -4196,8 +4925,8 @@ header {
   width: 65%;
   left: 50%;
   transform: translate(-50%, 0);
-  top: 4.5em;
-  bottom: 0.5em;
+  top: 4.2em;
+  bottom: 0.2em;
   justify-content: center;
   align-items: center;
   z-index: 1010;
@@ -4240,13 +4969,16 @@ input:disabled {
     margin: 0;
   }
 }
-@media screen and (max-width: 736px) and (orientation: landscape) {
-  #repeater .repeater {
-    padding-top: 4.5em;
+@media screen and (max-device-width: 1000px) and (orientation: landscape) {
+  header {
+    height: 3em !important;
+    padding: 0 0.5em;
   }
-  #repeater .repeater span p {
-    margin-block-start: 0.2em;
-    margin-block-end: 0.2em;
+  #repeater .repeater {
+    padding-top: 3.5em;
+  }
+  #myVideo {
+    height: 0;
   }
 }
 </style>
