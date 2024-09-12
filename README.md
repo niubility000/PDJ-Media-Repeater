@@ -4,6 +4,10 @@
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot2.jpg)
 
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot51.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot52.jpg)
+
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot6.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot7.jpg)
@@ -151,11 +155,17 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package-lock.json
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/headers.go
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/headers_dev.go
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/preview.go
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/raw.go
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/static.go
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/tus_handlers.go
 
 
 <span id="lable"> </span>
