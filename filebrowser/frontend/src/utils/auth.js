@@ -32,6 +32,8 @@ export async function validateLogin() {
 export async function login(username, password, recaptcha) {
   const data = { username, password, recaptcha };
 
+  if (!localStorage.getItem("isOffline")) localStorage.setItem("isOffline", 1);
+
   if (
     localStorage.getItem("isOffline") &&
     localStorage.getItem("isOffline") == "1"

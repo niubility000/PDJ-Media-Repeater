@@ -2619,12 +2619,6 @@ export default {
   },
   methods: {
     async readyStatus() {
-      if (this.contentAll !== null) {
-        this.isReadyToPlay = true;
-        this.cleanUp1();
-        this.cleanUp2();
-        return;
-      }
       let vm = this;
       try {
         vm.contentAll = await api.fetch("/files/" + this.favFileName);
@@ -2716,22 +2710,19 @@ export default {
           this.currentMedia.muted = false;
           this.currentMedia.pause();
         }, 1);
-
-        if (this.allowOffline) {
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
-        } else {
-          var srtFullPath = "";
-          const path = url.removeLastDir(this.$route.path);
-          if (this.onRevision) srtFullPath = this.srtRevisePath;
-          else srtFullPath = path + "/" + this.reqF.name;
-          try {
-            await api.post(srtFullPath, this.reqF.content, true);
-          } catch (error) {
+        this.isReadyToPlay = true;
+        var srtFullPath = "";
+        const path = url.removeLastDir(this.$route.path);
+        if (this.onRevision) srtFullPath = this.srtRevisePath;
+        else srtFullPath = path + "/" + this.reqF.name;
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+          if (this.allowOffline)
             window.localStorage.setItem(this.mediaName, this.reqF.content);
-          }
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
         }
       }
-      this.isReadyToPlay = true;
       if (window.localStorage.getItem(this.favFileName)) {
         this.save();
       }
@@ -4156,19 +4147,20 @@ export default {
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
 
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.favFileName, favContent);
-      } else {
-        let vm = this;
-        try {
-          await api.post("/files/" + this.favFileName, favContent, true);
-          vm.serverFav = favContent;
-          if (window.localStorage.getItem(this.favFileName)) {
-            window.localStorage.removeItem(this.favFileName);
-          }
-        } catch (error) {
-          window.localStorage.setItem(this.favFileName, favContent);
+      let vm = this;
+      try {
+        await api.post("/files/" + this.favFileName, favContent, true);
+        vm.serverFav = favContent;
+        if (
+          !this.allowOffline &&
+          window.localStorage.getItem(this.favFileName)
+        ) {
+          window.localStorage.removeItem(this.favFileName);
         }
+        if (this.allowOffline)
+          window.localStorage.setItem(this.favFileName, favContent);
+      } catch (error) {
+        window.localStorage.setItem(this.favFileName, favContent);
       }
     },
 
@@ -4510,15 +4502,14 @@ export default {
       }
 
       this.historyIndex = this.historyIndex + 1;
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, formatContent);
-      } else {
-        try {
-          await api.post(path + "/" + this.reqF.name, formatContent, true);
-        } catch (error) {
+      try {
+        await api.post(path + "/" + this.reqF.name, formatContent, true);
+        if (this.allowOffline)
           window.localStorage.setItem(this.mediaName, formatContent);
-        }
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, formatContent);
       }
+
       this.cleanUp1();
       this.cleanUp2();
       this.reqF.content = formatContent;
@@ -4613,15 +4604,15 @@ export default {
       }
 
       this.historyIndex = this.historyIndex + 1;
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, formatContent);
-      } else {
-        try {
-          await api.post(srtFullPath, formatContent, true);
-        } catch (error) {
+
+      try {
+        await api.post(srtFullPath, formatContent, true);
+        if (this.allowOffline)
           window.localStorage.setItem(this.mediaName, formatContent);
-        }
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, formatContent);
       }
+
       this.cleanUp1();
       this.cleanUp2();
       this.reqF.content = formatContent;
@@ -4677,15 +4668,15 @@ export default {
         );
       }
       this.historyIndex = this.historyIndex + 1;
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, formatContent);
-      } else {
-        try {
-          await api.post(srtFullPath, formatContent, true);
-        } catch (error) {
+
+      try {
+        await api.post(srtFullPath, formatContent, true);
+        if (this.allowOffline)
           window.localStorage.setItem(this.mediaName, formatContent);
-        }
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, formatContent);
       }
+
       this.cleanUp1();
       this.cleanUp2();
       this.reqF.content = formatContent;
@@ -4728,18 +4719,18 @@ export default {
           nCont
         );
       }
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
-      } else {
-        try {
-          await api.post(srtFullPath, this.reqF.content, true);
-          if (window.localStorage.getItem(this.mediaName)) {
-            window.localStorage.removeItem(this.mediaName);
-          }
-        } catch (error) {
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
+
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+        if (!this.allowOffline && window.localStorage.getItem(this.mediaName)) {
+          window.localStorage.removeItem(this.mediaName);
         }
+        if (this.allowOffline)
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
       }
+
       if (this.isFav) {
         this.switchIsFav();
         setTimeout(() => {
@@ -4759,15 +4750,14 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
 
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
-      } else {
-        try {
-          await api.post(srtFullPath, this.reqF.content, true);
-        } catch (error) {
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+        if (this.allowOffline)
           window.localStorage.setItem(this.mediaName, this.reqF.content);
-        }
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
       }
+
       if (this.isFav) {
         this.switchIsFav();
         setTimeout(() => {
@@ -4803,15 +4793,15 @@ export default {
       this.historyIndex = this.historyIndex + 1;
       this.cleanUp1();
       this.cleanUp2();
-      if (this.allowOffline) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
-      } else {
-        try {
-          await api.post(srtFullPath, this.reqF.content, true);
-        } catch (error) {
+
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+        if (this.allowOffline)
           window.localStorage.setItem(this.mediaName, this.reqF.content);
-        }
+      } catch (error) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
       }
+
       if (this.isFav) {
         this.switchIsFav();
         setTimeout(() => {
