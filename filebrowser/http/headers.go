@@ -5,5 +5,5 @@ package http
 
 // global headers to append to every response
 var globalHeaders = map[string]string{
-	"Cache-Control": "no-cache, no-store, must-revalidate",
+	"Cache-Control": "public, max-age=315360000",
 }

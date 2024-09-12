@@ -208,7 +208,7 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 
 	setContentDisposition(w, r, file)
 	w.Header().Add("Content-Security-Policy", `script-src 'none';`)
-	w.Header().Set("Cache-Control", "private")
+	w.Header().Set("Cache-Control", "public, max-age=315360000")
 	http.ServeContent(w, r, file.Name, file.ModTime, fd)
 	return 0, nil
 }

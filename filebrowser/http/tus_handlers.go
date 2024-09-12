@@ -66,7 +66,7 @@ func tusPostHandler() handleFunc {
 
 func tusHeadHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Cache-Control", "public, max-age=315360000")
 		if !d.Check(r.URL.Path) {
 			return http.StatusForbidden, nil
 		}

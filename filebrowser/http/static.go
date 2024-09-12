@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
@@ -117,8 +116,7 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 			return http.StatusNotFound, nil
 		}
 
-		const maxAge = 86400 // 1 day
-		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", maxAge))
+		w.Header().Set("Cache-Control", "public, max-age=315360000")
 
 		if d.settings.Branding.Files != "" {
 			if strings.HasPrefix(r.URL.Path, "img/") {

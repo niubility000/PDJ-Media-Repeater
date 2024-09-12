@@ -10,13 +10,26 @@ export async function fetchURL(url, opts, auth = true) {
   let { headers, ...rest } = opts;
   let res;
   try {
-    res = await fetch(`${baseURL}${url}`, {
-      headers: {
-        "X-Auth": store.state.jwt,
-        ...headers,
-      },
-      ...rest,
-    });
+    if (
+      localStorage.getItem("isOffline") &&
+      localStorage.getItem("isOffline") == "1"
+    )
+      res = await fetch(`${baseURL}${url}`, {
+        headers: {
+          "X-Auth": store.state.jwt,
+          ...headers,
+        },
+        ...rest,
+      });
+    else
+      res = await fetch(`${baseURL}${url}`, {
+        headers: {
+          "Cache-Control": "max-age=0",
+          "X-Auth": store.state.jwt,
+          ...headers,
+        },
+        ...rest,
+      });
   } catch {
     const error = new Error("000 No connection");
     error.status = 0;

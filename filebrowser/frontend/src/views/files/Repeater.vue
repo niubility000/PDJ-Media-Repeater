@@ -338,12 +338,7 @@
                 <span
                   style="color: blue; cursor: pointer"
                   @click="
-                    revisionPlay(
-                      item.name,
-                      item.reqname,
-                      item.startIndex,
-                      item.oRawPath
-                    )
+                    revisionPlay(item.name, item.startIndex, item.oRawPath)
                   "
                 >
                   {{ index + 1 }}. {{ item.name }}&nbsp;(
@@ -437,6 +432,7 @@
             @click="chooseSentence(index)"
           >
             <p
+              style="cursor: pointer"
               :style="{
                 color: sentenceIndex == index + 1 ? 'blue' : 'white',
               }"
@@ -453,7 +449,6 @@
         v-if="showNewWordList"
         style="
           background-color: gray;
-
           color: whitesmoke;
           z-index: 1010;
           display: flex;
@@ -497,16 +492,25 @@
             :id="index + 1"
             @click="chooseSentence(newWord.num, index)"
           >
-            <p v-if="!newWord.showTrans && !withTrans" style="color: white">
+            <p
+              v-if="!newWord.showTrans && !withTrans"
+              style="color: white; cursor: pointer"
+            >
               {{ index + 1 }}. {{ newWord.origin }}
             </p>
-            <p v-if="newWord.showTrans && !withTrans" style="color: white">
+            <p
+              v-if="newWord.showTrans && !withTrans"
+              style="color: white; cursor: pointer"
+            >
               {{ index + 1 }}.
               {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
                 newWord.trans
               }}
             </p>
-            <p v-if="withTrans" style="color: white !important">
+            <p
+              v-if="withTrans"
+              style="color: white !important; cursor: pointer"
+            >
               {{ index + 1 }}.
               {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
                 newWord.trans
@@ -936,23 +940,68 @@
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="color: white; text-align: justify; text-align-last: left">
-              <input type="checkbox" v-model="allowCacheTemp" />
+              <input type="checkbox" v-model="allowCache" />
               {{ $t("repeater.allowCache") }}
             </p>
             <p style="color: white; text-align: justify; text-align-last: left">
-              {{ $t("max num of latest files to cache") }}
+              {{ $t("repeater.cached1") }}
               <input
                 style="width: 4em"
                 type="number"
                 v-model.lazy="maxCacheNum"
               />
             </p>
-            <p style="color: white; text-align: justify; text-align-last: left">
-              {{ $t("repeater.savedfiles", { numOfKeys: numOfKeys }) }}
-              <button @click="cacheCleanUp">
-                {{ $t("repeater.cleanUpCache") }}
-              </button>
-            </p>
+            <div
+              style="color: white; text-align: justify; text-align-last: left"
+            >
+              <p>
+                {{ $t("repeater.savedfiles", { numOfKeys: numOfKeys }) }}
+              </p>
+              <div v-if="cachedKeys !== ''">
+                <ul
+                  style="
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    padding: 0 1em;
+                    border-radius: 10px;
+                    background: grey;
+                    list-style-type: none;
+                  "
+                >
+                  <li
+                    v-for="(name, index) in cachedKeysArr"
+                    :key="index"
+                    :id="index + 1"
+                  >
+                    <p
+                      style="
+                        margin: 0;
+                        color: greenyellow;
+                        word-break: break-all;
+                      "
+                    >
+                      {{ index + 1 }}.
+                      {{ name }}
+                    </p>
+                  </li>
+                </ul>
+              </div>
+
+              <p>
+                <button :disabled="numOfKeys == 0" @click="cacheCleanUp">
+                  {{ $t("repeater.cleanUpCache") }}
+                </button>
+              </p>
+
+              <p
+                style="color: white; text-align: justify; text-align-last: left"
+              >
+                <input type="checkbox" v-model="allowOffline" />
+                {{ $t("repeater.offlineApp") }}
+              </p>
+            </div>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
           </div>
           <div style="color: white">
             <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -974,6 +1023,11 @@
               {{ $t("repeater.instruction5") }}
             </p>
             <p style="text-align: justify">{{ $t("repeater.instruction6") }}</p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickButton") }}
+              <i style="color: white" class="material-icons">add_alert</i
+              >{{ $t("repeater.instruction14") }}
+            </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">repeat_one</i
@@ -1070,7 +1124,7 @@
             padding-bottom: 1em;
             padding-top: 0.2em;
           "
-          v-if="isMediaType == 2 && !browserHiJack"
+          v-if="isMediaType == 2 && !browserHiJack && raw !== ' '"
           id="myVideo"
           :src="raw"
           :autoplay="autoPlay"
@@ -1093,7 +1147,14 @@
 
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
-          style="color: white"
+          style="
+            color: white;
+            position: fixed;
+            z-index: 1011;
+            left: 50%;
+            transform: translate(-50%, 0);
+            bottom: 1.5em;
+          "
         >
           Loading Media...
         </p>
@@ -1102,7 +1163,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles && isReadyToPlay && isMediaType == 1"
+          v-if="srtSubtitles && isMediaType == 1"
           style="
             width: 100%;
             margin: 0;
@@ -1112,7 +1173,7 @@
           "
         >
         </span>
-        <div v-if="srtSubtitles && !isEmpty && isReadyToPlay">
+        <div v-if="srtSubtitles && !isEmpty">
           <button
             v-if="isFav"
             class="action"
@@ -1146,7 +1207,7 @@
           @touchstart="startTouchS"
           @touchend="endTouchS"
           @dblclick="dblClick"
-          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
+          v-if="srtSubtitles && !isEditSubandNotes"
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -1173,7 +1234,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles && isReadyToPlay && !isEditSubandNotes"
+          v-if="srtSubtitles && !isEditSubandNotes"
           style="
             color: white;
             width: 100%;
@@ -1206,7 +1267,7 @@
           </div>
         </span>
         <span
-          v-if="srtSubtitles && isReadyToPlay && isEditSubandNotes && !isEmpty"
+          v-if="srtSubtitles && isEditSubandNotes && !isEmpty"
           style="
             overflow-wrap: break-word;
             width: 100%;
@@ -1485,7 +1546,7 @@
             id="editArea1"
             v-model.lazy="subFirstLine"
             placeholder="...Subtitle's First Line..."
-            rows="1"
+            :rows="rowsNum"
             style="
               width: 100%;
               text-align: center;
@@ -1501,7 +1562,7 @@
             id="editArea2"
             v-model.lazy="subSecLine"
             placeholder="...Subtitle's Second Line..."
-            rows="1"
+            :rows="rowsNum"
             style="
               width: 100%;
               text-align: center;
@@ -1515,7 +1576,7 @@
           <textarea
             v-show="!isEmpty && isShowLine3 && !isTimeLineEdit"
             id="editArea3"
-            rows="2"
+            :rows="rowsNum"
             v-model.lazy="note"
             placeholder="...NOTES..., use format [Original Text: Translation] to add a New Word or Phrase."
             style="
@@ -1602,7 +1663,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles && isReadyToPlay"
+          v-if="srtSubtitles"
           style="width: 100%; flex-grow: 1"
         ></div>
       </div>
@@ -1623,6 +1684,22 @@
         </p>
       </div>
 
+      <div
+        v-if="mediaCached"
+        style="
+          z-index: 1011;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 0.5em;
+          font-size: 1em;
+        "
+      >
+        <p style="color: blue; background-color: grey; padding: 0.3em">
+          {{ $t("repeater.cached") }}
+        </p>
+      </div>
+
       <audio
         style="
           position: fixed;
@@ -1632,7 +1709,7 @@
           right: 0;
           margin: auto;
         "
-        v-if="isMediaType == 1 && !browserHiJack"
+        v-if="isMediaType == 1 && !browserHiJack && raw !== ' '"
         id="myAudio"
         :src="raw"
         :controls="!isSingle"
@@ -1649,7 +1726,7 @@
           v-if="!showEditNew"
           class="action"
           @click="addANewWord"
-          :title="$t('repeater.fav')"
+          :title="$t('repeater.addnewWord')"
         >
           <i style="color: white; font-size: 2.5em" class="material-icons"
             >add_circle</i
@@ -1776,8 +1853,6 @@ export default {
       subSecLine: "     ",
       ShowSwitchSubtitle: false,
       firstMount: true,
-      allowCache: Number(window.localStorage.getItem("cacheOn")) == 1,
-      allowCacheTemp: Number(window.localStorage.getItem("cacheOn")) == 1,
       numOfKeys: 0,
       playFromCache: false,
       reader: 0,
@@ -1806,8 +1881,14 @@ export default {
       markRevised: false,
       reviseType: 0,
       srtRevisePath: "",
-      maxCacheNum: Number(window.localStorage.getItem("max")) || 3,
-      cachedKeys: "",
+      maxCacheNum: Number(window.localStorage.getItem("max")) || 10,
+      cachedKeys: window.localStorage.getItem("cKeys") || "",
+      indexOfNewWordList: 0,
+      raw: " ",
+      mediaCached: false,
+      allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
+      serverFav: "",
+      allowOffline: Number(localStorage.getItem("isOffline")) == 1,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1922,7 +2003,9 @@ export default {
         return { color: "blue" };
       }
     },
-
+    rowsNum() {
+      return window.innerWidth > 736 ? 1 : 2;
+    },
     srtSubtitles() {
       if (!this.isFavOnPlay) {
         var formatContent = this.reqF.content;
@@ -1985,6 +2068,11 @@ export default {
       } else {
         return this.currentFileFavList;
       }
+    },
+
+    cachedKeysArr() {
+      let temp = this.cachedKeys.replace(";;", "");
+      return temp.split(";;");
     },
 
     newWordList() {
@@ -2052,7 +2140,9 @@ export default {
             }
           }
           return 0;
-        } else return -1;
+        } else {
+          return -1;
+        }
       }
     },
 
@@ -2174,27 +2264,6 @@ export default {
       }
     },
 
-    raw() {
-      let srtUrl = api.getDownloadURL(this.reqF, true);
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        return (
-          srtUrl.split("/raw/")[0] +
-          "/raw/" +
-          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
-            "?"
-          )[0] +
-          "?" +
-          srtUrl.split("?")[1]
-        );
-      } else {
-        if (srtUrl && this.isMediaType == 1) {
-          return srtUrl.replace(".srt", ".mp3");
-        } else if (srtUrl && this.isMediaType == 2) {
-          return srtUrl.replace(".srt", ".mp4");
-        } else return "";
-      }
-    },
-
     isTouchDevice() {
       return (
         "ontouchstart" in window ||
@@ -2218,11 +2287,43 @@ export default {
     $route: function () {
       this.updatePreview();
     },
+
     maxCacheNum: function () {
-      if (this.maxCacheNum < Number(window.localStorage.getItem("max")))
+      if (
+        window.localStorage.getItem("max") &&
+        this.maxCacheNum < Number(window.localStorage.getItem("max"))
+      )
         this.cacheCleanUp();
       window.localStorage.setItem("max", this.maxCacheNum);
     },
+
+    allowOffline: function () {
+      if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+      else window.localStorage.setItem("isOffline", 0);
+      if (!this.allowOffline) {
+        if (window.localStorage.getItem(this.mediaName)) {
+          this.reqF.content = window.localStorage.getItem(this.mediaName);
+          this.saveSubNow();
+        }
+      }
+    },
+
+    mediaName: function () {
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.getCacheMedia();
+        setTimeout(() => {
+          if (window.localStorage.getItem(this.mediaName)) {
+            this.reqF.content = window.localStorage.getItem(this.mediaName);
+            this.saveSubNow();
+          }
+        }, 100);
+        clearTimeout(this.timeOutId);
+      }, 10);
+    },
+
     startTimeTemp: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2261,8 +2362,7 @@ export default {
     },
 
     sentenceIndex: function () {
-      if (this.isFavOnPlay && this.isPlayFullFavList && this.allowCache)
-        this.getCacheMedia();
+      if (this.isFavOnPlay && this.isPlayFullFavList) this.getCacheMedia();
       if (this.isEditSubandNotes) {
         this.startTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -2473,11 +2573,11 @@ export default {
       }, 1);
     },
 
-    allowCacheTemp() {
-      if (this.allowCacheTemp) window.localStorage.setItem("cacheOn", 1);
-      else window.localStorage.setItem("cacheOn", 0);
+    allowCache() {
+      if (this.allowCache) window.localStorage.setItem("cacheOff", 0);
+      else window.localStorage.setItem("cacheOff", 1);
       setTimeout(() => {
-        this.close();
+        location.reload();
       }, 300);
     },
 
@@ -2511,7 +2611,6 @@ export default {
       );
     }
     this.reqF.content = this.formatAll(this.reqF.content);
-    if (this.allowCache) this.getCacheMedia();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -2520,13 +2619,24 @@ export default {
   },
   methods: {
     async readyStatus() {
+      if (this.contentAll !== null) {
+        this.isReadyToPlay = true;
+        this.cleanUp1();
+        this.cleanUp2();
+        return;
+      }
       let vm = this;
       try {
         vm.contentAll = await api.fetch("/files/" + this.favFileName);
+        vm.serverFav = vm.contentAll.content;
       } catch (e) {
         this.confirmType = "fetch";
         this.showConfirm();
       }
+      if (window.localStorage.getItem(this.favFileName)) {
+        this.contentAll.content = window.localStorage.getItem(this.favFileName);
+      }
+
       if (this.contentAll !== null) {
         this.repeatTimes = Number(
           JSON.parse(this.contentAll.content.split("::")[1])
@@ -2606,53 +2716,80 @@ export default {
           this.currentMedia.muted = false;
           this.currentMedia.pause();
         }, 1);
-        var srtFullPath = "";
-        const path = url.removeLastDir(this.$route.path);
-        if (this.onRevision) srtFullPath = this.srtRevisePath;
-        else srtFullPath = path + "/" + this.reqF.name;
-        try {
-          await api.post(srtFullPath, this.reqF.content, true);
-        } catch (error) {
-          this.confirmType = "save";
-          this.showConfirm();
+
+        if (this.allowOffline) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        } else {
+          var srtFullPath = "";
+          const path = url.removeLastDir(this.$route.path);
+          if (this.onRevision) srtFullPath = this.srtRevisePath;
+          else srtFullPath = path + "/" + this.reqF.name;
+          try {
+            await api.post(srtFullPath, this.reqF.content, true);
+          } catch (error) {
+            window.localStorage.setItem(this.mediaName, this.reqF.content);
+          }
         }
       }
       this.isReadyToPlay = true;
+      if (window.localStorage.getItem(this.favFileName)) {
+        this.save();
+      }
     },
 
     cacheMedia() {
-      let srtUrl = this.reqF.name;
+      let keyName;
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        keyName = this.srtSubtitles[this.sentenceIndex - 1].mediaName;
+      } else {
+        keyName = this.mediaName;
+      }
       if (window.localStorage.getItem("cKeys") == null)
         window.localStorage.setItem("cKeys", this.cachedKeys);
       else this.cachedKeys = window.localStorage.getItem("cKeys");
       var vmcachedKeys = this.cachedKeys;
       var vmmax = this.maxCacheNum + 1;
+
       fetch(this.raw)
         .then((response) => response.blob()) // 将响应转换为Blob对象
         .then((blob) => {
-          localforage.setItem(srtUrl, blob, function () {
+          let vmm = this;
+          localforage.setItem(keyName, blob, function () {
             // Do other things once the value has been saved.
-            vmcachedKeys = vmcachedKeys + ";;" + srtUrl;
+            vmcachedKeys = vmcachedKeys + ";;" + keyName;
             window.localStorage.setItem("cKeys", vmcachedKeys);
             var ck = vmcachedKeys.split(";;");
             if (ck.length > vmmax) {
-              var keyName = ck[1];
-              localforage.removeItem(keyName, function () {
-                console.log("we just removed: " + keyName);
-                localforage.getItem(keyName, function (err, value) {
+              var keyName1 = ck[1];
+              localforage.removeItem(keyName1, function () {
+                console.log("we just removed: " + keyName1);
+                localforage.getItem(keyName1, function (err, value) {
                   console.log(value);
                   // Null result as somekey was removed.
                 });
               });
-              vmcachedKeys = vmcachedKeys.replace(ck[1] + ";;", "");
+              vmcachedKeys = vmcachedKeys.replace(";;" + ck[1], "");
               window.localStorage.setItem("cKeys", vmcachedKeys);
             }
+            vmm.cachedKeys = vmcachedKeys;
+            setTimeout(() => {
+              vmm.mediaCached = true;
+              localforage
+                .getItem(keyName)
+                .then(function (value) {
+                  vmm.raw = URL.createObjectURL(value);
+                  vmm.playFromCache = true;
+                })
+                .catch(function () {});
+            }, 200);
+            setTimeout(() => {
+              vmm.mediaCached = false;
+            }, 1500);
           });
         })
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
         });
-      this.cachedKeys = vmcachedKeys;
     },
 
     getDateAfterDays(days) {
@@ -2700,7 +2837,6 @@ export default {
       var reviseItem = {
         oRawPath: srtUrl.split("?")[0].split("/raw/")[1],
         name: this.mediaName,
-        reqname: this.reqF.name,
         startIndex: this.indexS,
         endIndex: this.indexE,
         date: reviseDate,
@@ -2720,7 +2856,7 @@ export default {
       this.reviseData.unshift(reviseItem);
     },
 
-    async revisionPlay(name, reqname, startIndex, oRawPath) {
+    async revisionPlay(name, startIndex, oRawPath) {
       this.srtRevisePath = "/files/" + oRawPath;
       try {
         var m = await api.fetch(this.srtRevisePath);
@@ -2754,20 +2890,47 @@ export default {
       };
     },
 
+    calcRaw() {
+      let srtUrl = api.getDownloadURL(this.reqF, true);
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        this.raw =
+          srtUrl.split("/raw/")[0] +
+          "/raw/" +
+          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
+            "?"
+          )[0] +
+          "?" +
+          srtUrl.split("?")[1];
+      } else {
+        if (srtUrl && this.isMediaType == 1) {
+          this.raw = srtUrl.replace(".srt", ".mp3");
+        } else if (srtUrl && this.isMediaType == 2) {
+          this.raw = srtUrl.replace(".srt", ".mp4");
+        } else this.raw = " ";
+      }
+    },
+
     getCacheMedia() {
       setTimeout(() => {
-        let srtUrl;
+        if (!this.allowCache) {
+          this.calcRaw();
+          return;
+        }
+        let keyName;
         if (this.isFavOnPlay && this.isPlayFullFavList) {
-          srtUrl = this.srtSubtitles[this.sentenceIndex - 1].rawPath;
-        } else srtUrl = this.reqF.name;
+          keyName = this.srtSubtitles[this.sentenceIndex - 1].mediaName;
+        } else {
+          keyName = this.mediaName;
+        }
         let vm = this;
         localforage
-          .getItem(srtUrl)
+          .getItem(keyName)
           .then(function (value) {
             vm.raw = URL.createObjectURL(value);
             vm.playFromCache = true;
           })
           .catch(function () {
+            vm.calcRaw();
             vm.playFromCache = false;
             vm.cacheMedia();
           });
@@ -2775,11 +2938,11 @@ export default {
     },
 
     cachedNumber() {
-      let vm = this;
+      let vmm = this;
       localforage
         .length()
         .then(function (numberOfKeys) {
-          vm.numOfKeys = numberOfKeys;
+          vmm.numOfKeys = numberOfKeys;
         })
         .catch(function (err) {
           console.log(err);
@@ -2887,19 +3050,34 @@ export default {
       this.sentenceIndex = index;
       this.sentenceIndex = index + 1;
       if (this.showNewWordList && !this.withTrans) {
-        this.newWordList[indexWordList].showTrans = true;
+        if (this.newWordList.length > 0)
+          this.newWordList[indexWordList].showTrans = true;
+        this.indexOfNewWordList = indexWordList;
       }
       this.cleanUp1();
       this.cleanUp2();
+      if (this.isFavOnPlay && this.showNewWordList) return;
       this.click();
     },
 
     switchShowList() {
-      if (!this.showSubtitleList && !this.showNewWordList) {
+      if (!this.showSubtitleList && !this.showNewWordList && !this.withTrans) {
         this.showSubtitleList = true;
-      } else if (this.showSubtitleList && !this.showNewWordList) {
+      } else if (
+        this.showSubtitleList &&
+        !this.showNewWordList &&
+        !this.withTrans &&
+        !this.isFavOnPlay
+      ) {
         this.showSubtitleList = false;
         this.showNewWordList = true;
+      } else if (
+        this.showSubtitleList &&
+        !this.showNewWordList &&
+        !this.withTrans &&
+        this.isFavOnPlay
+      ) {
+        this.showSubtitleList = false;
       } else if (
         !this.showSubtitleList &&
         this.showNewWordList &&
@@ -2911,6 +3089,8 @@ export default {
         this.showNewWordList &&
         this.withTrans
       ) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
         this.showNewWordList = false;
         this.withTrans = false;
       }
@@ -3170,11 +3350,18 @@ export default {
     playFavList() {
       this.cleanUp2();
       this.cleanUp1();
+      this.showSubtitleList = false;
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
+      this.withTrans = false;
       if (!this.isFavOnPlay) {
         window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
       }
       this.isFavOnPlay = !this.isFavOnPlay;
-      if (this.allowCache) this.getCacheMedia();
+      this.getCacheMedia();
       if (this.isFavOnPlay) {
         if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
@@ -3193,6 +3380,7 @@ export default {
         }
       }
     },
+
     formatAll(x) {
       x = x.replace(/\n\n$/, "");
       if (x.includes("\r\n")) x = x.replaceAll("\r\n", "\n");
@@ -3203,6 +3391,7 @@ export default {
       x = x.replace(/^\n+|\n+$/g, "");
       return x;
     },
+
     switchIsFav() {
       let srtUrl = api.getDownloadURL(this.reqF, true);
       let originRaw = "";
@@ -3316,11 +3505,6 @@ export default {
           this.close();
         }
       }
-      if (this.confirmType == "save") {
-        alert(
-          "Error! Can't save change to your favorite file. Please retry later."
-        );
-      }
       if (this.confirmType == "delete") {
         var userConfirmationDelete = window.confirm(
           "Are you sure to delete Current Sentence?"
@@ -3352,6 +3536,7 @@ export default {
         }
       }
     },
+
     onSingle() {
       this.isSingle = !this.isSingle;
       if (!this.isSingle) {
@@ -3372,16 +3557,21 @@ export default {
         this.currentMedia.removeEventListener("focus", this.removeFocus);
       }
     },
+
     removeFocus() {
       this.currentMedia.blur();
     },
+
     cacheCleanUp() {
+      let vmm = this;
       localforage
         .clear()
         .then(function () {
-          this.cachedNumber();
           window.localStorage.removeItem("cKeys");
           console.log("Database is now empty.");
+          vmm.numOfKeys = 0;
+          vmm.playFromCache = false;
+          vmm.cachedKeys = "";
         })
         .catch(function (err) {
           console.log(err);
@@ -3482,7 +3672,11 @@ export default {
       this.isSetting = false;
       this.showRevision = false;
       this.showSubtitleList = false;
-      this.showNewWordList = false;
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
       this.withTrans = false;
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
@@ -3519,7 +3713,8 @@ export default {
         window.getSelection().toString() !== "" &&
         window.getSelection().toString() !== " " &&
         document.getElementById("subArea") &&
-        document.getElementById("subArea").contains(event.target)
+        document.getElementById("subArea").contains(event.target) &&
+        !this.isFavOnPlay
       ) {
         this.cleanUp1();
         this.cleanUp2();
@@ -3542,7 +3737,11 @@ export default {
       this.isSetting = false;
       this.showRevision = false;
       this.showSubtitleList = false;
-      this.showNewWordList = false;
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
       this.withTrans = false;
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
@@ -3579,7 +3778,8 @@ export default {
         window.getSelection().toString() !== "" &&
         window.getSelection().toString() !== " " &&
         document.getElementById("subArea") &&
-        document.getElementById("subArea").contains(event.target)
+        document.getElementById("subArea").contains(event.target) &&
+        !this.isFavOnPlay
       ) {
         this.cleanUp1();
         this.cleanUp2();
@@ -3954,11 +4154,21 @@ export default {
 
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
-      try {
-        await api.post("/files/" + this.favFileName, favContent, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.serverFav == favContent) return;
+
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.favFileName, favContent);
+      } else {
+        let vm = this;
+        try {
+          await api.post("/files/" + this.favFileName, favContent, true);
+          vm.serverFav = favContent;
+          if (window.localStorage.getItem(this.favFileName)) {
+            window.localStorage.removeItem(this.favFileName);
+          }
+        } catch (error) {
+          window.localStorage.setItem(this.favFileName, favContent);
+        }
       }
     },
 
@@ -4300,12 +4510,14 @@ export default {
       }
 
       this.historyIndex = this.historyIndex + 1;
-
-      try {
-        await api.post(path + "/" + this.reqF.name, formatContent, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, formatContent);
+      } else {
+        try {
+          await api.post(path + "/" + this.reqF.name, formatContent, true);
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, formatContent);
+        }
       }
       this.cleanUp1();
       this.cleanUp2();
@@ -4401,12 +4613,14 @@ export default {
       }
 
       this.historyIndex = this.historyIndex + 1;
-
-      try {
-        await api.post(srtFullPath, formatContent, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, formatContent);
+      } else {
+        try {
+          await api.post(srtFullPath, formatContent, true);
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, formatContent);
+        }
       }
       this.cleanUp1();
       this.cleanUp2();
@@ -4463,12 +4677,14 @@ export default {
         );
       }
       this.historyIndex = this.historyIndex + 1;
-
-      try {
-        await api.post(srtFullPath, formatContent, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, formatContent);
+      } else {
+        try {
+          await api.post(srtFullPath, formatContent, true);
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, formatContent);
+        }
       }
       this.cleanUp1();
       this.cleanUp2();
@@ -4512,12 +4728,17 @@ export default {
           nCont
         );
       }
-
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
+      } else {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+          if (window.localStorage.getItem(this.mediaName)) {
+            window.localStorage.removeItem(this.mediaName);
+          }
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        }
       }
       if (this.isFav) {
         this.switchIsFav();
@@ -4537,11 +4758,15 @@ export default {
       this.reqF.content = this.changeOld[this.historyIndex];
       this.cleanUp1();
       this.cleanUp2();
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
+      } else {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        }
       }
       if (this.isFav) {
         this.switchIsFav();
@@ -4578,11 +4803,14 @@ export default {
       this.historyIndex = this.historyIndex + 1;
       this.cleanUp1();
       this.cleanUp2();
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-      } catch (error) {
-        this.confirmType = "save";
-        this.showConfirm();
+      if (this.allowOffline) {
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
+      } else {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+        } catch (error) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        }
       }
       if (this.isFav) {
         this.switchIsFav();
@@ -4829,7 +5057,11 @@ export default {
       }
       if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
         this.showSubtitleList = false;
-        this.showNewWordList = false;
+        if (this.showNewWordList) {
+          if (this.newWordList.length > 0)
+            this.newWordList[this.indexOfNewWordList].showTrans = false;
+          this.showNewWordList = false;
+        }
         this.withTrans = false;
         return;
       }

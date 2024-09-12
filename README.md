@@ -32,17 +32,17 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for English o
 
 Updated: 09-06-2024
 
-3.01: add a review function
+3.01: add a offline app mode (in settings)
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/16907745/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/16974479/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16907773/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/16974485/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16907798/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/16974489/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/16907813/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/16974495/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -150,6 +150,13 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/fronten
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package.json
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package-lock.json
+
+
+
+
+
+
+
 
 <span id="lable"> </span>
 ## Filebrowser Settings with command lines

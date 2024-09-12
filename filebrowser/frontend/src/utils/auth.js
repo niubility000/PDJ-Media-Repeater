@@ -32,6 +32,20 @@ export async function validateLogin() {
 export async function login(username, password, recaptcha) {
   const data = { username, password, recaptcha };
 
+  if (
+    localStorage.getItem("isOffline") &&
+    localStorage.getItem("isOffline") == "1"
+  ) {
+    if (localStorage.getItem("lastRawToken")) {
+      const lastRawToken = localStorage.getItem("lastRawToken");
+      parseToken(lastRawToken);
+    } else
+      parseToken(
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJsb2NhbGUiOiJ6aC1jbiIsInZpZXdNb2RlIjoibGlzdCIsInNpbmdsZUNsaWNrIjp0cnVlLCJwZXJtIjp7ImFkbWluIjp0cnVlLCJleGVjdXRlIjp0cnVlLCJjcmVhdGUiOnRydWUsInJlbmFtZSI6dHJ1ZSwibW9kaWZ5Ijp0cnVlLCJkZWxldGUiOnRydWUsInNoYXJlIjp0cnVlLCJkb3dubG9hZCI6dHJ1ZX0sImNvbW1hbmRzIjpbXSwibG9ja1Bhc3N3b3JkIjpmYWxzZSwiaGlkZURvdGZpbGVzIjpmYWxzZSwiZGF0ZUZvcm1hdCI6ZmFsc2V9LCJpc3MiOiJGaWxlIEJyb3dzZXIiLCJleHAiOjE3MjYwOTgwMDQsImlhdCI6MTcyNjAxMTYwNH0.nWa-2Nscv-Dc0njiJ_T49SktusgkRWY_9RgSNh17_Ek"
+      );
+    return;
+  }
+
   const res = await fetch(`${baseURL}/api/login`, {
     method: "POST",
     headers: {
@@ -43,6 +57,7 @@ export async function login(username, password, recaptcha) {
   const body = await res.text();
 
   if (res.status === 200) {
+    localStorage.setItem("lastRawToken", body);
     parseToken(body);
   } else {
     throw new Error(body);
@@ -50,6 +65,20 @@ export async function login(username, password, recaptcha) {
 }
 
 export async function renew(jwt) {
+  if (
+    localStorage.getItem("isOffline") &&
+    localStorage.getItem("isOffline") == "1"
+  ) {
+    if (localStorage.getItem("lastRawToken")) {
+      const lastRawToken = localStorage.getItem("lastRawToken");
+      parseToken(lastRawToken);
+    } else
+      parseToken(
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJsb2NhbGUiOiJ6aC1jbiIsInZpZXdNb2RlIjoibGlzdCIsInNpbmdsZUNsaWNrIjp0cnVlLCJwZXJtIjp7ImFkbWluIjp0cnVlLCJleGVjdXRlIjp0cnVlLCJjcmVhdGUiOnRydWUsInJlbmFtZSI6dHJ1ZSwibW9kaWZ5Ijp0cnVlLCJkZWxldGUiOnRydWUsInNoYXJlIjp0cnVlLCJkb3dubG9hZCI6dHJ1ZX0sImNvbW1hbmRzIjpbXSwibG9ja1Bhc3N3b3JkIjpmYWxzZSwiaGlkZURvdGZpbGVzIjpmYWxzZSwiZGF0ZUZvcm1hdCI6ZmFsc2V9LCJpc3MiOiJGaWxlIEJyb3dzZXIiLCJleHAiOjE3MjYwOTgwMDQsImlhdCI6MTcyNjAxMTYwNH0.nWa-2Nscv-Dc0njiJ_T49SktusgkRWY_9RgSNh17_Ek"
+      );
+    return;
+  }
+
   const res = await fetch(`${baseURL}/api/renew`, {
     method: "POST",
     headers: {

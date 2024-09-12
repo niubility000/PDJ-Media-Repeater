@@ -103,7 +103,7 @@ func handleImagePreview(
 		}
 	}
 
-	w.Header().Set("Cache-Control", "private")
+	w.Header().Set("Cache-Control", "public, max-age=315360000")
 	http.ServeContent(w, r, file.Name, file.ModTime, bytes.NewReader(resizedImage))
 
 	return 0, nil
