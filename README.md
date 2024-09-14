@@ -167,8 +167,11 @@ https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/st
 
 https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/tus_handlers.go
 
-更改了auth.js, utils.js, login.vue,
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/utils/auth.js
 
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/api/utils.js
+
+https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Login.vue
 
 
 <span id="lable"> </span>
