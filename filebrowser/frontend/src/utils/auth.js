@@ -14,15 +14,15 @@ export function parseToken(token) {
 
   document.cookie = `auth=${token}; path=/`;
 
-  localStorage.setItem("jwt", token);
+  window.localStorage.setItem("jwt", token);
   store.commit("setJWT", token);
   store.commit("setUser", data.user);
 }
 
 export async function validateLogin() {
   try {
-    if (localStorage.getItem("jwt")) {
-      await renew(localStorage.getItem("jwt"));
+    if (window.localStorage.getItem("jwt")) {
+      await renew(window.localStorage.getItem("jwt"));
     }
   } catch (_) {
     console.warn("Invalid JWT token in storage"); // eslint-disable-line
@@ -32,19 +32,13 @@ export async function validateLogin() {
 export async function login(username, password, recaptcha) {
   const data = { username, password, recaptcha };
 
-  if (!localStorage.getItem("isOffline")) localStorage.setItem("isOffline", 1);
-
   if (
-    localStorage.getItem("isOffline") &&
-    localStorage.getItem("isOffline") == "1"
+    window.localStorage.getItem("isOffline") &&
+    window.localStorage.getItem("isOffline") == "1" &&
+    window.localStorage.getItem("lastRawToken")
   ) {
-    if (localStorage.getItem("lastRawToken")) {
-      const lastRawToken = localStorage.getItem("lastRawToken");
-      parseToken(lastRawToken);
-    } else
-      parseToken(
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJsb2NhbGUiOiJ6aC1jbiIsInZpZXdNb2RlIjoibGlzdCIsInNpbmdsZUNsaWNrIjp0cnVlLCJwZXJtIjp7ImFkbWluIjp0cnVlLCJleGVjdXRlIjp0cnVlLCJjcmVhdGUiOnRydWUsInJlbmFtZSI6dHJ1ZSwibW9kaWZ5Ijp0cnVlLCJkZWxldGUiOnRydWUsInNoYXJlIjp0cnVlLCJkb3dubG9hZCI6dHJ1ZX0sImNvbW1hbmRzIjpbXSwibG9ja1Bhc3N3b3JkIjpmYWxzZSwiaGlkZURvdGZpbGVzIjpmYWxzZSwiZGF0ZUZvcm1hdCI6ZmFsc2V9LCJpc3MiOiJGaWxlIEJyb3dzZXIiLCJleHAiOjE3MjYwOTgwMDQsImlhdCI6MTcyNjAxMTYwNH0.nWa-2Nscv-Dc0njiJ_T49SktusgkRWY_9RgSNh17_Ek"
-      );
+    const lastRawToken = window.localStorage.getItem("lastRawToken");
+    parseToken(lastRawToken);
     return;
   }
 
@@ -59,7 +53,7 @@ export async function login(username, password, recaptcha) {
   const body = await res.text();
 
   if (res.status === 200) {
-    localStorage.setItem("lastRawToken", body);
+    window.localStorage.setItem("lastRawToken", body);
     parseToken(body);
   } else {
     throw new Error(body);
@@ -68,11 +62,11 @@ export async function login(username, password, recaptcha) {
 
 export async function renew(jwt) {
   if (
-    localStorage.getItem("isOffline") &&
-    localStorage.getItem("isOffline") == "1"
+    window.localStorage.getItem("isOffline") &&
+    window.localStorage.getItem("isOffline") == "1"
   ) {
-    if (localStorage.getItem("lastRawToken")) {
-      const lastRawToken = localStorage.getItem("lastRawToken");
+    if (window.localStorage.getItem("lastRawToken")) {
+      const lastRawToken = window.localStorage.getItem("lastRawToken");
       parseToken(lastRawToken);
     } else
       parseToken(
@@ -118,6 +112,6 @@ export function logout() {
 
   store.commit("setJWT", "");
   store.commit("setUser", null);
-  localStorage.setItem("jwt", null);
+  window.localStorage.setItem("jwt", null);
   router.push({ path: "/login" });
 }

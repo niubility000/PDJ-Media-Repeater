@@ -1114,17 +1114,20 @@
       </div>
       <div class="repeater" style="display: flex">
         <video
+          v-if="isMediaType == 2 && !browserHiJack"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          style="
-            max-height: 60%;
-            max-width: 100%;
-            padding-bottom: 1em;
-            padding-top: 0.2em;
-          "
-          v-if="isMediaType == 2 && !browserHiJack && raw !== ' '"
+          style="padding-bottom: 1em; padding-top: 0.2em"
+          :style="{
+            visibility:
+              isMediaType == 2 && !browserHiJack && raw !== ' '
+                ? 'visible'
+                : 'hidden',
+            height: isMobile ? '40%' : '60%',
+            width: isMobile ? '100%' : 'auto',
+          }"
           id="myVideo"
           :src="raw"
           :autoplay="autoPlay"
@@ -1173,7 +1176,7 @@
           "
         >
         </span>
-        <div v-if="srtSubtitles && !isEmpty">
+        <div v-if="isMediaType > 0 && srtSubtitles && !isEmpty">
           <button
             v-if="isFav"
             class="action"
@@ -1207,7 +1210,7 @@
           @touchstart="startTouchS"
           @touchend="endTouchS"
           @dblclick="dblClick"
-          v-if="srtSubtitles && !isEditSubandNotes"
+          v-if="isMediaType > 0 && srtSubtitles && !isEditSubandNotes"
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -1234,7 +1237,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles && !isEditSubandNotes"
+          v-if="isMediaType > 0 && srtSubtitles && !isEditSubandNotes"
           style="
             color: white;
             width: 100%;
@@ -1888,7 +1891,7 @@ export default {
       mediaCached: false,
       allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
       serverFav: "",
-      allowOffline: Number(localStorage.getItem("isOffline")) == 1,
+      allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -2298,9 +2301,11 @@ export default {
     },
 
     allowOffline: function () {
-      if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
-      else window.localStorage.setItem("isOffline", 0);
-      if (!this.allowOffline) {
+      if (this.allowOffline) {
+        window.localStorage.setItem("isOffline", 1);
+        this.allowCache = true;
+      } else {
+        window.localStorage.setItem("isOffline", 0);
         if (window.localStorage.getItem(this.mediaName)) {
           this.reqF.content = window.localStorage.getItem(this.mediaName);
           this.saveSubNow();
@@ -2575,7 +2580,10 @@ export default {
 
     allowCache() {
       if (this.allowCache) window.localStorage.setItem("cacheOff", 0);
-      else window.localStorage.setItem("cacheOff", 1);
+      else {
+        window.localStorage.setItem("cacheOff", 1);
+        this.allowOffline = false;
+      }
       setTimeout(() => {
         location.reload();
       }, 300);
@@ -2611,6 +2619,8 @@ export default {
       );
     }
     this.reqF.content = this.formatAll(this.reqF.content);
+    if (!this.allowCache) this.allowOffline = false;
+    if (this.allowOffline) this.allowCache = true;
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);

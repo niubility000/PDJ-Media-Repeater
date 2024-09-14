@@ -6,6 +6,7 @@
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
 
       <input
+        :disabled="allowOffline && !firstLogin"
         autofocus
         class="input input--block"
         type="text"
@@ -14,6 +15,7 @@
         :placeholder="$t('login.username')"
       />
       <input
+        :disabled="allowOffline && !firstLogin"
         class="input input--block"
         type="password"
         v-model="password"
@@ -26,6 +28,30 @@
         v-model="passwordConfirm"
         :placeholder="$t('login.passwordConfirm')"
       />
+
+      <p
+        v-if="!createMode"
+        style="
+          text-align: justify;
+          text-align-last: left;
+          padding: 1em 0;
+          color: black;
+          cursor: default;
+        "
+      >
+        <input :disabled="firstLogin" type="checkbox" v-model="allowOffline" />
+        {{ $t("repeater.allowOfflineL") }}
+        <button
+          v-if="!firstLogin"
+          class="action"
+          @click="cleanUp"
+          title="Delete Cached Account Info"
+        >
+          <i style="color: red; font-size: 1.5em" class="material-icons"
+            >delete</i
+          >
+        </button>
+      </p>
 
       <div v-if="recaptcha" id="recaptcha"></div>
       <input
@@ -68,9 +94,22 @@ export default {
       password: "",
       recaptcha: recaptcha,
       passwordConfirm: "",
+      allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
+      firstLogin: window.localStorage.getItem("lastRawToken") == null,
     };
   },
+
+  watch: {
+    allowOffline: function () {
+      if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+      else window.localStorage.setItem("isOffline", 0);
+    },
+  },
+
   mounted() {
+    if (!window.localStorage.getItem("isOffline"))
+      window.localStorage.setItem("isOffline", 0);
+    if (!window.localStorage.getItem("lastRawToken")) this.allowOffline = false;
     if (!recaptcha) return;
 
     window.grecaptcha.ready(function () {
@@ -80,8 +119,15 @@ export default {
     });
   },
   methods: {
+    cleanUp() {
+      window.localStorage.removeItem("isOffline");
+      this.allowOffline = false;
+      window.localStorage.removeItem("lastRawToken");
+      this.firstLogin = true;
+    },
     toggleMode() {
       this.createMode = !this.createMode;
+      if (this.createMode) this.allowOffline = false;
     },
     async submit(event) {
       event.preventDefault();

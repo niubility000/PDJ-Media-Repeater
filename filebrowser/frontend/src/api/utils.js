@@ -11,8 +11,8 @@ export async function fetchURL(url, opts, auth = true) {
   let res;
   try {
     if (
-      localStorage.getItem("isOffline") &&
-      localStorage.getItem("isOffline") == "1"
+      window.localStorage.getItem("isOffline") &&
+      window.localStorage.getItem("isOffline") == "1"
     )
       res = await fetch(`${baseURL}${url}`, {
         headers: {
@@ -24,7 +24,7 @@ export async function fetchURL(url, opts, auth = true) {
     else
       res = await fetch(`${baseURL}${url}`, {
         headers: {
-          "Cache-Control": "max-age=0",
+          "Cache-Control": "no-cache",
           "X-Auth": store.state.jwt,
           ...headers,
         },
