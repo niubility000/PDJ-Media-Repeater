@@ -8,7 +8,14 @@
       </div>
     </div>
     <template v-else>
-      <header-bar v-if="srtSubtitles" style="padding: 0.5em">
+      <header-bar
+        v-if="srtSubtitles"
+        style="padding: 0.5em"
+        :style="{
+          height: isMobile && isLandscape ? '3em' : '4em',
+          padding: isMobile && isLandscape ? '0 0.5em' : '0.5em 1em 0.5em 1em',
+        }"
+      >
         <action
           :style="{
             color:
@@ -258,7 +265,6 @@
           bottom: 0.2em;
           border-radius: 10px;
           overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
@@ -322,7 +328,6 @@
               height: 100%;
               padding: 1em;
               overflow-y: auto;
-              -webkit-overflow-scrolling: touch;
               list-style-type: none;
             "
           >
@@ -420,7 +425,6 @@
             padding: 1em;
             border-radius: 10px;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
             background: grey;
             list-style-type: none;
           "
@@ -460,7 +464,6 @@
           bottom: 0.2em;
           border-radius: 10px;
           overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
@@ -482,7 +485,6 @@
             height: 100%;
             padding: 0 1em;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
             list-style-type: none;
           "
         >
@@ -1112,21 +1114,21 @@
           </div>
         </div>
       </div>
-      <div class="repeater" style="display: flex">
+      <div
+        class="repeater"
+        style="display: flex"
+        :style="{ paddingTop: isMobile && isLandscape ? '3em' : '4em' }"
+      >
         <video
           v-if="isMediaType == 2 && !browserHiJack"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          style="padding-bottom: 1em; padding-top: 0.2em"
+          style="padding-bottom: 1em; padding-top: 0.2em; object-position: top"
           :style="{
-            visibility:
-              isMediaType == 2 && !browserHiJack && raw !== ' '
-                ? 'visible'
-                : 'hidden',
-            height: isMobile ? '40%' : '60%',
             width: isMobile ? '100%' : 'auto',
+            height: isMobile && isLandscape ? '0' : isMobile ? '40%' : '60%',
           }"
           id="myVideo"
           :src="raw"
@@ -1423,13 +1425,10 @@
           </p>
           <p
             v-if="isTimeLineEdit"
-            style="
-              font-size: 0.8em;
-              color: red;
-              padding: 1em;
-              margin: 0;
-              text-align: center;
-            "
+            style="font-size: 0.8em; color: red; margin: 0; text-align: center"
+            :style="{
+              padding: isMobile && isLandscape ? '0.5em' : '1em',
+            }"
           >
             {{ $t("repeater.timestampChange") }}
           </p>
@@ -1439,9 +1438,11 @@
               font-size: 0.8em;
               color: red;
               padding: 1em;
-              margin: 0 0 1.5em 0;
               text-align: center;
             "
+            :style="{
+              margin: isMobile && isLandscape ? '0 0 0.5em 0' : '0 0 1.5em 0',
+            }"
           >
             startTime:
             <span
@@ -1892,6 +1893,7 @@ export default {
       allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
       serverFav: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
+      isLandscape: this.checkLandscape(),
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1899,7 +1901,9 @@ export default {
   computed: {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
     isMobile() {
-      return window.innerWidth < 736;
+      return (
+        /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 736
+      );
     },
 
     favFileName() {
@@ -2007,7 +2011,7 @@ export default {
       }
     },
     rowsNum() {
-      return window.innerWidth > 736 ? 1 : 2;
+      return this.isMobile && !this.isLandscape ? 2 : 1;
     },
     srtSubtitles() {
       if (!this.isFavOnPlay) {
@@ -2629,16 +2633,17 @@ export default {
   },
   methods: {
     async readyStatus() {
-      let vm = this;
       try {
-        vm.contentAll = await api.fetch("/files/" + this.favFileName);
-        vm.serverFav = vm.contentAll.content;
+        this.contentAll = await api.fetch("/files/" + this.favFileName);
+        this.serverFav = this.contentAll.content;
+        if (window.localStorage.getItem(this.favFileName)) {
+          this.contentAll.content = window.localStorage.getItem(
+            this.favFileName
+          );
+        }
       } catch (e) {
         this.confirmType = "fetch";
         this.showConfirm();
-      }
-      if (window.localStorage.getItem(this.favFileName)) {
-        this.contentAll.content = window.localStorage.getItem(this.favFileName);
       }
 
       if (this.contentAll !== null) {
@@ -2721,21 +2726,14 @@ export default {
           this.currentMedia.pause();
         }, 1);
         this.isReadyToPlay = true;
-        var srtFullPath = "";
-        const path = url.removeLastDir(this.$route.path);
-        if (this.onRevision) srtFullPath = this.srtRevisePath;
-        else srtFullPath = path + "/" + this.reqF.name;
-        try {
-          await api.post(srtFullPath, this.reqF.content, true);
-          if (this.allowOffline)
-            window.localStorage.setItem(this.mediaName, this.reqF.content);
-        } catch (error) {
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
-        }
       }
       if (window.localStorage.getItem(this.favFileName)) {
         this.save();
       }
+    },
+
+    checkLandscape() {
+      return window.matchMedia("(orientation: landscape)").matches;
     },
 
     cacheMedia() {
@@ -4103,7 +4101,7 @@ export default {
       this.isTimeLineEdit = !this.isTimeLineEdit;
     },
 
-    async save() {
+    save() {
       if (!this.isReadyToPlay && this.confirmType != "fetch") return;
       let customConfig =
         "customConfig" +
@@ -4157,20 +4155,26 @@ export default {
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
 
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.saveNow(favContent);
+
+        clearTimeout(this.timeOutId);
+      }, 20);
+    },
+
+    async saveNow(favContent) {
       let vm = this;
+      window.localStorage.setItem(this.favFileName, favContent);
       try {
         await api.post("/files/" + this.favFileName, favContent, true);
         vm.serverFav = favContent;
-        if (
-          !this.allowOffline &&
-          window.localStorage.getItem(this.favFileName)
-        ) {
+        if (!this.allowOffline)
           window.localStorage.removeItem(this.favFileName);
-        }
-        if (this.allowOffline)
-          window.localStorage.setItem(this.favFileName, favContent);
       } catch (error) {
-        window.localStorage.setItem(this.favFileName, favContent);
+        console.log(error);
       }
     },
 
@@ -4512,12 +4516,13 @@ export default {
       }
 
       this.historyIndex = this.historyIndex + 1;
+
+      window.localStorage.setItem(this.mediaName, formatContent);
       try {
         await api.post(path + "/" + this.reqF.name, formatContent, true);
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, formatContent);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, formatContent);
+        console.log(error);
       }
 
       this.cleanUp1();
@@ -4615,12 +4620,12 @@ export default {
 
       this.historyIndex = this.historyIndex + 1;
 
+      window.localStorage.setItem(this.mediaName, formatContent);
       try {
         await api.post(srtFullPath, formatContent, true);
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, formatContent);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, formatContent);
+        console.log(error);
       }
 
       this.cleanUp1();
@@ -4679,12 +4684,12 @@ export default {
       }
       this.historyIndex = this.historyIndex + 1;
 
+      window.localStorage.setItem(this.mediaName, formatContent);
       try {
         await api.post(srtFullPath, formatContent, true);
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, formatContent);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, formatContent);
+        console.log(error);
       }
 
       this.cleanUp1();
@@ -4730,15 +4735,12 @@ export default {
         );
       }
 
+      window.localStorage.setItem(this.mediaName, this.reqF.content);
       try {
         await api.post(srtFullPath, this.reqF.content, true);
-        if (!this.allowOffline && window.localStorage.getItem(this.mediaName)) {
-          window.localStorage.removeItem(this.mediaName);
-        }
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
+        console.log(error);
       }
 
       if (this.isFav) {
@@ -4760,12 +4762,12 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
 
+      window.localStorage.setItem(this.mediaName, this.reqF.content);
       try {
         await api.post(srtFullPath, this.reqF.content, true);
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
+        console.log(error);
       }
 
       if (this.isFav) {
@@ -4804,12 +4806,12 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
 
+      window.localStorage.setItem(this.mediaName, this.reqF.content);
       try {
         await api.post(srtFullPath, this.reqF.content, true);
-        if (this.allowOffline)
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
       } catch (error) {
-        window.localStorage.setItem(this.mediaName, this.reqF.content);
+        console.log(error);
       }
 
       if (this.isFav) {
@@ -5040,6 +5042,7 @@ export default {
       }
     },
     handleResize() {
+      this.isLandscape = this.checkLandscape();
       this.resized = true;
     },
     close() {
@@ -5103,7 +5106,6 @@ export default {
   overflow: hidden;
 }
 #repeater .repeater {
-  padding-top: 4em;
   text-align: center;
   height: 100%;
   margin: 0 1em 0 1em;
@@ -5147,7 +5149,6 @@ span.headSubject {
 }
 
 header {
-  padding: 0.5em 1em 0.5em 1em;
   background: transparent;
 }
 
@@ -5171,7 +5172,6 @@ header {
   padding: 1em;
   border-radius: 10px;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   background: grey;
 }
 
@@ -5199,18 +5199,6 @@ input:disabled {
     width: 5em;
     padding: 0;
     margin: 0;
-  }
-}
-@media screen and (max-device-width: 1000px) and (orientation: landscape) {
-  header {
-    height: 3em !important;
-    padding: 0 0.5em;
-  }
-  #repeater .repeater {
-    padding-top: 3.5em;
-  }
-  #myVideo {
-    height: 0;
   }
 }
 </style>

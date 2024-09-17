@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -181,8 +182,13 @@ user created with the credentials from options "username" and "password".`,
 
 		defer listener.Close()
 
+		localIP, err := getLocalIP()
+		if err != nil {
+			localIP = "127.0.0.0"
+		}
+
 		if strings.Contains(adr, "0.0.0.0") {
-			log.Println("Listening on 0.0.0.0:" + server.Port + ". You can access the FileBrowser at 127.0.0.1:" + server.Port)
+			log.Println("Now you can access the FileBrowser at " + localIP + ":" + server.Port + ", or PublicIP:" + server.Port)
 		} else {
 			log.Println("Listening on", listener.Addr().String())
 		}
@@ -427,4 +433,43 @@ func initConfig() {
 	} else {
 		cfgFile = "Using config file: " + v.ConfigFileUsed()
 	}
+}
+
+func getLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, address := range addrs {
+		// 检查是否是IP网络地址
+		if ipNet, ok := address.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				// 检查是否是私有IP地址
+				if isPrivateIP(ipNet.IP.String()) {
+					return ipNet.IP.String(), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no local IP address found")
+}
+
+func isPrivateIP(ip string) bool {
+	privateRanges := []string{
+		"10.0.0.0/8",
+		"172.16.0.0/12",
+		"192.168.0.0/16",
+	}
+
+	ipAddr := net.ParseIP(ip)
+	for _, r := range privateRanges {
+		_, network, _ := net.ParseCIDR(r)
+		if network.Contains(ipAddr) {
+			return true
+		}
+	}
+
+	return false
 }
