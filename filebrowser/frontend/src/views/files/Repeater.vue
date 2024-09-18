@@ -2642,6 +2642,7 @@ export default {
           );
         }
       } catch (e) {
+        this.isReadyToPlay = true;
         this.confirmType = "fetch";
         this.showConfirm();
       }
@@ -3493,10 +3494,7 @@ export default {
             this.isSystemTTS = "No";
           }
           this.save();
-          this.currentMedia.play();
-          this.currentMedia.muted = true;
           setTimeout(() => {
-            this.currentMedia.muted = false;
             this.currentMedia.pause();
           }, 1);
         } else {
@@ -4102,7 +4100,7 @@ export default {
     },
 
     save() {
-      if (!this.isReadyToPlay && this.confirmType != "fetch") return;
+      if (!this.isReadyToPlay) return;
       let customConfig =
         "customConfig" +
         "::" +
@@ -4154,15 +4152,7 @@ export default {
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
-
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.saveNow(favContent);
-
-        clearTimeout(this.timeOutId);
-      }, 20);
+      this.saveNow(favContent);
     },
 
     async saveNow(favContent) {
