@@ -45,7 +45,7 @@
           v-if="!firstLogin"
           class="action"
           @click="cleanUp"
-          title="Delete Cached Account Info"
+          :title="$t('repeater.cleanCache')"
         >
           <i style="color: red; font-size: 1.5em" class="material-icons"
             >delete</i
@@ -66,11 +66,26 @@
         }}
       </p>
     </form>
+    <p
+      v-if="isCleanedUp"
+      style="
+        color: red;
+        position: fixed;
+        text-align: center;
+        z-index: 1011;
+        left: 50%;
+        transform: translate(-50%, 0);
+        bottom: 1.5em;
+      "
+    >
+      {{ $t("repeater.cleanCacheDone") }}
+    </p>
   </div>
 </template>
 
 <script>
 import * as auth from "@/utils/auth";
+import localforage from "localforage";
 import {
   name,
   logoURL,
@@ -96,6 +111,7 @@ export default {
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       firstLogin: window.localStorage.getItem("lastRawToken") == null,
+      isCleanedUp: false,
     };
   },
 
@@ -124,6 +140,25 @@ export default {
       this.allowOffline = false;
       window.localStorage.removeItem("lastRawToken");
       this.firstLogin = true;
+      this.cacheCleanUp();
+    },
+    cacheCleanUp() {
+      var vm = this;
+      localforage
+        .clear()
+        .then(function () {
+          window.localStorage.removeItem("cKeys");
+          vm.showResult();
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+    },
+    showResult() {
+      this.isCleanedUp = true;
+      setTimeout(() => {
+        this.isCleanedUp = false;
+      }, 2000);
     },
     toggleMode() {
       this.createMode = !this.createMode;

@@ -38,16 +38,15 @@ Updated: 09-18-2024
 
 3.01: add a offline app mode
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/17038656/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/17054097/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17038660/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17054100/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17038663/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17054102/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/17038665/filebrowser.zip)
-
+[filebrowser.zip](https://github.com/user-attachments/files/17054108/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -65,7 +64,7 @@ In windows, just double click the filebrowser.exe, then you can visit it at your
 
 Double click **the .srt file** with yellow icon in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "PDJ-userX-favorite.txt" file in current user's root folder. 
+Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "PDJ-userX.txt" file in current user's root folder. 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
 
 And the following account permission settings in filebrowser will not allow the account user to change the settings and add/remove a favorite sentence in PDJ media repeater.

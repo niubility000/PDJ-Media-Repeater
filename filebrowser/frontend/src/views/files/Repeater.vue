@@ -592,7 +592,7 @@
               class="input input--repeater"
               type="number"
               placeholder="-100"
-              step="100"
+              step="50"
               v-model.number.lazy="timeStampChangeStart"
             />
           </div>
@@ -604,7 +604,7 @@
               class="input input--repeater"
               type="number"
               placeholder="100"
-              step="100"
+              step="50"
               v-model.number.lazy="timeStampChangeEnd"
             />
           </div>
@@ -1312,7 +1312,7 @@
               type="number"
               v-model.number.lazy="startTimeTemp"
               id="editArea0"
-              step="0.1"
+              step="0.001"
               style="font-size: 1em; padding: 0; margin: 0"
               :style="{
                 width: isMobile ? '4.5em' : '5.2em',
@@ -1394,7 +1394,7 @@
               class="input input--repeater"
               type="number"
               v-model.number.lazy="endTimeTemp"
-              step="0.1"
+              step="0.001"
               id="editArea00"
               style="font-size: 1em; padding: 0; margin: 0"
               :style="{
@@ -1470,8 +1470,8 @@
               type="number"
               min="0"
               v-model.number.lazy="startTimeMove"
-              step="0.1"
-              id="editArea0"
+              step="0.05"
+              id="editArea000"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
             &#32;
@@ -1520,8 +1520,8 @@
               type="number"
               min="0"
               v-model.number.lazy="endTimeMove"
-              step="0.1"
-              id="editArea0"
+              step="0.05"
+              id="editArea0000"
               style="font-size: 1em; padding: 0; margin: 0; width: 3em"
             />
             &#32;
@@ -1843,7 +1843,6 @@ export default {
       isPlayFullFavList: false,
       audio: null,
       isSystemTTS: "Yes",
-      contentAll: null,
       note: "     ",
       confirmType: "",
       showSubtitleList: false,
@@ -1907,7 +1906,7 @@ export default {
     },
 
     favFileName() {
-      return "PDJ-user" + this.user.id + "-favorite.txt";
+      return "PDJ-user" + this.user.id + ".txt";
     },
 
     reqF() {
@@ -2633,80 +2632,56 @@ export default {
   },
   methods: {
     async readyStatus() {
-      try {
-        this.contentAll = await api.fetch("/files/" + this.favFileName);
-        this.serverFav = this.contentAll.content;
-        if (window.localStorage.getItem(this.favFileName)) {
-          this.contentAll.content = window.localStorage.getItem(
-            this.favFileName
-          );
+      var PDJcontent = "";
+      var PDJserverContent = null;
+      if (window.localStorage.getItem(this.favFileName)) {
+        PDJcontent = window.localStorage.getItem(this.favFileName);
+      } else {
+        try {
+          PDJserverContent = await api.fetch("/files/" + this.favFileName);
+          PDJcontent = PDJserverContent.content;
+          this.serverFav = PDJcontent;
+        } catch (e) {
+          this.isReadyToPlay = true;
+          this.confirmType = "fetch";
+          this.showConfirm();
         }
-      } catch (e) {
-        this.isReadyToPlay = true;
-        this.confirmType = "fetch";
-        this.showConfirm();
       }
 
-      if (this.contentAll !== null) {
-        this.repeatTimes = Number(
-          JSON.parse(this.contentAll.content.split("::")[1])
-        );
-        this.interval = Number(
-          JSON.parse(this.contentAll.content.split("::")[2])
-        );
-        this.autoPlayNext = JSON.parse(this.contentAll.content.split("::")[3]);
+      if (PDJcontent !== "") {
+        this.repeatTimes = Number(JSON.parse(PDJcontent.split("::")[1]));
+        this.interval = Number(JSON.parse(PDJcontent.split("::")[2]));
+        this.autoPlayNext = JSON.parse(PDJcontent.split("::")[3]);
         this.timeStampChangeStart = Number(
-          JSON.parse(this.contentAll.content.split("::")[4])
+          JSON.parse(PDJcontent.split("::")[4])
         );
         this.timeStampChangeEnd = Number(
-          JSON.parse(this.contentAll.content.split("::")[20])
+          JSON.parse(PDJcontent.split("::")[20])
         );
-        this.currentSpeed = JSON.parse(this.contentAll.content.split("::")[5]);
-        this.subtitleLang = JSON.parse(this.contentAll.content.split("::")[6]);
+        this.currentSpeed = JSON.parse(PDJcontent.split("::")[5]);
+        this.subtitleLang = JSON.parse(PDJcontent.split("::")[6]);
         this.switchSubtitleMini();
-        this.pauseTimeTransLine = Number(
-          JSON.parse(this.contentAll.content.split("::")[8])
-        );
-        this.speedOfUtter = Number(
-          JSON.parse(this.contentAll.content.split("::")[9])
-        );
-        this.isUtterTransLineFirstly = JSON.parse(
-          this.contentAll.content.split("::")[10]
-        );
-        this.isPauseAfterFirstDone = JSON.parse(
-          this.contentAll.content.split("::")[14]
-        );
-        this.autoPlay = JSON.parse(this.contentAll.content.split("::")[15]);
-        this.isSystemTTS = JSON.parse(this.contentAll.content.split("::")[16]);
-        this.TTSurl = JSON.parse(this.contentAll.content.split("::")[17]);
-        this.replayFromStart = JSON.parse(
-          this.contentAll.content.split("::")[18]
-        );
-        this.isPlayFullFavList = JSON.parse(
-          this.contentAll.content.split("::")[19]
-        );
-        this.reviseData = JSON.parse(this.contentAll.content.split("::")[21]);
-        this.revisePlan = JSON.parse(this.contentAll.content.split("::")[22]);
-        this.isAutoDetectLang = JSON.parse(
-          this.contentAll.content.split("::")[13]
-        );
+        this.pauseTimeTransLine = Number(JSON.parse(PDJcontent.split("::")[8]));
+        this.speedOfUtter = Number(JSON.parse(PDJcontent.split("::")[9]));
+        this.isUtterTransLineFirstly = JSON.parse(PDJcontent.split("::")[10]);
+        this.isPauseAfterFirstDone = JSON.parse(PDJcontent.split("::")[14]);
+        this.autoPlay = JSON.parse(PDJcontent.split("::")[15]);
+        this.isSystemTTS = JSON.parse(PDJcontent.split("::")[16]);
+        this.TTSurl = JSON.parse(PDJcontent.split("::")[17]);
+        this.replayFromStart = JSON.parse(PDJcontent.split("::")[18]);
+        this.isPlayFullFavList = JSON.parse(PDJcontent.split("::")[19]);
+        this.reviseData = JSON.parse(PDJcontent.split("::")[21]);
+        this.revisePlan = JSON.parse(PDJcontent.split("::")[22]);
+        this.isAutoDetectLang = JSON.parse(PDJcontent.split("::")[13]);
         if (!this.isAutoDetectLang) {
-          this.isUtterTransLine = JSON.parse(
-            this.contentAll.content.split("::")[7]
-          );
-          this.langInTransLine = JSON.parse(
-            this.contentAll.content.split("::")[11]
-          );
-          this.lineNumOfTrans = Number(
-            JSON.parse(this.contentAll.content.split("::")[12])
-          );
+          this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
+          this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
+          this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
         } else {
           this.autoDetectLangInTrans();
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
-        this.favList = JSON.parse(
-          this.contentAll.content.split("Subtitle:")[1]
-        );
+        this.favList = JSON.parse(PDJcontent.split("Subtitle:")[1]);
         if (this.currentFileFavList) {
           for (var i = 0; i < this.currentFileFavList.length; ++i) {
             if (
@@ -3606,6 +3581,20 @@ export default {
           document.getElementById("editArea00").contains(document.activeElement)
         ) {
           document.getElementById("editArea00").blur();
+        } else if (
+          document.getElementById("editArea000") &&
+          document
+            .getElementById("editArea000")
+            .contains(document.activeElement)
+        ) {
+          document.getElementById("editArea000").blur();
+        } else if (
+          document.getElementById("editArea0000") &&
+          document
+            .getElementById("editArea0000")
+            .contains(document.activeElement)
+        ) {
+          document.getElementById("editArea0000").blur();
         } else if (
           document.getElementById("editArea1") &&
           document.getElementById("editArea1").contains(document.activeElement)
@@ -4919,6 +4908,14 @@ export default {
             document
               .getElementById("editArea00")
               .contains(document.activeElement)) ||
+          (document.getElementById("editArea000") &&
+            document
+              .getElementById("editArea000")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea0000") &&
+            document
+              .getElementById("editArea0000")
+              .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document
               .getElementById("editArea1")
@@ -4967,6 +4964,14 @@ export default {
           (document.getElementById("editArea00") &&
             document
               .getElementById("editArea00")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea000") &&
+            document
+              .getElementById("editArea000")
+              .contains(document.activeElement)) ||
+          (document.getElementById("editArea0000") &&
+            document
+              .getElementById("editArea0000")
               .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document
