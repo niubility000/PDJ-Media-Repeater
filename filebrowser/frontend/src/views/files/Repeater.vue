@@ -942,7 +942,11 @@
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="color: white; text-align: justify; text-align-last: left">
-              <input type="checkbox" v-model="allowCache" />
+              <input
+                :disabled="allowOffline"
+                type="checkbox"
+                v-model="allowCache"
+              />
               {{ $t("repeater.allowCache") }}
             </p>
             <p style="color: white; text-align: justify; text-align-last: left">
@@ -999,7 +1003,7 @@
               <p
                 style="color: white; text-align: justify; text-align-last: left"
               >
-                <input type="checkbox" v-model="allowOffline" />
+                <input disabled="true" type="checkbox" v-model="allowOffline" />
                 {{ $t("repeater.offlineApp") }}
               </p>
             </div>
@@ -2303,19 +2307,6 @@ export default {
       window.localStorage.setItem("max", this.maxCacheNum);
     },
 
-    allowOffline: function () {
-      if (this.allowOffline) {
-        window.localStorage.setItem("isOffline", 1);
-        this.allowCache = true;
-      } else {
-        window.localStorage.setItem("isOffline", 0);
-        if (window.localStorage.getItem(this.mediaName)) {
-          this.reqF.content = window.localStorage.getItem(this.mediaName);
-          this.saveSubNow();
-        }
-      }
-    },
-
     mediaName: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2585,7 +2576,6 @@ export default {
       if (this.allowCache) window.localStorage.setItem("cacheOff", 0);
       else {
         window.localStorage.setItem("cacheOff", 1);
-        this.allowOffline = false;
       }
       setTimeout(() => {
         location.reload();
@@ -2622,7 +2612,6 @@ export default {
       );
     }
     this.reqF.content = this.formatAll(this.reqF.content);
-    if (!this.allowCache) this.allowOffline = false;
     if (this.allowOffline) this.allowCache = true;
   },
   beforeDestroy() {

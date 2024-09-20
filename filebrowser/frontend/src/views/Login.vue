@@ -13,6 +13,7 @@
         autocapitalize="off"
         v-model="username"
         :placeholder="$t('login.username')"
+        onkeydown='if(event.keyCode == 13) return false;'
       />
       <input
         :disabled="allowOffline && !firstLogin"
@@ -20,6 +21,7 @@
         type="password"
         v-model="password"
         :placeholder="$t('login.password')"
+        onkeydown='if(event.keyCode == 13) return false;'
       />
       <input
         class="input input--block"
@@ -29,15 +31,17 @@
         :placeholder="$t('login.passwordConfirm')"
       />
 
-      <p
+      <div
         v-if="!createMode"
         style="
           text-align: justify;
           text-align-last: left;
           padding: 1em 0;
-          color: black;
           cursor: default;
         "
+        :style="{
+          color: firstLogin ? 'lightblue' : 'black',
+        }"
       >
         <input :disabled="firstLogin" type="checkbox" v-model="allowOffline" />
         {{ $t("repeater.allowOfflineL") }}
@@ -51,7 +55,7 @@
             >delete</i
           >
         </button>
-      </p>
+      </div>
 
       <div v-if="recaptcha" id="recaptcha"></div>
       <input
