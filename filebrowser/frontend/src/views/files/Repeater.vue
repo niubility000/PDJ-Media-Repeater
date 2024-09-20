@@ -1003,7 +1003,7 @@
               <p
                 style="color: white; text-align: justify; text-align-last: left"
               >
-                <input disabled="true" type="checkbox" v-model="allowOffline" />
+                <input type="checkbox" v-model="allowOffline" />
                 {{ $t("repeater.offlineApp") }}
               </p>
             </div>
@@ -2305,6 +2305,19 @@ export default {
       )
         this.cacheCleanUp();
       window.localStorage.setItem("max", this.maxCacheNum);
+    },
+
+    allowOffline: function () {
+      if (this.allowOffline) {
+        window.localStorage.setItem("isOffline", 1);
+        this.allowCache = true;
+      } else {
+        window.localStorage.setItem("isOffline", 0);
+        if (window.localStorage.getItem(this.mediaName)) {
+          this.reqF.content = window.localStorage.getItem(this.mediaName);
+          this.saveSubNow();
+        }
+      }
     },
 
     mediaName: function () {

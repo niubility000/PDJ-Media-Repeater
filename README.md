@@ -40,15 +40,15 @@ Updated: 09-20-2024
 
 3.01: add a offline app mode
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/17068154/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/17068471/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17068157/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17068477/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17068159/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17068478/filebrowser-linux-arm64.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/17068160/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/17068481/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
