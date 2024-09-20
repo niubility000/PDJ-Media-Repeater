@@ -1003,7 +1003,7 @@
               <p
                 style="color: white; text-align: justify; text-align-last: left"
               >
-                <input type="checkbox" v-model="allowOffline" />
+                <input disabled="true" type="checkbox" v-model="allowOffline" />
                 {{ $t("repeater.offlineApp") }}
               </p>
             </div>
@@ -1897,6 +1897,7 @@ export default {
       serverFav: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
+      tempFavContent: "",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1916,6 +1917,14 @@ export default {
     reqF() {
       if (this.onRevision) return this.oReq;
       else return this.req;
+    },
+
+    favNotUpload() {
+      return this.favFileName + "favNotUpload";
+    },
+
+    srtNotUpload() {
+      return this.mediaName + "srtNotUpload";
     },
 
     favListStatus() {
@@ -2307,19 +2316,6 @@ export default {
       window.localStorage.setItem("max", this.maxCacheNum);
     },
 
-    allowOffline: function () {
-      if (this.allowOffline) {
-        window.localStorage.setItem("isOffline", 1);
-        this.allowCache = true;
-      } else {
-        window.localStorage.setItem("isOffline", 0);
-        if (window.localStorage.getItem(this.mediaName)) {
-          this.reqF.content = window.localStorage.getItem(this.mediaName);
-          this.saveSubNow();
-        }
-      }
-    },
-
     mediaName: function () {
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
@@ -2327,7 +2323,11 @@ export default {
       this.timeOutId = setTimeout(() => {
         this.getCacheMedia();
         setTimeout(() => {
-          if (window.localStorage.getItem(this.mediaName)) {
+          if (
+            (this.allowOffline ||
+              window.localStorage.getItem(this.srtNotUpload)) &&
+            window.localStorage.getItem(this.mediaName)
+          ) {
             this.reqF.content = window.localStorage.getItem(this.mediaName);
             this.saveSubNow();
           }
@@ -2636,7 +2636,11 @@ export default {
     async readyStatus() {
       var PDJcontent = "";
       var PDJserverContent = null;
-      if (window.localStorage.getItem(this.favFileName)) {
+
+      if (
+        (this.allowOffline || window.localStorage.getItem(this.favNotUpload)) &&
+        window.localStorage.getItem(this.favFileName)
+      ) {
         PDJcontent = window.localStorage.getItem(this.favFileName);
       } else {
         try {
@@ -4143,19 +4147,29 @@ export default {
       let favContent =
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
-      this.saveNow(favContent);
+      this.tempFavContent = favContent;
+      if (this.timeOutId) {
+        clearTimeout(this.timeOutId);
+      }
+      this.timeOutId = setTimeout(() => {
+        this.saveNow(this.tempFavContent);
+        clearTimeout(this.timeOutId);
+      }, 10);
     },
 
     async saveNow(favContent) {
-      let vm = this;
       window.localStorage.setItem(this.favFileName, favContent);
-      try {
-        await api.post("/files/" + this.favFileName, favContent, true);
-        vm.serverFav = favContent;
-        if (!this.allowOffline)
-          window.localStorage.removeItem(this.favFileName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        let vm = this;
+        try {
+          await api.post("/files/" + this.favFileName, favContent, true);
+          vm.serverFav = favContent;
+          window.localStorage.removeItem(this.favNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.favNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.favNotUpload, "1");
       }
     },
 
@@ -4499,11 +4513,15 @@ export default {
       this.historyIndex = this.historyIndex + 1;
 
       window.localStorage.setItem(this.mediaName, formatContent);
-      try {
-        await api.post(path + "/" + this.reqF.name, formatContent, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(path + "/" + this.reqF.name, formatContent, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
 
       this.cleanUp1();
@@ -4602,11 +4620,15 @@ export default {
       this.historyIndex = this.historyIndex + 1;
 
       window.localStorage.setItem(this.mediaName, formatContent);
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(srtFullPath, formatContent, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
 
       this.cleanUp1();
@@ -4666,11 +4688,15 @@ export default {
       this.historyIndex = this.historyIndex + 1;
 
       window.localStorage.setItem(this.mediaName, formatContent);
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(srtFullPath, formatContent, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
 
       this.cleanUp1();
@@ -4715,15 +4741,17 @@ export default {
           nCont
         );
       }
-
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
-
       if (this.isFav) {
         this.switchIsFav();
         setTimeout(() => {
@@ -4744,11 +4772,15 @@ export default {
       this.cleanUp2();
 
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
 
       if (this.isFav) {
@@ -4788,11 +4820,15 @@ export default {
       this.cleanUp2();
 
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        if (!this.allowOffline) window.localStorage.removeItem(this.mediaName);
-      } catch (error) {
-        console.log(error);
+      if (!this.allowOffline) {
+        try {
+          await api.post(srtFullPath, this.reqF.content, true);
+          window.localStorage.removeItem(this.srtNotUpload);
+        } catch (error) {
+          window.localStorage.setItem(this.srtNotUpload, "1");
+        }
+      } else {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
 
       if (this.isFav) {
