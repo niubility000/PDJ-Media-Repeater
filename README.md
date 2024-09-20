@@ -6,6 +6,8 @@
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot51.jpg)
 
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot2-1.jpg)
+
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot52.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot6.jpg)
