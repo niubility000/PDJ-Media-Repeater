@@ -2431,13 +2431,7 @@ export default {
     },
 
     revisePlan: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 300);
+      this.save();
     },
 
     replayFromStart: function () {
@@ -2461,24 +2455,12 @@ export default {
 
     timeStampChangeStart: function () {
       this.timeStampChangeStart = Math.floor(this.timeStampChangeStart);
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     timeStampChangeEnd: function () {
       this.timeStampChangeEnd = Math.floor(this.timeStampChangeEnd);
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     subtitleLang: function () {
@@ -2486,13 +2468,7 @@ export default {
     },
 
     isUtterTransLine: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     isSystemTTS: function () {
@@ -2525,26 +2501,14 @@ export default {
     },
 
     langInTransLine: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     lineNumOfTrans: function () {
       this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
       if (this.lineNumOfTrans > 2) this.lineNumOfTrans = 2;
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     isAutoDetectLang: function () {
@@ -2552,13 +2516,8 @@ export default {
         this.langInTransLine = navigator.language || navigator.userLanguage;
         this.autoDetectLangInTrans();
       }
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+
+      this.save();
     },
 
     isPauseAfterFirstDone: function () {
@@ -2566,23 +2525,11 @@ export default {
     },
 
     autoPlay: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     isPlayFullFavList: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.save();
-        clearTimeout(this.timeOutId);
-      }, 1);
+      this.save();
     },
 
     allowCache() {
@@ -2701,12 +2648,7 @@ export default {
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
-        this.currentMedia.play();
-        this.currentMedia.muted = true;
-        setTimeout(() => {
-          this.currentMedia.muted = false;
-          this.currentMedia.pause();
-        }, 1);
+        this.currentMedia.pause();
         this.isReadyToPlay = true;
       }
       if (window.localStorage.getItem(this.favFileName)) {
@@ -2968,33 +2910,34 @@ export default {
     },
 
     firstClick() {
-      if (!(this.isMediaType == 1 && this.isSystemTTS == "No"))
-        this.utterTransLine();
-      if (this.audio) this.audio.muted = true;
-      if (this.isIphone) {
+      if (
+        this.isIphone &&
+        !(this.isUtterTransLineFirstly == false && this.isSystemTTS == "No")
+      ) {
+        if (this.isSystemTTS == "Yes") this.utterTransLine();
+        if (this.isSystemTTS == "No" && this.audio) this.audio.muted = true;
+        this.currentMedia.play();
+        this.currentMedia.currentTime =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        this.currentMedia.muted = true;
         setTimeout(() => {
-          this.currentMedia.play();
-        }, 20);
-      } else this.currentMedia.play();
-      this.currentMedia.currentTime =
-        this.srtSubtitles[this.sentenceIndex - 1].startTime;
-      this.currentMedia.muted = true;
-      setTimeout(() => {
-        this.currentMedia.muted = false;
-        if (this.audio) this.audio.muted = false;
-        this.cleanUp2();
-        this.cleanUp1();
-        if (
-          this.firstMount &&
-          (this.currentMedia.currentTime <
-            this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.2 ||
-            this.currentMedia.currentTime >
-              this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2)
-        ) {
-          window.sessionStorage.setItem("isBrowserHiJack", true);
-          location.reload();
-        }
-      }, 1);
+          this.currentMedia.muted = false;
+          if (this.audio) this.audio.muted = false;
+          this.cleanUp2();
+          this.cleanUp1();
+
+          if (
+            this.firstMount &&
+            (this.currentMedia.currentTime <
+              this.srtSubtitles[this.sentenceIndex - 1].startTime - 0.2 ||
+              this.currentMedia.currentTime >
+                this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2)
+          ) {
+            window.sessionStorage.setItem("isBrowserHiJack", true);
+            location.reload();
+          }
+        }, 1);
+      }
       this.isFirstClick = false;
     },
 
@@ -3153,7 +3096,6 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
-        if (this.isFirstClick) this.utterThis.text = "n";
         if (this.langInTransLine == "") {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
@@ -3181,7 +3123,6 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
-        if (this.isFirstClick) text = "n";
         let ttsFullUrl = this.TTSurl + text;
         fetch(ttsFullUrl)
           .then(() => {
@@ -3370,6 +3311,15 @@ export default {
       if (x.includes("\t\t")) x = x.replaceAll("\t\t", "\n");
       x = x.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       x = x.replace(/^\n+|\n+$/g, "");
+
+      for (var i = 0; i < x.split("\n\n").length; ++i) {
+        var ni = i + 1;
+        let nCont = x
+          .split("\n\n")
+          [i].replace(x.split("\n\n")[i].split("\n")[0] + "\n", ni + "\n");
+        x = x.replace(x.split("\n\n")[i], nCont);
+      }
+
       return x;
     },
 
@@ -4221,11 +4171,18 @@ export default {
       }
 
       var oldContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn +
+        "\n" +
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp +
         tempContent
-          .split(this.srtSubtitles[this.sentenceIndex - 1].timeStamp)[1]
+          .split(
+            this.srtSubtitles[this.sentenceIndex - 1].sn +
+              "\n" +
+              this.srtSubtitles[this.sentenceIndex - 1].timeStamp
+          )[1]
           .split("\n\n")[0];
-
+      newContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + newContent;
       this.reqF.content = tempContent.replace(oldContent, newContent);
       this.saveSubNow();
     },
@@ -4282,6 +4239,11 @@ export default {
         "," +
         time.milliseconds +
         " --> ";
+
+      oldContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + oldContent;
+      newContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + newContent;
       tempContent = tempContent.replace(oldContent, newContent);
 
       if (this.sentenceIndex > 1) {
@@ -4305,6 +4267,21 @@ export default {
           time1.seconds +
           "," +
           time1.milliseconds;
+
+        oldContent1 =
+          this.srtSubtitles[this.sentenceIndex - 2].sn +
+          "\n" +
+          this.srtSubtitles[this.sentenceIndex - 2].timeStamp.split(
+            " --> "
+          )[0] +
+          oldContent1;
+        newContent1 =
+          this.srtSubtitles[this.sentenceIndex - 2].sn +
+          "\n" +
+          this.srtSubtitles[this.sentenceIndex - 2].timeStamp.split(
+            " --> "
+          )[0] +
+          newContent1;
         tempContent = tempContent.replace(oldContent1, newContent1);
       }
       this.reqF.content = tempContent;
@@ -4365,6 +4342,16 @@ export default {
         "," +
         time.milliseconds;
 
+      oldContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn +
+        "\n" +
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
+        oldContent;
+      newContent =
+        this.srtSubtitles[this.sentenceIndex - 1].sn +
+        "\n" +
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
+        newContent;
       tempContent = tempContent.replace(oldContent, newContent);
 
       if (this.sentenceIndex <= this.srtSubtitles.length - 1) {
@@ -4387,6 +4374,10 @@ export default {
           "," +
           time1.milliseconds +
           " --> ";
+        oldContent1 =
+          this.srtSubtitles[this.sentenceIndex].sn + "\n" + oldContent1;
+        newContent1 =
+          this.srtSubtitles[this.sentenceIndex].sn + "\n" + newContent1;
         tempContent = tempContent.replace(oldContent1, newContent1);
       }
       this.reqF.content = tempContent;
@@ -4422,8 +4413,11 @@ export default {
           "," +
           time.milliseconds +
           " --> ";
+        oldContent = this.srtSubtitles[i].sn + "\n" + oldContent;
+        newContent = this.srtSubtitles[i].sn + "\n" + newContent;
         this.reqF.content = tempContent.replace(oldContent, newContent);
       }
+
       this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
       this.saveSubNow();
     },
@@ -4457,6 +4451,17 @@ export default {
           time.seconds +
           "," +
           time.milliseconds;
+
+        oldContent =
+          this.srtSubtitles[i].sn +
+          "\n" +
+          this.srtSubtitles[i].timeStamp.split(" --> ")[0] +
+          oldContent;
+        newContent =
+          this.srtSubtitles[i].sn +
+          "\n" +
+          this.srtSubtitles[i].timeStamp.split(" --> ")[0] +
+          newContent;
         this.reqF.content = tempContent.replace(oldContent, newContent);
       }
       this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
