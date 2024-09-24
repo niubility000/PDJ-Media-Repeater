@@ -2317,6 +2317,7 @@ export default {
     },
 
     mediaName: function () {
+      this.onRUdo = true;
       if (this.timeOutId) {
         clearTimeout(this.timeOutId);
       }
@@ -2374,6 +2375,12 @@ export default {
     },
 
     sentenceIndex: function () {
+      if (this.isEditSubandNotes) {
+        this.onRUdo = true;
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 1000);
+      }
       if (this.isFavOnPlay && this.isPlayFullFavList) this.getCacheMedia();
       if (this.isEditSubandNotes) {
         this.startTimeTemp =
@@ -2386,23 +2393,7 @@ export default {
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
       }
-      if (this.isFavOnPlay) {
-        this.isFav = true;
-      } else if (this.currentFileFavList) {
-        for (var i = 0; i < this.currentFileFavList.length; ++i) {
-          if (
-            this.currentFileFavList[i].startTime ==
-            this.srtSubtitles[this.sentenceIndex - 1].startTime
-          ) {
-            this.isFav = true;
-            return;
-          } else if (i == this.currentFileFavList.length - 1) {
-            this.isFav = false;
-          }
-        }
-      } else {
-        this.isFav = false;
-      }
+      this.calcFav();
       if (this.showSubtitleList) {
         document
           .getElementById(this.sentenceIndex)
@@ -2573,6 +2564,7 @@ export default {
     }
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.allowOffline) this.allowCache = true;
+    this.getReader();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -2581,6 +2573,7 @@ export default {
   },
   methods: {
     async readyStatus() {
+      this.currentMedia.pause();
       var PDJcontent = "";
       var PDJserverContent = null;
 
@@ -2635,20 +2628,10 @@ export default {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
         this.favList = JSON.parse(PDJcontent.split("Subtitle:")[1]);
-        if (this.currentFileFavList) {
-          for (var i = 0; i < this.currentFileFavList.length; ++i) {
-            if (
-              this.currentFileFavList[i].startTime ==
-              this.srtSubtitles[this.sentenceIndex - 1].startTime
-            ) {
-              this.isFav = true;
-            }
-          }
-        }
+        this.calcFav();
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
-        this.currentMedia.pause();
         this.isReadyToPlay = true;
       }
       if (window.localStorage.getItem(this.favFileName)) {
@@ -2777,6 +2760,21 @@ export default {
         }
       }
       this.reviseData.unshift(reviseItem);
+    },
+
+    calcFav() {
+      this.isFav = false;
+      if (this.isFavOnPlay) this.isFav = true;
+      else if (this.currentFileFavList) {
+        for (var i = 0; i < this.currentFileFavList.length; ++i) {
+          if (
+            this.currentFileFavList[i].startTime ==
+            this.srtSubtitles[this.sentenceIndex - 1].startTime
+          ) {
+            this.isFav = true;
+          }
+        }
+      }
     },
 
     async revisionPlay(name, startIndex, oRawPath) {
@@ -3375,6 +3373,9 @@ export default {
       this.isEditSubandNotes = !this.isEditSubandNotes;
       if (this.isEditSubandNotes) {
         this.onRUdo = true;
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 1000);
         this.cleanUp1();
         this.cleanUp2();
         this.isShowLine1 = true;
@@ -4125,9 +4126,6 @@ export default {
 
     saveSub() {
       if (this.onRUdo) {
-        setTimeout(() => {
-          this.onRUdo = false;
-        }, 100);
         return;
       }
       if (!this.onEdit) return;
@@ -4189,9 +4187,6 @@ export default {
 
     saveSub1() {
       if (this.onRUdo) {
-        setTimeout(() => {
-          this.onRUdo = false;
-        }, 100);
         return;
       }
       if (!this.onEdit) return;
@@ -4290,9 +4285,6 @@ export default {
 
     saveSub2() {
       if (this.onRUdo) {
-        setTimeout(() => {
-          this.onRUdo = false;
-        }, 100);
         return;
       }
       if (!this.onEdit) return;
@@ -4386,9 +4378,6 @@ export default {
 
     startTimeMoveSave: function (direction) {
       if (this.onRUdo) {
-        setTimeout(() => {
-          this.onRUdo = false;
-        }, 100);
         return;
       }
       this.tempOldContent = this.reqF.content;
@@ -4423,9 +4412,6 @@ export default {
     },
     endTimeMoveSave: function (direction) {
       if (this.onRUdo) {
-        setTimeout(() => {
-          this.onRUdo = false;
-        }, 100);
         return;
       }
       this.tempOldContent = this.reqF.content;
@@ -4490,6 +4476,10 @@ export default {
     },
 
     async deleteSentence() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -4504,19 +4494,10 @@ export default {
       const path = url.removeLastDir(this.$route.path);
       this.changeNew[this.historyIndex] = formatContent;
 
-      if (this.changeNew.length > this.historyIndex + 1) {
-        this.changeNew.splice(
-          this.historyIndex + 1,
-          this.changeNew.length - this.historyIndex - 1
-        );
-        this.changeOld.splice(
-          this.historyIndex + 1,
-          this.changeOld.length - this.historyIndex - 1
-        );
-      }
-
       this.historyIndex = this.historyIndex + 1;
 
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
       window.localStorage.setItem(this.mediaName, formatContent);
       if (!this.allowOffline) {
         try {
@@ -4546,6 +4527,10 @@ export default {
     },
 
     async mergeSentence() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -4611,19 +4596,9 @@ export default {
       else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
 
-      if (this.changeNew.length > this.historyIndex + 1) {
-        this.changeNew.splice(
-          this.historyIndex + 1,
-          this.changeNew.length - this.historyIndex - 1
-        );
-        this.changeOld.splice(
-          this.historyIndex + 1,
-          this.changeOld.length - this.historyIndex - 1
-        );
-      }
-
       this.historyIndex = this.historyIndex + 1;
-
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
       window.localStorage.setItem(this.mediaName, formatContent);
       if (!this.allowOffline) {
         try {
@@ -4653,6 +4628,10 @@ export default {
     },
 
     async addSentence() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -4663,13 +4642,13 @@ export default {
         textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[1] +
         " --> " +
         textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
-      var line3 = " ";
+      var line3 = "...Subtitle's First Line...";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
-      let newOne = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
+      let newContent = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
       formatContent = formatContent.replace(
         textSubtitles[this.sentenceIndex - 1],
-        newOne
+        newContent
       );
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
@@ -4680,18 +4659,9 @@ export default {
       else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
 
-      if (this.changeNew.length > this.historyIndex + 1) {
-        this.changeNew.splice(
-          this.historyIndex + 1,
-          this.changeNew.length - this.historyIndex - 1
-        );
-        this.changeOld.splice(
-          this.historyIndex + 1,
-          this.changeOld.length - this.historyIndex - 1
-        );
-      }
       this.historyIndex = this.historyIndex + 1;
-
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
       window.localStorage.setItem(this.mediaName, formatContent);
       if (!this.allowOffline) {
         try {
@@ -4718,21 +4688,12 @@ export default {
       const path = url.removeLastDir(this.$route.path);
       if (this.onRevision) srtFullPath = this.srtRevisePath;
       else srtFullPath = path + "/" + this.reqF.name;
-      this.changeOld[this.historyIndex] = this.tempOldContent;
-      this.changeNew[this.historyIndex] = this.reqF.content;
+      if (!this.onRUdo) {
+        this.changeOld[this.historyIndex] = this.tempOldContent;
+        this.changeNew[this.historyIndex] = this.reqF.content;
 
-      if (this.changeNew.length > this.historyIndex + 1) {
-        this.changeNew.splice(
-          this.historyIndex + 1,
-          this.changeNew.length - this.historyIndex - 1
-        );
-        this.changeOld.splice(
-          this.historyIndex + 1,
-          this.changeOld.length - this.historyIndex - 1
-        );
-      }
-      this.historyIndex = this.historyIndex + 1;
-
+        this.historyIndex = this.historyIndex + 1;
+      } else this.onRUdo = false;
       for (var i = 0; i < this.reqF.content.split("\n\n").length; ++i) {
         var ni = i + 1;
         let nCont = this.reqF.content
@@ -4767,6 +4728,9 @@ export default {
 
     async changeUndo() {
       this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
       var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
       if (this.onRevision) srtFullPath = this.srtRevisePath;
@@ -4815,6 +4779,9 @@ export default {
 
     async changeRedo() {
       this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
       var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
       if (this.onRevision) srtFullPath = this.srtRevisePath;
