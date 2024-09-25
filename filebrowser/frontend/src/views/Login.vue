@@ -13,7 +13,6 @@
         autocapitalize="off"
         v-model="username"
         :placeholder="$t('login.username')"
-        onkeydown='if(event.keyCode == 13) return false;'
       />
       <input
         :disabled="allowOffline && !firstLogin"
@@ -21,7 +20,6 @@
         type="password"
         v-model="password"
         :placeholder="$t('login.password')"
-        onkeydown='if(event.keyCode == 13) return false;'
       />
       <input
         class="input input--block"
@@ -45,16 +43,6 @@
       >
         <input :disabled="firstLogin" type="checkbox" v-model="allowOffline" />
         {{ $t("repeater.allowOfflineL") }}
-        <button
-          v-if="!firstLogin"
-          class="action"
-          @click="cleanUp"
-          :title="$t('repeater.cleanCache')"
-        >
-          <i style="color: red; font-size: 1.5em" class="material-icons"
-            >delete</i
-          >
-        </button>
       </div>
 
       <div v-if="recaptcha" id="recaptcha"></div>
@@ -70,6 +58,18 @@
         }}
       </p>
     </form>
+    <div style="position: fixed; bottom: 1em; right: 1em">
+      <button
+        v-if="!firstLogin || !noCachedMedia || !noCachedOther"
+        class="action"
+        @click="cleanUp"
+        :title="$t('repeater.cleanCache')"
+      >
+        <i style="color: red; font-size: 1.5em" class="material-icons"
+          >delete</i
+        >
+      </button>
+    </div>
     <p
       v-if="isCleanedUp"
       style="
@@ -84,6 +84,59 @@
     >
       {{ $t("repeater.cleanCacheDone") }}
     </p>
+    <div
+      v-if="showCleanUp"
+      style="
+        background-color: gray;
+        color: white;
+        z-index: 1010;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        padding: 0 1em;
+        max-width: 25em;
+        width: 90%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 10px;
+      "
+      :style="{
+        height: isMobile ? '80%' : '65%',
+      }"
+    >
+      <div style="color: white; padding: 1em 0">
+        <input :disabled="firstLogin" type="checkbox" v-model="cleanAccount" />
+        {{ $t("repeater.cleanAccount") }}
+      </div>
+      <div style="color: white; padding: 1em 0">
+        <input :disabled="noCachedMedia" type="checkbox" v-model="cleanMedia" />
+        {{ $t("repeater.cleanMedia") }}
+      </div>
+      <div style="color: white; padding: 1em 0">
+        <input
+          :disabled="noCachedOther"
+          type="checkbox"
+          v-model="cleanSrtandSettings"
+        />
+        {{ $t("repeater.cleanSrtandSettings") }}
+      </div>
+      <div style="flex-grow: 1"></div>
+      <div
+        style="
+          display: flex;
+          justify-content: space-around;
+          padding-bottom: 2em;
+        "
+      >
+        <button @click="cleanUpNow">
+          {{ $t("buttons.ok") }}
+        </button>
+        <button @click="cleanUpClose">
+          {{ $t("buttons.cancel") }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -115,7 +168,13 @@ export default {
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       firstLogin: window.localStorage.getItem("lastRawToken") == null,
+      noCachedMedia: window.localStorage.getItem("cKeys") == null,
+      noCachedOther: window.localStorage.getItem("cachedOther") == null,
       isCleanedUp: false,
+      cleanAccount: false,
+      cleanMedia: false,
+      cleanSrtandSettings: false,
+      showCleanUp: false,
     };
   },
 
@@ -140,11 +199,31 @@ export default {
   },
   methods: {
     cleanUp() {
-      window.localStorage.removeItem("isOffline");
-      this.allowOffline = false;
-      window.localStorage.removeItem("lastRawToken");
-      this.firstLogin = true;
-      this.cacheCleanUp();
+      this.showCleanUp = true;
+    },
+    cleanUpNow() {
+      if (this.cleanAccount) {
+        window.localStorage.removeItem("isOffline");
+        this.allowOffline = false;
+        window.localStorage.removeItem("lastRawToken");
+        this.firstLogin = true;
+        this.cleanAccount = false;
+      }
+      if (this.cleanMedia) {
+        this.cacheCleanUp();
+        this.cleanMedia = false;
+      }
+      if (this.cleanSrtandSettings) {
+        var temp01 = window.localStorage.getItem("isOffline");
+        var temp02 = window.localStorage.removeItem("lastRawToken");
+        window.localStorage.clear();
+        window.localStorage.setItem("isOffline", temp01);
+        window.localStorage.setItem("lastRawToken", temp02);
+        this.noCachedOther = true;
+        this.cleanSrtandSettings = false;
+      }
+      this.showResult();
+      this.showCleanUp = false;
     },
     cacheCleanUp() {
       var vm = this;
@@ -152,11 +231,17 @@ export default {
         .clear()
         .then(function () {
           window.localStorage.removeItem("cKeys");
-          vm.showResult();
+          vm.noCachedMedia = true;
         })
         .catch(function (err) {
           console.log(err);
         });
+    },
+    cleanUpClose() {
+      this.cleanAccount = false;
+      this.cleanMedia = false;
+      this.cleanSrtandSettings = false;
+      this.showCleanUp = false;
     },
     showResult() {
       this.isCleanedUp = true;
