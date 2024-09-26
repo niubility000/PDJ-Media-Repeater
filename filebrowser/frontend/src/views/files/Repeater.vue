@@ -1157,7 +1157,7 @@
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
           style="
-            color: white;
+            color: grey;
             position: fixed;
             z-index: 1011;
             left: 50%;
@@ -2661,7 +2661,6 @@ export default {
       else this.cachedKeys = window.localStorage.getItem("cKeys");
       var vmcachedKeys = this.cachedKeys;
       var vmmax = this.maxCacheNum + 1;
-
       fetch(this.raw)
         .then((response) => response.blob()) // 将响应转换为Blob对象
         .then((blob) => {
@@ -2722,7 +2721,7 @@ export default {
                 );
                 window.localStorage.removeItem("onFullPlaying");
               }
-            }, 1700);
+            }, 1500);
           });
         })
         .catch((error) => {
@@ -2752,7 +2751,7 @@ export default {
       }
       let reviseDate = [];
       let reviseTemp1 = this.revisePlan.split(" ");
-      let srtUrl = api.getDownloadURL(this.req, true);
+      let srtUrl = api.getDownloadURL(this.reqF, true);
       let reviseTemp2 = "";
       for (var i = 0; i < reviseTemp1.length; ++i) {
         if (i == 0 && parseInt(reviseTemp1[0]) == 0) {
@@ -2810,22 +2809,18 @@ export default {
     },
 
     async revisionPlay(name, startIndex, oRawPath) {
+      this.srtRevisePath = "/files/" + oRawPath;
+      try {
+        var m = await api.fetch(this.srtRevisePath);
+      } catch (e) {
+        this.confirmType = "fetch";
+        this.showConfirm();
+      }
       if (name.endsWith(".mp3")) this.reviseType = 1;
       else this.reviseType = 2;
-      if (window.localStorage.getItem(name)) {
-        this.oReq = this.reqF;
+      this.oReq = m;
+      if (window.localStorage.getItem(name))
         this.oReq.content = window.localStorage.getItem(name);
-        this.oReq.name = name.slice(0, -4) + ".srt";
-      } else {
-        this.srtRevisePath = "/files/" + oRawPath;
-        try {
-          var m = await api.fetch(this.srtRevisePath);
-          this.oReq = m;
-        } catch (e) {
-          this.confirmType = "fetch";
-          this.showConfirm();
-        }
-      }
       this.onRevision = true;
       this.tempSentenceIndex = this.sentenceIndex;
       this.sentenceIndex = startIndex;
@@ -2850,7 +2845,7 @@ export default {
     },
 
     calcRaw() {
-      let srtUrl = api.getDownloadURL(this.req, true);
+      let srtUrl = api.getDownloadURL(this.reqF, true);
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         this.raw =
           srtUrl.split("/raw/")[0] +
@@ -3360,7 +3355,7 @@ export default {
     },
 
     switchIsFav() {
-      let srtUrl = api.getDownloadURL(this.req, true);
+      let srtUrl = api.getDownloadURL(this.reqF, true);
       let originRaw = "";
       if (srtUrl && this.isMediaType == 1) {
         originRaw = srtUrl.replace(".srt", ".mp3");
