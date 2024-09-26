@@ -77,7 +77,7 @@
     "revise5": "标记为‘已复习’",
     "cached": "媒体已缓存！",
     "cleanCache": "清空指定的浏览器缓存",
-    "cleanCacheDone": "已清空！",
+    "cleanCacheDone": "选中的缓存已清空！",
     "cleanAccount": "清空浏览器缓存中的登录信息，清空此项后将不能使用离线APP模式登录。",
     "cleanMedia": "清空浏览器缓存中的媒体文件！",
     "cleanSrtandSettings": "清空浏览器缓存中的其他文件，包含在离线APP模式下断网时已修改但可能尚未同步到服务器的字幕文件和配置文件！",

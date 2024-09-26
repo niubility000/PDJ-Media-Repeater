@@ -77,7 +77,7 @@
     "revise5": "Marked as 'Reviewed'",
     "cached": "Media cached!",
     "cleanCache": "Clean up specified browser cache.",
-    "cleanCacheDone": "Cleaned Up!",
+    "cleanCacheDone": "Selected caches have been cleaned up!",
     "cleanAccount": "Clear the login info in browser cache. Then, login in 'Offline APP mode' will not be disabled.",
     "cleanMedia": "Clear cached media files in browser!",
     "cleanSrtandSettings": "Clear other files in browser cache, including subtitles and settings that have been modified in 'Offline APP mode' with a disconnected server but may not have been synchronized to the server yet!",

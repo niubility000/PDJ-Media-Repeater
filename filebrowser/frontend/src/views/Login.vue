@@ -202,25 +202,27 @@ export default {
       this.showCleanUp = true;
     },
     cleanUpNow() {
-      if (this.cleanAccount) {
-        window.localStorage.removeItem("isOffline");
-        this.allowOffline = false;
-        window.localStorage.removeItem("lastRawToken");
-        this.firstLogin = true;
-        this.cleanAccount = false;
-      }
       if (this.cleanMedia) {
         this.cacheCleanUp();
         this.cleanMedia = false;
       }
       if (this.cleanSrtandSettings) {
         var temp01 = window.localStorage.getItem("isOffline");
-        var temp02 = window.localStorage.removeItem("lastRawToken");
+        var temp02 = window.localStorage.getItem("lastRawToken");
         window.localStorage.clear();
-        window.localStorage.setItem("isOffline", temp01);
-        window.localStorage.setItem("lastRawToken", temp02);
+        if (!this.firstLogin) {
+          window.localStorage.setItem("isOffline", temp01);
+          window.localStorage.setItem("lastRawToken", temp02);
+        }
         this.noCachedOther = true;
         this.cleanSrtandSettings = false;
+      }
+      if (this.cleanAccount) {
+        window.localStorage.removeItem("isOffline");
+        this.allowOffline = false;
+        window.localStorage.removeItem("lastRawToken");
+        this.firstLogin = true;
+        this.cleanAccount = false;
       }
       this.showResult();
       this.showCleanUp = false;

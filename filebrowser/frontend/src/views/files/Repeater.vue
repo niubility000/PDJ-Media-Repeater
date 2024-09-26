@@ -2331,6 +2331,11 @@ export default {
             this.onRUdo = true;
             this.reqF.content = window.localStorage.getItem(this.mediaName);
             this.saveSubNow();
+          } else if (
+            !this.allowOffline &&
+            !window.localStorage.getItem(this.srtNotUpload)
+          ) {
+            window.localStorage.setItem(this.mediaName, this.reqF.content);
           }
         }, 100);
         clearTimeout(this.timeOutId);
@@ -2680,6 +2685,16 @@ export default {
             }
             vmm.cachedKeys = vmcachedKeys;
             setTimeout(() => {
+              if (vmm.playInProcess) {
+                window.localStorage.setItem("onPlaying", vmm.playCount);
+              } else if (vmm.utterInProcess) {
+                window.localStorage.setItem("onUttering", 1);
+              } else if (!vmm.isSingle && !vmm.currentMedia.paused) {
+                window.localStorage.setItem(
+                  "onFullPlaying",
+                  vmm.currentMedia.currentTime
+                );
+              }
               vmm.mediaCached = true;
               localforage
                 .getItem(keyName)
@@ -2691,7 +2706,23 @@ export default {
             }, 200);
             setTimeout(() => {
               vmm.mediaCached = false;
-            }, 1500);
+              if (window.localStorage.getItem("onPlaying")) {
+                vmm.playCount = Number(
+                  window.localStorage.getItem("onPlaying")
+                );
+                vmm.loopPlay();
+                window.localStorage.removeItem("onPlaying");
+              } else if (window.localStorage.getItem("onUttering")) {
+                vmm.click();
+                window.localStorage.removeItem("onUttering");
+              } else if (window.localStorage.getItem("onFullPlaying")) {
+                vmm.regularPlay();
+                vmm.currentMedia.currentTime = Number(
+                  window.localStorage.getItem("onFullPlaying")
+                );
+                window.localStorage.removeItem("onFullPlaying");
+              }
+            }, 1700);
           });
         })
         .catch((error) => {
@@ -2721,7 +2752,7 @@ export default {
       }
       let reviseDate = [];
       let reviseTemp1 = this.revisePlan.split(" ");
-      let srtUrl = api.getDownloadURL(this.reqF, true);
+      let srtUrl = api.getDownloadURL(this.req, true);
       let reviseTemp2 = "";
       for (var i = 0; i < reviseTemp1.length; ++i) {
         if (i == 0 && parseInt(reviseTemp1[0]) == 0) {
@@ -2779,16 +2810,22 @@ export default {
     },
 
     async revisionPlay(name, startIndex, oRawPath) {
-      this.srtRevisePath = "/files/" + oRawPath;
-      try {
-        var m = await api.fetch(this.srtRevisePath);
-      } catch (e) {
-        this.confirmType = "fetch";
-        this.showConfirm();
-      }
       if (name.endsWith(".mp3")) this.reviseType = 1;
       else this.reviseType = 2;
-      this.oReq = m;
+      if (window.localStorage.getItem(name)) {
+        this.oReq = this.reqF;
+        this.oReq.content = window.localStorage.getItem(name);
+        this.oReq.name = name.slice(0, -4) + ".srt";
+      } else {
+        this.srtRevisePath = "/files/" + oRawPath;
+        try {
+          var m = await api.fetch(this.srtRevisePath);
+          this.oReq = m;
+        } catch (e) {
+          this.confirmType = "fetch";
+          this.showConfirm();
+        }
+      }
       this.onRevision = true;
       this.tempSentenceIndex = this.sentenceIndex;
       this.sentenceIndex = startIndex;
@@ -2813,7 +2850,7 @@ export default {
     },
 
     calcRaw() {
-      let srtUrl = api.getDownloadURL(this.reqF, true);
+      let srtUrl = api.getDownloadURL(this.req, true);
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         this.raw =
           srtUrl.split("/raw/")[0] +
@@ -3323,7 +3360,7 @@ export default {
     },
 
     switchIsFav() {
-      let srtUrl = api.getDownloadURL(this.reqF, true);
+      let srtUrl = api.getDownloadURL(this.req, true);
       let originRaw = "";
       if (srtUrl && this.isMediaType == 1) {
         originRaw = srtUrl.replace(".srt", ".mp3");
@@ -4804,6 +4841,7 @@ export default {
         this.sentenceIndex = this.tempSentenceIndex;
         this.onRevision = false;
         this.showRevision = true;
+        this.req.content = window.localStorage.getItem(this.mediaName);
         return;
       }
       this.showRevision = !this.showRevision;
@@ -5055,6 +5093,7 @@ export default {
         this.sentenceIndex = this.tempSentenceIndex;
         this.onRevision = false;
         this.showRevision = true;
+        this.req.content = window.localStorage.getItem(this.mediaName);
         return;
       }
       this.cleanUp1();
