@@ -7,6 +7,7 @@
         <div class="bounce3"></div>
       </div>
     </div>
+
     <template v-else>
       <header-bar
         v-if="srtSubtitles"
@@ -2317,29 +2318,9 @@ export default {
     },
 
     mediaName: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
+      if (this.isMediaType !== -1) {
         this.getCacheMedia();
-        setTimeout(() => {
-          if (
-            (this.allowOffline ||
-              window.localStorage.getItem(this.srtNotUpload)) &&
-            window.localStorage.getItem(this.mediaName)
-          ) {
-            this.onRUdo = true;
-            this.reqF.content = window.localStorage.getItem(this.mediaName);
-            this.saveSubNow();
-          } else if (
-            !this.allowOffline &&
-            !window.localStorage.getItem(this.srtNotUpload)
-          ) {
-            window.localStorage.setItem(this.mediaName, this.reqF.content);
-          }
-        }, 100);
-        clearTimeout(this.timeOutId);
-      }, 10);
+      }
     },
 
     startTimeTemp: function () {
@@ -2553,6 +2534,25 @@ export default {
       this.isFirstClick = true;
       if (this.isFavOnPlay && this.isAutoDetectLang)
         this.autoDetectLangInTrans();
+
+      if (!this.isFavOnPlay && !this.onRevision && !this.showRevision) {
+        if (
+          (this.allowOffline ||
+            window.localStorage.getItem(this.srtNotUpload)) &&
+          window.localStorage.getItem(this.mediaName)
+        ) {
+          this.reqF.content = window.localStorage.getItem(this.mediaName);
+          if (window.localStorage.getItem(this.srtNotUpload)) {
+            this.onRUdo = true;
+            this.saveSubNow();
+          }
+        } else if (
+          !this.allowOffline &&
+          !window.localStorage.getItem(this.srtNotUpload)
+        ) {
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+        }
+      }
     },
   },
 
@@ -2676,7 +2676,7 @@ export default {
                 console.log("we just removed: " + keyName1);
                 localforage.getItem(keyName1, function (err, value) {
                   console.log(value);
-                  // Null result as somekey was removed.
+                  // should be Null result as somekey was removed.
                 });
               });
               vmcachedKeys = vmcachedKeys.replace(";;" + ck[1], "");
@@ -2809,22 +2809,31 @@ export default {
     },
 
     async revisionPlay(name, startIndex, oRawPath) {
+      if (name.endsWith(".mp3")) this.reviseType = 1;
+      else this.reviseType = 2;
       this.srtRevisePath = "/files/" + oRawPath;
       try {
-        var m = await api.fetch(this.srtRevisePath);
+        this.oReq = await api.fetch(this.srtRevisePath);
+        var tempMediaName = name + "srtNotUpload";
+        if (
+          (this.allowOffline || window.localStorage.getItem(tempMediaName)) &&
+          window.localStorage.getItem(name)
+        ) {
+          this.oReq.content = window.localStorage.getItem(name);
+        } else if (
+          !this.allowOffline &&
+          !window.localStorage.getItem(tempMediaName)
+        ) {
+          window.localStorage.setItem(name, this.oReq.content);
+        }
+        this.onRevision = true;
+        this.tempSentenceIndex = this.sentenceIndex;
+        this.sentenceIndex = startIndex;
+        this.showRevision = false;
       } catch (e) {
         this.confirmType = "fetch";
         this.showConfirm();
       }
-      if (name.endsWith(".mp3")) this.reviseType = 1;
-      else this.reviseType = 2;
-      this.oReq = m;
-      if (window.localStorage.getItem(name))
-        this.oReq.content = window.localStorage.getItem(name);
-      this.onRevision = true;
-      this.tempSentenceIndex = this.sentenceIndex;
-      this.sentenceIndex = startIndex;
-      this.showRevision = false;
     },
 
     convertToHMS(milliseconds) {
@@ -4836,7 +4845,7 @@ export default {
         this.sentenceIndex = this.tempSentenceIndex;
         this.onRevision = false;
         this.showRevision = true;
-        this.req.content = window.localStorage.getItem(this.mediaName);
+        this.reqF.content = window.localStorage.getItem(this.mediaName);
         return;
       }
       this.showRevision = !this.showRevision;
@@ -5088,7 +5097,7 @@ export default {
         this.sentenceIndex = this.tempSentenceIndex;
         this.onRevision = false;
         this.showRevision = true;
-        this.req.content = window.localStorage.getItem(this.mediaName);
+        this.reqF.content = window.localStorage.getItem(this.mediaName);
         return;
       }
       this.cleanUp1();
