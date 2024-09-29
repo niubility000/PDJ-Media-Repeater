@@ -63,12 +63,13 @@
           style="cursor: pointer"
         >
           <span
-            class="headSubject"
             style="
+              display: inline-block;
               text-align: right;
               border: none;
               padding: 0;
               margin: 0 0.5em 0 0;
+              width: 4em;
             "
             :style="{
               color:
@@ -80,7 +81,7 @@
                   ? 'black'
                   : 'blue',
             }"
-            >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
+            >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
           >
         </span>
 
@@ -626,11 +627,29 @@
                 color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
               }"
             >
-              <input type="checkbox" v-model="autoPlay" />
+              <input
+                v-if="isFavOnPlay && isPlayFullFavList"
+                disabled
+                type="checkbox"
+              />
+              <input
+                v-if="!(isFavOnPlay && isPlayFullFavList)"
+                type="checkbox"
+                v-model="autoPlay"
+              />
               {{ $t("repeater.autoPlayCurrentSentence") }}
             </p>
-            <p style="color: white">
-              <input type="checkbox" v-model="autoPlayNext" />
+            <p
+              :style="{
+                color: isEditSubandNotes ? '#bbbaba' : 'white',
+              }"
+            >
+              <input v-if="isEditSubandNotes" disabled type="checkbox" />
+              <input
+                v-if="!isEditSubandNotes"
+                type="checkbox"
+                v-model="autoPlayNext"
+              />
               {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
             <p style="color: white">
@@ -1157,8 +1176,9 @@
 
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
+          id="displayDelay"
           style="
-            color: grey;
+            color: black;
             position: fixed;
             z-index: 1011;
             left: 50%;
@@ -1287,10 +1307,7 @@
             padding-top: 0;
           "
         >
-          <p
-            style="font-size: 1em; padding: 0"
-            :style="{ margin: isTimeLineEdit ? '0 0 0.5em 0' : '0 0 1.5em 0' }"
-          >
+          <p style="font-size: 1em; padding: 0; margin: 0 0 1.5em 0">
             <span
               @click="startTimeMinus()"
               :style="{
@@ -1344,36 +1361,7 @@
                 ><font color="yellow" size="5">&#916;</font></span
               >
             </span>
-            -----
-            <span
-              v-if="!isTimeLineEdit"
-              @click="showTimeLineEdit"
-              style="
-                cursor: pointer;
-                font-size: 1em;
-                color: red;
-                padding: 0;
-                margin: 0;
-                text-align: center;
-              "
-            >
-              &#8744;
-            </span>
-            <span
-              v-if="isTimeLineEdit"
-              @click="showTimeLineEdit"
-              style="
-                cursor: pointer;
-                font-size: 1em;
-                color: red;
-                padding: 0;
-                margin: 0;
-                text-align: center;
-              "
-            >
-              &#8743;
-            </span>
-            -----
+            ----------
             <span
               @click="endTimeMinus()"
               :style="{
@@ -1428,130 +1416,9 @@
               >
             </span>
           </p>
-          <p
-            v-if="isTimeLineEdit"
-            style="font-size: 0.8em; color: red; margin: 0; text-align: center"
-            :style="{
-              padding: isMobile && isLandscape ? '0.5em' : '1em',
-            }"
-          >
-            {{ $t("repeater.timestampChange") }}
-          </p>
-          <p
-            v-if="isTimeLineEdit"
-            style="
-              font-size: 0.8em;
-              color: red;
-              padding: 1em;
-              text-align: center;
-            "
-            :style="{
-              margin: isMobile && isLandscape ? '0 0 0.5em 0' : '0 0 1.5em 0',
-            }"
-          >
-            startTime:
-            <span
-              @click="startTimeMoveSave(-1)"
-              :style="{
-                pointerEvents: !isSingle ? 'none' : 'auto',
-              }"
-              style="cursor: pointer; user-select: none"
-            >
-              <span
-                class="headSubject"
-                style="
-                  text-align: right;
-                  border: none;
-                  padding: 0;
-                  margin: 0;
-                  color: white;
-                "
-                >&#8656;</span
-              >
-            </span>
-            &#32;
-            <input
-              class="input input--repeater"
-              type="number"
-              min="0"
-              v-model.number.lazy="startTimeMove"
-              step="0.05"
-              id="editArea000"
-              style="font-size: 1em; padding: 0; margin: 0; width: 3em"
-            />
-            &#32;
-            <span
-              @click="startTimeMoveSave(1)"
-              :style="{
-                pointerEvents: !isSingle ? 'none' : 'auto',
-              }"
-              style="cursor: pointer; user-select: none"
-            >
-              <span
-                class="headSubject"
-                style="
-                  text-align: right;
-                  border: none;
-                  padding: 0;
-                  margin: 0;
-                  color: white;
-                "
-                >&#8658;</span
-              >
-            </span>
-            &nbsp;&nbsp;endTime:
-            <span
-              @click="endTimeMoveSave(-1)"
-              :style="{
-                pointerEvents: !isSingle ? 'none' : 'auto',
-              }"
-              style="cursor: pointer; user-select: none"
-            >
-              <span
-                class="headSubject"
-                style="
-                  text-align: right;
-                  border: none;
-                  padding: 0;
-                  margin: 0;
-                  color: white;
-                "
-                >&#8656;</span
-              >
-            </span>
-            &#32;
-            <input
-              class="input input--repeater"
-              type="number"
-              min="0"
-              v-model.number.lazy="endTimeMove"
-              step="0.05"
-              id="editArea0000"
-              style="font-size: 1em; padding: 0; margin: 0; width: 3em"
-            />
-            &#32;
-            <span
-              @click="endTimeMoveSave(1)"
-              :style="{
-                pointerEvents: !isSingle ? 'none' : 'auto',
-              }"
-              style="cursor: pointer; user-select: none"
-            >
-              <span
-                class="headSubject"
-                style="
-                  text-align: right;
-                  border: none;
-                  padding: 0;
-                  margin: 0;
-                  color: white;
-                "
-                >&#8658;</span
-              >
-            </span>
-          </p>
+
           <textarea
-            v-if="isShowLine1 && !isTimeLineEdit"
+            v-if="isShowLine1"
             id="editArea1"
             v-model.lazy="subFirstLine"
             placeholder="...Subtitle's First Line..."
@@ -1567,7 +1434,7 @@
             "
           ></textarea>
           <textarea
-            v-if="isShowLine2 && !isTimeLineEdit"
+            v-if="isShowLine2"
             id="editArea2"
             v-model.lazy="subSecLine"
             placeholder="...Subtitle's Second Line..."
@@ -1583,7 +1450,7 @@
             "
           ></textarea>
           <textarea
-            v-show="!isEmpty && isShowLine3 && !isTimeLineEdit"
+            v-show="!isEmpty && isShowLine3"
             id="editArea3"
             :rows="rowsNum"
             v-model.lazy="note"
@@ -1601,10 +1468,9 @@
             "
           ></textarea>
           <button
-            v-if="!isTimeLineEdit"
             class="action"
             @click="confirmDelete"
-            title="Delete Current Sentence"
+            :title="$t('repeater.infoDelete')"
           >
             <i style="color: red; font-size: 1.5em" class="material-icons"
               >delete</i
@@ -1612,21 +1478,25 @@
           </button>
 
           <button
-            v-if="!isTimeLineEdit"
+            :disabled="lastSentence"
             class="action"
             @click="confirmMerge"
-            title="Merge Current Sentence to Next Sentence"
+            :title="$t('repeater.infoMerge')"
           >
-            <i style="color: red; font-size: 1.5em" class="material-icons"
+            <i
+              style="font-size: 1.5em"
+              :style="{
+                color: lastSentence ? 'grey' : 'red',
+              }"
+              class="material-icons"
               >merge</i
             >
           </button>
 
           <button
-            v-if="!isTimeLineEdit"
             class="action"
             @click="confirmAdd"
-            title="Add a New Sentence after Current Sentence"
+            :title="$t('repeater.infoAdd')"
           >
             <i style="color: red; font-size: 1.5em" class="material-icons"
               >call_split</i
@@ -1637,7 +1507,7 @@
             :disabled="loading || historyIndex < 1"
             class="action"
             @click="changeUndo"
-            title="Undo"
+            :title="$t('repeater.undo')"
           >
             <i
               :style="{
@@ -1653,7 +1523,7 @@
             :disabled="loading || historyIndex >= changeNew.length"
             class="action"
             @click="changeRedo"
-            title="Redo"
+            :title="$t('repeater.redo')"
           >
             <i
               :style="{
@@ -1706,6 +1576,22 @@
       >
         <p style="color: blue; background-color: grey; padding: 0.3em">
           {{ $t("repeater.cached") }}
+        </p>
+      </div>
+
+      <div
+        v-if="RUdoAlert"
+        style="
+          z-index: 1011;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          bottom: 0.5em;
+          font-size: 1em;
+        "
+      >
+        <p style="color: blue; background-color: grey; padding: 0.3em">
+          {{ $t("repeater.RUdoAlert") }}
         </p>
       </div>
 
@@ -1809,7 +1695,7 @@ export default {
       replayFromStart: false,
       timeOutId: null,
       intervalId: null,
-      intervalId1: null,
+      timeOutId1: null,
       autoPlayNext: true,
       autoPlay: true,
       timeStampChangeStart: 0,
@@ -1869,9 +1755,6 @@ export default {
       newWord: " ",
       newTranslation: "",
       withTrans: false,
-      startTimeMove: 0.1,
-      endTimeMove: 0.1,
-      isTimeLineEdit: false,
       changeOld: [],
       changeNew: [],
       historyIndex: 0,
@@ -1895,10 +1778,13 @@ export default {
       raw: " ",
       mediaCached: false,
       allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
-      serverFav: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
       tempFavContent: "",
+      notSaveFav: false,
+      notFromStarttimeTempChg: true,
+      fromMerge: false,
+      RUdoAlert: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1926,6 +1812,10 @@ export default {
 
     srtNotUpload() {
       return this.mediaName + "srtNotUpload";
+    },
+
+    lastSentence() {
+      return this.sentenceIndex == this.srtSubtitles.length;
     },
 
     favListStatus() {
@@ -2319,30 +2209,21 @@ export default {
 
     mediaName: function () {
       if (this.isMediaType !== -1) {
+        if (!window.localStorage.getItem(this.mediaName))
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
         this.getCacheMedia();
       }
     },
 
     startTimeTemp: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.onEdit = true;
-        this.saveSub1();
-        clearTimeout(this.timeOutId);
-      }, 300);
+      this.notFromStarttimeTempChg = false;
+      this.onEdit = true;
+      this.saveSub1();
     },
 
     endTimeTemp: function () {
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.onEdit = true;
-        this.saveSub2();
-        clearTimeout(this.timeOutId);
-      }, 300);
+      this.onEdit = true;
+      this.saveSub2();
     },
 
     subFirstLine: function () {
@@ -2571,6 +2452,12 @@ export default {
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.allowOffline) this.allowCache = true;
     this.getReader();
+    setTimeout(() => {
+      if (!this.isReadyToPlay) {
+        if (document.getElementById("displayDelay"))
+          document.getElementById("displayDelay").style.color = "white";
+      }
+    }, 1000);
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
@@ -2599,6 +2486,11 @@ export default {
           this.showConfirm();
         }
       }
+
+      this.notSaveFav = true;
+      setTimeout(() => {
+        this.notSaveFav = false;
+      }, 500);
 
       if (PDJcontent !== "") {
         this.repeatTimes = Number(JSON.parse(PDJcontent.split("::")[1]));
@@ -2640,7 +2532,11 @@ export default {
         }
         this.isReadyToPlay = true;
       }
-      if (window.localStorage.getItem(this.favFileName)) {
+      if (
+        window.localStorage.getItem(this.favNotUpload) ||
+        !window.localStorage.getItem(this.favFileName)
+      ) {
+        this.notSaveFav = false;
         this.save();
       }
     },
@@ -2662,11 +2558,10 @@ export default {
       var vmcachedKeys = this.cachedKeys;
       var vmmax = this.maxCacheNum + 1;
       fetch(this.raw)
-        .then((response) => response.blob()) // 将响应转换为Blob对象
+        .then((response) => response.blob())
         .then((blob) => {
           let vmm = this;
           localforage.setItem(keyName, blob, function () {
-            // Do other things once the value has been saved.
             vmcachedKeys = vmcachedKeys + ";;" + keyName;
             window.localStorage.setItem("cKeys", vmcachedKeys);
             var ck = vmcachedKeys.split(";;");
@@ -2674,10 +2569,6 @@ export default {
               var keyName1 = ck[1];
               localforage.removeItem(keyName1, function () {
                 console.log("we just removed: " + keyName1);
-                localforage.getItem(keyName1, function (err, value) {
-                  console.log(value);
-                  // should be Null result as somekey was removed.
-                });
               });
               vmcachedKeys = vmcachedKeys.replace(";;" + ck[1], "");
               window.localStorage.setItem("cKeys", vmcachedKeys);
@@ -2827,7 +2718,7 @@ export default {
           window.localStorage.setItem(name, this.oReq.content);
         }
         this.onRevision = true;
-        this.tempSentenceIndex = this.sentenceIndex;
+        this.serverFav = this.tempSentenceIndex = this.sentenceIndex;
         this.sentenceIndex = startIndex;
         this.showRevision = false;
       } catch (e) {
@@ -2901,15 +2792,9 @@ export default {
     },
 
     cachedNumber() {
-      let vmm = this;
-      localforage
-        .length()
-        .then(function (numberOfKeys) {
-          vmm.numOfKeys = numberOfKeys;
-        })
-        .catch(function (err) {
-          console.log(err);
-        });
+      var ck = window.localStorage.getItem("cKeys");
+      if (ck) this.numOfKeys = ck.split(";;").length - 1;
+      else this.numOfKeys = 0;
     },
 
     addANewWord() {
@@ -3234,11 +3119,11 @@ export default {
 
     switchSubtitle() {
       this.ShowSwitchSubtitle = true;
-      if (this.intervalId1) clearInterval(this.intervalId1);
+      if (this.timeOutId1) clearTimeout(this.timeOutId1);
       this.subtitleLang = this.subtitleLang + 1;
       if (this.subtitleLang == 9) this.subtitleLang = 1;
       this.switchSubtitleMini();
-      this.intervalId1 = setTimeout(() => {
+      this.timeOutId1 = setTimeout(() => {
         this.ShowSwitchSubtitle = false;
       }, 3000);
     },
@@ -3294,7 +3179,6 @@ export default {
       this.showAddNew = false;
       this.showEditNew = false;
       this.newTranslation = "";
-      this.isTimeLineEdit = false;
     },
     cleanUp2() {
       if (this.pauseAfterFirstDone) this.pauseAfterFirstDone = false;
@@ -3391,11 +3275,29 @@ export default {
             this.cleanUp2();
             this.cleanUp1();
           }
-          var nowStartTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
-          this.favList = this.favList.filter(function (item) {
-            return item.startTime !== nowStartTime;
-          });
+
+          if (this.fromMerge) {
+            this.fromMerge = false;
+            var nowStartTime1 = this.srtSubtitles[this.sentenceIndex].startTime;
+            this.favList = this.favList.filter(function (item) {
+              return item.startTime !== nowStartTime1;
+            });
+          }
+
+          if (this.notFromStarttimeTempChg) {
+            var nowStartTime =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            this.favList = this.favList.filter(function (item) {
+              return item.startTime !== nowStartTime;
+            });
+          } else {
+            this.notFromStarttimeTempChg = true;
+            var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+            this.favList = this.favList.filter(function (item) {
+              return item.endTime !== nowEndTime;
+            });
+          }
+
           this.save();
           if (this.isFavOnPlay) {
             if (this.srtSubtitles.length < 1) {
@@ -3478,7 +3380,7 @@ export default {
       }
       if (this.confirmType == "delete") {
         var userConfirmationDelete = window.confirm(
-          "Are you sure to delete Current Sentence?"
+          this.$t("repeater.confirmDelete")
         );
         if (userConfirmationDelete) {
           this.deleteSentence();
@@ -3488,7 +3390,7 @@ export default {
       }
       if (this.confirmType == "merge") {
         var userConfirmationMerge = window.confirm(
-          "Are you sure to merge Current Sentence to Next Sentence?"
+          this.$t("repeater.confirmMerge")
         );
         if (userConfirmationMerge) {
           this.mergeSentence();
@@ -3498,7 +3400,7 @@ export default {
       }
       if (this.confirmType == "add") {
         var userConfirmationAdd = window.confirm(
-          "Are you sure to add a New Sentence after Current Sentence?"
+          this.$t("repeater.confirmAdd")
         );
         if (userConfirmationAdd) {
           this.addSentence();
@@ -3580,20 +3482,6 @@ export default {
           document.getElementById("editArea00").contains(document.activeElement)
         ) {
           document.getElementById("editArea00").blur();
-        } else if (
-          document.getElementById("editArea000") &&
-          document
-            .getElementById("editArea000")
-            .contains(document.activeElement)
-        ) {
-          document.getElementById("editArea000").blur();
-        } else if (
-          document.getElementById("editArea0000") &&
-          document
-            .getElementById("editArea0000")
-            .contains(document.activeElement)
-        ) {
-          document.getElementById("editArea0000").blur();
         } else if (
           document.getElementById("editArea1") &&
           document.getElementById("editArea1").contains(document.activeElement)
@@ -4083,12 +3971,8 @@ export default {
       } else this.isUtterTransLine = false;
     },
 
-    showTimeLineEdit() {
-      this.isTimeLineEdit = !this.isTimeLineEdit;
-    },
-
     save() {
-      if (!this.isReadyToPlay) return;
+      if (!this.isReadyToPlay || this.notSaveFav) return;
       let customConfig =
         "customConfig" +
         "::" +
@@ -4141,13 +4025,7 @@ export default {
         customConfig + "Subtitle:" + JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
       this.tempFavContent = favContent;
-      if (this.timeOutId) {
-        clearTimeout(this.timeOutId);
-      }
-      this.timeOutId = setTimeout(() => {
-        this.saveNow(this.tempFavContent);
-        clearTimeout(this.timeOutId);
-      }, 10);
+      this.saveNow(this.tempFavContent);
     },
 
     async saveNow(favContent) {
@@ -4414,84 +4292,6 @@ export default {
       this.saveSubNow();
     },
 
-    startTimeMoveSave: function (direction) {
-      if (this.onRUdo) {
-        return;
-      }
-      this.tempOldContent = this.reqF.content;
-
-      for (var i = 0; i < this.srtSubtitles.length; ++i) {
-        let startTemp;
-        if (direction == 1)
-          startTemp = this.srtSubtitles[i].startTime + this.startTimeMove;
-        else startTemp = this.srtSubtitles[i].startTime - this.startTimeMove;
-        var tempContent = this.reqF.content;
-        var oldContent =
-          this.srtSubtitles[i].timeStamp.split(" --> ")[0] + " --> ";
-        var time = this.convertToHMS(
-          startTemp * 1000 - this.timeStampChangeStart
-        );
-        var newContent =
-          time.hours +
-          ":" +
-          time.minutes +
-          ":" +
-          time.seconds +
-          "," +
-          time.milliseconds +
-          " --> ";
-        oldContent = this.srtSubtitles[i].sn + "\n" + oldContent;
-        newContent = this.srtSubtitles[i].sn + "\n" + newContent;
-        this.reqF.content = tempContent.replace(oldContent, newContent);
-      }
-
-      this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
-      this.saveSubNow();
-    },
-    endTimeMoveSave: function (direction) {
-      if (this.onRUdo) {
-        return;
-      }
-      this.tempOldContent = this.reqF.content;
-
-      for (var i = 0; i < this.srtSubtitles.length; ++i) {
-        let endTemp;
-        if (direction == 1)
-          endTemp = this.srtSubtitles[i].endTime + this.endTimeMove;
-        else endTemp = this.srtSubtitles[i].endTime - this.endTimeMove;
-        var tempContent = this.reqF.content;
-        var oldContent =
-          " --> " + this.srtSubtitles[i].timeStamp.split(" --> ")[1];
-        var time = this.convertToHMS(
-          endTemp * 1000 - this.timeStampChangeEnd + 1
-        );
-
-        var newContent =
-          " --> " +
-          time.hours +
-          ":" +
-          time.minutes +
-          ":" +
-          time.seconds +
-          "," +
-          time.milliseconds;
-
-        oldContent =
-          this.srtSubtitles[i].sn +
-          "\n" +
-          this.srtSubtitles[i].timeStamp.split(" --> ")[0] +
-          oldContent;
-        newContent =
-          this.srtSubtitles[i].sn +
-          "\n" +
-          this.srtSubtitles[i].timeStamp.split(" --> ")[0] +
-          newContent;
-        this.reqF.content = tempContent.replace(oldContent, newContent);
-      }
-      this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
-      this.saveSubNow();
-    },
-
     confirmDelete() {
       this.cleanUp1();
       this.cleanUp2();
@@ -4518,6 +4318,9 @@ export default {
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
+      if (this.isFav) {
+        this.switchIsFav();
+      }
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -4533,30 +4336,17 @@ export default {
       this.changeNew[this.historyIndex] = formatContent;
 
       this.historyIndex = this.historyIndex + 1;
-
       formatContent = this.formatAll(formatContent);
       this.reqF.content = formatContent;
       window.localStorage.setItem(this.mediaName, formatContent);
-
+      this.cleanUp1();
+      this.cleanUp2();
+      this.refresh();
       try {
         await api.post(path + "/" + this.reqF.name, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
         window.localStorage.setItem(this.srtNotUpload, "1");
-      }
-
-      this.cleanUp1();
-      this.cleanUp2();
-      if (this.sentenceIndex == 1) {
-        this.sentenceIndex = this.sentenceIndex + 1;
-        setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex - 1;
-        }, 10);
-      } else {
-        this.sentenceIndex = this.sentenceIndex - 1;
-        setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex + 1;
-        }, 10);
       }
     },
 
@@ -4565,6 +4355,12 @@ export default {
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
+      this.fromMerge = true;
+      var hasFav = false;
+      if (this.isFav) {
+        this.switchIsFav();
+        hasFav = true;
+      }
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -4632,27 +4428,23 @@ export default {
 
       this.historyIndex = this.historyIndex + 1;
       formatContent = this.formatAll(formatContent);
+
       this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+
+      this.sentenceIndex = this.sentenceIndex + 1;
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        if (hasFav) this.switchIsFav();
+      }, 10);
+
       window.localStorage.setItem(this.mediaName, formatContent);
       try {
         await api.post(srtFullPath, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
         window.localStorage.setItem(this.srtNotUpload, "1");
-      }
-
-      this.cleanUp1();
-      this.cleanUp2();
-      if (this.sentenceIndex == 1) {
-        this.sentenceIndex = this.sentenceIndex + 1;
-        setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex - 1;
-        }, 10);
-      } else {
-        this.sentenceIndex = this.sentenceIndex - 1;
-        setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex + 1;
-        }, 10);
       }
     },
 
@@ -4667,11 +4459,19 @@ export default {
 
       var textSubtitles = formatContent.split("\n\n");
       var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
-      var line2 =
-        textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[1] +
-        " --> " +
-        textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
-      var line3 = "...Subtitle's First Line...";
+      var line2 = " ";
+      var tempEndTime = textSubtitles[this.sentenceIndex - 1]
+        .split("\n")[1]
+        .split(" --> ")[1];
+      if (this.sentenceIndex == this.srtSubtitles.length) {
+        line2 = tempEndTime + " --> " + tempEndTime.split(",")[0] + "," + "999";
+      } else {
+        line2 =
+          tempEndTime +
+          " --> " +
+          textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
+      }
+      var line3 = "";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
       let newContent = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
@@ -4691,6 +4491,11 @@ export default {
       this.historyIndex = this.historyIndex + 1;
       formatContent = this.formatAll(formatContent);
       this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex + 1;
+      }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
       try {
         await api.post(srtFullPath, formatContent, true);
@@ -4698,12 +4503,6 @@ export default {
       } catch (error) {
         window.localStorage.setItem(this.srtNotUpload, "1");
       }
-
-      this.cleanUp1();
-      this.cleanUp2();
-      setTimeout(() => {
-        this.sentenceIndex = this.sentenceIndex + 1;
-      }, 10);
     },
 
     async saveSubNow() {
@@ -4731,19 +4530,18 @@ export default {
           nCont
         );
       }
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
         window.localStorage.setItem(this.srtNotUpload, "1");
-      }
-
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
       }
     },
 
@@ -4760,15 +4558,6 @@ export default {
       this.reqF.content = this.changeOld[this.historyIndex];
       this.cleanUp1();
       this.cleanUp2();
-
-      window.localStorage.setItem(this.mediaName, this.reqF.content);
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-      }
-
       if (this.isFav) {
         this.switchIsFav();
         setTimeout(() => {
@@ -4776,21 +4565,19 @@ export default {
         }, 10);
       }
 
-      setTimeout(() => {
-        if (this.sentenceIndex > this.srtSubtitles.length)
-          this.sentenceIndex = this.sentenceIndex - 1;
-      }, 5);
-
-      if (this.sentenceIndex == 1) {
-        this.sentenceIndex = this.sentenceIndex + 1;
+      this.refresh();
+      if (!this.RUdoAlert) {
+        this.RUdoAlert = true;
         setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex - 1;
-        }, 10);
-      } else {
-        this.sentenceIndex = this.sentenceIndex - 1;
-        setTimeout(() => {
-          this.sentenceIndex = this.sentenceIndex + 1;
-        }, 10);
+          this.RUdoAlert = false;
+        }, 2000);
+      }
+      window.localStorage.setItem(this.mediaName, this.reqF.content);
+      try {
+        await api.post(srtFullPath, this.reqF.content, true);
+        window.localStorage.removeItem(this.srtNotUpload);
+      } catch (error) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
       }
     },
 
@@ -4807,7 +4594,19 @@ export default {
       this.historyIndex = this.historyIndex + 1;
       this.cleanUp1();
       this.cleanUp2();
-
+      if (this.isFav) {
+        this.switchIsFav();
+        setTimeout(() => {
+          this.switchIsFav();
+        }, 10);
+      }
+      this.refresh();
+      if (!this.RUdoAlert) {
+        this.RUdoAlert = true;
+        setTimeout(() => {
+          this.RUdoAlert = false;
+        }, 2000);
+      }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
       try {
         await api.post(srtFullPath, this.reqF.content, true);
@@ -4815,21 +4614,18 @@ export default {
       } catch (error) {
         window.localStorage.setItem(this.srtNotUpload, "1");
       }
+    },
 
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
-      setTimeout(() => {
-        if (this.sentenceIndex > this.srtSubtitles.length)
-          this.sentenceIndex = this.sentenceIndex - 1;
-      }, 5);
+    refresh() {
       if (this.sentenceIndex == 1) {
         this.sentenceIndex = this.sentenceIndex + 1;
         setTimeout(() => {
           this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+      } else if (this.sentenceIndex == this.srtSubtitles.length + 1) {
+        this.sentenceIndex = this.sentenceIndex - 2;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex + 1;
         }, 10);
       } else {
         this.sentenceIndex = this.sentenceIndex - 1;
@@ -4838,6 +4634,7 @@ export default {
         }, 10);
       }
     },
+
     switchRevisePlan() {
       this.cleanUp1();
       this.cleanUp2();
@@ -4932,14 +4729,6 @@ export default {
             document
               .getElementById("editArea00")
               .contains(document.activeElement)) ||
-          (document.getElementById("editArea000") &&
-            document
-              .getElementById("editArea000")
-              .contains(document.activeElement)) ||
-          (document.getElementById("editArea0000") &&
-            document
-              .getElementById("editArea0000")
-              .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document
               .getElementById("editArea1")
@@ -4988,14 +4777,6 @@ export default {
           (document.getElementById("editArea00") &&
             document
               .getElementById("editArea00")
-              .contains(document.activeElement)) ||
-          (document.getElementById("editArea000") &&
-            document
-              .getElementById("editArea000")
-              .contains(document.activeElement)) ||
-          (document.getElementById("editArea0000") &&
-            document
-              .getElementById("editArea0000")
               .contains(document.activeElement)) ||
           (document.getElementById("editArea1") &&
             document

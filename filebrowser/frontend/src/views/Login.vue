@@ -121,6 +121,9 @@
         />
         {{ $t("repeater.cleanSrtandSettings") }}
       </div>
+      <div style="color: white; padding: 1em 0">
+        {{ $t("repeater.cleanAlert") }}
+      </div>
       <div style="flex-grow: 1"></div>
       <div
         style="
@@ -202,20 +205,25 @@ export default {
       this.showCleanUp = true;
     },
     cleanUpNow() {
-      if (this.cleanMedia) {
-        this.cacheCleanUp();
-        this.cleanMedia = false;
-      }
       if (this.cleanSrtandSettings) {
         var temp01 = window.localStorage.getItem("isOffline");
         var temp02 = window.localStorage.getItem("lastRawToken");
+        var temp03 = window.localStorage.getItem("cKeys");
+
         window.localStorage.clear();
         if (!this.firstLogin) {
           window.localStorage.setItem("isOffline", temp01);
           window.localStorage.setItem("lastRawToken", temp02);
         }
+        if (!this.cleanMedia) {
+          window.localStorage.setItem("cKeys", temp03);
+        }
         this.noCachedOther = true;
         this.cleanSrtandSettings = false;
+      }
+      if (this.cleanMedia) {
+        this.cacheCleanUp();
+        this.cleanMedia = false;
       }
       if (this.cleanAccount) {
         window.localStorage.removeItem("isOffline");
