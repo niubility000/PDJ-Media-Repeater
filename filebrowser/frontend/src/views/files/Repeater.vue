@@ -237,19 +237,8 @@
           >
         </button>
       </header-bar>
-      <div
-        v-if="isSlowInternet"
-        style="
-          z-index: 1011;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          bottom: 2.5em;
-        "
-      >
-        <p style="color: white; background-color: red">
-          Slow Internet! Replay...
-        </p>
+      <div v-if="isSlowInternet" class="showMsg" style="bottom: 2.5em">
+        <p style="color: red">Slow Internet! Replay...</p>
       </div>
 
       <div
@@ -387,18 +376,7 @@
         </div>
       </div>
 
-      <div
-        v-if="ShowSwitchSubtitle"
-        style="
-          z-index: 1011;
-          position: fixed;
-          text-align: center;
-          width: 100%;
-          left: 50%;
-          transform: translate(-50%, 0);
-          bottom: 2.5em;
-        "
-      >
+      <div v-if="ShowSwitchSubtitle" class="showMsg" style="bottom: 2.5em">
         <p style="color: yellow">
           {{ indicateSub }}
         </p>
@@ -1177,14 +1155,8 @@
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
           id="displayDelay"
-          style="
-            color: black;
-            position: fixed;
-            z-index: 1011;
-            left: 50%;
-            transform: translate(-50%, 0);
-            bottom: 1.5em;
-          "
+          class="showMsg"
+          style="color: black; bottom: 1.5em"
         >
           Loading Media...
         </p>
@@ -1547,52 +1519,22 @@
         ></div>
       </div>
 
-      <div
-        v-if="markRevised"
-        style="
-          z-index: 1011;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          bottom: 0.5em;
-          font-size: 1.5em;
-        "
-      >
-        <p style="color: blue; background-color: grey; padding: 0.3em">
+      <div v-if="markRevised" class="showMsg" style="bottom: 2.5em">
+        <span style="color: white; padding: 0.3em; background-color: black">
           {{ $t("repeater.revise5") }}
-        </p>
+        </span>
       </div>
 
-      <div
-        v-if="mediaCached"
-        style="
-          z-index: 1011;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          bottom: 0.5em;
-          font-size: 1em;
-        "
-      >
-        <p style="color: blue; background-color: grey; padding: 0.3em">
+      <div v-if="mediaCached" class="showMsg" style="bottom: 2.5em">
+        <span style="color: blue; padding: 0.3em; background-color: grey">
           {{ $t("repeater.cached") }}
-        </p>
+        </span>
       </div>
 
-      <div
-        v-if="RUdoAlert"
-        style="
-          z-index: 1011;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          bottom: 0.5em;
-          font-size: 1em;
-        "
-      >
-        <p style="color: blue; background-color: grey; padding: 0.3em">
+      <div v-if="RUdoAlert" class="showMsg" style="bottom: 1em">
+        <span style="color: blue; background-color: grey">
           {{ $t("repeater.RUdoAlert") }}
-        </p>
+        </span>
       </div>
 
       <audio
@@ -1612,6 +1554,7 @@
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
+
       <div
         v-if="showAddNew"
         :disabled="loading || isSetting || !isSingle"
@@ -1785,12 +1728,15 @@ export default {
       notFromStarttimeTempChg: true,
       fromMerge: false,
       RUdoAlert: false,
+      notShowSlow: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
   },
+
   computed: {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
+
     isMobile() {
       return (
         /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 736
@@ -1913,9 +1859,11 @@ export default {
         return { color: "blue" };
       }
     },
+
     rowsNum() {
       return this.isMobile && !this.isLandscape ? 2 : 1;
     },
+
     srtSubtitles() {
       if (!this.isFavOnPlay) {
         var formatContent = this.reqF.content;
@@ -2193,6 +2141,7 @@ export default {
       return /iPhone/i.test(navigator.userAgent);
     },
   },
+
   watch: {
     $route: function () {
       this.updatePreview();
@@ -2575,11 +2524,7 @@ export default {
             }
             vmm.cachedKeys = vmcachedKeys;
             setTimeout(() => {
-              if (vmm.playInProcess) {
-                window.localStorage.setItem("onPlaying", vmm.playCount);
-              } else if (vmm.utterInProcess) {
-                window.localStorage.setItem("onUttering", 1);
-              } else if (!vmm.isSingle && !vmm.currentMedia.paused) {
+              if (!vmm.isSingle && !vmm.currentMedia.paused) {
                 window.localStorage.setItem(
                   "onFullPlaying",
                   vmm.currentMedia.currentTime
@@ -2591,28 +2536,25 @@ export default {
                 .then(function (value) {
                   vmm.raw = URL.createObjectURL(value);
                   vmm.playFromCache = true;
+
+                  if (vmm.playInProcess) {
+                    vmm.notShowSlow = true;
+                  }
                 })
                 .catch(function () {});
             }, 200);
-            setTimeout(() => {
-              vmm.mediaCached = false;
-              if (window.localStorage.getItem("onPlaying")) {
-                vmm.playCount = Number(
-                  window.localStorage.getItem("onPlaying")
-                );
-                vmm.loopPlay();
-                window.localStorage.removeItem("onPlaying");
-              } else if (window.localStorage.getItem("onUttering")) {
-                vmm.click();
-                window.localStorage.removeItem("onUttering");
-              } else if (window.localStorage.getItem("onFullPlaying")) {
-                vmm.regularPlay();
-                vmm.currentMedia.currentTime = Number(
-                  window.localStorage.getItem("onFullPlaying")
-                );
-                window.localStorage.removeItem("onFullPlaying");
-              }
-            }, 1500);
+            if (!vmm.playInProcess) {
+              setTimeout(() => {
+                vmm.mediaCached = false;
+                if (window.localStorage.getItem("onFullPlaying")) {
+                  vmm.regularPlay();
+                  vmm.currentMedia.currentTime = Number(
+                    window.localStorage.getItem("onFullPlaying")
+                  );
+                  window.localStorage.removeItem("onFullPlaying");
+                }
+              }, 1500);
+            }
           });
         })
         .catch((error) => {
@@ -3820,6 +3762,17 @@ export default {
     },
 
     sessionEnd() {
+      if (this.notShowSlow) {
+        this.notShowSlow = false;
+        this.mediaCached = false;
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
+        this.currentMedia.pause();
+        this.playSection();
+        return;
+      }
+
       this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
       if (this.timeDiff > this.sessionLength) {
         if (this.intervalId) {
@@ -4471,7 +4424,7 @@ export default {
           " --> " +
           textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
       }
-      var line3 = "";
+      var line3 = "First Line";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
       let newContent = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
@@ -4974,6 +4927,15 @@ header {
   border-radius: 10px;
   overflow-y: auto;
   background: grey;
+}
+
+.showMsg {
+  z-index: 1011;
+  position: fixed;
+  text-align: center;
+  width: 100%;
+  left: 50%;
+  transform: translate(-50%, 0);
 }
 
 input:disabled {

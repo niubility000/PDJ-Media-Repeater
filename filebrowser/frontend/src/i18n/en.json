@@ -83,7 +83,7 @@
     "undo": "Undo",
     "redo": "Redo",
     "RUdoAlert": "Done! When restoring deleted or merged sentence, the favorite status may not be restored correctly, please adjust manually.",           
-    "cached": "Media cached!",
+    "cached": "Media Cached! Switching...",
     "cleanCache": "Clean up specified browser cache.",
     "cleanCacheDone": "Selected caches have been cleaned up!",
     "cleanAccount": "Clear the login info in browser cache. Then, login in 'Offline APP mode' will not be disabled.",
