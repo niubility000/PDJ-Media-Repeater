@@ -238,7 +238,9 @@
         </button>
       </header-bar>
       <div v-if="isSlowInternet" class="showMsg" style="bottom: 2.5em">
-        <p style="color: red">Slow Internet! Replay...</p>
+        <p style="color: red">
+          {{ $t("repeater.slowInternet") }}
+        </p>
       </div>
 
       <div
@@ -1154,9 +1156,8 @@
 
         <p
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
-          id="displayDelay"
           class="showMsg"
-          style="color: black; bottom: 1.5em"
+          style="color: grey; bottom: 1.5em"
         >
           Loading Media...
         </p>
@@ -1570,6 +1571,7 @@
             >add_circle</i
           >
         </button>
+
         <div
           v-if="showEditNew"
           style="border-radius: 10px; background: grey; padding: 0.3em"
@@ -1728,7 +1730,6 @@ export default {
       notFromStarttimeTempChg: true,
       fromMerge: false,
       RUdoAlert: false,
-      notShowSlow: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -2020,12 +2021,16 @@ export default {
     },
 
     mediaName() {
-      if (this.isMediaType == 1) {
-        return this.reqF.name.replace(".srt", ".mp3");
-      } else if (this.isMediaType == 2) {
-        return this.reqF.name.replace(".srt", ".mp4");
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        return this.srtSubtitles[this.sentenceIndex - 1].mediaName;
       } else {
-        return "";
+        if (this.isMediaType == 1) {
+          return this.reqF.name.replace(".srt", ".mp3");
+        } else if (this.isMediaType == 2) {
+          return this.reqF.name.replace(".srt", ".mp4");
+        } else {
+          return "";
+        }
       }
     },
 
@@ -2158,7 +2163,10 @@ export default {
 
     mediaName: function () {
       if (this.isMediaType !== -1) {
-        if (!window.localStorage.getItem(this.mediaName))
+        if (
+          !window.localStorage.getItem(this.mediaName) &&
+          !(this.isFavOnPlay && this.isPlayFullFavList)
+        )
           window.localStorage.setItem(this.mediaName, this.reqF.content);
         this.getCacheMedia();
       }
@@ -2197,7 +2205,6 @@ export default {
           this.onRUdo = false;
         }, 1000);
       }
-      if (this.isFavOnPlay && this.isPlayFullFavList) this.getCacheMedia();
       if (this.isEditSubandNotes) {
         this.startTimeTemp =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -2401,21 +2408,17 @@ export default {
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.allowOffline) this.allowCache = true;
     this.getReader();
-    setTimeout(() => {
-      if (!this.isReadyToPlay) {
-        if (document.getElementById("displayDelay"))
-          document.getElementById("displayDelay").style.color = "white";
-      }
-    }, 1000);
   },
+
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
     window.removeEventListener("resize", this.handleResize);
     this.cleanUp1();
   },
+
   methods: {
     async readyStatus() {
-      this.currentMedia.pause();
+      if (this.currentMedia) this.currentMedia.pause();
       var PDJcontent = "";
       var PDJserverContent = null;
 
@@ -2524,37 +2527,35 @@ export default {
             }
             vmm.cachedKeys = vmcachedKeys;
             setTimeout(() => {
+              if (keyName !== vmm.mediaName) {
+                return; // may multiple running at the same time.
+              }
               if (!vmm.isSingle && !vmm.currentMedia.paused) {
                 window.localStorage.setItem(
                   "onFullPlaying",
                   vmm.currentMedia.currentTime
                 );
               }
-              vmm.mediaCached = true;
               localforage
                 .getItem(keyName)
                 .then(function (value) {
                   vmm.raw = URL.createObjectURL(value);
                   vmm.playFromCache = true;
-
-                  if (vmm.playInProcess) {
-                    vmm.notShowSlow = true;
-                  }
+                  vmm.mediaCached = true;
                 })
                 .catch(function () {});
             }, 200);
-            if (!vmm.playInProcess) {
-              setTimeout(() => {
-                vmm.mediaCached = false;
-                if (window.localStorage.getItem("onFullPlaying")) {
-                  vmm.regularPlay();
-                  vmm.currentMedia.currentTime = Number(
-                    window.localStorage.getItem("onFullPlaying")
-                  );
-                  window.localStorage.removeItem("onFullPlaying");
-                }
-              }, 1500);
-            }
+
+            setTimeout(() => {
+              vmm.mediaCached = false;
+              if (window.localStorage.getItem("onFullPlaying")) {
+                vmm.regularPlay();
+                vmm.currentMedia.currentTime = Number(
+                  window.localStorage.getItem("onFullPlaying")
+                );
+                window.localStorage.removeItem("onFullPlaying");
+              }
+            }, 2000);
           });
         })
         .catch((error) => {
@@ -3036,15 +3037,25 @@ export default {
             !this.isUtterTransLineFirstly &&
             this.sentenceIndex < this.srtSubtitles.length
           ) {
-            this.sentenceIndex = this.sentenceIndex + 1;
             if (
-              !this.autoPlay ||
-              (this.isFavOnPlay && this.isPlayFullFavList)
+              this.autoPlayNext &&
+              !this.isEditSubandNotes &&
+              !this.showNewWordList
             ) {
+              this.sentenceIndex = this.sentenceIndex + 1;
+              if (
+                !this.autoPlay ||
+                (this.isFavOnPlay && this.isPlayFullFavList)
+              ) {
+                this.cleanUp1();
+                return;
+              }
+              this.singleModePlay();
+            } else {
               this.cleanUp1();
+              this.cleanUp2();
               return;
             }
-            this.singleModePlay();
           } else if (
             this.isUtterTransLine &&
             !this.isUtterTransLineFirstly &&
@@ -3149,7 +3160,6 @@ export default {
         window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
       }
       this.isFavOnPlay = !this.isFavOnPlay;
-      this.getCacheMedia();
       if (this.isFavOnPlay) {
         if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
@@ -3158,6 +3168,7 @@ export default {
           this.singleModePlay();
         }
       } else {
+        this.calcFav();
         if (this.isPlayFullFavList) {
           this.sentenceIndex = Number(
             window.sessionStorage.getItem("lastSentenceIndex")
@@ -3614,15 +3625,14 @@ export default {
         this.cleanUp1();
         if (this.sentenceIndex == 1) return;
         this.sentenceIndex = this.sentenceIndex - 1;
-        if (this.isFavOnPlay && this.isPlayFullFavList) return;
+        if (
+          (this.isSingle && !this.autoPlay) ||
+          (this.isFavOnPlay && this.isPlayFullFavList)
+        )
+          return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
-          if (!this.autoPlay) {
-            setTimeout(() => {
-              this.cleanUp1();
-            }, 1);
-          }
         } else {
           setTimeout(() => {
             this.regularPlay();
@@ -3640,15 +3650,14 @@ export default {
         this.cleanUp1();
         if (this.sentenceIndex == this.srtSubtitles.length) return;
         this.sentenceIndex = this.sentenceIndex + 1;
-        if (this.isFavOnPlay && this.isPlayFullFavList) return;
+        if (
+          (this.isSingle && !this.autoPlay) ||
+          (this.isFavOnPlay && this.isPlayFullFavList)
+        )
+          return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
-          if (!this.autoPlay) {
-            setTimeout(() => {
-              this.cleanUp1();
-            }, 1);
-          }
         } else {
           setTimeout(() => {
             this.regularPlay();
@@ -3740,7 +3749,7 @@ export default {
         this.sessionLength =
           (this.srtSubtitles[this.sentenceIndex - 1].endTime -
             this.srtSubtitles[this.sentenceIndex - 1].startTime +
-            4) /
+            2) /
           this.currentMedia.playbackRate;
         let playLength =
           (this.srtSubtitles[this.sentenceIndex - 1].endTime -
@@ -3762,17 +3771,6 @@ export default {
     },
 
     sessionEnd() {
-      if (this.notShowSlow) {
-        this.notShowSlow = false;
-        this.mediaCached = false;
-        if (this.intervalId) {
-          clearInterval(this.intervalId);
-        }
-        this.currentMedia.pause();
-        this.playSection();
-        return;
-      }
-
       this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
       if (this.timeDiff > this.sessionLength) {
         if (this.intervalId) {
@@ -3832,6 +3830,9 @@ export default {
                   return;
                 }
                 this.singleModePlay();
+              } else {
+                this.cleanUp1();
+                this.cleanUp2();
               }
             }
           }, this.interval * 1000);
@@ -3894,6 +3895,9 @@ export default {
               return;
             }
             this.singleModePlay();
+          } else {
+            this.cleanUp1();
+            this.cleanUp2();
           }
         }
         return;
@@ -4699,15 +4703,14 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex + 1;
-        if (this.isFavOnPlay && this.isPlayFullFavList) return;
+        if (
+          (this.isSingle && !this.autoPlay) ||
+          (this.isFavOnPlay && this.isPlayFullFavList)
+        )
+          return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
-          if (!this.autoPlay) {
-            setTimeout(() => {
-              this.cleanUp1();
-            }, 1);
-          }
         } else {
           setTimeout(() => {
             this.regularPlay();
@@ -4748,15 +4751,14 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         this.sentenceIndex = this.sentenceIndex - 1;
-        if (this.isFavOnPlay && this.isPlayFullFavList) return;
+        if (
+          (this.isSingle && !this.autoPlay) ||
+          (this.isFavOnPlay && this.isPlayFullFavList)
+        )
+          return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
-          if (!this.autoPlay) {
-            setTimeout(() => {
-              this.cleanUp1();
-            }, 1);
-          }
         } else {
           setTimeout(() => {
             this.regularPlay();
