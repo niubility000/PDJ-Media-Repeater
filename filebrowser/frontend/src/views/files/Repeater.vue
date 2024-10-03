@@ -336,7 +336,12 @@
                 <span
                   style="color: blue; cursor: pointer"
                   @click="
-                    revisionPlay(item.name, item.startIndex, item.oRawPath)
+                    revisionPlay(
+                      item.name,
+                      item.startIndex,
+                      item.oRawPath,
+                      index
+                    )
                   "
                 >
                   {{ index + 1 }}. {{ item.name }}&nbsp;(
@@ -1141,6 +1146,7 @@
           controlslist="noplaybackrate nodownload noremoteplayback"
           disablePictureInPicture="true"
           @loadedmetadata="readyStatus"
+          @error="wrongSrc"
           x5-video-player-type="h5-page"
           webkit-playsinline="true"
           playsinline="true"
@@ -2498,12 +2504,7 @@ export default {
     },
 
     cacheMedia() {
-      let keyName;
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        keyName = this.srtSubtitles[this.sentenceIndex - 1].mediaName;
-      } else {
-        keyName = this.mediaName;
-      }
+      let keyName = this.mediaName;
       if (window.localStorage.getItem("cKeys") == null)
         window.localStorage.setItem("cKeys", this.cachedKeys);
       else this.cachedKeys = window.localStorage.getItem("cKeys");
@@ -2561,6 +2562,13 @@ export default {
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
         });
+    },
+
+    wrongSrc() {
+      if (this.isFavOnPlay && this.isPlayFullFavList) {
+        this.confirmType = "wrongSrc";
+        this.showConfirm();
+      }
     },
 
     getDateAfterDays(days) {
@@ -2642,7 +2650,7 @@ export default {
       }
     },
 
-    async revisionPlay(name, startIndex, oRawPath) {
+    async revisionPlay(name, startIndex, oRawPath, index) {
       if (name.endsWith(".mp3")) this.reviseType = 1;
       else this.reviseType = 2;
       this.srtRevisePath = "/files/" + oRawPath;
@@ -2665,8 +2673,8 @@ export default {
         this.sentenceIndex = startIndex;
         this.showRevision = false;
       } catch (e) {
-        this.confirmType = "fetch";
-        this.showConfirm();
+        this.confirmType = "fetchRevision";
+        this.showConfirm(index);
       }
     },
 
@@ -2713,11 +2721,12 @@ export default {
           this.calcRaw();
           return;
         }
-        let keyName;
-        if (this.isFavOnPlay && this.isPlayFullFavList) {
-          keyName = this.srtSubtitles[this.sentenceIndex - 1].mediaName;
-        } else {
-          keyName = this.mediaName;
+        let keyName = this.mediaName;
+        if (!this.cachedKeys.includes(";;" + keyName)) {
+          this.calcRaw();
+          this.playFromCache = false;
+          this.cacheMedia();
+          return;
         }
         let vm = this;
         localforage
@@ -2727,9 +2736,9 @@ export default {
             vm.playFromCache = true;
           })
           .catch(function () {
-            vm.calcRaw();
-            vm.playFromCache = false;
-            vm.cacheMedia();
+            alert(
+              "Something Wrong with your Browser Database for Cached Media. Please clear Up the Cached Media and try again!"
+            );
           });
       }, 50);
     },
@@ -3208,7 +3217,7 @@ export default {
       } else if (srtUrl && this.isMediaType == 2) {
         originRaw = srtUrl.replace(".srt", ".mp4");
       } else originRaw = "";
-      if (this.isReadyToPlay) {
+      if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
           //add a fav
@@ -3309,7 +3318,7 @@ export default {
       this.endTimeTemp = parseFloat(temp);
     },
 
-    showConfirm() {
+    showConfirm(index) {
       if (this.confirmType == "fetch") {
         var userConfirmation = window.confirm(
           this.$t("repeater.favoriteClearConfirm", {
@@ -3331,6 +3340,29 @@ export default {
           this.close();
         }
       }
+
+      if (this.confirmType == "fetchRevision") {
+        var userConfirmationRevision = window.confirm(
+          this.$t("repeater.removeRevisionConfirm")
+        );
+        if (userConfirmationRevision) {
+          this.reviseData.splice(index, 1);
+        } else {
+          return;
+        }
+      }
+
+      if (this.confirmType == "wrongSrc") {
+        window.confirm(this.$t("repeater.wrongSrc"));
+        this.cacheCleanUp();
+        setTimeout(() => {
+          if (this.isFavOnPlay && this.isPlayFullFavList) {
+            this.switchIsFav();
+          }
+          return;
+        }, 500);
+      }
+
       if (this.confirmType == "delete") {
         var userConfirmationDelete = window.confirm(
           this.$t("repeater.confirmDelete")
@@ -3929,7 +3961,12 @@ export default {
     },
 
     save() {
-      if (!this.isReadyToPlay || this.notSaveFav) return;
+      if (
+        (!this.isReadyToPlay &&
+          !(this.isFavOnPlay && this.isPlayFullFavList)) ||
+        this.notSaveFav
+      )
+        return;
       let customConfig =
         "customConfig" +
         "::" +
@@ -4643,7 +4680,7 @@ export default {
       this.cleanUp2();
 
       var userConfirmationDelete = window.confirm(
-        "Are you sure to delete this clip's revision?"
+        this.$t("repeater.delThisRevision2")
       );
       if (userConfirmationDelete) {
         this.reviseData.splice(index, 1);
