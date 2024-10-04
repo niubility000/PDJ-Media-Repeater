@@ -1558,6 +1558,7 @@
         :src="raw"
         :controls="!isSingle"
         controlslist="noplaybackrate nodownload"
+        @error="wrongSrc"
         :autoplay="autoPlay"
         @loadedmetadata="readyStatus"
       ></audio>
@@ -2429,7 +2430,10 @@ export default {
       var PDJserverContent = null;
 
       if (
-        (this.allowOffline || window.localStorage.getItem(this.favNotUpload)) &&
+        (this.allowOffline ||
+          window.localStorage.getItem(this.favNotUpload) ||
+          (this.isFavOnPlay && this.isPlayFullFavList) ||
+          this.showRevision) &&
         window.localStorage.getItem(this.favFileName)
       ) {
         PDJcontent = window.localStorage.getItem(this.favFileName);
@@ -3321,7 +3325,7 @@ export default {
     showConfirm(index) {
       if (this.confirmType == "fetch") {
         var userConfirmation = window.confirm(
-          this.$t("repeater.favoriteClearConfirm", {
+          this.$t("repeater.noFavoriteFile", {
             favFileName: this.favFileName,
           })
         );
