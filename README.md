@@ -46,6 +46,10 @@ Updated: 10-03-2024
 
 [filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17257285/filebrowser-linux-arm64.zip)
 
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/17257534/filebrowser-darwin-amd64.for.mac.zip)
+
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/17257539/filebrowser-darwin-arm64.for.mac.zip)
+
 Latest Source Code:
 
 [filebrowser.zip](https://github.com/user-attachments/files/17257288/filebrowser.zip)
