@@ -53,7 +53,6 @@
           }"
         >
         </span>
-
         <span
           @click="switchShowList()"
           :style="{
@@ -84,7 +83,6 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
           >
         </span>
-
         <button
           :disabled="
             loading ||
@@ -124,7 +122,6 @@
             >settings</i
           >
         </button>
-
         <button
           v-if="srtSubtitles"
           :disabled="
@@ -158,7 +155,6 @@
             >edit</i
           >
         </button>
-
         <button
           :disabled="
             loading ||
@@ -200,7 +196,6 @@
         >
           <i :style="playMode" class="material-icons">repeat</i>
         </button>
-
         <button
           :disabled="
             loading ||
@@ -242,7 +237,6 @@
           {{ $t("repeater.slowInternet") }}
         </p>
       </div>
-
       <div
         v-if="showRevision"
         style="
@@ -457,10 +451,10 @@
         }"
       >
         <p v-if="!this.withTrans" style="padding: 0 1em; color: yellow">
-          New Words Test
+          {{ $t("repeater.newWordTest") }}
         </p>
         <p v-if="this.withTrans" style="padding: 0 1em; color: yellow">
-          New Words List
+          {{ $t("repeater.newWordList") }}
         </p>
         <ul
           v-if="newWordList.length > 0"
@@ -1182,32 +1176,7 @@
           "
         >
         </span>
-        <div v-if="isMediaType > 0 && srtSubtitles && !isEmpty">
-          <button
-            v-if="isFav"
-            class="action"
-            @click="switchIsFav"
-            :title="$t('repeater.fav')"
-          >
-            <i
-              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
-              class="material-icons"
-              >star</i
-            >
-          </button>
-          <button
-            v-if="!isFav"
-            class="action"
-            @click="switchIsFav"
-            :title="$t('repeater.fav')"
-          >
-            <i
-              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
-              class="material-icons"
-              >star_outline</i
-            >
-          </button>
-        </div>
+
         <span
           v-html="subtitleContent"
           id="subArea"
@@ -1516,6 +1485,33 @@
           </button>
         </span>
 
+        <div v-if="isMediaType > 0 && srtSubtitles && !isEmpty">
+          <button
+            v-if="isFav"
+            class="action"
+            @click="switchIsFav"
+            :title="$t('repeater.fav')"
+          >
+            <i
+              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
+              class="material-icons"
+              >star</i
+            >
+          </button>
+          <button
+            v-if="!isFav && isReadyToPlay"
+            class="action"
+            @click="switchIsFav"
+            :title="$t('repeater.fav')"
+          >
+            <i
+              style="color: #464633; padding: 0 0 0.5em 0; font-size: 1.2em"
+              class="material-icons"
+              >star_outline</i
+            >
+          </button>
+        </div>
+
         <div
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -1737,6 +1733,7 @@ export default {
       notFromStarttimeTempChg: true,
       fromMerge: false,
       RUdoAlert: false,
+      fetchCount: 0,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -2729,7 +2726,8 @@ export default {
         if (!this.cachedKeys.includes(";;" + keyName)) {
           this.calcRaw();
           this.playFromCache = false;
-          this.cacheMedia();
+          this.fetchCount++;
+          if (this.fetchCount > 2) this.cacheMedia();
           return;
         }
         let vm = this;
@@ -2741,7 +2739,7 @@ export default {
           })
           .catch(function () {
             alert(
-              "Something Wrong with your Browser Database for Cached Media. Please clear Up the Cached Media and try again!"
+              "Something Wrong with your Browser Database for Cached Media. Please Clean Up the Cached Media and try again!"
             );
           });
       }, 50);
@@ -3357,7 +3355,24 @@ export default {
       }
 
       if (this.confirmType == "wrongSrc") {
-        window.confirm(this.$t("repeater.wrongSrc"));
+        var userConfirmationWrongSrc = window.confirm(
+          this.$t("repeater.wrongSrc")
+        );
+        if (userConfirmationWrongSrc) {
+          this.cacheCleanUp();
+          setTimeout(() => {
+            if (this.isFavOnPlay && this.isPlayFullFavList) {
+              this.switchIsFav();
+            }
+            return;
+          }, 500);
+        } else {
+          this.cacheCleanUp();
+          setTimeout(() => {
+            return;
+          }, 500);
+        }
+
         this.cacheCleanUp();
         setTimeout(() => {
           if (this.isFavOnPlay && this.isPlayFullFavList) {

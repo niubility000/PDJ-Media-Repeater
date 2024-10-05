@@ -85,6 +85,8 @@
     "slowInternet": "Slow Internet or Media Source switched! Replay...",
     "undo": "Undo",
     "redo": "Redo",
+    "newWordTest": "New Words and Phrases Test",
+    "newWordList": "New Words and Phrases List",    
     "RUdoAlert": "Done! When restoring deleted or merged sentence, the favorite status may not be restored correctly, please adjust manually.",           
     "cached": "Media Cached! Switching...",
     "cleanCache": "Clean up specified browser cache.",
@@ -93,7 +95,7 @@
     "cleanMedia": "Clear cached media files in browser!",
     "cleanSrtandSettings": "Clear other files in browser cache, including subtitles and settings that have been modified in 'Offline APP mode' with a disconnected server but may not have been synchronized to the server yet!",
     "cleanAlert": "Tip: Moving or deleting files on the server may make favorite sentences and review plans stored in the config file 'PDJ-userX.txt' in the server's user root directory invalid! If necessary, please manually delete the 'PDJ-userX.txt' on the server, and re-add the favorite sentences and review plans.",
-    "wrongSrc": "Media file loading failed! This media file cannot be found in the path when adding this sentence to favorite list. This media file has been moved or deleted on the server and also cannot be found in the media cache. Click any key to continue and it will automatically cancel the favorite status of this sentence and clear the wrong cached media.",
+    "wrongSrc": "Media file loading failed! It has been moved on the server or there is an error in the media cache. Click 'confirm' to automatically cancel the favorite status of this sentence and clear the cached media. Or click 'cancel' to clear the cached media only.",
     "noFavoriteFile": "Unable to read the user config file '{favFileName}' in the user's root folder on the server!. If you are using the PDJ Media Repeater for the first time, please click 'confirm' and this config file will be automatically created; If it is due to network issues, please click 'Cancel' to exit， and try again after connecting to the internet or switching to 'Offline APP Mode'. The PDJ media repeater will automatically cache accessed data for offline use, which can be cleared on the login page. Meanwhile, when using the subtitle editing function, the original .srt file will be modified. If necessary, please make a backup in advance.", 
     "speechsynthesisAlert": "Sorry, your browser does not support 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS. You can use official Firefox browser in Android phone (especially in China), Safari in iPhone, and Chrome/Edge in windows PC",
      "warning1": "Video or audeo tag is hijacked by this browser. This browser may not fully comply with HTML5 standard. Please restart your browser to retry. Or change to a standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly."    
