@@ -53,6 +53,7 @@
           }"
         >
         </span>
+
         <span
           @click="switchShowList()"
           :style="{
@@ -83,6 +84,7 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
           >
         </span>
+
         <button
           :disabled="
             loading ||
@@ -204,7 +206,8 @@
             isFavOnPlay ||
             showSubtitleList ||
             showNewWordList ||
-            isEditSubandNotes
+            isEditSubandNotes ||
+            !isReadyToPlay
           "
           class="action"
           @click="switchRevisePlan"
@@ -219,7 +222,8 @@
                 isFavOnPlay ||
                 showSubtitleList ||
                 showNewWordList ||
-                isEditSubandNotes
+                isEditSubandNotes ||
+                !isReadyToPlay
                   ? 'grey'
                   : showRevision
                   ? 'red'
@@ -2559,9 +2563,11 @@ export default {
               }
             }, 2000);
           });
+          this.fetchCount--;
         })
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
+          this.fetchCount--;
         });
     },
 
@@ -2727,7 +2733,8 @@ export default {
           this.calcRaw();
           this.playFromCache = false;
           this.fetchCount++;
-          if (this.fetchCount > 2) this.cacheMedia();
+          if (this.fetchCount > 2) return;
+          this.cacheMedia();
           return;
         }
         let vm = this;
