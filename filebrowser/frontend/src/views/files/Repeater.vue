@@ -53,7 +53,6 @@
           }"
         >
         </span>
-
         <span
           @click="switchShowList()"
           :style="{
@@ -84,7 +83,6 @@
             >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
           >
         </span>
-
         <button
           :disabled="
             loading ||
@@ -279,7 +277,6 @@
             v-model.number="indexS"
           />
           &nbsp;to&nbsp;
-
           <input
             class="input input--repeater"
             style="width: 3.5em; margin: 0; padding: 0"
@@ -288,7 +285,6 @@
             v-model.number="indexE"
           />
         </p>
-
         <p style="padding: 0 1em">
           {{ $t("repeater.revise2") }}&nbsp;
           <input
@@ -298,7 +294,6 @@
             v-model="revisePlan"
           />
         </p>
-
         <p style="padding: 0 1em; margin: 0">
           {{ $t("repeater.revise3") }}
           <button
@@ -310,7 +305,6 @@
             <i class="material-icons">add_card</i>
           </button>
         </p>
-
         <div>
           <ul
             style="
@@ -1961,21 +1955,29 @@ export default {
               .split("\r\n")[2]
               .split("[")
               [j].split(":")[0];
-            trans = this.srtSubtitles[i].content
-              .split("\r\n")[2]
-              .split("[")
-              [j].split(":")[1]
-              .split("]")[0];
 
-            if (origin !== "") {
-              sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
-              var newWordItem = {
-                num: sIndex,
-                showTrans: false,
-                origin: origin,
-                trans: trans,
-              };
-              wordList.push(newWordItem);
+            if (
+              this.srtSubtitles[i].content
+                .split("\r\n")[2]
+                .split("[")
+                [j].split(":")[1]
+            ) {
+              trans = this.srtSubtitles[i].content
+                .split("\r\n")[2]
+                .split("[")
+                [j].split(":")[1]
+                .split("]")[0];
+
+              if (origin !== "") {
+                sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
+                var newWordItem = {
+                  num: sIndex,
+                  showTrans: false,
+                  origin: origin,
+                  trans: trans,
+                };
+                wordList.push(newWordItem);
+              }
             }
           }
         }
@@ -2534,7 +2536,7 @@ export default {
             vmm.cachedKeys = vmcachedKeys;
             setTimeout(() => {
               if (keyName !== vmm.mediaName) {
-                return; // may multiple running at the same time.
+                return; // may multiple running at the same time. but limited up to 2. this to avoid saved wrong name.
               }
               if (!vmm.isSingle && !vmm.currentMedia.paused) {
                 window.localStorage.setItem(
