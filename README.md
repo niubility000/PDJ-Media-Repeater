@@ -36,23 +36,23 @@ PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for English o
 
 ## Assets Download
 
-Updated: 10-06-2024
+Updated: 10-21-2024
 
-3.2: fix media source in review mode:
+4.1: Add a To Do List function
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/17269292/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/17456838/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17269294/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/17456841/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17269296/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/17456844/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/17269297/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/17456872/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/17269298/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/17456856/filebrowser-darwin-arm64.for.mac.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/17269300/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/17456885/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
