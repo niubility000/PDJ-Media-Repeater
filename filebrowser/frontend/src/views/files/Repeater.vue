@@ -234,11 +234,13 @@
           >
         </button>
       </header-bar>
+
       <div v-if="isSlowInternet" class="showMsg" style="bottom: 2.5em">
         <p style="color: red">
           {{ $t("repeater.slowInternet") }}
         </p>
       </div>
+
       <div
         v-if="showRevision"
         style="
@@ -380,6 +382,7 @@
           {{ indicateSub }}
         </p>
       </div>
+
       <div
         v-if="showSubtitleList"
         style="
@@ -428,6 +431,7 @@
           </li>
         </ul>
       </div>
+
       <div
         v-if="showNewWordList"
         style="
@@ -519,6 +523,7 @@
           </p>
         </div>
       </div>
+
       <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
         <div id="settingBox">
           <p style="text-align: justify; text-align-last: left; color: white">
@@ -648,28 +653,35 @@
                 {{ $t("repeater.autoDetect") }})
               </span>
             </p>
-            <div
-              :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
-              :disabled="!isUtterTransLine"
-            >
+            <div :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }">
               <p style="margin-bottom: 0">
                 <input
-                  :disabled="!isUtterTransLine"
+                  :disabled="!isUtterTransLine || !hasSpeechSynthesis"
                   style="margin-left: 1em"
                   type="radio"
                   value="Yes"
                   v-model="isSystemTTS"
                 />
-                <span>{{ $t("repeater.systemTTS") }}</span>
+                <span
+                  :style="{
+                    color:
+                      hasSpeechSynthesis && isUtterTransLine
+                        ? 'white'
+                        : '#bbbaba',
+                  }"
+                  >{{ $t("repeater.systemTTS") }}</span
+                >
               </p>
+
               <p
-                v-if="alertNotSuportSpeechSynthesis"
-                style="color: red; margin-left: 2em"
+                v-if="!hasSpeechSynthesis"
+                style="color: red; margin-left: 2rem; font-size: 0.8em"
               >
                 {{ $t("repeater.speechsynthesisAlert") }}
               </p>
+
               <p
-                style="margin: 0.5em 0 1em 2em"
+                style="margin: 0.5em 0 1em 2rem; font-size: 0.8em"
                 :style="{
                   color:
                     isSystemTTS == 'Yes' && isUtterTransLine
@@ -679,6 +691,117 @@
               >
                 {{ $t("repeater.SystemTTSnote") }}
               </p>
+
+              <div style="display: block">
+                <span
+                  :style="{
+                    color:
+                      !isUtterTransLine ||
+                      isSystemTTS == 'No' ||
+                      !hasSpeechSynthesis
+                        ? '#bbbaba'
+                        : 'white',
+                  }"
+                  style="margin-left: 2em"
+                  class="subject"
+                >
+                  {{ $t("repeater.langInTransLine") }}
+                </span>
+                <input
+                  :disabled="
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    isAutoDetectLang ||
+                    !hasSpeechSynthesis
+                  "
+                  class="input input--repeater"
+                  type="text"
+                  :placeholder="langInTransLinedefault"
+                  v-model="langInTransLine"
+                />
+              </div>
+              <div style="display: block">
+                <span
+                  :style="{
+                    color:
+                      !isUtterTransLine ||
+                      isSystemTTS == 'No' ||
+                      !hasSpeechSynthesis
+                        ? '#bbbaba'
+                        : 'white',
+                  }"
+                  style="margin-left: 2em"
+                  class="subject"
+                >
+                  {{
+                    $t("repeater.voice", {
+                      totalvoices: totalReaders,
+                    })
+                  }}
+                </span>
+                <input
+                  :disabled="
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    !hasSpeechSynthesis
+                  "
+                  class="input input--repeater"
+                  type="number"
+                  v-model.number.lazy="reader"
+                  :style="{
+                    width: isMobile ? '3em' : '6em',
+                  }"
+                />
+                <button
+                  :disabled="
+                    isSystemTTS == 'No' ||
+                    !isUtterTransLine ||
+                    !hasSpeechSynthesis
+                  "
+                  class="action"
+                  @click="testTTSVoice"
+                  :title="$t('repeater.testTTSVoice')"
+                >
+                  <i
+                    :style="{
+                      color:
+                        isSystemTTS == 'No' || !isUtterTransLine
+                          ? '#bbbaba'
+                          : 'blue',
+                    }"
+                    class="material-icons"
+                    >play_circle_outline</i
+                  >
+                </button>
+              </div>
+
+              <div style="display: block">
+                <span
+                  :style="{
+                    color:
+                      !isUtterTransLine ||
+                      isSystemTTS == 'No' ||
+                      !hasSpeechSynthesis
+                        ? '#bbbaba'
+                        : 'white',
+                  }"
+                  style="margin-left: 2em"
+                  class="subject"
+                >
+                  {{ $t("repeater.speedOfUttering") }}
+                </span>
+                <input
+                  :disabled="
+                    !isUtterTransLine ||
+                    isSystemTTS == 'No' ||
+                    !hasSpeechSynthesis
+                  "
+                  class="input input--repeater"
+                  type="text"
+                  v-model.number.lazy="speedOfUtter"
+                />
+              </div>
+
               <p style="margin-bottom: 0">
                 <input
                   :disabled="!isUtterTransLine"
@@ -736,12 +859,13 @@
               />
               <p
                 style="
-                  margin: 0 0 1em 2em;
+                  margin: 0 0 1em 2rem;
                   text-align: justify;
                   text-align-last: left;
                   word-wrap: break-word;
                   overflow-wrap: break-word;
                   word-break: break-all;
+                  font-size: 0.8em;
                 "
                 :style="{
                   color:
@@ -772,88 +896,7 @@
                 v-model.number.lazy="lineNumOfTrans"
               />
             </div>
-            <div style="display: block">
-              <span
-                :style="{
-                  color:
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
-                }"
-                style="margin-left: 1em"
-                class="subject"
-              >
-                {{ $t("repeater.langInTransLine") }}
-              </span>
-              <input
-                :disabled="
-                  !isUtterTransLine ||
-                  isSystemTTS == 'No' ||
-                  isAutoDetectLang ||
-                  !hasSpeechSynthesis
-                "
-                class="input input--repeater"
-                type="text"
-                :placeholder="langInTransLinedefault"
-                v-model="langInTransLine"
-              />
-            </div>
-            <div style="display: block">
-              <span
-                :style="{
-                  color:
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
-                }"
-                style="margin-left: 1em"
-                class="subject"
-              >
-                {{
-                  $t("repeater.voice", {
-                    totalvoices: totalReaders,
-                  })
-                }}
-              </span>
-              <input
-                :disabled="
-                  !isUtterTransLine ||
-                  isSystemTTS == 'No' ||
-                  !hasSpeechSynthesis
-                "
-                class="input input--repeater"
-                type="number"
-                v-model.number.lazy="reader"
-                :style="{
-                  width: isMobile ? '3em' : '6em',
-                }"
-              />
-              <button
-                :disabled="
-                  isSystemTTS == 'No' ||
-                  !isUtterTransLine ||
-                  !hasSpeechSynthesis
-                "
-                class="action"
-                @click="testTTSVoice"
-                :title="$t('repeater.testTTSVoice')"
-              >
-                <i
-                  :style="{
-                    color:
-                      isSystemTTS == 'No' || !isUtterTransLine
-                        ? '#bbbaba'
-                        : 'blue',
-                  }"
-                  class="material-icons"
-                  >play_circle_outline</i
-                >
-              </button>
-            </div>
+
             <div style="display: block">
               <span
                 :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
@@ -871,32 +914,7 @@
                 v-model.lazy="pauseTimeTransLine"
               />
             </div>
-            <div style="display: block">
-              <span
-                :style="{
-                  color:
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
-                }"
-                style="margin-left: 1em"
-                class="subject"
-              >
-                {{ $t("repeater.speedOfUttering") }}
-              </span>
-              <input
-                :disabled="
-                  !isUtterTransLine ||
-                  isSystemTTS == 'No' ||
-                  !hasSpeechSynthesis
-                "
-                class="input input--repeater"
-                type="text"
-                v-model.number.lazy="speedOfUtter"
-              />
-            </div>
+
             <p :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }">
               <input
                 :disabled="!isUtterTransLine"
@@ -1002,6 +1020,16 @@
               >
                 <input disabled="true" type="checkbox" v-model="allowOffline" />
                 {{ $t("repeater.offlineApp") }}
+              </p>
+              <p
+                style="color: white; text-align: justify; text-align-last: left"
+              >
+                <input
+                  :disabled="allowOffline"
+                  type="checkbox"
+                  v-model="notAllowSaveInOffline"
+                />
+                {{ $t("repeater.notAllowSaveInoffline") }}
               </p>
             </div>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
@@ -1115,6 +1143,7 @@
           </div>
         </div>
       </div>
+
       <div
         class="repeater"
         style="display: flex"
@@ -1671,7 +1700,6 @@ export default {
       isPauseAfterFirstDone: false,
       pauseAfterFirstDone: false,
       browserHiJack: window.sessionStorage.getItem("isBrowserHiJack"),
-      alertNotSuportSpeechSynthesis: false,
       resized: false,
       isFirstClick: true,
       hasSpeechSynthesis:
@@ -1732,6 +1760,9 @@ export default {
       fromMerge: false,
       RUdoAlert: false,
       fetchCount: 0,
+      notAllowSaveInOffline: false,
+      favFileName: "PDJ-Repeater.txt",
+      favNotUpload: "PDJ-Repeater.txtfavNotUpload",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1746,17 +1777,9 @@ export default {
       );
     },
 
-    favFileName() {
-      return "PDJ-user" + this.user.id + ".txt";
-    },
-
     reqF() {
       if (this.onRevision) return this.oReq;
       else return this.req;
-    },
-
-    favNotUpload() {
-      return this.favFileName + "favNotUpload";
     },
 
     srtNotUpload() {
@@ -2234,16 +2257,6 @@ export default {
       }
     },
 
-    isSetting: function () {
-      if (
-        !this.isSetting &&
-        this.isSystemTTS == "Yes" &&
-        !this.hasSpeechSynthesis
-      ) {
-        this.isSystemTTS = "No";
-      }
-    },
-
     repeatTimes: function () {
       if (this.repeatTimes < 0) this.repeatTimes = 0;
       this.repeatTimes = Math.floor(this.repeatTimes);
@@ -2296,12 +2309,6 @@ export default {
     },
 
     isSystemTTS: function () {
-      if (this.isSystemTTS == "Yes" && !this.hasSpeechSynthesis) {
-        this.alertNotSuportSpeechSynthesis = true;
-      }
-      if (this.isSystemTTS == "No" && !this.hasSpeechSynthesis) {
-        this.alertNotSuportSpeechSynthesis = false;
-      }
       this.save();
     },
 
@@ -2312,6 +2319,10 @@ export default {
     pauseTimeTransLine: function () {
       if (this.pauseTimeTransLine < 0) this.pauseTimeTransLine = 0;
       this.pauseTimeTransLine = Math.floor(this.pauseTimeTransLine);
+      this.save();
+    },
+
+    notAllowSaveInOffline: function () {
       this.save();
     },
 
@@ -2442,9 +2453,10 @@ export default {
         PDJcontent = window.localStorage.getItem(this.favFileName);
       } else {
         try {
-          PDJserverContent = await api.fetch("/files/" + this.favFileName);
+          PDJserverContent = await api.fetch("/files/!PDJ/" + this.favFileName);
           PDJcontent = PDJserverContent.content;
           this.serverFav = PDJcontent;
+          window.localStorage.setItem(this.favFileName, this.serverFav);
         } catch (e) {
           this.isReadyToPlay = true;
           this.confirmType = "fetch";
@@ -2479,8 +2491,9 @@ export default {
         this.TTSurl = JSON.parse(PDJcontent.split("::")[17]);
         this.replayFromStart = JSON.parse(PDJcontent.split("::")[18]);
         this.isPlayFullFavList = JSON.parse(PDJcontent.split("::")[19]);
-        this.reviseData = JSON.parse(PDJcontent.split("::")[21]);
-        this.revisePlan = JSON.parse(PDJcontent.split("::")[22]);
+        this.notAllowSaveInOffline = JSON.parse(PDJcontent.split("::")[21]);
+        this.reviseData = JSON.parse(PDJcontent.split("::")[22]);
+        this.revisePlan = JSON.parse(PDJcontent.split("::")[23]);
         this.isAutoDetectLang = JSON.parse(PDJcontent.split("::")[13]);
         if (!this.isAutoDetectLang) {
           this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
@@ -2580,10 +2593,11 @@ export default {
       }
     },
 
-    getDateAfterDays(days) {
+    getDateAfterDays(n) {
       const date = new Date();
-      date.setDate(date.getDate() + days);
-      return date.toISOString().split("T")[0];
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 一天的毫秒数
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期
+      return nDaysAfter.toLocaleDateString().replaceAll("/", "-");
     },
 
     compareDates(date) {
@@ -2881,6 +2895,8 @@ export default {
         !this.withTrans &&
         !this.isFavOnPlay
       ) {
+        this.cleanUp1();
+        this.cleanUp2();
         this.showSubtitleList = false;
         this.showNewWordList = true;
       } else if (
@@ -2895,6 +2911,8 @@ export default {
         this.showNewWordList &&
         !this.withTrans
       ) {
+        this.cleanUp1();
+        this.cleanUp2();
         this.withTrans = true;
       } else if (
         !this.showSubtitleList &&
@@ -4038,6 +4056,8 @@ export default {
         "::" +
         JSON.stringify(this.timeStampChangeEnd) +
         "::" +
+        JSON.stringify(this.notAllowSaveInOffline) +
+        "::" +
         JSON.stringify(this.reviseData) +
         "::" +
         JSON.stringify(this.revisePlan) +
@@ -4052,9 +4072,13 @@ export default {
 
     async saveNow(favContent) {
       window.localStorage.setItem(this.favFileName, favContent);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.favNotUpload, "1");
+        return;
+      }
       let vm = this;
       try {
-        await api.post("/files/" + this.favFileName, favContent, true);
+        await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
         vm.serverFav = favContent;
         window.localStorage.removeItem(this.favNotUpload);
       } catch (error) {
@@ -4364,6 +4388,10 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
       this.refresh();
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(path + "/" + this.reqF.name, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
@@ -4462,6 +4490,10 @@ export default {
       }, 10);
 
       window.localStorage.setItem(this.mediaName, formatContent);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(srtFullPath, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
@@ -4519,6 +4551,10 @@ export default {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(srtFullPath, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
@@ -4559,6 +4595,10 @@ export default {
         }, 10);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
@@ -4595,6 +4635,10 @@ export default {
         }, 2000);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
@@ -4630,6 +4674,10 @@ export default {
         }, 2000);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
+      if (this.allowOffline && this.notAllowSaveInOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);

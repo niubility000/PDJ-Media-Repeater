@@ -2,8 +2,44 @@
   <div id="login" :class="{ recaptcha: recaptcha }">
     <form @submit="submit">
       <img :src="logoURL" alt="File Browser" />
-      <h1>{{ name }}</h1>
+      <h1 v-if="!isReminder">{{ $t("repeater.repeater") }}</h1>
+      <h1 v-if="isReminder">{{ $t("reminder.reminder") }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
+
+      <div
+        style="display: flex; justify-content: space-between; margin: 0 0 8px 0"
+      >
+        <span
+          style="
+            padding: 10px 20px;
+            background-color: white;
+            cursor: pointer;
+            width: 50%;
+            text-align: center;
+          "
+          :style="{
+            border: isReminder ? '1px solid #efefef' : '1px solid #2196f3',
+          }"
+          @click="clickRepeater"
+        >
+          {{ $t("repeater.nameRepeater") }}
+        </span>
+        <span
+          style="
+            padding: 10px 20px;
+            background-color: white;
+            cursor: pointer;
+            width: 50%;
+            text-align: center;
+          "
+          :style="{
+            border: !isReminder ? '1px solid #efefef' : '1px solid #2196f3',
+          }"
+          @click="clickReminder"
+        >
+          {{ $t("reminder.nameReminder") }}
+        </span>
+      </div>
 
       <input
         :disabled="allowOffline && !firstLogin"
@@ -146,19 +182,12 @@
 <script>
 import * as auth from "@/utils/auth";
 import localforage from "localforage";
-import {
-  name,
-  logoURL,
-  recaptcha,
-  recaptchaKey,
-  signup,
-} from "@/utils/constants";
+import { logoURL, recaptcha, recaptchaKey, signup } from "@/utils/constants";
 
 export default {
   name: "login",
   computed: {
     signup: () => signup,
-    name: () => name,
     logoURL: () => logoURL,
   },
   data: function () {
@@ -170,8 +199,11 @@ export default {
       recaptcha: recaptcha,
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
+      isReminder: Number(window.localStorage.getItem("isReminder")) == 1,
       firstLogin: window.localStorage.getItem("lastRawToken") == null,
-      noCachedMedia: window.localStorage.getItem("cKeys") == null,
+      noCachedMedia:
+        window.localStorage.getItem("cKeys") == null &&
+        window.localStorage.getItem("hasCachedAttach") == null,
       noCachedOther: window.localStorage.getItem("cachedOther") == null,
       isCleanedUp: false,
       cleanAccount: false,
@@ -209,7 +241,7 @@ export default {
         var temp01 = window.localStorage.getItem("isOffline");
         var temp02 = window.localStorage.getItem("lastRawToken");
         var temp03 = window.localStorage.getItem("cKeys");
-
+        var temp04 = window.localStorage.getItem("hasCachedAttach");
         window.localStorage.clear();
         if (!this.firstLogin) {
           window.localStorage.setItem("isOffline", temp01);
@@ -217,6 +249,7 @@ export default {
         }
         if (!this.cleanMedia) {
           window.localStorage.setItem("cKeys", temp03);
+          window.localStorage.setItem("hasCachedAttach", temp04);
         }
         this.noCachedOther = true;
         this.cleanSrtandSettings = false;
@@ -241,6 +274,7 @@ export default {
         .clear()
         .then(function () {
           window.localStorage.removeItem("cKeys");
+          window.localStorage.removeItem("hasCachedAttach");
           vm.noCachedMedia = true;
         })
         .catch(function (err) {
@@ -253,6 +287,17 @@ export default {
       this.cleanSrtandSettings = false;
       this.showCleanUp = false;
     },
+
+    clickRepeater() {
+      if (this.isReminder) this.isReminder = false;
+      window.localStorage.setItem("isReminder", 0);
+    },
+
+    clickReminder() {
+      if (!this.isReminder) this.isReminder = true;
+      window.localStorage.setItem("isReminder", 1);
+    },
+
     showResult() {
       this.isCleanedUp = true;
       setTimeout(() => {
