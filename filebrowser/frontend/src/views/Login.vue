@@ -265,6 +265,8 @@ export default {
         this.firstLogin = true;
         this.cleanAccount = false;
       }
+      if (this.isReminder) this.clickReminder();
+      else this.clickRepeater();
       this.showResult();
       this.showCleanUp = false;
     },

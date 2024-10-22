@@ -4,11 +4,11 @@
       style="padding: 0.5em"
       :style="{
         height: isMobile && isLandscape ? '3em' : '4em',
-        padding: isMobile && isLandscape ? '0 0.5em' : '0.5em 1em 0.5em 1em',
+        padding: isMobile && isLandscape ? '0 0.5em' : '0.5em',
       }"
     >
       <button
-        v-if="!isEditItem && !addNew && !isItemReview"
+        v-if="!isEditItem && !addNew && !isItemReview && !isSetting"
         class="action"
         @click="logout"
         :title="$t('reminder.logout')"
@@ -17,12 +17,12 @@
       </button>
 
       <button
-        v-if="isEditItem || addNew || isItemReview"
+        v-if="isEditItem || addNew || isItemReview || isSetting"
         class="action"
         @click="exitToList"
         :title="$t('reminder.return')"
       >
-        <i style="color: blue" class="material-icons">turn_left</i>
+        <i style="color: red" class="material-icons">turn_left</i>
       </button>
 
       <button
@@ -34,7 +34,7 @@
         <i style="color: red" class="material-icons">upload</i>
       </button>
 
-      <title style="flex-grow: 1; white-space: nowrap">
+      <title style="flex-grow: 1; white-space: nowrap; padding: 0 0.5em">
         {{ $t("reminder.reminder") }}
       </title>
       <span
@@ -43,24 +43,18 @@
         }"
       >
       </span>
+
       <button
         v-if="!(isEditItem || addNew)"
+        :disabled="isSetting"
         class="action"
-        style="color: blue"
+        :style="{
+          color: isSetting ? 'grey' : 'blue',
+        }"
         @click="addNewItem"
         :title="$t('reminder.addNew')"
       >
         <i class="material-icons">add_card</i>
-      </button>
-
-      <button
-        v-if="isEditItem || addNew"
-        class="action"
-        style="color: red"
-        @click="submitItem"
-        :title="$t('reminder.submit')"
-      >
-        <i class="material-icons">save</i>
       </button>
 
       <button
@@ -71,7 +65,7 @@
       >
         <i
           :style="{
-            color: isSetting ? 'red' : 'blue',
+            color: isEditItem || addNew ? 'grey' : isSetting ? 'red' : 'blue',
           }"
           class="material-icons"
           >settings</i
@@ -100,13 +94,27 @@
         width: isMobile ? '100%' : '65%',
       }"
     >
-      <p v-if="addNew" style="padding: 0 1em; color: blue">
-        {{ $t("reminder.addNew") }}&nbsp;&nbsp;&nbsp;{{ getDateAfterDays(0) }}
-      </p>
-      <p v-if="isEditItem" style="padding: 0 1em; color: blue">
-        {{ $t("reminder.editTask") }} &nbsp;&nbsp;&nbsp;{{
-          getDateAfterDays(0)
-        }}
+      <p
+        style="padding: 0 1em; color: blue; display: flex; flex-direction: row"
+      >
+        <span v-if="addNew" style="flex-grow: 1">
+          {{ $t("reminder.addNew") }}&nbsp;&nbsp;&nbsp;{{ getDateAfterDays(0) }}
+        </span>
+        <span v-if="isEditItem" style="flex-grow: 1">
+          {{ $t("reminder.editTask") }} &nbsp;&nbsp;&nbsp;{{
+            getDateAfterDays(0)
+          }}
+        </span>
+
+        <button
+          v-if="isEditItem || addNew"
+          class="action"
+          style="color: red"
+          @click="submitItem"
+          :title="$t('reminder.submit')"
+        >
+          <i class="material-icons">save</i>
+        </button>
       </p>
 
       <p style="padding: 0 1em; color: blue">
@@ -368,7 +376,7 @@
 
       <p
         v-if="isType == '1' && isEvery && selectedType == '2'"
-        style="color: blue; margin-left: 3em"
+        style="color: blue; margin-left: 3rem; font-size: 0.9em"
       >
         <input type="checkbox" v-model="isSun" />
         {{ $t("reminder.sun") }}
@@ -408,27 +416,21 @@
         {{ $t("reminder.ebbinghaus") }}
       </p>
 
-      <p
-        v-if="isCustom && isType == '1'"
-        style="padding: 0 1em; margin-left: 2em; color: blue"
-      >
-        {{ $t("reminder.days") }}&nbsp;
+      <p v-if="isCustom && isType == '1'" style="padding: 0; margin-left: 3em">
+        {{ $t("reminder.days") }}
         <input
           class="input input--repeater"
-          style="width: 10em; margin: 0; padding: 0"
+          style="width: 9em; margin: 0; padding: 0"
           type="text"
           v-model="curveDays"
         />
       </p>
 
-      <p
-        v-if="isCurve && isType == '2'"
-        style="padding: 0 1em; margin-left: 2em"
-      >
-        {{ $t("reminder.days") }}&nbsp;
+      <p v-if="isCurve && isType == '2'" style="padding: 0; margin-left: 3em">
+        {{ $t("reminder.days") }}
         <input
           class="input input--repeater"
-          style="width: 10em; margin: 0; padding: 0"
+          style="width: 9em; margin: 0; padding: 0"
           type="text"
           v-model="curveDays"
         />
@@ -696,17 +698,17 @@
             :key="index"
             :id="index + 1"
           >
-            <p
-              v-if="isShowAllList"
-              @click="showItemReview(index)"
-              style="cursor: pointer; color: blue"
-            >
-              {{ index + 1 }}. {{ subtitle.split("\n")[1] }}
+            <p v-if="isShowAllList">
+              <span
+                @click="showItemReview(index)"
+                style="cursor: pointer; color: blue"
+              >
+                {{ index + 1 }}. {{ subtitle.split("\n")[1] }}
+              </span>
             </p>
 
             <p
               v-if="!isShowAllList"
-              style="cursor: pointer"
               :style="{
                 color: !isTodayEarly
                   ? 'black'
@@ -758,7 +760,7 @@
               >
                 {{ $t("reminder.status02") }}
               </span>
-              <span @click="showItemReview(index)">
+              <span @click="showItemReview(index)" style="cursor: pointer">
                 &nbsp;&nbsp;{{ index + 1 }}&nbsp;
                 {{
                   subtitle.split("\n")[4].split("::repeatType:")[0]
@@ -868,6 +870,7 @@
             position: relative;
             width: 100%;
             text-align: right;
+            font-size: 0.8em;
           "
         >
           {{ $t("reminder.markedAll") }}
@@ -908,10 +911,6 @@
     >
       <div
         id="show reviewPageInside"
-        @mousedown="startDrag"
-        @mouseup="endDrag"
-        @touchstart="startTouch"
-        @touchend="endTouch"
         style="
           background-color: #cdcdcd;
           color: white;
@@ -921,33 +920,42 @@
           top: 0.2em;
           bottom: 4.2em;
           border-radius: 10px;
-          overflow-y: auto;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: calc(100% - 1em);
-        "
-      >
-        <p style="padding: 0 1em; color: blue">
-          {{ itemContent[sentenceIndex - 1].split("\n")[contentIndex] }}
-        </p>
-      </div>
-      <div
-        style="
-          background-color: #cdcdcd;
-          color: white;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          height: 3.8em;
-          bottom: 0.2em;
-          border-radius: 10px;
-          overflow-y: auto;
           display: flex;
           flex-direction: column;
           width: calc(100% - 1em);
         "
       >
+        <div
+          style="
+            margin: 1rem;
+            padding: 0px;
+            font-size: 0.9em;
+            text-align: center;
+          "
+        >
+          <span style="color: blue">
+            {{ frontAndBack }}&nbsp;&nbsp;
+            {{ sentenceIndex }}
+            /{{ itemContent.length }}
+          </span>
+        </div>
+
+        <div
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
+          style="
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            display: flex;
+          "
+        >
+          <p style="padding: 0 1em; color: blue">
+            {{ itemContent[sentenceIndex - 1].split("\n")[contentIndex] }}
+          </p>
+        </div>
         <div
           v-if="contentIndex == 1 && !arrFrontAtt == []"
           style="margin: 0px 1rem; padding: 0; font-size: 0.9em"
@@ -958,7 +966,7 @@
               flex-wrap: wrap;
               gap: 10px;
               list-style: none;
-              padding: 0;
+              padding: 1em 0;
               margin: 0;
             "
           >
@@ -966,7 +974,7 @@
               v-for="(subtitle, index) in arrFrontAtt"
               :key="index"
               :id="index + 1"
-              style="margin: 0 10px; color: blue; cursor: pointer"
+              style="margin: 0; color: blue; cursor: pointer"
             >
               <i @click="calcHref(subtitle)"
                 >{{ $t("reminder.attach") }} {{ index + 1 }}</i
@@ -985,7 +993,7 @@
               flex-wrap: wrap;
               gap: 10px;
               list-style: none;
-              padding: 0;
+              padding: 1em 0;
               margin: 0;
             "
           >
@@ -993,7 +1001,7 @@
               v-for="(subtitle, index) in arrBackAtt"
               :key="index"
               :id="index + 1"
-              style="margin: 0 10px; color: blue; cursor: pointer"
+              style="margin: 0; color: blue; cursor: pointer"
             >
               <i @click="calcHref(subtitle)"
                 >{{ $t("reminder.attach") }} {{ index + 1 }}</i
@@ -1001,23 +1009,35 @@
             </li>
           </ul>
         </div>
+      </div>
+      <div
+        style="
+          background-color: #cdcdcd;
+          color: white;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          height: 3.8em;
+          bottom: 0.2em;
+          border-radius: 10px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          width: calc(100% - 1em);
+        "
+      >
         <div
           style="
             display: flex;
             flex-direction: row;
-            justify-content: space-evenly;
+            justify-content: space-around;
             align-items: center;
-            width: 100%;
+            width: calc(100% - 2em);
             flex-grow: 1;
+            margin: 1em;
           "
         >
-          <span style="color: black">
-            {{ $t("reminder.tags") }}
-            {{
-              itemContent[sentenceIndex - 1].split("\n")[3].replace(";", "; ")
-            }}
-          </span>
-          <span style="color: black">
+          <span style="color: blue; flex-grow: 1">
             {{ $t("reminder.lastReviewedDate") }}
             {{ lastReviewedDate }}
           </span>
@@ -1035,6 +1055,7 @@
           >
             <i class="material-icons">edit</i>
           </button>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <button
             v-if="false"
             style="
@@ -1059,7 +1080,7 @@
               margin: 0;
               padding: 0;
             "
-            @click="deleteItem"
+            @click="showConfirmDelete"
             :title="$t('reminder.delete')"
           >
             <i class="material-icons">delete</i>
@@ -1075,7 +1096,6 @@
         </p>
 
         <div style="display: block">
-          <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p>
             <span style="color: white">
               <input
@@ -1551,7 +1571,7 @@
           <p style="text-align: justify">
             {{ $t("reminder.ins25") }}
           </p>
-
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.updatesandComments") }}
           </p>
@@ -1674,6 +1694,7 @@ export default {
       isInFetch: false,
       frontAttach: "",
       backAttach: "",
+      attachChanged: false,
       toDoListName: "PDJ-ToDoList.txt",
       notUpload: "PDJ-ToDoList.txtNotUpload",
       unSavedAttach: window.localStorage.getItem("unSavedAttach") || "",
@@ -2046,6 +2067,11 @@ export default {
       }
     },
 
+    frontAndBack() {
+      if (this.contentIndex == 1) return this.$t("reminder.frontSide");
+      else return this.$t("reminder.backSide");
+    },
+
     isEnglishLine1() {
       if (
         !this.itemContent[this.sentenceIndex - 1] ||
@@ -2201,7 +2227,7 @@ export default {
       this.save();
     },
     searchList: function () {
-      this.searchList = this.searchList.replaceAll("；", ";"); //replace chinese charcode,
+      this.searchList = this.searchList.replaceAll("；", ";");
       if (this.searchList == ";") this.searchList = "";
       var sList = this.searchList.split(";");
       sList = sList.map(function (item) {
@@ -2508,7 +2534,7 @@ export default {
       let text =
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
-          : "no content";
+          : this.$t("reminder.noContent");
       let ttsFullUrl = this.TTSurlFront + text;
 
       fetch(ttsFullUrl)
@@ -2534,7 +2560,7 @@ export default {
           transLineContent !== " " &&
           transLineContent !== ""
             ? transLineContent
-            : "no content";
+            : this.$t("reminder.noContent");
         this.utterThis.lang = this.langInFrontSide;
         this.speedOfUtter = this.speedOfUtterFront;
         this.utterThis.rate = this.speedOfUtter;
@@ -2565,7 +2591,7 @@ export default {
           transLineContent !== " " &&
           transLineContent !== ""
             ? transLineContent
-            : "no content";
+            : this.$t("reminder.noContent");
         this.utterThis.lang = this.langInBackSide;
         this.speedOfUtter = this.speedOfUtterBack;
         this.utterThis.rate = this.speedOfUtter;
@@ -2608,7 +2634,7 @@ export default {
       var ttList = tList.filter((item) => !item.includes(id));
       this.itemList = ttList.join("\n\n");
       this.save();
-      if (!this.itemcontent || this.itemContent == []) {
+      if (!this.itemContent || this.itemContent == []) {
         this.itemContent = [];
         this.isItemReview = false;
       }
@@ -2679,6 +2705,7 @@ export default {
     },
 
     showItemReview(x) {
+      this.contentIndex = 1;
       this.isItemReview = !this.isItemReview;
       this.isEditItem = false;
       this.addNew = false;
@@ -2687,7 +2714,7 @@ export default {
 
     showConfirm() {
       var userConfirmation = window.confirm(
-        this.$t("repeater.noTodoListFile", {
+        this.$t("reminder.noTodoListFile", {
           favFileName: this.toDoListName,
         })
       );
@@ -2704,6 +2731,13 @@ export default {
       var userConfirmation = window.confirm(this.$t("reminder.uploadUnsaved"));
       if (userConfirmation) {
         this.uploadUnsaved();
+      }
+    },
+
+    showConfirmDelete() {
+      var userConfirmation = window.confirm(this.$t("reminder.deleteConfirm"));
+      if (userConfirmation) {
+        this.deleteItem();
       }
     },
 
@@ -2793,18 +2827,41 @@ export default {
 
     exitToList() {
       if (this.addNew) {
+        this.showConfirmAdd();
+        return;
+      } else if (this.isEditItem) {
+        if (this.attachChanged) alert(this.$t("reminder.attachChanged"));
+        else this.showConfirmEdit();
+        return;
+      } else if (this.isSetting) {
+        this.isSetting = false;
+        return;
+      } else {
+        this.cleanUp();
+        this.isItemReview = false;
+        return;
+      }
+    },
+
+    showConfirmAdd() {
+      var userConfirmation = window.confirm(
+        this.$t("reminder.leaveWithoutSave")
+      );
+      if (userConfirmation) {
         this.delItemAttach();
         this.addNew = !this.addNew;
         this.getFrontAttach();
         this.getBackAttach();
         this.isEditItem = false;
-        this.isItemReview = false;
-      } else if (this.isEditItem) {
-        this.delItemAttach();
+      }
+    },
+
+    showConfirmEdit() {
+      var userConfirmation = window.confirm(
+        this.$t("reminder.leaveWithoutSave")
+      );
+      if (userConfirmation) {
         this.isEditItem = false;
-      } else {
-        this.cleanUp();
-        this.isItemReview = false;
       }
     },
 
@@ -2880,22 +2937,23 @@ export default {
     },
 
     submitItem() {
+      this.attachChanged = false;
       this.newItemLine1 = this.newItemLine1.replace(/^\s+|\s+$/g, "");
       if (this.newItemLine1 == "") {
-        alert("Front Page of the Task can't be empty");
+        alert(this.$t("reminder.alert1"));
         return;
       }
       if (this.weekRange == "" && this.isEvery && this.selectedType == "2") {
-        alert("Selected week day can't be empty ");
+        alert(this.$t("reminder.alert2"));
         return;
       }
       this.curveDays = this.curveDays.trim();
       if (this.isCurve && this.isType == "2" && this.curveDays == "") {
-        alert("Date for Ebbinghaus Forgetting Curve can't be empty ");
+        alert(this.$t("reminder.alert3"));
         return;
       }
       if (this.isCustom && this.isType == "1" && this.curveDays == "") {
-        alert("Date for Custom Dates can't be empty ");
+        alert(this.$t("reminder.alert4"));
         return;
       }
 
@@ -2904,7 +2962,7 @@ export default {
         Number(this.endDate.replaceAll("-", "")) <
           Number(this.startDate.replaceAll("-", ""))
       ) {
-        alert("End Date should not be smaller than Start Date.");
+        alert(this.$t("reminder.alert5"));
         return;
       }
       this.newItemLine3 = this.newItemLine3.replaceAll("；", ";"); //replace chinese code ；
@@ -3045,7 +3103,7 @@ export default {
       this.isEditItem = false;
       if (this.addNew) {
         this.addNew = false;
-        this.isShowAllList = true;
+        this.isItemReview = false;
       }
     },
 
@@ -3134,8 +3192,7 @@ export default {
           transLineContent !== " " &&
           transLineContent !== ""
             ? transLineContent
-            : "no content";
-
+            : this.$t("reminder.noContent");
         if (langInTransLine == "") {
           langInTransLine = navigator.language || navigator.userLanguage;
         }
@@ -3163,7 +3220,7 @@ export default {
           transLineContent !== " " &&
           transLineContent !== ""
             ? transLineContent
-            : "no content";
+            : this.$t("reminder.noContent");
         let ttsFullUrl = "";
         if (this.contentIndex == 1) ttsFullUrl = this.TTSurlFront + text;
         else ttsFullUrl = this.TTSurlBack + text;
@@ -3177,6 +3234,7 @@ export default {
     },
 
     uploadInput(event, x) {
+      if (this.isEditItem) this.attachChanged = true;
       this.$store.commit("closeHovers");
       let files = event.currentTarget.files;
       let folder_upload =
@@ -3218,11 +3276,14 @@ export default {
     },
 
     async uploadNow(x, y, keyName) {
+      this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
+      window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
       try {
         await api.post(x, y, true);
-      } catch (error) {
-        this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
+        this.unSavedAttach = this.unSavedAttach.replace(":::" + keyName, "");
         window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+      } catch (error) {
+        console.log(error);
       }
     },
 
@@ -3240,13 +3301,15 @@ export default {
           : this.$route.path + "/!PDJ/ToDoList-attachments/";
         for await (const keyName of arrUnsaved) {
           keyValue = await localforage.getItem(keyName);
-          this.unSavedAttach = this.unSavedAttach.replace(":::" + keyName, "");
-          window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
           try {
             await api.post(path + keyName, keyValue, true);
-          } catch (error) {
-            this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
+            this.unSavedAttach = this.unSavedAttach.replace(
+              ":::" + keyName,
+              ""
+            );
             window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+          } catch (error) {
+            console.log(error);
           }
         }
       }
@@ -3263,6 +3326,7 @@ export default {
     },
 
     deleteAttach(index, x) {
+      if (this.isEditItem) this.attachChanged = true;
       var keyName;
       if (x == 1) {
         let vm = this;
@@ -3287,11 +3351,13 @@ export default {
         : this.$route.path + "/!PDJ/ToDoList-attachments/";
       var fullPath = path + x;
       try {
-        await api.remove(fullPath);
-      } catch (e) {
-        this.$showError(e);
         this.unDeleted = this.unDeleted + ":::" + x;
         window.localStorage.setItem("unDeleted", this.unDeleted);
+        await api.remove(fullPath);
+        this.unDeleted = this.unDeleted.replace(":::" + x, "");
+        window.localStorage.setItem("unDeleted", this.unDeleted);
+      } catch (e) {
+        this.$showError(e);
       }
     },
 
@@ -3542,6 +3608,7 @@ export default {
 
     onSetting() {
       this.getReader();
+      this.cleanUp();
       this.isSetting = !this.isSetting;
     },
 
@@ -3593,6 +3660,8 @@ export default {
 
     async saveNow() {
       window.localStorage.setItem("PDJ-ToDoList.txt", this.savedContent);
+      window.localStorage.setItem("PDJ-ToDoList.txtNotUpload", "1");
+      this.unsavedTask = "1";
       try {
         await api.post(
           "/files/!PDJ/" + "PDJ-ToDoList.txt",
@@ -3602,8 +3671,7 @@ export default {
         window.localStorage.removeItem("PDJ-ToDoList.txtNotUpload");
         this.unsavedTask = "";
       } catch (error) {
-        window.localStorage.setItem("PDJ-ToDoList.txtNotUpload", "1");
-        this.unsavedTask = "1";
+        console.log(error);
       }
     },
 
@@ -3646,11 +3714,6 @@ export default {
         return;
       } else if (event.which === 38 && !this.isSetting) {
         // up arrow
-        if (this.contentIndex == 1) {
-          this.isItemReview = false;
-          this.cleanUp();
-          return;
-        }
         this.contentIndex = 1;
         if (this.autoPlay) {
           this.cleanUp();

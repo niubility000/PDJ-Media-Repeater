@@ -2530,6 +2530,7 @@ export default {
       else this.cachedKeys = window.localStorage.getItem("cKeys");
       var vmcachedKeys = this.cachedKeys;
       var vmmax = this.maxCacheNum + 1;
+      this.fetchCount--;
       fetch(this.raw)
         .then((response) => response.blob())
         .then((blob) => {
@@ -2578,11 +2579,9 @@ export default {
               }
             }, 2000);
           });
-          this.fetchCount--;
         })
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
-          this.fetchCount--;
         });
     },
 
@@ -4077,12 +4076,13 @@ export default {
         return;
       }
       let vm = this;
+      window.localStorage.setItem(this.favNotUpload, "1");
       try {
         await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
         vm.serverFav = favContent;
         window.localStorage.removeItem(this.favNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.favNotUpload, "1");
+        return;
       }
     },
 
@@ -4392,11 +4392,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(path + "/" + this.reqF.name, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
@@ -4494,11 +4495,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
@@ -4555,11 +4557,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, formatContent, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
@@ -4599,11 +4602,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
@@ -4639,11 +4643,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
@@ -4678,11 +4683,12 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
       } catch (error) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
       }
     },
 
