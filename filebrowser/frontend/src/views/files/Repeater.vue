@@ -544,7 +544,7 @@
           <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.settings") }}
           </p>
-          <div style="display: block">
+          <div style="display: flex; align-items: center">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.sentencePlaybackTimes") }}
             </span>
@@ -556,7 +556,7 @@
               v-model.number.lazy="repeatTimes"
             />
           </div>
-          <div style="display: block">
+          <div style="display: flex; align-items: center">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.interval") }}
             </span>
@@ -568,7 +568,7 @@
               v-model.number.lazy="interval"
             />
           </div>
-          <div style="display: block">
+          <div style="display: flex; align-items: center">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.timestampMove") }}
             </span>
@@ -580,7 +580,7 @@
               v-model.number.lazy="timeStampChangeStart"
             />
           </div>
-          <div style="display: block">
+          <div style="display: flex; align-items: center">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.timestampMoveEnd") }}
             </span>
@@ -592,7 +592,7 @@
               v-model.number.lazy="timeStampChangeEnd"
             />
           </div>
-          <div style="display: block">
+          <div style="display: flex; align-items: center">
             <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
               >{{ $t("repeater.speedEachTime") }}
             </span>
@@ -692,7 +692,7 @@
                 {{ $t("repeater.SystemTTSnote") }}
               </p>
 
-              <div style="display: block">
+              <div style="display: flex; align-items: center">
                 <span
                   :style="{
                     color:
@@ -720,7 +720,7 @@
                   v-model="langInTransLine"
                 />
               </div>
-              <div style="display: block">
+              <div style="display: flex; align-items: center">
                 <span
                   :style="{
                     color:
@@ -775,7 +775,7 @@
                 </button>
               </div>
 
-              <div style="display: block">
+              <div style="display: flex; align-items: center">
                 <span
                   :style="{
                     color:
@@ -877,7 +877,7 @@
                 {{ $t("repeater.notSystemTTSnote") }}
               </p>
             </div>
-            <div style="display: block">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color: isUtterTransLine ? 'white' : '#bbbaba',
@@ -897,7 +897,7 @@
               />
             </div>
 
-            <div style="display: block">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
                 style="margin-left: 1em"

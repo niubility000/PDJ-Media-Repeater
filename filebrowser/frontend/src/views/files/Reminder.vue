@@ -58,6 +58,16 @@
       </button>
 
       <button
+        v-if="isEditItem || addNew"
+        class="action"
+        style="color: red"
+        @click="submitItem"
+        :title="$t('reminder.submit')"
+      >
+        <i class="material-icons">save</i>
+      </button>
+
+      <button
         class="action"
         @click="onSetting"
         :disabled="addNew || isEditItem"
@@ -94,27 +104,13 @@
         width: isMobile ? '100%' : '65%',
       }"
     >
-      <p
-        style="padding: 0 1em; color: blue; display: flex; flex-direction: row"
-      >
-        <span v-if="addNew" style="flex-grow: 1">
-          {{ $t("reminder.addNew") }}&nbsp;&nbsp;&nbsp;{{ getDateAfterDays(0) }}
-        </span>
-        <span v-if="isEditItem" style="flex-grow: 1">
-          {{ $t("reminder.editTask") }} &nbsp;&nbsp;&nbsp;{{
-            getDateAfterDays(0)
-          }}
-        </span>
-
-        <button
-          v-if="isEditItem || addNew"
-          class="action"
-          style="color: red"
-          @click="submitItem"
-          :title="$t('reminder.submit')"
-        >
-          <i class="material-icons">save</i>
-        </button>
+      <p v-if="addNew" style="padding: 0 1em; color: blue">
+        {{ $t("reminder.addNew") }}&nbsp;&nbsp;&nbsp;{{ getDateAfterDays(0) }}
+      </p>
+      <p v-if="isEditItem" style="padding: 0 1em; color: blue">
+        {{ $t("reminder.editTask") }} &nbsp;&nbsp;&nbsp;{{
+          getDateAfterDays(0)
+        }}
       </p>
 
       <p style="padding: 0 1em; color: blue">
@@ -219,7 +215,7 @@
       <textarea
         v-model.lazy="newItemLine1"
         placeholder="...can't leave blank..."
-        rows="2"
+        rows="6"
         style="
           width: calc(100% - 2em);
           margin: 0 1em;
@@ -280,7 +276,7 @@
       <textarea
         v-model.lazy="newItemLine2"
         placeholder="...may leave blank..."
-        rows="2"
+        rows="6"
         style="
           width: calc(100% - 2em);
           margin: 0 1em;
@@ -504,11 +500,13 @@
           v-model.number="reviewMinute"
         />
       </p>
-      <div v-if="false && isEditItem">
+      <div>
         <p style="padding: 0 1em; color: blue">
-          <input type="checkbox" :disabled="addNew" v-model="importantDaily" />
-          Important(will show in the list everyday)
+          <input type="checkbox" v-model="importantDaily" />
+          {{ $t("reminder.important1") }}
         </p>
+      </div>
+      <div v-if="false && isEditItem">
         <p style="padding: 0 1em; color: blue">
           <input type="checkbox" :disabled="addNew" v-model="disabledDaily" />
           disabled(will not show in the daily list but will keep in the whole
@@ -681,6 +679,37 @@
             </li>
           </ul>
         </div>
+
+        <p style="margin: 0; padding: 0.5em">{{ $t("reminder.specials") }}</p>
+        <div style="margin: 0px 1rem; padding: 0; font-size: 0.9em">
+          <ul
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              gap: 10px;
+              list-style: none;
+              padding: 0;
+              margin: 0;
+            "
+          >
+            <li
+              v-for="(subtitle, index) in arrSpecials"
+              :key="index"
+              :id="index + 1"
+              style="margin: 0 10px"
+              :style="{
+                backgroundColor: selectedSpecials.includes(subtitle)
+                  ? 'indigo'
+                  : 'grey',
+              }"
+              @click="calcSpecials(index)"
+            >
+              <span style="cursor: pointer; color: white">
+                {{ $t("reminder." + subtitle) }}
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div style="overflow-y: auto; flex-grow: 1">
@@ -698,12 +727,14 @@
             :key="index"
             :id="index + 1"
           >
-            <p v-if="isShowAllList">
-              <span
-                @click="showItemReview(index)"
-                style="cursor: pointer; color: blue"
-              >
-                {{ index + 1 }}. {{ subtitle.split("\n")[1] }}
+            <p
+              v-if="isShowAllList"
+              :style="{
+                color: arrIsImpt[index] ? 'red' : 'blue',
+              }"
+            >
+              <span @click="showItemReview(index)" style="cursor: pointer">
+                {{ index + 1 }}. {{ subtitle.split("\n\t")[1] }}
               </span>
             </p>
 
@@ -712,6 +743,8 @@
               :style="{
                 color: !isTodayEarly
                   ? 'black'
+                  : arrIsImpt[index] && arrIsDue[index]
+                  ? 'red'
                   : arrIsDue[index]
                   ? 'blue'
                   : 'grey',
@@ -739,6 +772,7 @@
                   font-size: 0.8em;
                   background-color: #dadce4;
                   border-radius: 5px;
+                  cursor: pointer;
                 "
                 @click="switchDone(index)"
                 :title="$t('reminder.switchStatus')"
@@ -754,6 +788,7 @@
                   font-size: 0.8em;
                   background-color: #dadce4;
                   border-radius: 5px;
+                  cursor: pointer;
                 "
                 @click="switchDone(index)"
                 :title="$t('reminder.switchStatus')"
@@ -763,9 +798,9 @@
               <span @click="showItemReview(index)" style="cursor: pointer">
                 &nbsp;&nbsp;{{ index + 1 }}&nbsp;
                 {{
-                  subtitle.split("\n")[4].split("::repeatType:")[0]
+                  subtitle.split("\n\t")[4].split("::repeatType:")[0]
                 }}&nbsp;&nbsp;&nbsp;
-                {{ subtitle.split("\n")[1] }}
+                {{ subtitle.split("\n\t")[1] }}
               </span>
             </p>
 
@@ -864,7 +899,7 @@
           </p>
         </div>
         <p
-          v-if="itemContent.length !== 0"
+          v-if="!isShowAllList && itemContent.length !== 0"
           style="
             padding: 0 1em;
             position: relative;
@@ -934,9 +969,10 @@
           "
         >
           <span style="color: blue">
-            {{ frontAndBack }}&nbsp;&nbsp;
             {{ sentenceIndex }}
             /{{ itemContent.length }}
+            &nbsp;&nbsp;&nbsp;
+            {{ frontAndBack }}
           </span>
         </div>
 
@@ -950,10 +986,12 @@
             justify-content: center;
             flex-grow: 1;
             display: flex;
+            white-space: pre-line;
+            word-break: break-all;
           "
         >
           <p style="padding: 0 1em; color: blue">
-            {{ itemContent[sentenceIndex - 1].split("\n")[contentIndex] }}
+            {{ itemContent[sentenceIndex - 1].split("\n\t")[contentIndex] }}
           </p>
         </div>
         <div
@@ -1037,6 +1075,54 @@
             margin: 1em;
           "
         >
+          <span
+            v-if="!isShowAllList && !isTodayEarly"
+            style="
+              border: 0;
+              margin: 0;
+              padding: 0;
+              font-size: 0.8em;
+              background-color: #262626;
+              border-radius: 5px;
+            "
+          >
+            {{ $t("reminder.status03") }}
+          </span>
+          <span
+            v-if="!isShowAllList && isTodayEarly && arrIsDue[sentenceIndex - 1]"
+            style="
+              border: 0;
+              margin: 0;
+              padding: 0;
+              font-size: 0.8em;
+              background-color: blue;
+              border-radius: 5px;
+              cursor: pointer;
+            "
+            @click="switchDone(sentenceIndex - 1)"
+            :title="$t('reminder.switchStatus')"
+          >
+            {{ $t("reminder.status01") }}
+          </span>
+          <span
+            v-if="
+              !isShowAllList && isTodayEarly && !arrIsDue[sentenceIndex - 1]
+            "
+            style="
+              border: 0;
+              margin: 0;
+              padding: 0;
+              font-size: 0.8em;
+              background-color: #888888;
+              border-radius: 5px;
+              cursor: pointer;
+            "
+            @click="switchDone(sentenceIndex - 1)"
+            :title="$t('reminder.switchStatus')"
+          >
+            {{ $t("reminder.status02") }}
+          </span>
+          <span v-if="!isShowAllList"> &nbsp;&nbsp; </span>
           <span style="color: blue; flex-grow: 1">
             {{ $t("reminder.lastReviewedDate") }}
             {{ lastReviewedDate }}
@@ -1090,14 +1176,14 @@
     </div>
 
     <div id="settingBoxContainer" v-if="isSetting">
-      <div id="settingBox">
+      <div id="settingBox" style="background-color: #cdcdcd">
         <p style="color: blue; font-weight: bold; padding-top: 0em">
           {{ $t("repeater.settings") }}
         </p>
 
         <div style="display: block">
           <p>
-            <span style="color: white">
+            <span style="color: black">
               <input
                 :disabled="isAutoDetectLang"
                 type="checkbox"
@@ -1105,13 +1191,13 @@
               />
               {{ $t("reminder.utter") }}
             </span>
-            <span style="color: white">
+            <span style="color: black">
               (<input type="checkbox" v-model="isAutoDetectLang" />
               {{ $t("repeater.autoDetect") }})
             </span>
           </p>
           <div
-            :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
+            :style="{ color: isUtterTransLine ? 'black' : '#868686' }"
             :disabled="!isUtterTransLine"
           >
             <p style="margin-bottom: 0">
@@ -1137,22 +1223,22 @@
               :style="{
                 color:
                   isSystemTTS == 'Yes' && isUtterTransLine
-                    ? 'white'
-                    : '#bbbaba',
+                    ? 'black'
+                    : '#868686',
               }"
             >
               {{ $t("repeater.SystemTTSnote") }}
             </p>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 2em; width: 60%"
                 class="subject"
@@ -1173,15 +1259,15 @@
               />
             </div>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 3em; width: calc(60% - 1em)"
                 class="subject"
@@ -1219,7 +1305,7 @@
                   :style="{
                     color:
                       isSystemTTS == 'No' || !isUtterTransLine
-                        ? '#bbbaba'
+                        ? '#868686'
                         : 'blue',
                   }"
                   class="material-icons"
@@ -1228,15 +1314,15 @@
               </button>
             </div>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 3em; width: calc(60% - 1em)"
                 class="subject"
@@ -1255,15 +1341,15 @@
               />
             </div>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 2em; width: 60%"
                 class="subject"
@@ -1284,15 +1370,15 @@
               />
             </div>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 3em; width: calc(60% - 1em)"
                 class="subject"
@@ -1330,7 +1416,7 @@
                   :style="{
                     color:
                       isSystemTTS == 'No' || !isUtterTransLine
-                        ? '#bbbaba'
+                        ? '#868686'
                         : 'blue',
                   }"
                   class="material-icons"
@@ -1339,15 +1425,15 @@
               </button>
             </div>
 
-            <div style="display: flex">
+            <div style="display: flex; align-items: center">
               <span
                 :style="{
                   color:
                     !isUtterTransLine ||
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
-                      ? '#bbbaba'
-                      : 'white',
+                      ? '#868686'
+                      : 'black',
                 }"
                 style="margin-left: 3em; width: calc(60% - 1em)"
                 class="subject"
@@ -1385,7 +1471,7 @@
                   :style="{
                     color:
                       isSystemTTS == 'Yes' || !isUtterTransLine
-                        ? '#bbbaba'
+                        ? '#868686'
                         : 'blue',
                   }"
                   class="material-icons"
@@ -1402,7 +1488,7 @@
                   :style="{
                     color:
                       isSystemTTS == 'Yes' || !isUtterTransLine
-                        ? '#bbbaba'
+                        ? '#868686'
                         : 'blue',
                   }"
                   class="material-icons"
@@ -1414,7 +1500,7 @@
               style="margin-left: 2em"
               :style="{
                 color:
-                  isSystemTTS == 'No' && isUtterTransLine ? 'white' : '#bbbaba',
+                  isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
               }"
             >
               {{ $t("reminder.frontWithLang") }}
@@ -1434,7 +1520,7 @@
               style="margin-left: 2em"
               :style="{
                 color:
-                  isSystemTTS == 'No' && isUtterTransLine ? 'white' : '#bbbaba',
+                  isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
               }"
             >
               {{ $t("reminder.backWithLang") }}
@@ -1462,20 +1548,20 @@
               "
               :style="{
                 color:
-                  isSystemTTS == 'No' && isUtterTransLine ? 'white' : '#bbbaba',
+                  isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
               }"
             >
               {{ $t("repeater.notSystemTTSnote") }}
             </p>
           </div>
 
-          <p style="color: white">
+          <p style="color: black">
             <input type="checkbox" v-model="autoPlay" />
             {{ $t("repeater.autoPlayCurrentSentence") }}
           </p>
 
           <div>
-            <p style="color: white; text-align: justify; text-align-last: left">
+            <p style="color: black; text-align: justify; text-align-last: left">
               <input disabled="true" type="checkbox" v-model="allowOffline" />
               {{ $t("reminder.offlineApp") }}
             </p>
@@ -1483,7 +1569,7 @@
 
           <hr style="border: none; border-top: 1px solid black; height: 0" />
         </div>
-        <div style="color: white">
+        <div style="color: black">
           <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.instructions") }}
           </p>
@@ -1630,8 +1716,10 @@ export default {
       tags: "",
       selectedTags: [],
       selectedTypes: "",
+      selectedSpecials: "",
       selectedWords: [],
       arrTypes: ["Regular Task", "Recitation Task", "Memo"],
+      arrSpecials: ["important", "With Attachments"],
       isOnce: false,
       isEvery: true,
       isCustom: false,
@@ -1719,18 +1807,18 @@ export default {
 
     arrAllCachedAttach() {
       var tempContent1 = this.savedContent;
-      tempContent1 = tempContent1.split(";.\n\n")[1];
+      tempContent1 = tempContent1.split(";.\n\t\n\t")[1];
       if (tempContent1) {
-        var allList = tempContent1.split("\n\n");
+        var allList = tempContent1.split("\n\t\n\t");
         var allCA = "";
         for (let i = 0; i < allList.length; i++) {
           allCA =
             allCA +
             allList[i]
-              .split("\n")[0]
+              .split("\n\t")[0]
               .split(":AttachFront")[1]
               .split(":AttachBack")[0] +
-            allList[i].split("\n")[0].split(":AttachBack")[1];
+            allList[i].split("\n\t")[0].split(":AttachBack")[1];
         }
         var arrAllCA = allCA.replace(/^:::|:::$/g, "").split(":::");
         return arrAllCA;
@@ -1739,7 +1827,7 @@ export default {
 
     lastReviewedDate() {
       let lRD = this.itemContent[this.sentenceIndex - 1]
-        .split("\n")[4]
+        .split("\n\t")[4]
         .split("::latestReviewed:")[1];
       if (lRD == "0001-01-01") return "Never!";
       else return lRD;
@@ -2075,11 +2163,11 @@ export default {
     isEnglishLine1() {
       if (
         !this.itemContent[this.sentenceIndex - 1] ||
-        !this.itemContent[this.sentenceIndex - 1].split("\n")[1]
+        !this.itemContent[this.sentenceIndex - 1].split("\n\t")[1]
       )
         return false;
       let str = this.itemContent[this.sentenceIndex - 1]
-        .split("\n")[1]
+        .split("\n\t")[1]
         .replace(/^\s\s*/, "")
         .replace(/\s\s*$/, "");
       return /^[a-zA-Z]/.test(str);
@@ -2088,13 +2176,13 @@ export default {
     isEnglishLine2() {
       if (
         !this.itemContent[this.sentenceIndex - 1] ||
-        !this.itemContent[this.sentenceIndex - 1].split("\n")[2] ||
-        this.itemContent[this.sentenceIndex - 1].split("\n")[2] == " "
+        !this.itemContent[this.sentenceIndex - 1].split("\n\t")[2] ||
+        this.itemContent[this.sentenceIndex - 1].split("\n\t")[2] == " "
       )
         return false;
       else {
         let str = this.itemContent[this.sentenceIndex - 1]
-          .split("\n")[2]
+          .split("\n\t")[2]
           .replace(/^\s\s*/, "")
           .replace(/\s\s*$/, "");
         return /^[a-zA-Z]/.test(str);
@@ -2112,7 +2200,7 @@ export default {
       var tempDue = [];
       for (let i = 0; i < this.itemContent.length; i++) {
         let reviewDate = this.itemContent[i]
-          .split("\n")[4]
+          .split("\n\t")[4]
           .split("latestReviewed:")[1];
         const d1 = Date.parse(reviewDate);
         const d2 = Date.parse(this.selectedDate);
@@ -2121,15 +2209,25 @@ export default {
       }
       return tempDue;
     },
+    arrIsImpt() {
+      var tempImpt = [];
+      for (let i = 0; i < this.itemContent.length; i++) {
+        if (this.itemContent[i].split("\n\t")[4].includes("::impt:true"))
+          tempImpt[i] = true;
+        else tempImpt[i] = false;
+      }
+      return tempImpt;
+    },
   },
 
   watch: {
     isShowAllList() {
       this.getItemContent();
+      this.calcList();
     },
     savedContent() {
       this.getItemContent();
-      this.itemList = this.savedContent.split(";.\n\n")[1];
+      this.itemList = this.savedContent.split(";.\n\t\n\t")[1];
     },
     selectedDate() {
       this.getItemContent();
@@ -2233,6 +2331,10 @@ export default {
       sList = sList.map(function (item) {
         return item.trim();
       });
+      this.selectedSpecials = sList
+        .filter((item) => item.startsWith("@"))
+        .join(";")
+        .replace(";", "");
       this.selectedTags = sList.filter((item) => item.startsWith("*"));
       this.selectedTypes = sList
         .filter((item) => item.startsWith("#"))
@@ -2240,7 +2342,8 @@ export default {
         .replace(";", "");
       this.selectedWords = sList
         .filter((item) => !item.startsWith("*"))
-        .filter((item) => !item.startsWith("#"));
+        .filter((item) => !item.startsWith("#"))
+        .filter((item) => !item.startsWith("@"));
       this.calcList();
     },
   },
@@ -2267,10 +2370,10 @@ export default {
     async readToDoList() {
       var PDJcontent = "";
       var PDJserverContent = null;
-
       if (
         (this.allowOffline ||
           window.localStorage.getItem("PDJ-ToDoList.txtNotUpload")) &&
+        this.user.id == window.localStorage.getItem("userID") &&
         window.localStorage.getItem("PDJ-ToDoList.txt")
       ) {
         PDJcontent = window.localStorage.getItem("PDJ-ToDoList.txt");
@@ -2280,6 +2383,7 @@ export default {
             "/files/!PDJ/" + "PDJ-ToDoList.txt"
           );
           PDJcontent = PDJserverContent.content;
+          window.localStorage.setItem("userID", this.user.id);
           window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
         } catch (e) {
           this.showConfirm();
@@ -2289,10 +2393,10 @@ export default {
       if (PDJcontent !== "") {
         this.savedContent = PDJcontent;
         this.getItemContent();
-        this.itemList = PDJcontent.split(";.\n\n")[1];
+        this.itemList = PDJcontent.split(";.\n\t\n\t")[1];
         this.tags = this.getTags();
         let config = PDJcontent.split("tags:")[0]
-          .split("::\n\n")[0]
+          .split("::\n\t\n\t")[0]
           .split("customConfig: ")[1]
           .split("::");
         this.isSystemTTS = JSON.parse(config[0]);
@@ -2377,14 +2481,14 @@ export default {
       var newItem;
       if (this.arrIsDue[index]) {
         newItem =
-          this.itemContent[index].slice(0, -12) + this.selectedDate + "\n]";
+          this.itemContent[index].slice(0, -13) + this.selectedDate + "\n\t]";
         this.itemList = this.itemList.replace(this.itemContent[index], newItem);
         this.save();
       } else {
         newItem =
-          this.itemContent[index].slice(0, -12) +
+          this.itemContent[index].slice(0, -13) +
           this.yesterSelectedDate +
-          "\n]";
+          "\n\t]";
         this.itemList = this.itemList.replace(this.itemContent[index], newItem);
         this.save();
       }
@@ -2393,21 +2497,21 @@ export default {
     getItemContent() {
       if (this.isShowAllList) {
         var tempContent = this.savedContent;
-        tempContent = tempContent.split(";.\n\n")[1];
+        tempContent = tempContent.split(";.\n\t\n\t")[1];
         if (tempContent) {
-          this.itemContent = tempContent.split("\n\n");
+          this.itemContent = tempContent.split("\n\t\n\t");
           this.itemContent.reverse();
         } else this.itemContent = [];
       } else {
         var tempContent1 = this.savedContent;
-        tempContent1 = tempContent1.split(";.\n\n")[1];
+        tempContent1 = tempContent1.split(";.\n\t\n\t")[1];
         if (tempContent1) {
-          var allList = tempContent1.split("\n\n");
+          var allList = tempContent1.split("\n\t\n\t");
           var list = [];
           var cDate = Number(this.selectedDate.replaceAll("-", ""));
           var date1 = new Date(this.selectedDate);
           for (let i = 0; i < allList.length; i++) {
-            var rawLine4 = allList[i].split("\n")[4];
+            var rawLine4 = allList[i].split("\n\t")[4];
             var sDate = Number(
               rawLine4
                 .split("startDate:")[1]
@@ -2503,10 +2607,10 @@ export default {
           list.reverse();
           list.sort(function (a, b) {
             let timeA = Number(
-              a.split("\n")[4].split("::repeatType:")[0].replace(":", "")
+              a.split("\n\t")[4].split("::repeatType:")[0].replace(":", "")
             );
             let timeB = Number(
-              b.split("\n")[4].split("::repeatType:")[0].replace(":", "")
+              b.split("\n\t")[4].split("::repeatType:")[0].replace(":", "")
             );
             return timeA - timeB;
           });
@@ -2522,7 +2626,7 @@ export default {
 
     getTags() {
       var tempContent = this.savedContent;
-      tempContent = tempContent.split(";.\n\n")[0];
+      tempContent = tempContent.split(";.\n\t\n\t")[0];
       tempContent = tempContent.split("tags: ")[1];
       if (tempContent) return tempContent;
       else return "";
@@ -2530,7 +2634,7 @@ export default {
 
     testTTSurl() {
       let transLineContent =
-        this.itemContent[this.sentenceIndex - 1].split("\n")[1];
+        this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
       let text =
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
@@ -2554,7 +2658,7 @@ export default {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         this.cleanUp();
         let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n")[1];
+          this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -2585,7 +2689,7 @@ export default {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         this.cleanUp();
         let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n")[2];
+          this.itemContent[this.sentenceIndex - 1].split("\n\t")[2];
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -2630,9 +2734,9 @@ export default {
       let id = this.itemContent[this.sentenceIndex - 1]
         .split("[ ID=")[1]
         .split(":AttachFront")[0];
-      var tList = this.itemList.split("\n\n");
+      var tList = this.itemList.split("\n\t\n\t");
       var ttList = tList.filter((item) => !item.includes(id));
-      this.itemList = ttList.join("\n\n");
+      this.itemList = ttList.join("\n\t\n\t");
       this.save();
       if (!this.itemContent || this.itemContent == []) {
         this.itemContent = [];
@@ -2658,7 +2762,8 @@ export default {
         .getItem(keyName)
         .then(function (value) {
           tHref = URL.createObjectURL(value);
-          window.open(tHref, "_self");
+          if (vm.isMobile) window.open(tHref, "_self");
+          else window.open(tHref, "_blank");
           vm.isInFetch = false;
         })
         .catch(function () {
@@ -2685,7 +2790,8 @@ export default {
                 .getItem(keyName)
                 .then(function (value) {
                   var cachePath = URL.createObjectURL(value);
-                  window.open(cachePath, "_self");
+                  if (vm.isMobile) window.open(cachePath, "_self");
+                  else window.open(cachePath, "_blank");
                   vm.isInFetch = false;
                 })
                 .catch(function () {
@@ -2811,9 +2917,9 @@ export default {
 
     markAllAsDone() {
       if (this.itemList && this.isTodayEarly) {
-        var allList = this.itemList.split("\n\n");
+        var allList = this.itemList.split("\n\t\n\t");
         for (let i = 0; i < allList.length; i++) {
-          let newItem = allList[i].slice(0, -12) + this.selectedDate + "\n]";
+          let newItem = allList[i].slice(0, -12) + this.selectedDate + "\n\t]";
           this.itemList = this.itemList.replace(allList[i], newItem);
           this.save();
         }
@@ -2889,17 +2995,30 @@ export default {
       this.searchList = tempList;
     },
 
+    calcSpecials(index) {
+      var tempList = this.searchList + ";";
+      if (this.selectedSpecials.includes("@" + this.arrSpecials[index])) {
+        tempList = tempList.replace("@" + this.arrSpecials[index], "");
+      } else {
+        tempList = tempList + "@" + this.arrSpecials[index];
+      }
+      tempList = tempList.replace(/^;|;$/g, "");
+      this.searchList = tempList;
+    },
+
     calcList() {
       this.getItemContent();
       var target = this.selectedTags.map((item) => item.replace(/^\*/, ""));
       var list = this.itemContent;
       var sublist = [];
       for (var i = 0; i < list.length; ++i) {
-        let tTags = list[i].split("\n")[3].split(";");
-        let tType = list[i].split("\n")[4];
+        let tTags = list[i].split("\n\t")[3].split(";");
+        let tType = list[i].split("\n\t")[4];
+        let tSpecials = list[i].split("\n\t")[0];
         let hasTags = this.isSubArr(target, tTags);
         let hasType = false;
         let hasWord = false;
+        let hasSpecial = false;
         if (this.selectedTypes.includes("Recitation")) {
           if (tType.includes("::repeatType:Ebbinghaus:")) hasType = true;
         } else if (this.selectedTypes.includes("Memo")) {
@@ -2911,10 +3030,22 @@ export default {
           )
             hasType = true;
         } else hasType = true;
-        let wholeSub = list[i].split("\n")[1] + list[i].split("\n")[2];
-        hasWord = this.containsAll(wholeSub, this.selectedWords);
 
-        if (hasTags && hasType && hasWord) sublist.push(list[i]);
+        if (
+          this.selectedSpecials.includes("With Attachments") &&
+          this.selectedSpecials.includes("important")
+        ) {
+          if (tSpecials.includes("-") && tType.includes("::impt:true"))
+            hasSpecial = true;
+        } else if (this.selectedSpecials.includes("With Attachments")) {
+          if (tSpecials.includes("-")) hasSpecial = true;
+        } else if (this.selectedSpecials.includes("important")) {
+          if (tType.includes("::impt:true")) hasSpecial = true;
+        } else hasSpecial = true;
+
+        let wholeSub = list[i].split("\n\t")[1] + list[i].split("\n\t")[2];
+        hasWord = this.containsAll(wholeSub, this.selectedWords);
+        if (hasTags && hasType && hasWord && hasSpecial) sublist.push(list[i]);
       }
 
       this.itemContent = sublist;
@@ -2933,7 +3064,7 @@ export default {
     },
 
     switchImportant() {
-      console.log("1111");
+      console.log("not yet");
     },
 
     submitItem() {
@@ -3018,22 +3149,22 @@ export default {
         let id = Math.random();
         this.itemList =
           this.itemList +
-          "\n\n" +
+          "\n\t\n\t" +
           "[ ID=" +
           id +
           ":AttachFront" +
           this.frontAttach +
           ":AttachBack" +
           this.backAttach +
-          "\n" +
+          "\n\t" +
           this.newItemLine1 +
-          "\n" +
+          "\n\t" +
           this.newItemLine2 +
-          "\n" +
+          "\n\t" +
           this.newItemLine3 +
-          "\n" +
+          "\n\t" +
           newItemLine4 +
-          "\n]\n";
+          "\n\t]\n\t";
       } else {
         let newItemLine4 =
           this.reviewTime +
@@ -3057,22 +3188,22 @@ export default {
           this.frontAttach +
           ":AttachBack" +
           this.backAttach +
-          "\n" +
+          "\n\t" +
           this.newItemLine1 +
-          "\n" +
+          "\n\t" +
           this.newItemLine2 +
-          "\n" +
+          "\n\t" +
           this.newItemLine3 +
-          "\n" +
+          "\n\t" +
           newItemLine4 +
-          "\n]";
+          "\n\t]";
         this.itemList = this.itemList.replace(/^\s+|\s+$/g, "");
-        var tList = this.itemList.split("\n\n");
+        var tList = this.itemList.split("\n\t\n\t");
         var ttList = tList.map((element) =>
           element.includes(id) ? editedItem : element
         );
-        this.itemList = ttList.join("\n\n");
-        this.savedContent = "tags: " + this.tags + ";.\n\n" + this.itemList;
+        this.itemList = ttList.join("\n\t\n\t");
+        this.savedContent = "tags: " + this.tags + ";.\n\t\n\t" + this.itemList;
       }
       this.save();
       this.newItemLine1 = "";
@@ -3184,7 +3315,7 @@ export default {
         } else langInTransLine = this.langInBackSide;
 
         let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n")[
+          this.itemContent[this.sentenceIndex - 1].split("\n\t")[
             this.contentIndex
           ];
         this.utterThis.text =
@@ -3212,7 +3343,7 @@ export default {
         window.speechSynthesis.speak(this.utterThis);
       } else if (this.isUtterTransLine && this.isSystemTTS == "No") {
         let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n")[
+          this.itemContent[this.sentenceIndex - 1].split("\n\t")[
             this.contentIndex
           ];
         let text =
@@ -3369,14 +3500,14 @@ export default {
       if (
         !this.itemContent[this.sentenceIndex - 1] ||
         !this.itemContent[this.sentenceIndex - 1]
-          .split("\n")[0]
+          .split("\n\t")[0]
           .split(":AttachFront")[1]
       ) {
         this.frontAttach = "";
         return;
       }
       this.frontAttach = this.itemContent[this.sentenceIndex - 1]
-        .split("\n")[0]
+        .split("\n\t")[0]
         .split(":AttachFront")[1]
         .split(":AttachBack")[0];
     },
@@ -3389,20 +3520,20 @@ export default {
       if (
         !this.itemContent[this.sentenceIndex - 1] ||
         !this.itemContent[this.sentenceIndex - 1]
-          .split("\n")[0]
+          .split("\n\t")[0]
           .split(":AttachBack")[1]
       ) {
         this.backAttach = "";
         return;
       }
       this.backAttach = this.itemContent[this.sentenceIndex - 1]
-        .split("\n")[0]
+        .split("\n\t")[0]
         .split(":AttachBack")[1];
     },
 
     showEditItem() {
       this.cleanUp();
-      var item = this.itemContent[this.sentenceIndex - 1].split("\n");
+      var item = this.itemContent[this.sentenceIndex - 1].split("\n\t");
       this.newItemLine1 = item[1];
       this.newItemLine2 = item[2];
       if (item[3] == " ") this.newItemLine3 = "";
@@ -3616,9 +3747,9 @@ export default {
       var allTags = "";
       var tempContent1 = this.itemList;
       if (tempContent1) {
-        var allList = tempContent1.split("\n\n");
+        var allList = tempContent1.split("\n\t\n\t");
         for (let i = 0; i < allList.length; i++) {
-          allTags = allTags + ";" + allList[i].split("\n")[3];
+          allTags = allTags + ";" + allList[i].split("\n\t")[3];
         }
       }
       var arrAllTags = allTags.replace(/^;+|;+$/g, "").split(";");
@@ -3654,7 +3785,12 @@ export default {
         "::";
 
       this.savedContent =
-        customConfig + "\n\n" + "tags: " + this.tags + ";.\n\n" + this.itemList;
+        customConfig +
+        "\n\t\n\t" +
+        "tags: " +
+        this.tags +
+        ";.\n\t\n\t" +
+        this.itemList;
       this.saveNow();
     },
 
@@ -3676,6 +3812,7 @@ export default {
     },
 
     key(event) {
+      if (this.isEditItem || this.addNew || this.isSetting) return;
       if (
         event.which === 39 &&
         this.sentenceIndex <= this.itemContent.length &&
