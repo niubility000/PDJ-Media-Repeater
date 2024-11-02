@@ -19,19 +19,32 @@
       <button
         v-if="isEditItem || addNew || isItemReview || isSetting"
         class="action"
+        :disabled="isUploading"
         @click="exitToList"
         :title="$t('reminder.return')"
       >
-        <i style="color: red" class="material-icons">turn_left</i>
+        <i
+          :style="{
+            color: isUploading ? 'grey' : 'red',
+          }"
+          class="material-icons"
+          >turn_left</i
+        >
       </button>
 
       <button
         v-if="unsavedTask !== '' || unSavedAttach !== '' || unDeleted !== ''"
+        :disabled="isUploading"
         class="action"
         @click="showConfirmUpload"
         :title="$t('reminder.upload')"
       >
-        <i style="color: red" class="material-icons">upload</i>
+        <i v-if="isUploading" style="color: red" class="material-icons"
+          >cloud_upload</i
+        >
+        <i v-if="!isUploading" style="color: red" class="material-icons"
+          >cloud_sync</i
+        >
       </button>
 
       <title style="flex-grow: 1; white-space: nowrap; padding: 0 0.5em">
@@ -45,7 +58,7 @@
       </span>
 
       <button
-        v-if="!(isEditItem || addNew)"
+        v-if="!(isEditItem || addNew || isItemReview)"
         :disabled="isSetting"
         class="action"
         :style="{
@@ -58,9 +71,31 @@
       </button>
 
       <button
+        v-if="isItemReview && !isEditItem"
+        class="action"
+        style="color: blue"
+        @click="showEditItem"
+        :title="$t('reminder.edit')"
+      >
+        <i class="material-icons">edit</i>
+      </button>
+      <button
+        v-if="isItemReview && !isEditItem"
+        class="action"
+        style="color: blue"
+        @click="showConfirmDelete"
+        :title="$t('reminder.delete')"
+      >
+        <i class="material-icons">delete</i>
+      </button>
+
+      <button
         v-if="isEditItem || addNew"
         class="action"
-        style="color: red"
+        :disabled="isUploading"
+        :style="{
+          color: isUploading ? 'grey' : 'red',
+        }"
         @click="submitItem"
         :title="$t('reminder.submit')"
       >
@@ -336,8 +371,10 @@
           </li>
         </ul>
       </div>
-      <p style="padding: 0 1em; color: blue">{{ $t("reminder.repDate") }}</p>
-      <p v-if="isType == '3'" style="color: blue; margin-left: 2em">
+      <p v-if="isType !== '3'" style="padding: 0 1em; color: blue">
+        {{ $t("reminder.repDate") }}
+      </p>
+      <p v-if="false" style="color: blue; margin-left: 2em">
         <input type="checkbox" disabled v-model="isNone" />
         {{ $t("reminder.none") }}
       </p>
@@ -450,7 +487,7 @@
         <input type="date" v-model.lazy="startDate" />
       </p>
       <div
-        v-if="isType !== '3'"
+        v-if="isType !== '3' && !isOnce"
         style="padding: 0 1em; margin-left: 1em; color: blue"
       >
         {{ $t("reminder.endDate") }}
@@ -501,16 +538,13 @@
         />
       </p>
       <div>
-        <p style="padding: 0 1em; color: blue">
+        <p v-if="isType !== '3'" style="padding: 0 1em; color: blue">
           <input type="checkbox" v-model="importantDaily" />
           {{ $t("reminder.important1") }}
         </p>
-      </div>
-      <div v-if="false && isEditItem">
-        <p style="padding: 0 1em; color: blue">
-          <input type="checkbox" :disabled="addNew" v-model="disabledDaily" />
-          disabled(will not show in the daily list but will keep in the whole
-          list)
+        <p v-if="isType == '3'" style="padding: 0 1em; color: blue">
+          <input type="checkbox" v-model="importantDaily" />
+          {{ $t("reminder.important2") }}
         </p>
       </div>
     </div>
@@ -729,13 +763,13 @@
           >
             <p
               v-if="isShowAllList"
+              @click="showItemReview(index)"
+              style="cursor: pointer"
               :style="{
                 color: arrIsImpt[index] ? 'red' : 'blue',
               }"
             >
-              <span @click="showItemReview(index)" style="cursor: pointer">
-                {{ index + 1 }}. {{ subtitle.split("\n\t")[1] }}
-              </span>
+              <span> {{ index + 1 }}. {{ subtitle.split("\n\t")[1] }} </span>
             </p>
 
             <p
@@ -745,16 +779,21 @@
                   ? 'black'
                   : arrIsImpt[index] && arrIsDue[index]
                   ? 'red'
+                  : index > dailyLength - 1
+                  ? 'black'
                   : arrIsDue[index]
                   ? 'blue'
                   : 'grey',
               }"
+              style="display: flex; flex-direction: row; align-items: center"
             >
               <span
                 v-if="!isTodayEarly"
                 style="
                   border: 0;
-                  margin: 0;
+                  flex: 0 0 48px;
+                  text-align: center;
+                  margin: 0 0.5em 0 0;
                   padding: 0;
                   font-size: 0.8em;
                   background-color: #dadce4;
@@ -763,11 +802,32 @@
               >
                 {{ $t("reminder.status03") }}
               </span>
+
+              <span
+                v-if="
+                  isTodayEarly && arrIsDue[index] && index > dailyLength - 1
+                "
+                style="
+                  border: 0;
+                  flex: 0 0 48px;
+                  text-align: center;
+                  margin: 0 0.5em 0 0;
+                  padding: 0;
+                  font-size: 0.8em;
+                  background-color: #dadce4;
+                  border-radius: 5px;
+                "
+              >
+                {{ $t("reminder.outOfDate") }}
+              </span>
+
               <span
                 v-if="isTodayEarly && arrIsDue[index]"
                 style="
                   border: 0;
-                  margin: 0;
+                  flex: 0 0 48px;
+                  text-align: center;
+                  margin: 0 0.5em 0 0;
                   padding: 0;
                   font-size: 0.8em;
                   background-color: #dadce4;
@@ -783,7 +843,9 @@
                 v-if="isTodayEarly && !arrIsDue[index]"
                 style="
                   border: 0;
-                  margin: 0;
+                  flex: 0 0 48px;
+                  text-align: center;
+                  margin: 0 0.5em 0 0;
                   padding: 0;
                   font-size: 0.8em;
                   background-color: #dadce4;
@@ -795,8 +857,14 @@
               >
                 {{ $t("reminder.status02") }}
               </span>
-              <span @click="showItemReview(index)" style="cursor: pointer">
-                &nbsp;&nbsp;{{ index + 1 }}&nbsp;
+
+              <span
+                @click="showItemReview(index)"
+                style="flex-grow: 1; cursor: pointer"
+              >
+                {{
+                  index > dailyLength - 1 ? index - dailyLength + 1 : index + 1
+                }}&nbsp;
                 {{
                   subtitle.split("\n\t")[4].split("::repeatType:")[0]
                 }}&nbsp;&nbsp;&nbsp;
@@ -972,6 +1040,8 @@
             {{ sentenceIndex }}
             /{{ itemContent.length }}
             &nbsp;&nbsp;&nbsp;
+            {{ typeTitle }}
+            &nbsp;&nbsp;&nbsp;
             {{ frontAndBack }}
           </span>
         </div>
@@ -988,6 +1058,7 @@
             display: flex;
             white-space: pre-line;
             word-break: break-all;
+            overflow-y: auto;
           "
         >
           <p style="padding: 0 1em; color: blue">
@@ -1014,7 +1085,7 @@
               :id="index + 1"
               style="margin: 0; color: blue; cursor: pointer"
             >
-              <i @click="calcHref(subtitle)"
+              <i @click="calcHref(subtitle, 1)"
                 >{{ $t("reminder.attach") }} {{ index + 1 }}</i
               >
             </li>
@@ -1041,7 +1112,7 @@
               :id="index + 1"
               style="margin: 0; color: blue; cursor: pointer"
             >
-              <i @click="calcHref(subtitle)"
+              <i @click="calcHref(subtitle, 1)"
                 >{{ $t("reminder.attach") }} {{ index + 1 }}</i
               >
             </li>
@@ -1127,50 +1198,20 @@
             {{ $t("reminder.lastReviewedDate") }}
             {{ lastReviewedDate }}
           </span>
-          <button
-            style="
-              color: blue;
-              cursor: pointer;
-              background-color: #cdcdcd;
-              border: 0;
-              margin: 0;
-              padding: 0;
-            "
-            @click="showEditItem"
-            :title="$t('reminder.edit')"
+          <span
+            v-if="reviewType == 2"
+            @click="switchRemember(1)"
+            style="color: blue; flex-grow: 1; cursor: pointer"
           >
-            <i class="material-icons">edit</i>
-          </button>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <button
-            v-if="false"
-            style="
-              color: blue;
-              cursor: pointer;
-              background-color: #cdcdcd;
-              border: 0;
-              margin: 0;
-              padding: 0;
-            "
-            @click="switchImportant"
-            :title="$t('reminder.switchImportant')"
+            {{ $t("reminder.remembered") }}
+          </span>
+          <span
+            v-if="reviewType == 2"
+            @click="switchRemember(2)"
+            style="color: blue; flex-grow: 1; cursor: pointer"
           >
-            <i class="material-icons">star</i>
-          </button>
-          <button
-            style="
-              color: blue;
-              cursor: pointer;
-              background-color: #cdcdcd;
-              border: 0;
-              margin: 0;
-              padding: 0;
-            "
-            @click="showConfirmDelete"
-            :title="$t('reminder.delete')"
-          >
-            <i class="material-icons">delete</i>
-          </button>
+            {{ $t("reminder.forgot") }}
+          </span>
         </div>
       </div>
     </div>
@@ -1555,8 +1596,17 @@
             </p>
           </div>
 
-          <p style="color: black">
-            <input type="checkbox" v-model="autoPlay" />
+          <p
+            style="margin-left: 1em"
+            :style="{
+              color: !isUtterTransLine ? 'grey' : 'black',
+            }"
+          >
+            <input
+              :disabled="!isUtterTransLine"
+              type="checkbox"
+              v-model="autoPlay"
+            />
             {{ $t("repeater.autoPlayCurrentSentence") }}
           </p>
 
@@ -1564,6 +1614,12 @@
             <p style="color: black; text-align: justify; text-align-last: left">
               <input disabled="true" type="checkbox" v-model="allowOffline" />
               {{ $t("reminder.offlineApp") }}
+            </p>
+          </div>
+          <div>
+            <p style="color: black; text-align: justify; text-align-last: left">
+              <input type="checkbox" v-model="fromFirstDay" />
+              {{ $t("reminder.fromFirstDay") }}
             </p>
           </div>
 
@@ -1712,7 +1768,7 @@ export default {
       newItemLine3: "",
       itemContent: [],
       itemList: "",
-      savedContent: "",
+      browserContent: "",
       tags: "",
       selectedTags: [],
       selectedTypes: "",
@@ -1739,13 +1795,13 @@ export default {
       isFri: true,
       isSat: false,
       isSun: false,
-      curveDays: "1 3 7 15 30 60 120",
+      curveDays: "0 1 3 7 15 30 60 120",
       isNever: true,
       hasEnd: false,
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       startDate: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       endDate: this.getDateAfterDays(7, 1),
-      latestReviewDate: "1900-01-01",
+      latestReviewDate: "1970-01-01",
       reviewHour: 8,
       reviewMinute: 0,
       importantDaily: false,
@@ -1766,6 +1822,7 @@ export default {
       langInBackSide: navigator.language || navigator.userLanguage,
       isAutoDetectLang: true,
       isSystemTTS: "Yes",
+      fromFirstDay: true,
       resized: false,
       hasSpeechSynthesis:
         !!window.speechSynthesis || "speechSynthesis" in window,
@@ -1780,13 +1837,18 @@ export default {
       isType: "1",
       isNone: true,
       isInFetch: false,
+      isUploading: false,
       frontAttach: "",
       backAttach: "",
+      mounting: false,
+      contentChange: false,
       attachChanged: false,
       toDoListName: "PDJ-ToDoList.txt",
       notUpload: "PDJ-ToDoList.txtNotUpload",
       unSavedAttach: window.localStorage.getItem("unSavedAttach") || "",
       unDeleted: window.localStorage.getItem("unDeleted") || "",
+      dailyLength: 0,
+      allowBackUp: false,
       unsavedTask:
         window.localStorage.getItem("PDJ-ToDoList.txtNotUpload") || "",
       TTSurlFront:
@@ -1806,7 +1868,7 @@ export default {
     },
 
     arrAllCachedAttach() {
-      var tempContent1 = this.savedContent;
+      var tempContent1 = this.browserContent;
       tempContent1 = tempContent1.split(";.\n\t\n\t")[1];
       if (tempContent1) {
         var allList = tempContent1.split("\n\t\n\t");
@@ -1821,6 +1883,7 @@ export default {
             allList[i].split("\n\t")[0].split(":AttachBack")[1];
         }
         var arrAllCA = allCA.replace(/^:::|:::$/g, "").split(":::");
+        arrAllCA = arrAllCA.filter((item) => !item.includes("noCacheAllowed"));
         return arrAllCA;
       } else return [];
     },
@@ -1829,8 +1892,39 @@ export default {
       let lRD = this.itemContent[this.sentenceIndex - 1]
         .split("\n\t")[4]
         .split("::latestReviewed:")[1];
-      if (lRD == "0001-01-01") return "Never!";
+      let startD = this.itemContent[this.sentenceIndex - 1]
+        .split("\n\t")[4]
+        .split("::startDate:")[1]
+        .split("::endDate:")[0];
+      if (Number(lRD.replaceAll("-", "")) < Number(startD.replaceAll("-", "")))
+        return this.$t("reminder.none");
       else return lRD;
+    },
+    reviewType() {
+      if (
+        !this.itemContent[this.sentenceIndex - 1] ||
+        !this.itemContent[this.sentenceIndex - 1].split("\n\t")
+      )
+        return 0;
+      if (
+        this.itemContent[this.sentenceIndex - 1]
+          .split("\n\t")[4]
+          .includes("::repeatType:none:")
+      )
+        return 1;
+      else if (
+        this.itemContent[this.sentenceIndex - 1]
+          .split("\n\t")[4]
+          .includes("::repeatType:Ebbinghaus:")
+      )
+        return 2;
+      else return 3;
+    },
+
+    typeTitle() {
+      if (this.reviewType == 1) return this.$t("reminder.Memo");
+      else if (this.reviewType == 2) return this.$t("reminder.Recitation Task");
+      else return this.$t("reminder.Regular Task");
     },
 
     yesterSelectedDate() {
@@ -2225,12 +2319,16 @@ export default {
       this.getItemContent();
       this.calcList();
     },
-    savedContent() {
+    browserContent() {
+      if (this.browserContent == "") return;
       this.getItemContent();
-      this.itemList = this.savedContent.split(";.\n\t\n\t")[1];
+      this.setConfig();
+      this.itemList = this.browserContent.split(";.\n\t\n\t")[1];
+      this.calcList();
     },
     selectedDate() {
       this.getItemContent();
+      this.calcList();
     },
     isOnce() {
       if (this.isOnce) {
@@ -2267,7 +2365,9 @@ export default {
         window.localStorage.setItem("readerFront", this.readerFront);
       } else this.readerFront = 0;
     },
-
+    arrAllCachedAttach() {
+      this.getCachedAttach();
+    },
     readerBack() {
       if (this.hasSpeechSynthesis) {
         if (this.readerBack < 1) this.readerBack = 1;
@@ -2277,38 +2377,48 @@ export default {
     },
 
     isSystemTTS: function () {
+      this.allowBackUp = false;
       this.save();
     },
 
     autoPlay: function () {
+      this.allowBackUp = false;
       this.save();
     },
 
     isAutoDetectLang: function () {
       if (this.isAutoDetectLang) {
-        this.isUtterTransLine = true;
         this.autoDetectLangInTrans();
       }
+      this.allowBackUp = false;
       this.save();
     },
 
     isUtterTransLine: function () {
+      this.allowBackUp = false;
       this.save();
     },
 
     langInFrontSide: function () {
+      this.allowBackUp = false;
       this.save();
     },
     langInBackSide: function () {
+      this.allowBackUp = false;
       this.save();
     },
     speedOfUtterFront: function () {
+      this.allowBackUp = false;
       this.save();
     },
     speedOfUtterBack: function () {
+      this.allowBackUp = false;
       this.save();
     },
-
+    fromFirstDay: function () {
+      this.allowBackUp = false;
+      this.save();
+    },
     itemContent: function () {
       this.getFrontAttach();
       this.getBackAttach();
@@ -2319,13 +2429,17 @@ export default {
     },
 
     TTSurlFront: function () {
+      this.allowBackUp = false;
       this.save();
     },
     TTSurlBack: function () {
+      this.allowBackUp = false;
       this.save();
     },
     searchList: function () {
       this.searchList = this.searchList.replaceAll("；", ";");
+      this.searchList = this.searchList.replaceAll(";;", ";");
+      this.searchList = this.searchList.replace(/^;|;$/g, "");
       if (this.searchList == ";") this.searchList = "";
       var sList = this.searchList.split(";");
       sList = sList.map(function (item) {
@@ -2344,6 +2458,7 @@ export default {
         .filter((item) => !item.startsWith("*"))
         .filter((item) => !item.startsWith("#"))
         .filter((item) => !item.startsWith("@"));
+      this.getItemContent();
       this.calcList();
     },
   },
@@ -2355,7 +2470,6 @@ export default {
     this.readToDoList();
     this.getItemContent();
     this.getReader();
-    this.getCachedAttach();
     this.initUtter();
   },
 
@@ -2377,46 +2491,99 @@ export default {
         window.localStorage.getItem("PDJ-ToDoList.txt")
       ) {
         PDJcontent = window.localStorage.getItem("PDJ-ToDoList.txt");
+        if (PDJcontent !== "") {
+          this.browserContent = PDJcontent;
+        }
+        this.mounting = true;
+        this.compareContent();
+        setTimeout(() => {
+          this.mounting = false;
+        }, 1000);
       } else {
         try {
+          if (this.allowOffline) window.localStorage.removeItem("isOffline");
           PDJserverContent = await api.fetch(
             "/files/!PDJ/" + "PDJ-ToDoList.txt"
           );
+          if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
           window.localStorage.setItem("userID", this.user.id);
           window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
+          window.localStorage.setItem("serverContent", PDJcontent);
+          if (PDJcontent !== "") {
+            this.browserContent = PDJcontent;
+          }
         } catch (e) {
           this.showConfirm();
         }
       }
+    },
 
-      if (PDJcontent !== "") {
-        this.savedContent = PDJcontent;
-        this.getItemContent();
-        this.itemList = PDJcontent.split(";.\n\t\n\t")[1];
-        this.tags = this.getTags();
-        let config = PDJcontent.split("tags:")[0]
+    setConfig() {
+      this.tags = this.getTags();
+      if (
+        !this.browserContent
+          .split("tags:")[0]
           .split("::\n\t\n\t")[0]
           .split("customConfig: ")[1]
-          .split("::");
-        this.isSystemTTS = JSON.parse(config[0]);
-        this.autoPlay = JSON.parse(config[1]);
-        this.isUtterTransLine = JSON.parse(config[2]);
-        this.isAutoDetectLang = JSON.parse(config[3]);
-        this.langInFrontSide = JSON.parse(config[4]);
-        this.langInBackSide = JSON.parse(config[5]);
-        this.speedOfUtterFront = JSON.parse(config[6]);
-        this.TTSurlFront = JSON.parse(config[7]);
-        this.TTSurlBack = JSON.parse(config[8]);
-        this.speedOfUtterBack = JSON.parse(config[9]);
-        if (!this.hasSpeechSynthesis) this.isSystemTTS = "No";
-      }
-      if (
-        window.localStorage.getItem("PDJ-ToDoList.txtNotUpload") ||
-        !window.localStorage.getItem("PDJ-ToDoList.txt")
       )
-        this.save();
+        return;
+      let config = this.browserContent
+        .split("tags:")[0]
+        .split("::\n\t\n\t")[0]
+        .split("customConfig: ")[1]
+        .split("::");
+      this.isSystemTTS = JSON.parse(config[0]);
+      this.autoPlay = JSON.parse(config[1]);
+      this.isUtterTransLine = JSON.parse(config[2]);
+      this.isAutoDetectLang = JSON.parse(config[3]);
+      this.langInFrontSide = JSON.parse(config[4]);
+      this.langInBackSide = JSON.parse(config[5]);
+      this.speedOfUtterFront = JSON.parse(config[6]);
+      this.TTSurlFront = JSON.parse(config[7]);
+      this.TTSurlBack = JSON.parse(config[8]);
+      this.speedOfUtterBack = JSON.parse(config[9]);
+      this.fromFirstDay = JSON.parse(config[10]);
+      if (!this.hasSpeechSynthesis) this.isSystemTTS = "No";
     },
+
+    async compareContent() {
+      try {
+        if (this.allowOffline) window.localStorage.removeItem("isOffline");
+        let PDJserverContent = await api.fetch(
+          "/files/!PDJ/" + "PDJ-ToDoList.txt"
+        );
+        if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+        let PDJcontent = PDJserverContent.content;
+        if (
+          PDJcontent !== "" &&
+          window.localStorage.getItem("serverContent") &&
+          PDJcontent !== window.localStorage.getItem("serverContent")
+        ) {
+          this.showConfirmUnmatch(PDJcontent);
+        } else {
+          if (!this.contentChange) return;
+          this.saveNow();
+        }
+      } catch (e) {
+        console.log("disconnected");
+        if (!this.contentChange || this.allowOffline) return;
+        this.saveNow();
+      }
+    },
+
+    showConfirmUnmatch(PDJcontent) {
+      var userConfirm = window.confirm(this.$t("reminder.unmatch"));
+      if (userConfirm) {
+        this.allowBackUp = true;
+        this.saveNow();
+      } else {
+        window.localStorage.setItem("serverContent", PDJcontent);
+        window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
+        this.browserContent = PDJcontent;
+      }
+    },
+
     switchTab(x) {
       if (x == 1) this.isType = "1";
       else if (x == 2) this.isType = "2";
@@ -2483,6 +2650,7 @@ export default {
         newItem =
           this.itemContent[index].slice(0, -13) + this.selectedDate + "\n\t]";
         this.itemList = this.itemList.replace(this.itemContent[index], newItem);
+        this.allowBackUp = false;
         this.save();
       } else {
         newItem =
@@ -2490,20 +2658,21 @@ export default {
           this.yesterSelectedDate +
           "\n\t]";
         this.itemList = this.itemList.replace(this.itemContent[index], newItem);
+        this.allowBackUp = false;
         this.save();
       }
     },
 
     getItemContent() {
       if (this.isShowAllList) {
-        var tempContent = this.savedContent;
+        var tempContent = this.browserContent;
         tempContent = tempContent.split(";.\n\t\n\t")[1];
         if (tempContent) {
           this.itemContent = tempContent.split("\n\t\n\t");
           this.itemContent.reverse();
         } else this.itemContent = [];
       } else {
-        var tempContent1 = this.savedContent;
+        var tempContent1 = this.browserContent;
         tempContent1 = tempContent1.split(";.\n\t\n\t")[1];
         if (tempContent1) {
           var allList = tempContent1.split("\n\t\n\t");
@@ -2537,7 +2706,10 @@ export default {
             if (cDate >= sDate && cDate <= eDate) {
               if (rType == "once" && cDate == sDate) {
                 hit = true;
-              } else if (rType.startsWith("Ebbinghaus:")) {
+              } else if (
+                rType.startsWith("Ebbinghaus:") ||
+                rType.startsWith("custom:")
+              ) {
                 var range =
                   ":" + rType.split(":")[1].replaceAll(" ", ":") + ":";
                 if (range.includes(":" + diffDate + ":")) hit = true;
@@ -2614,8 +2786,24 @@ export default {
             );
             return timeA - timeB;
           });
-
-          this.itemContent = list;
+          let listing = [];
+          var subAllList = allList.filter((item) => !list.includes(item));
+          for (let i = 0; i < subAllList.length; i++) {
+            let hitting = this.pastDueToDo(subAllList[i]);
+            if (hitting) listing.push(subAllList[i]);
+          }
+          listing.reverse();
+          listing.sort(function (a, b) {
+            let timeA = Number(
+              a.split("\n\t")[4].split("::repeatType:")[0].replace(":", "")
+            );
+            let timeB = Number(
+              b.split("\n\t")[4].split("::repeatType:")[0].replace(":", "")
+            );
+            return timeA - timeB;
+          });
+          this.dailyLength = list.length;
+          this.itemContent = list.concat(listing);
         } else {
           this.itemContent = [];
         }
@@ -2624,8 +2812,147 @@ export default {
         this.sentenceIndex = this.sentenceIndex - 1;
     },
 
+    pastDueToDo(c) {
+      var rawLine4 = c.split("\n\t")[4];
+      if (rawLine4.includes("::impt:false::")) return false;
+      if (rawLine4.includes("::repeatType:none::")) return false;
+      var curveDays = "";
+      var cDate = Number(this.selectedDate.replaceAll("-", ""));
+      var startDate = rawLine4.split("startDate:")[1].split("::endDate:")[0];
+
+      var sDate = Number(startDate.replaceAll("-", ""));
+      var endDate = rawLine4.split("::endDate:")[1].split("::impt:")[0];
+      var eDate = Number(endDate.replaceAll("-", ""));
+
+      var rType = rawLine4
+        .split("::repeatType:")[1]
+        .split("::startDate:")[0]
+        .replaceAll("-", "");
+      var lastReiewDate = rawLine4.split("::latestReviewed:")[1];
+      var lrDate = Number(lastReiewDate.replaceAll("-", ""));
+
+      if (cDate >= sDate && cDate <= eDate) {
+        var date1 = new Date(startDate);
+        var date2 = new Date(this.selectedDate);
+        var date3 = new Date(rawLine4.split("::latestReviewed:")[1]);
+        var date4 = new Date(endDate);
+        const diff = date2.getTime() - date1.getTime();
+        const diffDate = diff / (24 * 60 * 60 * 1000);
+        const diff1 = date3.getTime() - date1.getTime();
+        const diffDate1 = diff1 / (24 * 60 * 60 * 1000);
+        const diff2 = date4.getTime() - date1.getTime();
+        const diffDate2 = diff2 / (24 * 60 * 60 * 1000);
+
+        if (rType.startsWith("once")) {
+          if (lrDate < sDate) {
+            return true;
+          } else return false;
+        } else if (rType.startsWith("Ebbinghaus")) {
+          curveDays = rawLine4
+            .split(":Ebbinghaus:")[1]
+            .split("::startDate:")[0];
+          let arrCurveDays = curveDays.split(" ");
+          for (let i = 0; i < arrCurveDays.length; i++) {
+            if (
+              Number(arrCurveDays[i]) > diffDate1 &&
+              Number(arrCurveDays[i]) < diffDate
+            )
+              return true;
+            else if (Number(arrCurveDays[i]) > diffDate) return false;
+          }
+        } else if (rType.startsWith("custom")) {
+          curveDays = rawLine4
+            .split("::repeatType:custom:")[1]
+            .split("::startDate:")[0];
+          let arrCurveDays = curveDays.split(" ");
+          for (let i = 0; i < arrCurveDays.length; i++) {
+            if (
+              Number(arrCurveDays[i]) > diffDate1 &&
+              Number(arrCurveDays[i]) < diffDate
+            )
+              return true;
+            else if (Number(arrCurveDays[i]) > diffDate) return false;
+          }
+        } else if (rType.startsWith("everyOfDays:")) {
+          let n = Number(
+            rawLine4.split("repeatType:everyOfDays:")[1].split("::startDate")[0]
+          );
+          for (let i = 0; i < diffDate2 / n + 1; i++) {
+            if (n * i > diffDate1 && n * i < diffDate) return true;
+            else if (n * i > diffDate) return false;
+          }
+        } else if (rType.startsWith("everyOfYears:")) {
+          let n = Number(
+            rawLine4
+              .split("repeatType:everyOfYears:")[1]
+              .split("::startDate")[0]
+          );
+          for (let i = 0; i < 10000; i++) {
+            let due = Number(
+              Number(startDate.split("-")[0]) +
+                n * i +
+                startDate.split("-")[1] +
+                startDate.split("-")[2]
+            );
+            if (
+              due > Number(lastReiewDate.replaceAll("-", "")) &&
+              due < Number(this.selectedDate.replaceAll("-", ""))
+            )
+              return true;
+            else if (due > Number(this.selectedDate.replaceAll("-", "")))
+              return false;
+          }
+        } else if (rType.startsWith("everyOfMonths:")) {
+          let n = Number(
+            rawLine4
+              .split("repeatType:everyOfMonths:")[1]
+              .split("::startDate")[0]
+          );
+          for (let i = 0; i < 100000; i++) {
+            var startTemp = new Date(startDate);
+            startTemp.setMonth(startTemp.getMonth() + n * i);
+            var x = startTemp.toLocaleDateString("af").replaceAll("/", "-");
+            if (
+              Number(x.replaceAll("-", "")) >
+                Number(lastReiewDate.replaceAll("-", "")) &&
+              Number(x.replaceAll("-", "")) <
+                Number(this.selectedDate.replaceAll("-", ""))
+            )
+              return true;
+            else if (
+              Number(x.replaceAll("-", "")) >
+              Number(this.selectedDate.replaceAll("-", ""))
+            )
+              return false;
+          }
+        } else if (rType.startsWith("everyOfWeeks:")) {
+          let n = Number(rawLine4.split("everyOfWeeks:")[1].split(":")[0]);
+          let weekRange = rawLine4
+            .split("everyOfWeeks:")[1]
+            .split(":")[1]
+            .split("::startDate")[0];
+          for (let i = 0; i < 100000000; i++) {
+            let dayRange = weekRange
+              .split(",")
+              .map((number) => Number(number) + i * n * 7);
+            let lastR = diffDate1 + date1.getDay();
+            let selectedD = diffDate + date1.getDay();
+
+            let isTrue1 = dayRange.some(function (element) {
+              return element > lastR && element < selectedD;
+            });
+            let isTrue2 = dayRange.some(function (element) {
+              return element > selectedD;
+            });
+            if (isTrue1) return true;
+            else if (isTrue2) return false;
+          }
+        }
+      } else return false;
+    },
+
     getTags() {
-      var tempContent = this.savedContent;
+      var tempContent = this.browserContent;
       tempContent = tempContent.split(";.\n\t\n\t")[0];
       tempContent = tempContent.split("tags: ")[1];
       if (tempContent) return tempContent;
@@ -2717,6 +3044,7 @@ export default {
     },
 
     autoDetectLangInTrans() {
+      this.isUtterTransLine = true;
       if (!this.isEnglishLine1) {
         this.langInFrontSide = navigator.language || navigator.userLanguage;
       } else {
@@ -2737,6 +3065,7 @@ export default {
       var tList = this.itemList.split("\n\t\n\t");
       var ttList = tList.filter((item) => !item.includes(id));
       this.itemList = ttList.join("\n\t\n\t");
+      this.allowBackUp = false;
       this.save();
       if (!this.itemContent || this.itemContent == []) {
         this.itemContent = [];
@@ -2753,25 +3082,51 @@ export default {
       }
     },
 
-    calcHref(keyName) {
+    calcHref(keyName, x) {
+      this.cleanUp();
       if (this.isInFetch) return;
       this.isInFetch = true;
-      var tHref;
-      var vm = this;
-      localforage
-        .getItem(keyName)
-        .then(function (value) {
-          tHref = URL.createObjectURL(value);
-          if (vm.isMobile) window.open(tHref, "_self");
-          else window.open(tHref, "_blank");
-          vm.isInFetch = false;
-        })
-        .catch(function () {
-          vm.fetchAttach(keyName);
-        });
+      if (keyName.includes("noCacheAllowed")) {
+        var tToken = window.localStorage.getItem("lastRawToken");
+        var fullPath =
+          "/api/raw/!PDJ/ToDoList-attachments/" +
+          keyName +
+          "?auth=" +
+          tToken +
+          "&inline=true";
+        if (this.isMobile) window.open(fullPath, "_self");
+        else window.open(fullPath, "_blank");
+        this.isInFetch = false;
+        return;
+      } else {
+        var tHref;
+        var vm = this;
+        localforage
+          .getItem(keyName)
+          .then(function (value) {
+            tHref = URL.createObjectURL(value);
+            if (vm.isMobile) window.open(tHref, "_self");
+            else window.open(tHref, "_blank");
+            vm.isInFetch = false;
+          })
+          .catch(function () {
+            if (x == 1) {
+              var tToken = window.localStorage.getItem("lastRawToken");
+              var fullPath =
+                "/api/raw/!PDJ/ToDoList-attachments/" +
+                keyName +
+                "?auth=" +
+                tToken +
+                "&inline=true";
+              if (vm.isMobile) window.open(fullPath, "_self");
+              else window.open(fullPath, "_blank");
+            }
+            vm.fetchAttach(keyName, x);
+          });
+      }
     },
 
-    fetchAttach(keyName) {
+    fetchAttach(keyName, x) {
       var vm = this;
       var tToken = window.localStorage.getItem("lastRawToken");
       var fullPath =
@@ -2785,6 +3140,10 @@ export default {
         .then((blob) => {
           localforage.setItem(keyName, blob, function () {
             window.localStorage.setItem("hasCachedAttach", 1);
+            if (x == 1) {
+              vm.isInFetch = false;
+              return;
+            }
             setTimeout(() => {
               localforage
                 .getItem(keyName)
@@ -2810,12 +3169,38 @@ export default {
       return window.matchMedia("(orientation: landscape)").matches;
     },
 
+    switchRemember(x) {
+      if (x == 1 && this.arrIsDue[this.sentenceIndex - 1]) {
+        this.switchDone(this.sentenceIndex - 1);
+      } else if (x == 2) {
+        if (!this.arrIsDue[this.sentenceIndex - 1])
+          this.switchDone(this.sentenceIndex - 1);
+        if (this.fromFirstDay) this.changeStartDate();
+      }
+    },
+
+    changeStartDate() {
+      let newItem =
+        this.itemContent[this.sentenceIndex - 1].split("::startDate:")[0] +
+        "::startDate:" +
+        this.today +
+        "::endDate:" +
+        this.itemContent[this.sentenceIndex - 1].split("::endDate:")[1];
+      this.itemList = this.itemList.replace(
+        this.itemContent[this.sentenceIndex - 1],
+        newItem
+      );
+      this.allowBackUp = false;
+      this.save();
+    },
+
     showItemReview(x) {
       this.contentIndex = 1;
       this.isItemReview = !this.isItemReview;
       this.isEditItem = false;
       this.addNew = false;
       this.sentenceIndex = x + 1;
+      if (this.isAutoDetectLang) this.autoDetectLangInTrans();
     },
 
     showConfirm() {
@@ -2829,6 +3214,7 @@ export default {
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
+        this.allowBackUp = true;
         this.save();
       }
     },
@@ -2879,7 +3265,8 @@ export default {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 一天的毫秒数
       const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期
-      if (m == 1) return nDaysAfter.toLocaleDateString().replaceAll("/", "-");
+      if (m == 1)
+        return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
       if (this.user.locale == "zh-cn") {
         const dayOfWeekNumber = (date.getDay() + n) % 7;
         const daysOfWeek = [
@@ -2893,13 +3280,13 @@ export default {
         ];
         const dayOfWeekName = daysOfWeek[dayOfWeekNumber];
         return (
-          nDaysAfter.toLocaleDateString().replaceAll("/", "-") +
+          nDaysAfter.toLocaleDateString("af").replaceAll("/", "-") +
           "  " +
           dayOfWeekName
         );
       } else
         return (
-          nDaysAfter.toLocaleDateString().replaceAll("/", "-") +
+          nDaysAfter.toLocaleDateString("af").replaceAll("/", "-") +
           "  " +
           nDaysAfter.toString().slice(0, 3)
         );
@@ -2921,6 +3308,7 @@ export default {
         for (let i = 0; i < allList.length; i++) {
           let newItem = allList[i].slice(0, -12) + this.selectedDate + "\n\t]";
           this.itemList = this.itemList.replace(allList[i], newItem);
+          this.allowBackUp = false;
           this.save();
         }
       }
@@ -3007,7 +3395,6 @@ export default {
     },
 
     calcList() {
-      this.getItemContent();
       var target = this.selectedTags.map((item) => item.replace(/^\*/, ""));
       var list = this.itemContent;
       var sublist = [];
@@ -3064,7 +3451,7 @@ export default {
     },
 
     switchImportant() {
-      console.log("not yet");
+      console.log("not done yet, may be don't need this.");
     },
 
     submitItem() {
@@ -3103,7 +3490,7 @@ export default {
       if (this.tags == " ") this.tags = " ;" + this.newItemLine3; //merge
       else this.tags = this.tags + ";" + this.newItemLine3; //merge
       let arr = this.tags.split(";");
-      arr = this.trimArrayElements(arr); //trim space before and after each tag.
+      arr = this.trimArrayElements(arr);
       arr = this.unique(arr); // remove duplicate tags
       this.tags = arr.join(";").replaceAll('""', "");
       this.tags = this.tags.replace(/^;|;$/g, "");
@@ -3128,7 +3515,7 @@ export default {
         else if (this.isType == "1" && this.isEvery && this.selectedType == "2")
           rType = "everyOfWeeks:" + this.numOf + ":" + this.weekRange + "::";
         var eDate = "";
-        if (this.isNever) eDate = "2999-12-31";
+        if (this.isNever) eDate = "9999-12-31";
         else eDate = this.endDate;
       }
       if (this.addNew) {
@@ -3145,7 +3532,7 @@ export default {
           "::disable:" +
           "false" +
           "::latestReviewed:" +
-          "0001-01-01";
+          "1970-01-01";
         let id = Math.random();
         this.itemList =
           this.itemList +
@@ -3203,8 +3590,10 @@ export default {
           element.includes(id) ? editedItem : element
         );
         this.itemList = ttList.join("\n\t\n\t");
-        this.savedContent = "tags: " + this.tags + ";.\n\t\n\t" + this.itemList;
+        this.browserContent =
+          "tags: " + this.tags + ";.\n\t\n\t" + this.itemList;
       }
+      this.allowBackUp = true;
       this.save();
       this.newItemLine1 = "";
       this.newItemLine2 = "";
@@ -3223,7 +3612,7 @@ export default {
       this.reviewMinute = 0;
       this.importantDaily = false;
       this.disabledDaily = false;
-      this.curveDays = "1 3 7 15 30 60 120";
+      this.curveDays = "0 1 3 7 15 30 60 120";
       this.isNever = true;
       this.hasEnd = false;
       this.isOnce = false;
@@ -3257,7 +3646,7 @@ export default {
     addTags(index) {
       this.newItemLine3 = this.newItemLine3.replaceAll("；", ";");
       this.newItemLine3 = this.newItemLine3.trimEnd();
-      this.newItemLine3 = this.newItemLine3.replace(/;$/, ""); //delete the last ;.
+      this.newItemLine3 = this.newItemLine3.replace(/;$/, "");
       this.newItemLine3 = this.newItemLine3.trimEnd();
       if (this.newItemLine3 == "") {
         this.newItemLine3 = this.arrTags[index];
@@ -3380,46 +3769,65 @@ export default {
       }
       var currentTime = new Date();
       let id = Math.floor(currentTime.getTime() / 1000);
-      var keyName = id + "-" + files[0].name;
-      let vmm = this;
-      let path = this.$route.path.endsWith("/")
-        ? this.$route.path + "!PDJ/ToDoList-attachments/"
-        : this.$route.path + "/!PDJ/ToDoList-attachments/";
-
-      var keyValue;
-      localforage.setItem(keyName, files[0], function () {
-        window.localStorage.setItem("hasCachedAttach", 1);
-        setTimeout(() => {
-          localforage
-            .getItem(keyName)
-            .then(function (value) {
-              if (x == 1) {
-                vmm.frontAttach = vmm.frontAttach + ":::" + keyName;
-              } else {
-                vmm.backAttach = vmm.backAttach + ":::" + keyName;
-              }
-              keyValue = value;
-              vmm.uploadNow(path + keyName, keyValue, keyName);
-            })
-            .catch(function () {});
-        }, 200);
-      });
+      if (files[0].size > 314572800) {
+        id = id + "noCacheAllowed";
+        let tempName = id + "-" + files[0].name;
+        let path = this.$route.path.endsWith("/")
+          ? this.$route.path + "!PDJ/ToDoList-attachments/"
+          : this.$route.path + "/!PDJ/ToDoList-attachments/";
+        if (x == 1) {
+          this.frontAttach = this.frontAttach + ":::" + tempName;
+        } else {
+          this.backAttach = this.backAttach + ":::" + tempName;
+        }
+        this.uploadNow(path + tempName, files[0], tempName);
+        return;
+      } else {
+        var keyName = id + "-" + files[0].name;
+        let vmm = this;
+        let path = this.$route.path.endsWith("/")
+          ? this.$route.path + "!PDJ/ToDoList-attachments/"
+          : this.$route.path + "/!PDJ/ToDoList-attachments/";
+        var keyValue;
+        localforage.setItem(keyName, files[0], function () {
+          window.localStorage.setItem("hasCachedAttach", 1);
+          setTimeout(() => {
+            localforage
+              .getItem(keyName)
+              .then(function (value) {
+                if (x == 1) {
+                  vmm.frontAttach = vmm.frontAttach + ":::" + keyName;
+                } else {
+                  vmm.backAttach = vmm.backAttach + ":::" + keyName;
+                }
+                keyValue = value;
+                vmm.uploadNow(path + keyName, keyValue, keyName);
+              })
+              .catch(function () {});
+          }, 200);
+        });
+      }
     },
 
     async uploadNow(x, y, keyName) {
       this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
       window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+      this.isUploading = true;
       try {
         await api.post(x, y, true);
         this.unSavedAttach = this.unSavedAttach.replace(":::" + keyName, "");
         window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+        this.isUploading = false;
       } catch (error) {
         console.log(error);
+        this.isUploading = false;
       }
     },
 
     async uploadUnsaved() {
+      this.isUploading = true;
       if (window.localStorage.getItem("PDJ-ToDoList.txtNotUpload")) {
+        this.allowBackUp = true;
         await this.saveNow();
       }
       if (this.unSavedAttach !== "") {
@@ -3454,6 +3862,7 @@ export default {
           await this.deleteFile(keyName);
         }
       }
+      this.isUploading = false;
     },
 
     deleteAttach(index, x) {
@@ -3600,7 +4009,7 @@ export default {
         this.startDate = item[4]
           .split("::startDate:")[1]
           .split("::endDate:")[0];
-        if (item[4].split("::impt")[0].split("::endDate:")[1] == "2999-12-31") {
+        if (item[4].split("::impt")[0].split("::endDate:")[1] == "9999-12-31") {
           this.isNever = true;
         } else {
           this.hasEnd = true;
@@ -3690,7 +4099,6 @@ export default {
         this.contentIndex = 1;
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isAutoDetectLang) {
-          this.isUtterTransLine = true;
           this.autoDetectLangInTrans();
         }
         if (this.autoPlay) {
@@ -3707,7 +4115,6 @@ export default {
         this.contentIndex = 1;
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isAutoDetectLang) {
-          this.isUtterTransLine = true;
           this.autoDetectLangInTrans();
         }
         if (this.autoPlay) {
@@ -3759,6 +4166,8 @@ export default {
     },
 
     save() {
+      if (this.mounting) return;
+      this.contentChange = true;
       this.itemList = this.itemList.trim();
       this.tags = this.reCalcTags();
       let customConfig =
@@ -3782,30 +4191,39 @@ export default {
         JSON.stringify(this.TTSurlBack) +
         "::" +
         JSON.stringify(this.speedOfUtterBack) +
+        "::" +
+        JSON.stringify(this.fromFirstDay) +
         "::";
 
-      this.savedContent =
+      this.browserContent =
         customConfig +
         "\n\t\n\t" +
         "tags: " +
         this.tags +
         ";.\n\t\n\t" +
         this.itemList;
-      this.saveNow();
+      this.compareContent();
     },
 
     async saveNow() {
-      window.localStorage.setItem("PDJ-ToDoList.txt", this.savedContent);
+      var currentTime = new Date();
+      let id = Math.floor(currentTime.getTime() / 1000);
+      let pdjBackUp = "PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
+      window.localStorage.setItem("PDJ-ToDoList.txt", this.browserContent);
       window.localStorage.setItem("PDJ-ToDoList.txtNotUpload", "1");
       this.unsavedTask = "1";
       try {
         await api.post(
           "/files/!PDJ/" + "PDJ-ToDoList.txt",
-          this.savedContent,
+          this.browserContent,
           true
         );
         window.localStorage.removeItem("PDJ-ToDoList.txtNotUpload");
+        window.localStorage.setItem("serverContent", this.browserContent);
         this.unsavedTask = "";
+        if (this.allowBackUp) {
+          await api.post("/files/!PDJ/" + pdjBackUp, this.browserContent, true);
+        }
       } catch (error) {
         console.log(error);
       }
@@ -3823,7 +4241,6 @@ export default {
         this.contentIndex = 1;
         this.sentenceIndex = this.sentenceIndex + 1;
         if (this.isAutoDetectLang) {
-          this.isUtterTransLine = true;
           this.autoDetectLangInTrans();
         }
         if (this.autoPlay) {
@@ -3841,7 +4258,6 @@ export default {
         this.contentIndex = 1;
         this.sentenceIndex = this.sentenceIndex - 1;
         if (this.isAutoDetectLang) {
-          this.isUtterTransLine = true;
           this.autoDetectLangInTrans();
         }
         if (this.autoPlay) {
