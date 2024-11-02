@@ -2567,7 +2567,8 @@ export default {
         }
       } catch (e) {
         console.log("disconnected");
-        if (!this.contentChange || this.allowOffline) return;
+        if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+        if (!this.contentChange) return;
         this.saveNow();
       }
     },
