@@ -1,3 +1,7 @@
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot0-1.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot0-2.jpg)
+
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot1.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot1-1.jpg)
@@ -5,8 +9,6 @@
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot2.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot51.jpg)
-
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot2-1.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot52.jpg)
 
@@ -19,6 +21,16 @@
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot301.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot302.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot001.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot002.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot003.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot0033.jpg)
+
+![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot004.jpg)
 
 ![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot303.jpg)
 
@@ -33,6 +45,10 @@
 [![Chat IRC](https://img.shields.io/badge/freenode-%23filebrowser-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23filebrowser)
 
 PDJ Media Player is a mp3 and mp4 repeater with .srt subtitle file for English or any other language learning. It's modified based on [Filebrowser](https://github.com/filebrowser/filebrowser). 
+
+PDJ Universal To Do List is a to do list for general purpose, including regular tast, recitation task, memo. 
+
+Both of these can be used online or offline.
 
 ## Assets Download
 
@@ -62,7 +78,7 @@ Sample Media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Rep
 
 ## Quick Launch
 
-PDJ Media Repeater is a green standalone software. 
+PDJ Media Repeater (PDJ Universal To Do List) is a green standalone software. 
 
 In windows, just double click the filebrowser.exe, then you can visit it at your IP address:port in your browser. The default account is admin:admin (If you can't run filebrowser.exe in this way, use <a href="#lable">command line instead</a>.)
 
