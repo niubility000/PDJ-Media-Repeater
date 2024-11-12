@@ -1396,7 +1396,7 @@
             v-if="isShowLine1"
             id="editArea1"
             v-model.lazy="subFirstLine"
-            placeholder="...Subtitle's First Line..."
+            placeholder="...Subtitle First Line..."
             :rows="rowsNum"
             style="
               width: 100%;
@@ -1412,7 +1412,7 @@
             v-if="isShowLine2"
             id="editArea2"
             v-model.lazy="subSecLine"
-            placeholder="...Subtitle's Second Line..."
+            placeholder="...Subtitle Second Line..."
             :rows="rowsNum"
             style="
               width: 100%;
@@ -2217,6 +2217,8 @@ export default {
     },
 
     subFirstLine: function () {
+      if (this.subFirstLine == "  " || this.subFirstLine == " ")
+        this.subFirstLine = "";
       this.onEdit = true;
       this.saveSub();
     },
@@ -2448,15 +2450,19 @@ export default {
           window.localStorage.getItem(this.favNotUpload) ||
           (this.isFavOnPlay && this.isPlayFullFavList) ||
           this.showRevision) &&
+        this.user.id == window.localStorage.getItem("userIDRepeater") &&
         window.localStorage.getItem(this.favFileName)
       ) {
         PDJcontent = window.localStorage.getItem(this.favFileName);
       } else {
         try {
+          if (this.allowOffline) window.localStorage.removeItem("isOffline");
           PDJserverContent = await api.fetch("/files/!PDJ/" + this.favFileName);
+          if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
           this.serverFav = PDJcontent;
           window.localStorage.setItem(this.favFileName, this.serverFav);
+          window.localStorage.setItem("userIDRepeater", this.user.id);
         } catch (e) {
           this.isReadyToPlay = true;
           this.confirmType = "fetch";
@@ -2594,7 +2600,7 @@ export default {
 
     getDateAfterDays(n) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 一天的毫秒数
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 毫秒数
       const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期
       return nDaysAfter.toLocaleDateString().replaceAll("/", "-");
     },
@@ -3222,7 +3228,7 @@ export default {
       if (x.includes("\r\n")) x = x.replaceAll("\r\n", "\n");
       if (x.includes("\n\n\n\n")) x = x.replaceAll("\n\n\n\n", "\n\n");
       if (x.includes("\n\n\n")) x = x.replaceAll("\n\n\n", "\n\n");
-      if (x.includes("\t\t")) x = x.replaceAll("\t\t", "\n");
+      if (x.includes("\t")) x = x.replaceAll("\t", " ");
       x = x.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       x = x.replace(/^\n+|\n+$/g, "");
 
@@ -4095,9 +4101,15 @@ export default {
       this.tempOldContent = this.reqF.content;
       var tempContent = this.reqF.content;
       var newContent = this.srtSubtitles[this.sentenceIndex - 1].timeStamp;
-
       if (this.subFirstLine !== undefined) {
         this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
+        if (
+          this.subFirstLine !== "" ||
+          this.subFirstLine !== " " ||
+          this.subFirstLine !== "  " ||
+          this.subFirstLine !== "     "
+        )
+          this.subFirstLine = this.subFirstLine.trim();
         if (
           this.subFirstLine == "" &&
           ((this.subSecLine !== undefined && this.subSecLine !== "") ||

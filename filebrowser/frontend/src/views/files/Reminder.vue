@@ -341,9 +341,10 @@
       ></textarea>
       <div>
         <ul
-          v-if="true"
           style="
             display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             border-radius: 20px;
             overflow-x: auto;
             list-style: none;
@@ -449,21 +450,27 @@
         {{ $t("reminder.ebbinghaus") }}
       </p>
 
-      <p v-if="isCustom && isType == '1'" style="padding: 0; margin-left: 3em">
+      <p
+        v-if="isCustom && isType == '1'"
+        style="padding: 0; margin-left: 3em; margin-right: 1em"
+      >
         {{ $t("reminder.days") }}
         <input
           class="input input--repeater"
-          style="width: 9em; margin: 0; padding: 0"
+          style="width: 8em; margin: 0; padding: 0"
           type="text"
           v-model="curveDays"
         />
       </p>
 
-      <p v-if="isCurve && isType == '2'" style="padding: 0; margin-left: 3em">
+      <p
+        v-if="isCurve && isType == '2'"
+        style="padding: 0; margin-left: 3em; margin-right: 1em"
+      >
         {{ $t("reminder.days") }}
         <input
           class="input input--repeater"
-          style="width: 9em; margin: 0; padding: 0"
+          style="width: 8em; margin: 0; padding: 0"
           type="text"
           v-model="curveDays"
         />
@@ -548,10 +555,29 @@
         </p>
       </div>
     </div>
+    <div
+      v-if="browserContent == ''"
+      style="
+        z-index: 1000;
+        position: fixed;
+        background: whitesmoke;
+        left: 50%;
+        transform: translate(-50%, 0);
+        top: 4.2em;
+        bottom: 0.2em;
+      "
+      :style="{
+        width: isMobile ? '100%' : '65%',
+      }"
+    >
+      <h2 style="margin-top: 50%" class="message delayed">
+        <span>{{ $t("files.loading") }}</span>
+      </h2>
+    </div>
 
     <div
       id="showList"
-      v-if="isShowList"
+      v-if="browserContent !== ''"
       style="
         z-index: 1000;
         display: flex;
@@ -877,7 +903,12 @@
         </ul>
         <div
           v-if="itemList == ''"
-          style="padding: 0 1em; position: relative; width: 100%"
+          style="
+            padding: 0 1em;
+            position: relative;
+            width: 100%;
+            word-break: break-all;
+          "
         >
           <p style="text-align: justify">
             {{ $t("reminder.ins01") }}
@@ -1021,7 +1052,7 @@
           left: 50%;
           transform: translate(-50%, 0);
           top: 0.2em;
-          bottom: 4.2em;
+          height: calc(100% - 4.4em);
           border-radius: 10px;
           display: flex;
           flex-direction: column;
@@ -1047,9 +1078,11 @@
         </div>
 
         <div
+          id="scrollArea"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
+          @touchmove="touchMove"
           @touchend="endTouch"
           style="
             align-items: center;
@@ -1061,9 +1094,9 @@
             overflow-y: auto;
           "
         >
-          <p style="padding: 0 1em; color: blue">
+          <h3 style="padding: 0 1em; color: blue; margin: auto">
             {{ itemContent[sentenceIndex - 1].split("\n\t")[contentIndex] }}
-          </p>
+          </h3>
         </div>
         <div
           v-if="contentIndex == 1 && !arrFrontAtt == []"
@@ -1126,13 +1159,13 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          height: 3.8em;
-          bottom: 0.2em;
+          height: 3.8rem;
+          bottom: 0.2rem;
           border-radius: 10px;
-          overflow-y: auto;
           display: flex;
           flex-direction: column;
-          width: calc(100% - 1em);
+          width: calc(100% - 1rem);
+          font-size: 0.8em;
         "
       >
         <div
@@ -1155,12 +1188,19 @@
               font-size: 0.8em;
               background-color: #262626;
               border-radius: 5px;
+              text-align: center;
             "
           >
             {{ $t("reminder.status03") }}
           </span>
+
           <span
-            v-if="!isShowAllList && isTodayEarly && arrIsDue[sentenceIndex - 1]"
+            v-if="
+              !isShowAllList &&
+              isTodayEarly &&
+              arrIsDue[sentenceIndex - 1] &&
+              reviewType == 3
+            "
             style="
               border: 0;
               margin: 0;
@@ -1168,6 +1208,7 @@
               font-size: 0.8em;
               background-color: blue;
               border-radius: 5px;
+              text-align: center;
               cursor: pointer;
             "
             @click="switchDone(sentenceIndex - 1)"
@@ -1177,7 +1218,10 @@
           </span>
           <span
             v-if="
-              !isShowAllList && isTodayEarly && !arrIsDue[sentenceIndex - 1]
+              !isShowAllList &&
+              isTodayEarly &&
+              !arrIsDue[sentenceIndex - 1] &&
+              reviewType == 3
             "
             style="
               border: 0;
@@ -1186,6 +1230,7 @@
               font-size: 0.8em;
               background-color: #888888;
               border-radius: 5px;
+              text-align: center;
               cursor: pointer;
             "
             @click="switchDone(sentenceIndex - 1)"
@@ -1193,26 +1238,134 @@
           >
             {{ $t("reminder.status02") }}
           </span>
-          <span v-if="!isShowAllList"> &nbsp;&nbsp; </span>
-          <span style="color: blue; flex-grow: 1">
+
+          <span
+            v-if="
+              !isShowAllList &&
+              isTodayEarly &&
+              arrIsDue[sentenceIndex - 1] &&
+              reviewType == 2
+            "
+            style="
+              border: 0;
+              margin: 0;
+              padding: 0;
+              font-size: 0.8em;
+              background-color: blue;
+              border-radius: 5px;
+              text-align: center;
+            "
+          >
+            {{ $t("reminder.status01") }}
+          </span>
+          <span
+            v-if="
+              !isShowAllList &&
+              isTodayEarly &&
+              !arrIsDue[sentenceIndex - 1] &&
+              reviewType == 2
+            "
+            style="
+              border: 0;
+              margin: 0;
+              padding: 0;
+              font-size: 0.8em;
+              background-color: #888888;
+              border-radius: 5px;
+              text-align: center;
+            "
+          >
+            {{ $t("reminder.status02") }}
+          </span>
+
+          <span v-if="!isShowAllList && reviewType !== 1"> &nbsp;&nbsp; </span>
+          <span v-if="reviewType !== 1" style="color: blue; flex-grow: 1">
             {{ $t("reminder.lastReviewedDate") }}
             {{ lastReviewedDate }}
           </span>
-          <span
+          <span v-if="reviewType !== 1"> &nbsp;&nbsp; </span>
+          <button
             v-if="reviewType == 2"
             @click="switchRemember(1)"
-            style="color: blue; flex-grow: 1; cursor: pointer"
+            style="
+              color: blue;
+              cursor: pointer;
+              border-radius: 5px;
+              padding: 2px;
+            "
           >
             {{ $t("reminder.remembered") }}
-          </span>
-          <span
+          </button>
+          <span v-if="reviewType !== 1"> &nbsp;&nbsp; </span>
+          <button
             v-if="reviewType == 2"
             @click="switchRemember(2)"
-            style="color: blue; flex-grow: 1; cursor: pointer"
+            style="
+              color: blue;
+              cursor: pointer;
+              border-radius: 5px;
+              padding: 2px;
+            "
           >
             {{ $t("reminder.forgot") }}
-          </span>
+          </button>
         </div>
+      </div>
+      <div
+        v-if="forgot1"
+        style="
+          position: fixed;
+          z-index: 1001;
+          bottom: 6em;
+          width: 100%;
+          text-align: center;
+        "
+      >
+        <p style="color: black; font-size: 0.9em; margin: 0 1em">
+          {{ $t("reminder.forgot1") }}
+        </p>
+      </div>
+      <div
+        v-if="forgot2"
+        style="
+          position: fixed;
+          z-index: 1001;
+          bottom: 6em;
+          width: 100%;
+          text-align: center;
+        "
+      >
+        <p style="color: black; font-size: 0.9em; margin: 0 1em">
+          {{ $t("reminder.forgot2") }}
+        </p>
+      </div>
+      <div
+        v-if="forgot3"
+        style="
+          position: fixed;
+          z-index: 1001;
+          bottom: 6em;
+          width: 100%;
+          text-align: center;
+        "
+      >
+        <p style="color: black; font-size: 0.9em; margin: 0 1em">
+          {{ $t("reminder.forgot3") }}
+        </p>
+      </div>
+      <div
+        v-if="remembered1"
+        style="
+          position: fixed;
+          z-index: 1001;
+          bottom: 6em;
+          width: 100%;
+          text-align: center;
+        "
+      >
+        <p style="color: black; font-size: 0.9em; margin: 0 1em">
+          {{ $t("reminder.remembered1") }}
+        </p>
       </div>
     </div>
 
@@ -1623,10 +1776,24 @@
             </p>
           </div>
 
+          <div>
+            <p style="color: black; text-align: justify; text-align-last: left">
+              <input type="checkbox" v-model="isBackUp" />
+              {{ $t("reminder.isBackUp") }}
+            </p>
+          </div>
+
           <hr style="border: none; border-top: 1px solid black; height: 0" />
         </div>
         <div style="color: black">
-          <p style="color: blue; font-weight: bold; padding-top: 2em">
+          <p
+            style="
+              color: blue;
+              font-weight: bold;
+              padding-top: 2em;
+              word-break: break-all;
+            "
+          >
             {{ $t("repeater.instructions") }}
           </p>
 
@@ -1761,7 +1928,6 @@ export default {
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
       addNew: false,
-      isShowList: true,
       isShowAllList: false,
       newItemLine1: "",
       newItemLine2: "",
@@ -1782,6 +1948,7 @@ export default {
       isCurve: true,
       numOf: 1,
       selectedType: "1",
+      initSave: false,
       tpyeOptions: [
         { value: "1", text: "Day(s)" },
         { value: "2", text: "Week(s)" },
@@ -1829,6 +1996,7 @@ export default {
       utterThis: null,
       audio: null,
       autoPlay: true,
+      isBackUp: true,
       reader: 0,
       readerFront: 0,
       readerBack: 0,
@@ -1849,6 +2017,11 @@ export default {
       unDeleted: window.localStorage.getItem("unDeleted") || "",
       dailyLength: 0,
       allowBackUp: false,
+      forgot1: false,
+      forgot2: false,
+      forgot3: false,
+      remembered1: false,
+      allowSwitch: false,
       unsavedTask:
         window.localStorage.getItem("PDJ-ToDoList.txtNotUpload") || "",
       TTSurlFront:
@@ -2380,6 +2553,10 @@ export default {
       this.allowBackUp = false;
       this.save();
     },
+    isBackUp: function () {
+      this.allowBackUp = false;
+      this.save();
+    },
 
     autoPlay: function () {
       this.allowBackUp = false;
@@ -2544,6 +2721,7 @@ export default {
       this.TTSurlBack = JSON.parse(config[8]);
       this.speedOfUtterBack = JSON.parse(config[9]);
       this.fromFirstDay = JSON.parse(config[10]);
+      this.isBackUp = JSON.parse(config[11]);
       if (!this.hasSpeechSynthesis) this.isSystemTTS = "No";
     },
 
@@ -2576,12 +2754,12 @@ export default {
     showConfirmUnmatch(PDJcontent) {
       var userConfirm = window.confirm(this.$t("reminder.unmatch"));
       if (userConfirm) {
-        this.allowBackUp = true;
-        this.saveNow();
-      } else {
         window.localStorage.setItem("serverContent", PDJcontent);
         window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
         this.browserContent = PDJcontent;
+      } else {
+        this.allowBackUp = true;
+        this.saveNow();
       }
     },
 
@@ -3066,7 +3244,7 @@ export default {
       var tList = this.itemList.split("\n\t\n\t");
       var ttList = tList.filter((item) => !item.includes(id));
       this.itemList = ttList.join("\n\t\n\t");
-      this.allowBackUp = false;
+      this.allowBackUp = true;
       this.save();
       if (!this.itemContent || this.itemContent == []) {
         this.itemContent = [];
@@ -3173,10 +3351,46 @@ export default {
     switchRemember(x) {
       if (x == 1 && this.arrIsDue[this.sentenceIndex - 1]) {
         this.switchDone(this.sentenceIndex - 1);
+        this.remembered1 = true;
+        this.forgot2 = false;
+        this.forgot3 = false;
+        this.forogt1 = false;
+        setTimeout(() => {
+          this.remembered1 = false;
+        }, 2000);
       } else if (x == 2) {
         if (!this.arrIsDue[this.sentenceIndex - 1])
           this.switchDone(this.sentenceIndex - 1);
-        if (this.fromFirstDay) this.changeStartDate();
+        if (this.fromFirstDay) {
+          this.changeStartDate();
+          this.forgot1 = true;
+          this.forgot2 = false;
+          this.forgot3 = false;
+          this.remembered1 = false;
+          setTimeout(() => {
+            this.forgot1 = false;
+          }, 2000);
+        } else if (
+          this.itemContent[this.sentenceIndex - 1]
+            .split("::impt:")[1]
+            .split("::disable:")[0] == "true"
+        ) {
+          this.forgot2 = true;
+          this.forgot1 = false;
+          this.forgot3 = false;
+          this.remembered1 = false;
+          setTimeout(() => {
+            this.forgot2 = false;
+          }, 2000);
+        } else {
+          this.forgot3 = true;
+          this.forgot2 = false;
+          this.forgot1 = false;
+          this.remembered1 = false;
+          setTimeout(() => {
+            this.forgot3 = false;
+          }, 2000);
+        }
       }
     },
 
@@ -3215,8 +3429,12 @@ export default {
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
+        this.initSave = true;
         this.allowBackUp = true;
         this.save();
+        setTimeout(() => {
+          this.initSave = false;
+        }, 500);
       }
     },
 
@@ -3249,6 +3467,7 @@ export default {
       if (this.addNew) {
         this.cleanUp();
         this.isEditItem = false;
+        this.startDate = this.today;
         this.newItemLine1 = "";
         this.newItemLine2 = "";
         this.newItemLine3 = "";
@@ -3265,25 +3484,30 @@ export default {
     getDateAfterDays(n, m) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样算到期日最简单。
       if (m == 1)
         return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
       if (this.user.locale == "zh-cn") {
-        const dayOfWeekNumber = (date.getDay() + n) % 7;
-        const daysOfWeek = [
-          "星期日",
-          "星期一",
-          "星期二",
-          "星期三",
-          "星期四",
-          "星期五",
-          "星期六",
-        ];
-        const dayOfWeekName = daysOfWeek[dayOfWeekNumber];
+        let dayOfWeekNumber = "";
+        if (nDaysAfter.toString().slice(0, 3) == "Mon")
+          dayOfWeekNumber = "星期一";
+        else if (nDaysAfter.toString().slice(0, 3) == "Tue")
+          dayOfWeekNumber = "星期二";
+        else if (nDaysAfter.toString().slice(0, 3) == "Wed")
+          dayOfWeekNumber = "星期三";
+        else if (nDaysAfter.toString().slice(0, 3) == "Thu")
+          dayOfWeekNumber = "星期四";
+        else if (nDaysAfter.toString().slice(0, 3) == "Fri")
+          dayOfWeekNumber = "星期五";
+        else if (nDaysAfter.toString().slice(0, 3) == "Sat")
+          dayOfWeekNumber = "星期六";
+        else if (nDaysAfter.toString().slice(0, 3) == "Sun")
+          dayOfWeekNumber = "星期日";
+
         return (
           nDaysAfter.toLocaleDateString("af").replaceAll("/", "-") +
           "  " +
-          dayOfWeekName
+          dayOfWeekNumber
         );
       } else
         return (
@@ -3307,7 +3531,7 @@ export default {
       if (this.itemList && this.isTodayEarly) {
         var allList = this.itemList.split("\n\t\n\t");
         for (let i = 0; i < allList.length; i++) {
-          let newItem = allList[i].slice(0, -12) + this.selectedDate + "\n\t]";
+          let newItem = allList[i].slice(0, -13) + this.selectedDate + "\n\t]";
           this.itemList = this.itemList.replace(allList[i], newItem);
           this.allowBackUp = false;
           this.save();
@@ -4060,7 +4284,8 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+        this.click();
     },
 
     startTouch(event) {
@@ -4068,6 +4293,20 @@ export default {
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
+      var a = document.getElementById("scrollArea");
+      if (a.scrollTop < 1) {
+        this.allowSwitch = true;
+        setTimeout(() => {
+          this.allowSwitch = false;
+        }, 500);
+      }
+    },
+
+    touchMove(event) {
+      event.preventDefault();
+      var endY = event.touches[0].clientY;
+      var a = document.getElementById("scrollArea");
+      a.scrollTop += (this.startY - endY) / 10;
     },
 
     endTouch(event) {
@@ -4091,7 +4330,8 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
-      this.click();
+      if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+        this.click();
     },
 
     checkNav(x, mode) {
@@ -4136,6 +4376,7 @@ export default {
           this.cleanUp();
           return;
         }
+        if (!this.allowSwitch) return;
         this.contentIndex = 1;
         if (this.autoPlay) {
           this.cleanUp();
@@ -4194,6 +4435,8 @@ export default {
         JSON.stringify(this.speedOfUtterBack) +
         "::" +
         JSON.stringify(this.fromFirstDay) +
+        "::" +
+        JSON.stringify(this.isBackUp) +
         "::";
 
       this.browserContent =
@@ -4203,10 +4446,19 @@ export default {
         this.tags +
         ";.\n\t\n\t" +
         this.itemList;
-      this.compareContent();
+      if (!this.initSave) this.compareContent();
     },
 
     async saveNow() {
+      if (this.browserContent == "") return;
+      if (
+        this.browserContent.includes("tags: ;.") &&
+        this.browserContent.split("tags: ;.")[1].trim() == "" &&
+        !this.initSave
+      ) {
+        this.showConfirm();
+        return;
+      }
       var currentTime = new Date();
       let id = Math.floor(currentTime.getTime() / 1000);
       let pdjBackUp = "PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
@@ -4222,8 +4474,12 @@ export default {
         window.localStorage.removeItem("PDJ-ToDoList.txtNotUpload");
         window.localStorage.setItem("serverContent", this.browserContent);
         this.unsavedTask = "";
-        if (this.allowBackUp) {
-          await api.post("/files/!PDJ/" + pdjBackUp, this.browserContent, true);
+        if (this.allowBackUp && this.isBackUp) {
+          await api.post(
+            "/files/!PDJ/ToDoList-attachments/" + pdjBackUp,
+            this.browserContent,
+            true
+          );
         }
       } catch (error) {
         console.log(error);
