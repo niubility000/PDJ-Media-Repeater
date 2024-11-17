@@ -348,14 +348,15 @@
                     @click="switchDateReviseStatus(index, i)"
                     :style="{
                       color:
-                        itm.split('^^')[1].split('**')[0] == '1'
+                        Number(itm.split('^^')[0].replaceAll('-', '')) >
+                        Number(today.replaceAll('-', ''))
                           ? 'white'
                           : itm.split('**')[1] == '1'
                           ? 'red'
                           : 'black',
                       pointerEvents:
-                        itm.split('^^')[1].split('**')[0] == '1' ||
-                        itm.split('**')[1] == '0'
+                        Number(itm.split('^^')[0].replaceAll('-', '')) >
+                        Number(today.replaceAll('-', ''))
                           ? 'none'
                           : 'auto',
                     }"
@@ -389,22 +390,31 @@
           color: whitesmoke;
           z-index: 1010;
           display: flex;
+          flex-direction: column;
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 3.2em;
-          bottom: 1.2em;
+          top: 4.2em;
+          bottom: 0.2em;
+          background-color: black;
         "
         :style="{
           width: isMobile ? '100%' : '65%',
         }"
       >
+        <input
+          style="height: 2em"
+          type="text"
+          placeholder=" Search in Subtitles and Notes "
+          v-model="searchList"
+        />
         <ul
           style="
             position: relative;
             width: 100%;
             height: 100%;
             padding: 1em;
+            margin: 0.2em 0 0 0;
             border-radius: 10px;
             overflow-y: auto;
             background: grey;
@@ -412,15 +422,15 @@
           "
         >
           <li
-            v-for="(subtitle, index) in srtSubtitles"
+            v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
-            :id="index + 1"
-            @click="chooseSentence(index)"
+            :id="subtitle.sn"
+            @click="chooseSentence(Number(subtitle.sn) - 1)"
           >
             <p
               style="cursor: pointer"
               :style="{
-                color: sentenceIndex == index + 1 ? 'blue' : 'white',
+                color: sentenceIndex == Number(subtitle.sn) ? 'blue' : 'white',
               }"
             >
               {{ index + 1 }}.
@@ -892,7 +902,7 @@
                 class="input input--repeater"
                 type="number"
                 min="1"
-                max="2"
+                max="3"
                 v-model.number.lazy="lineNumOfTrans"
               />
             </div>
@@ -1555,6 +1565,12 @@
         </span>
       </div>
 
+      <div v-if="markUnrevised" class="showMsg" style="bottom: 2.5em">
+        <span style="color: white; padding: 0.3em; background-color: black">
+          {{ $t("repeater.revise55") }}
+        </span>
+      </div>
+
       <div v-if="mediaCached" class="showMsg" style="bottom: 2.5em">
         <span style="color: blue; padding: 0.3em; background-color: grey">
           {{ $t("repeater.cached") }}
@@ -1744,6 +1760,7 @@ export default {
       indexE: 10,
       tempSentenceIndex: 1,
       markRevised: false,
+      markUnrevised: false,
       reviseType: 0,
       srtRevisePath: "",
       maxCacheNum: Number(window.localStorage.getItem("max")) || 10,
@@ -1763,6 +1780,8 @@ export default {
       notAllowSaveInOffline: false,
       favFileName: "PDJ-Repeater.txt",
       favNotUpload: "PDJ-Repeater.txtfavNotUpload",
+      today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
+      searchList: "",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1951,6 +1970,21 @@ export default {
         return this.favList;
       } else {
         return this.currentFileFavList;
+      }
+    },
+
+    srtSubtitlesSearch() {
+      var searchKey = this.searchList.replaceAll("；", ";");
+      searchKey = searchKey.replaceAll(";;", ";");
+      searchKey = searchKey.replace(/^;|;$/g, "");
+      searchKey = searchKey.trim();
+      if (searchKey == ";") searchKey = "";
+      if (searchKey == "") return this.srtSubtitles;
+      else {
+        var final = this.srtSubtitles.filter((item) =>
+          item.content.toLowerCase().includes(searchKey.toLowerCase())
+        );
+        return final;
       }
     },
 
@@ -2344,7 +2378,7 @@ export default {
     lineNumOfTrans: function () {
       this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
-      if (this.lineNumOfTrans > 2) this.lineNumOfTrans = 2;
+      if (this.lineNumOfTrans > 3) this.lineNumOfTrans = 3;
       this.save();
     },
 
@@ -2600,9 +2634,9 @@ export default {
 
     getDateAfterDays(n) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期
-      return nDaysAfter.toLocaleDateString().replaceAll("/", "-");
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期，这个最简单，直接了当。
+      return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
     compareDates(date) {
@@ -2903,6 +2937,7 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.showSubtitleList = false;
+        this.searchList = "";
         this.showNewWordList = true;
       } else if (
         this.showSubtitleList &&
@@ -2911,6 +2946,7 @@ export default {
         this.isFavOnPlay
       ) {
         this.showSubtitleList = false;
+        this.searchList = "";
       } else if (
         !this.showSubtitleList &&
         this.showNewWordList &&
@@ -3193,6 +3229,7 @@ export default {
       this.cleanUp2();
       this.cleanUp1();
       this.showSubtitleList = false;
+      this.searchList = "";
       if (this.showNewWordList) {
         if (this.newWordList.length > 0)
           this.newWordList[this.indexOfNewWordList].showTrans = false;
@@ -3581,6 +3618,7 @@ export default {
       this.isSetting = false;
       this.showRevision = false;
       this.showSubtitleList = false;
+      this.searchList = "";
       if (this.showNewWordList) {
         if (this.newWordList.length > 0)
           this.newWordList[this.indexOfNewWordList].showTrans = false;
@@ -3633,7 +3671,8 @@ export default {
         window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
-        this.click();
+        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+          this.click();
       }
     },
 
@@ -3646,6 +3685,7 @@ export default {
       this.isSetting = false;
       this.showRevision = false;
       this.showSubtitleList = false;
+      this.searchList = "";
       if (this.showNewWordList) {
         if (this.newWordList.length > 0)
           this.newWordList[this.indexOfNewWordList].showTrans = false;
@@ -3698,7 +3738,8 @@ export default {
         window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
-        this.click();
+        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+          this.click();
       }
     },
 
@@ -4758,15 +4799,25 @@ export default {
       this.$set(
         this.reviseData[index],
         this.reviseData[index].date[i],
-        this.reviseData[index].date[i].split("**")[0] + "**0"
+        this.reviseData[index].date[i].split("**")[0] + "**0",
+        this.reviseData[index].date[i].split("**")[0] + "**1"
       );
-      this.reviseData[index].date[i] =
-        this.reviseData[index].date[i].split("**")[0] + "**0";
+      if (this.reviseData[index].date[i].split("**")[1] == "1") {
+        this.reviseData[index].date[i] =
+          this.reviseData[index].date[i].split("**")[0] + "**0";
+        this.markRevised = true;
+        setTimeout(() => {
+          this.markRevised = false;
+        }, 1500);
+      } else {
+        this.reviseData[index].date[i] =
+          this.reviseData[index].date[i].split("**")[0] + "**1";
+        this.markUnrevised = true;
+        setTimeout(() => {
+          this.markUnrevised = false;
+        }, 1500);
+      }
       this.save();
-      this.markRevised = true;
-      setTimeout(() => {
-        this.markRevised = false;
-      }, 1500);
     },
 
     delRevision(index) {
@@ -4946,6 +4997,7 @@ export default {
       }
       if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
         this.showSubtitleList = false;
+        this.searchList = "";
         if (this.showNewWordList) {
           if (this.newWordList.length > 0)
             this.newWordList[this.indexOfNewWordList].showTrans = false;

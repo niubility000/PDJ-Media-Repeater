@@ -78,6 +78,7 @@
     "delThisRevision2": "Are you sure to delete this review?",
     "removeRevisionConfirm": "Unable to connect to the network, or the media file and subtitle file for this review have been moved or deleted on the server! Clicking 'confirm' will delete this review item. If necessary, please manually add again; Or click 'Cancel' to close and try again after connecting to the internet or in 'Offline APP Mode'.",  
     "revise5": "Marked as 'Reviewed'",
+    "revise55": "Marked as 'Haven't Reviewed'",
     "confirmDelete": "Are you sure to delete Current Sentence?",
     "confirmMerge": "Are you sure to merge Current Sentence to Next Sentence?",
     "confirmAdd": "Are you sure to add a New Sentence after Current Sentence?",

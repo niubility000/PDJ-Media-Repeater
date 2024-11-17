@@ -910,46 +910,46 @@
             word-break: break-all;
           "
         >
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins01") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins02") }}
             <i style="color: blue" class="material-icons">add_card</i
             >{{ $t("reminder.ins03") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins04") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins05") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins06") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins07") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins08") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins09") }}
             <i style="color: blue" class="material-icons">checklist_rtl</i
             >{{ $t("reminder.ins10") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins11") }}
             &nbsp;&or;&nbsp;
             {{ $t("reminder.ins12") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins13") }}
             <span style="font-size: 0.8em">
               &nbsp;{{ $t("reminder.status01") }}&nbsp;
@@ -957,43 +957,43 @@
             {{ $t("reminder.ins14") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins15") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins16") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins17") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins18") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins19") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins20") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins21") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins22") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins23") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins24") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins25") }}
           </p>
         </div>
@@ -1646,7 +1646,7 @@
               />
             </div>
 
-            <p style="margin-bottom: 0">
+            <p style="margin: 0">
               <input
                 :disabled="!isUtterTransLine"
                 style="margin-left: 1em"
@@ -1691,7 +1691,7 @@
               </button>
             </p>
             <p
-              style="margin-left: 2em"
+              style="margin: 0 0 0 2em"
               :style="{
                 color:
                   isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
@@ -1711,7 +1711,7 @@
               v-model.lazy="TTSurlFront"
             />
             <p
-              style="margin-left: 2em"
+              style="margin: 0 0 0 2em"
               :style="{
                 color:
                   isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
@@ -1731,15 +1731,8 @@
               v-model.lazy="TTSurlBack"
             />
             <p
-              style="
-                margin: 0 0 1em 2rem;
-                text-align: justify;
-                text-align-last: left;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                word-break: break-all;
-                font-size: 0.8em;
-              "
+              id="ins"
+              style="margin: 0 0 1em 2rem; font-size: 0.8em"
               :style="{
                 color:
                   isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
@@ -1764,21 +1757,21 @@
           </p>
 
           <div>
-            <p style="color: black; text-align: justify; text-align-last: left">
+            <p id="ins1">
               <input disabled="true" type="checkbox" v-model="allowOffline" />
               {{ $t("reminder.offlineApp") }}
             </p>
           </div>
           <div>
-            <p style="color: black; text-align: justify; text-align-last: left">
+            <p id="ins1">
               <input type="checkbox" v-model="fromFirstDay" />
               {{ $t("reminder.fromFirstDay") }}
             </p>
           </div>
 
           <div>
-            <p style="color: black; text-align: justify; text-align-last: left">
-              <input type="checkbox" v-model="isBackUp" />
+            <p id="ins1">
+              <input type="checkbox" disabled="true" v-model="isBackUp" />
               {{ $t("reminder.isBackUp") }}
             </p>
           </div>
@@ -1797,43 +1790,43 @@
             {{ $t("repeater.instructions") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins02") }}
             <i style="color: blue" class="material-icons">add_card</i
             >{{ $t("reminder.ins03") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins04") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins05") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins06") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins07") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins08") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins09") }}
             <i style="color: blue" class="material-icons">checklist_rtl</i
             >{{ $t("reminder.ins10") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins11") }}
             &nbsp;&or;&nbsp;
             {{ $t("reminder.ins12") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins13") }}
             <span style="font-size: 0.8em">
               &nbsp;{{ $t("reminder.status01") }}&nbsp;
@@ -1841,50 +1834,50 @@
             {{ $t("reminder.ins14") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins15") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins16") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins17") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins18") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins19") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins20") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins21") }}
           </p>
 
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins22") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins23") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins24") }}
           </p>
-          <p style="text-align: justify">
+          <p id="ins">
             {{ $t("reminder.ins25") }}
           </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.updatesandComments") }}
           </p>
-          <p>
+          <p id="ins">
             {{ $t("repeater.github") }}
             <a
               href="https://github.com/niubility000/PDJ-Media-Repeater"
@@ -2422,6 +2415,14 @@ export default {
       }
     },
 
+    isTouchDevice() {
+      return (
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0 ||
+        navigator.msMaxTouchPoints > 0
+      );
+    },
+
     frontAndBack() {
       if (this.contentIndex == 1) return this.$t("reminder.frontSide");
       else return this.$t("reminder.backSide");
@@ -2553,10 +2554,6 @@ export default {
       this.allowBackUp = false;
       this.save();
     },
-    isBackUp: function () {
-      this.allowBackUp = false;
-      this.save();
-    },
 
     autoPlay: function () {
       this.allowBackUp = false;
@@ -2679,9 +2676,7 @@ export default {
       } else {
         try {
           if (this.allowOffline) window.localStorage.removeItem("isOffline");
-          PDJserverContent = await api.fetch(
-            "/files/!PDJ/" + "PDJ-ToDoList.txt"
-          );
+          PDJserverContent = await api.fetch("/files/!PDJ/PDJ-ToDoList.txt");
           if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
           window.localStorage.setItem("userID", this.user.id);
@@ -2721,16 +2716,13 @@ export default {
       this.TTSurlBack = JSON.parse(config[8]);
       this.speedOfUtterBack = JSON.parse(config[9]);
       this.fromFirstDay = JSON.parse(config[10]);
-      this.isBackUp = JSON.parse(config[11]);
       if (!this.hasSpeechSynthesis) this.isSystemTTS = "No";
     },
 
     async compareContent() {
       try {
         if (this.allowOffline) window.localStorage.removeItem("isOffline");
-        let PDJserverContent = await api.fetch(
-          "/files/!PDJ/" + "PDJ-ToDoList.txt"
-        );
+        let PDJserverContent = await api.fetch("/files/!PDJ/PDJ-ToDoList.txt");
         if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
         let PDJcontent = PDJserverContent.content;
         if (
@@ -3483,8 +3475,8 @@ export default {
 
     getDateAfterDays(n, m) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样算到期日最简单。
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样算到期日最简单，直接了当。
       if (m == 1)
         return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
       if (this.user.locale == "zh-cn") {
@@ -4376,7 +4368,7 @@ export default {
           this.cleanUp();
           return;
         }
-        if (!this.allowSwitch) return;
+        if (!this.allowSwitch && this.isTouchDevice) return;
         this.contentIndex = 1;
         if (this.autoPlay) {
           this.cleanUp();
@@ -4435,8 +4427,6 @@ export default {
         JSON.stringify(this.speedOfUtterBack) +
         "::" +
         JSON.stringify(this.fromFirstDay) +
-        "::" +
-        JSON.stringify(this.isBackUp) +
         "::";
 
       this.browserContent =
@@ -4467,7 +4457,7 @@ export default {
       this.unsavedTask = "1";
       try {
         await api.post(
-          "/files/!PDJ/" + "PDJ-ToDoList.txt",
+          "/files/!PDJ/PDJ-ToDoList.txt",
           this.browserContent,
           true
         );
@@ -4551,6 +4541,19 @@ export default {
 span.headSubject {
   display: inline;
   color: black;
+}
+
+#ins {
+  text-align: justify;
+  text-align-last: left;
+  word-break: break-all;
+}
+
+#ins1 {
+  color: black;
+  text-align: justify;
+  text-align-last: left;
+  word-break: break-all;
 }
 
 header {
