@@ -1782,6 +1782,7 @@ export default {
       favNotUpload: "PDJ-Repeater.txtfavNotUpload",
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       searchList: "",
+      isSwitching: false,
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1911,9 +1912,12 @@ export default {
 
     srtSubtitles() {
       if (!this.isFavOnPlay) {
-        var formatContent = this.reqF.content;
+        var formatContent = "";
+        if (this.reqF.size == 0)
+          formatContent =
+            "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n \r\n";
+        else formatContent = this.reqF.content;
         formatContent = this.formatAll(formatContent);
-
         var subtitles = [];
         var textSubtitles = formatContent.split("\n\n");
         for (var i = 0; i < textSubtitles.length; ++i) {
@@ -2240,12 +2244,14 @@ export default {
     },
 
     startTimeTemp: function () {
+      if (this.isSwitching) return;
       this.notFromStarttimeTempChg = false;
       this.onEdit = true;
       this.saveSub1();
     },
 
     endTimeTemp: function () {
+      if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub2();
     },
@@ -2253,16 +2259,19 @@ export default {
     subFirstLine: function () {
       if (this.subFirstLine == "  " || this.subFirstLine == " ")
         this.subFirstLine = "";
+      if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
     },
 
     subSecLine: function () {
+      if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
     },
 
     note: function () {
+      if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
     },
@@ -2457,10 +2466,19 @@ export default {
     this.listing = this.oldReq.items;
     this.updatePreview();
     this.initUtter();
+    if (this.reqF.size == 0) {
+      this.reqF.content =
+        "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n \r\n";
+      this.saveSubNow();
+      setTimeout(() => {
+        location.reload();
+      }, 300);
+    }
     if (this.reqF.content == undefined) {
       alert(
-        "Can't read content of .srt. The .srt file should be encoded using UTF-8!"
+        "Can't read content of .srt. and the .srt file should be encoded using UTF-8!"
       );
+      this.close();
     }
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.allowOffline) this.allowCache = true;
@@ -2635,7 +2653,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期，这个最简单，直接了当。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期，这个最简单，直接了当，比其他方法都要简单很多。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3545,32 +3563,7 @@ export default {
       this.touches++;
       this.cleanUp1();
       if (this.isEditSubandNotes) {
-        if (
-          document.getElementById("editArea0") &&
-          document.getElementById("editArea0").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea0").blur();
-        } else if (
-          document.getElementById("editArea00") &&
-          document.getElementById("editArea00").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea00").blur();
-        } else if (
-          document.getElementById("editArea1") &&
-          document.getElementById("editArea1").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea1").blur();
-        } else if (
-          document.getElementById("editArea2") &&
-          document.getElementById("editArea2").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea2").blur();
-        } else if (
-          document.getElementById("editArea3") &&
-          document.getElementById("editArea3").contains(document.activeElement)
-        ) {
-          document.getElementById("editArea3").blur();
-        }
+        this.toBlur();
       }
       if (this.touches == 1) {
         if (this.isSingle) {
@@ -3743,52 +3736,99 @@ export default {
       }
     },
 
+    toBlur() {
+      if (
+        document.getElementById("editArea0") &&
+        document.getElementById("editArea0").contains(document.activeElement)
+      ) {
+        document.getElementById("editArea0").blur();
+      } else if (
+        document.getElementById("editArea00") &&
+        document.getElementById("editArea00").contains(document.activeElement)
+      ) {
+        document.getElementById("editArea00").blur();
+      } else if (
+        document.getElementById("editArea1") &&
+        document.getElementById("editArea1").contains(document.activeElement)
+      ) {
+        document.getElementById("editArea1").blur();
+      } else if (
+        document.getElementById("editArea2") &&
+        document.getElementById("editArea2").contains(document.activeElement)
+      ) {
+        document.getElementById("editArea2").blur();
+      } else if (
+        document.getElementById("editArea3") &&
+        document.getElementById("editArea3").contains(document.activeElement)
+      ) {
+        document.getElementById("editArea3").blur();
+      }
+    },
+
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
+        if (this.isEditSubandNotes) {
+          this.toBlur();
+        }
         this.cleanUp2();
         this.cleanUp1();
         if (this.sentenceIndex == 1) return;
-        this.sentenceIndex = this.sentenceIndex - 1;
-        if (
-          (this.isSingle && !this.autoPlay) ||
-          (this.isFavOnPlay && this.isPlayFullFavList)
-        )
-          return;
-        if (this.isSingle) {
-          if (this.isFirstClick) return;
-          this.click();
-        } else {
+        setTimeout(() => {
+          this.isSwitching = true;
+          this.sentenceIndex = this.sentenceIndex - 1;
           setTimeout(() => {
-            this.regularPlay();
-            this.currentMedia.currentTime =
-              this.srtSubtitles[this.sentenceIndex - 1].startTime;
-          }, 1);
-        }
+            this.isSwitching = false;
+          }, 200);
+          if (
+            (this.isSingle && !this.autoPlay) ||
+            (this.isFavOnPlay && this.isPlayFullFavList)
+          )
+            return;
+          if (this.isSingle) {
+            if (this.isFirstClick) return;
+            this.click();
+          } else {
+            setTimeout(() => {
+              this.regularPlay();
+              this.currentMedia.currentTime =
+                this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            }, 1);
+          }
+        }, 10);
         return;
       } else if (
         x < 0 &&
         mode == "SWITCHIMG" &&
         this.sentenceIndex <= this.srtSubtitles.length
       ) {
+        if (this.isEditSubandNotes) {
+          this.toBlur();
+        }
         this.cleanUp2();
         this.cleanUp1();
         if (this.sentenceIndex == this.srtSubtitles.length) return;
-        this.sentenceIndex = this.sentenceIndex + 1;
-        if (
-          (this.isSingle && !this.autoPlay) ||
-          (this.isFavOnPlay && this.isPlayFullFavList)
-        )
-          return;
-        if (this.isSingle) {
-          if (this.isFirstClick) return;
-          this.click();
-        } else {
+        setTimeout(() => {
+          this.isSwitching = true;
+          this.sentenceIndex = this.sentenceIndex + 1;
           setTimeout(() => {
-            this.regularPlay();
-            this.currentMedia.currentTime =
-              this.srtSubtitles[this.sentenceIndex - 1].startTime;
-          }, 1);
-        }
+            this.isSwitching = false;
+          }, 200);
+          if (
+            (this.isSingle && !this.autoPlay) ||
+            (this.isFavOnPlay && this.isPlayFullFavList)
+          )
+            return;
+          if (this.isSingle) {
+            if (this.isFirstClick) return;
+            this.click();
+          } else {
+            setTimeout(() => {
+              this.regularPlay();
+              this.currentMedia.currentTime =
+                this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            }, 1);
+          }
+        }, 10);
         return;
       } else if (
         this.isReadyToPlay &&
@@ -4987,10 +5027,6 @@ export default {
         this.onSetting();
         return;
       }
-      if (this.isEditSubandNotes) {
-        this.switchEditSubandNote();
-        return;
-      }
       if (this.isFavOnPlay) {
         this.playFavList();
         return;
@@ -5017,6 +5053,10 @@ export default {
         this.onRevision = false;
         this.showRevision = true;
         this.reqF.content = window.localStorage.getItem(this.mediaName);
+        return;
+      }
+      if (this.isEditSubandNotes) {
+        this.switchEditSubandNote();
         return;
       }
       this.cleanUp1();
