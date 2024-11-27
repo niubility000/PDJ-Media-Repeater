@@ -1623,17 +1623,24 @@
           style="border-radius: 10px; background: grey; padding: 0.3em"
         >
           <p style="text-align: justify; text-align-last: left; color: white">
-            <span style="width: 8em"> New word/phrase: </span>
+            <span style="width: 5em"> New word: </span>
             <input
-              style="padding: 0.2em; width: 9em"
+              style="padding: 0.2em; width: 10.5em; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
               v-model="newWord"
             />
+            <button class="action" @click="showTransPage">
+              <i
+                style="color: blue; width: 1em; padding: 0"
+                class="material-icons"
+                >auto_stories</i
+              >
+            </button>
           </p>
           <p style="text-align: justify; color: white">
             <input
-              style="width: 15.5em; padding: 0.2em; margin-right: 0.5em"
+              style="width: 15.5em; padding: 0.2em; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
               placeholder="Translation"
@@ -2643,6 +2650,10 @@ export default {
         });
     },
 
+    showTransPage() {
+      let url = "https://fanyi.baidu.com/#zh/en/" + this.newWord;
+      window.open(url, "_blank");
+    },
     wrongSrc() {
       if (this.isFavOnPlay && this.isPlayFullFavList) {
         this.confirmType = "wrongSrc";
