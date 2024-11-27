@@ -54,8 +54,6 @@ Both of these can be used online or offline.
 
 Updated: 11-26-2024
 
-Updated: 11-26-2024
-
 4.2: small fixes
 
 [filebrowser-windows.zip](https://github.com/user-attachments/files/17930476/filebrowser-windows.zip)
