@@ -56,7 +56,7 @@ Updated: 12-12-2024
 
 4.2: small fixes
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/18118788/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/18118820/filebrowser-windows.zip)
 
 [filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/18118789/filebrowser-linux-amd64.zip)
 
