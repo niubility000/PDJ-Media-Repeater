@@ -32,6 +32,8 @@
     "voice": "Voice (Your browser has {totalvoices} voices for this language, including online voices):",
     "pauseTime": "Pause Time (in second):",    
     "speedOfUttering": "Speed Of Uttering:",
+    "nextLoopPlay": "Loop Play in the Range From:",
+    "autoStop": "AutoStop After the Last Click: ",	  
     "replayFromStart": "SingleClick to Replay Current Sentence from the First Time",
     "utterTransFirstly": "Utter Subtitle's Translation Line Firstly",
     "autoPauseAfterFirstDone": "AutoPause After Uttering Translation Line or Playing Current Sentence Firstly, And Click To Continue.",
