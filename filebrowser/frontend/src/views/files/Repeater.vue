@@ -3800,30 +3800,12 @@ export default {
 
     endDragM(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      if (
-        window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
-        document.getElementsByName("editAreaM") &&
-        (document.getElementsByName("editAreaM")[0].contains(event.target) ||
-          document.getElementsByName("editAreaM")[1].contains(event.target)) &&
-        !this.isFavOnPlay
-      ) {
-        this.cleanUp1();
-        this.cleanUp2();
-        this.newWord = window.getSelection().toString();
-        this.showAddNew = true;
-      } else {
-        window.getSelection().removeAllRanges();
-        this.showAddNew = false;
-        this.showEditNew = false;
-      }
+      this.endTouchM(event);
     },
 
     endDragG() {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      this.showAddNew = false;
-      this.showEditNew = false;
+      this.endTouchG();
     },
 
     startTouch(event) {
@@ -3909,7 +3891,6 @@ export default {
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
-        window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
       }
