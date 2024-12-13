@@ -2765,7 +2765,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这么算最简单，直截了当。其他的太麻烦。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3732,21 +3732,7 @@ export default {
 
     startDrag(event) {
       event.preventDefault();
-      if (!this.isReadyToPlay || this.isTouchDevice) return;
-      this.handleAutoStop();
-      this.isSetting = false;
-      this.showRevision = false;
-      this.showSubtitleList = false;
-      this.searchList = "";
-      if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
-          this.newWordList[this.indexOfNewWordList].showTrans = false;
-        this.showNewWordList = false;
-      }
-      this.withTrans = false;
-      this.startTime = new Date().getTime();
-      this.startX = event.clientX;
-      this.startY = event.clientY;
+      this.startDragS(event);
     },
     startDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
@@ -3767,46 +3753,7 @@ export default {
     },
     endDrag(event) {
       event.preventDefault();
-      if (!this.isReadyToPlay || this.isTouchDevice) return;
-      this.timeDiff = new Date().getTime() - this.startTime;
-      this.distanceX = event.clientX - this.startX;
-      this.distanceY = event.clientY - this.startY;
-      if (
-        this.isReadyToPlay &&
-        this.timeDiff < 300 &&
-        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
-        Math.abs(this.distanceX) > 60
-      ) {
-        this.checkNav(this.distanceX, "SWITCHIMG");
-        return;
-      }
-      if (
-        this.timeDiff < 300 &&
-        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
-        Math.abs(this.distanceY) > 100
-      ) {
-        this.checkNav(this.distanceY, "VERTICAL");
-        return;
-      }
-      if (
-        window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
-        document.getElementById("subArea") &&
-        document.getElementById("subArea").contains(event.target) &&
-        !this.isFavOnPlay
-      ) {
-        this.cleanUp1();
-        this.cleanUp2();
-        this.newWord = window.getSelection().toString();
-        this.showAddNew = true;
-      } else {
-        window.getSelection().removeAllRanges();
-        this.showAddNew = false;
-        this.showEditNew = false;
-        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
-          this.click();
-      }
+      this.endDragS(event);
     },
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
@@ -3867,6 +3814,7 @@ export default {
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
+        // window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
       }
@@ -3880,21 +3828,7 @@ export default {
 
     startTouch(event) {
       event.preventDefault();
-      if (!this.isReadyToPlay) return;
-      this.handleAutoStop();
-      this.isSetting = false;
-      this.showRevision = false;
-      this.showSubtitleList = false;
-      this.searchList = "";
-      if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
-          this.newWordList[this.indexOfNewWordList].showTrans = false;
-        this.showNewWordList = false;
-      }
-      this.withTrans = false;
-      this.startTime = new Date().getTime();
-      this.startX = event.touches[0].clientX;
-      this.startY = event.touches[0].clientY;
+      this.startTouchS(event);
     },
     startTouchS(event) {
       if (!this.isReadyToPlay) return;
@@ -3915,46 +3849,7 @@ export default {
     },
     endTouch(event) {
       event.preventDefault();
-      if (!this.isReadyToPlay) return;
-      this.timeDiff = new Date().getTime() - this.startTime;
-      this.distanceX = event.changedTouches[0].clientX - this.startX;
-      this.distanceY = event.changedTouches[0].clientY - this.startY;
-      if (
-        this.isReadyToPlay &&
-        this.timeDiff < 300 &&
-        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
-        Math.abs(this.distanceX) > 30
-      ) {
-        this.checkNav(this.distanceX, "SWITCHIMG");
-        return;
-      }
-      if (
-        this.timeDiff < 300 &&
-        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
-        Math.abs(this.distanceY) > 70
-      ) {
-        this.checkNav(this.distanceY, "VERTICAL");
-        return;
-      }
-      if (
-        window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
-        document.getElementById("subArea") &&
-        document.getElementById("subArea").contains(event.target) &&
-        !this.isFavOnPlay
-      ) {
-        this.cleanUp1();
-        this.cleanUp2();
-        this.newWord = window.getSelection().toString();
-        this.showAddNew = true;
-      } else {
-        window.getSelection().removeAllRanges();
-        this.showAddNew = false;
-        this.showEditNew = false;
-        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
-          this.click();
-      }
+      this.endTouchS(event);
     },
     endTouchS(event) {
       if (!this.isReadyToPlay) return;
@@ -4014,6 +3909,7 @@ export default {
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
+        // window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
       }
