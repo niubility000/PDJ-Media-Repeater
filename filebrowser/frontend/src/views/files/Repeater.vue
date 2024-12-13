@@ -2765,7 +2765,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这么算最简单，直截了当。其他的太麻烦。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3732,7 +3732,21 @@ export default {
 
     startDrag(event) {
       event.preventDefault();
-      this.startDragS(event);
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
+      this.handleAutoStop();
+      this.isSetting = false;
+      this.showRevision = false;
+      this.showSubtitleList = false;
+      this.searchList = "";
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
+      this.withTrans = false;
+      this.startTime = new Date().getTime();
+      this.startX = event.clientX;
+      this.startY = event.clientY;
     },
     startDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
@@ -3753,7 +3767,46 @@ export default {
     },
     endDrag(event) {
       event.preventDefault();
-      this.endDragS(event);
+      if (!this.isReadyToPlay || this.isTouchDevice) return;
+      this.timeDiff = new Date().getTime() - this.startTime;
+      this.distanceX = event.clientX - this.startX;
+      this.distanceY = event.clientY - this.startY;
+      if (
+        this.isReadyToPlay &&
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
+        Math.abs(this.distanceX) > 60
+      ) {
+        this.checkNav(this.distanceX, "SWITCHIMG");
+        return;
+      }
+      if (
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
+        Math.abs(this.distanceY) > 100
+      ) {
+        this.checkNav(this.distanceY, "VERTICAL");
+        return;
+      }
+      if (
+        window.getSelection().toString() &&
+        window.getSelection().toString() !== "" &&
+        window.getSelection().toString() !== " " &&
+        document.getElementById("subArea") &&
+        document.getElementById("subArea").contains(event.target) &&
+        !this.isFavOnPlay
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.newWord = window.getSelection().toString();
+        this.showAddNew = true;
+      } else {
+        window.getSelection().removeAllRanges();
+        this.showAddNew = false;
+        this.showEditNew = false;
+        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+          this.click();
+      }
     },
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
@@ -3800,17 +3853,48 @@ export default {
 
     endDragM(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      this.endTouchM(event);
+      if (
+        window.getSelection().toString() &&
+        window.getSelection().toString() !== "" &&
+        window.getSelection().toString() !== " " &&
+        document.getElementsByName("editAreaM") &&
+        (document.getElementsByName("editAreaM")[0].contains(event.target) ||
+          document.getElementsByName("editAreaM")[1].contains(event.target)) &&
+        !this.isFavOnPlay
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.newWord = window.getSelection().toString();
+        this.showAddNew = true;
+      } else {
+        this.showAddNew = false;
+        this.showEditNew = false;
+      }
     },
 
     endDragG() {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      this.endTouchG();
+      this.showAddNew = false;
+      this.showEditNew = false;
     },
 
     startTouch(event) {
       event.preventDefault();
-      this.startTouchS(event);
+      if (!this.isReadyToPlay) return;
+      this.handleAutoStop();
+      this.isSetting = false;
+      this.showRevision = false;
+      this.showSubtitleList = false;
+      this.searchList = "";
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
+      this.withTrans = false;
+      this.startTime = new Date().getTime();
+      this.startX = event.touches[0].clientX;
+      this.startY = event.touches[0].clientY;
     },
     startTouchS(event) {
       if (!this.isReadyToPlay) return;
@@ -3831,7 +3915,46 @@ export default {
     },
     endTouch(event) {
       event.preventDefault();
-      this.endTouchS(event);
+      if (!this.isReadyToPlay) return;
+      this.timeDiff = new Date().getTime() - this.startTime;
+      this.distanceX = event.changedTouches[0].clientX - this.startX;
+      this.distanceY = event.changedTouches[0].clientY - this.startY;
+      if (
+        this.isReadyToPlay &&
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) > Math.abs(this.distanceY) &&
+        Math.abs(this.distanceX) > 30
+      ) {
+        this.checkNav(this.distanceX, "SWITCHIMG");
+        return;
+      }
+      if (
+        this.timeDiff < 300 &&
+        Math.abs(this.distanceX) < Math.abs(this.distanceY) &&
+        Math.abs(this.distanceY) > 70
+      ) {
+        this.checkNav(this.distanceY, "VERTICAL");
+        return;
+      }
+      if (
+        window.getSelection().toString() &&
+        window.getSelection().toString() !== "" &&
+        window.getSelection().toString() !== " " &&
+        document.getElementById("subArea") &&
+        document.getElementById("subArea").contains(event.target) &&
+        !this.isFavOnPlay
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.newWord = window.getSelection().toString();
+        this.showAddNew = true;
+      } else {
+        window.getSelection().removeAllRanges();
+        this.showAddNew = false;
+        this.showEditNew = false;
+        if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
+          this.click();
+      }
     },
     endTouchS(event) {
       if (!this.isReadyToPlay) return;
