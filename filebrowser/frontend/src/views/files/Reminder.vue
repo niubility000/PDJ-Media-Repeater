@@ -795,7 +795,9 @@
                 color: arrIsImpt[index] ? 'red' : 'blue',
               }"
             >
-              <span> {{ index + 1 }}. {{ subtitle.split("\n\t")[1] }} </span>
+              <span style="word-break: break-all">
+                {{ index + 1 }}. {{ subtitle.split("\n\t")[1] }}
+              </span>
             </p>
 
             <p
@@ -886,7 +888,10 @@
 
               <span
                 @click="showItemReview(index)"
-                style="flex-grow: 1; cursor: pointer"
+                style="flex-grow: 1; cursor: pointer; word-break: break-all"
+                :style="{
+                  width: isMobile ? 'calc(100% - 4em)' : 'calc(65% - 4em)',
+                }"
               >
                 {{
                   index > dailyLength - 1 ? index - dailyLength + 1 : index + 1

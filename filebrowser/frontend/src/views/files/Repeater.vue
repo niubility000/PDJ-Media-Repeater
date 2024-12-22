@@ -14,7 +14,7 @@
         style="padding: 0.5em"
         :style="{
           height: isMobile && isLandscape ? '3em' : '4em',
-          padding: isMobile && isLandscape ? '0 0.5em' : '0.5em 1em 0.5em 1em',
+          padding: isMobile && isLandscape ? '0 0.5em' : '0.5em 0em',
         }"
       >
         <action
@@ -93,6 +93,7 @@
           "
           class="action"
           @click="playFavList"
+          @dblclick.prevent
           :title="$t('repeater.playFavoriteList')"
         >
           <i :style="favListStatus" class="material-icons">folder_special</i>
@@ -107,6 +108,7 @@
           "
           class="action"
           @click="onSetting"
+          @dblclick.prevent
           :title="$t('repeater.settings')"
         >
           <i
@@ -135,6 +137,7 @@
           "
           class="action"
           @click="switchEditSubandNote"
+          @dblclick.prevent
           :title="$t('repeater.editSubandNote')"
         >
           <i
@@ -166,6 +169,7 @@
           "
           class="action"
           @click="switchSubtitle"
+          @dblclick.prevent
           :title="$t('repeater.switchsubtitleLanguages')"
         >
           <i :style="subSwitch" class="material-icons">closed_caption</i>
@@ -183,6 +187,7 @@
           "
           class="action"
           @click="onSingle"
+          @dblclick.prevent
           :title="$t('repeater.singleSentenceRepetitionMode')"
         >
           <i :style="playMode" class="material-icons">repeat_one</i>
@@ -192,6 +197,7 @@
           :disabled="loading || showRevision"
           class="action"
           @click="onSingle"
+          @dblclick.prevent
           :title="$t('repeater.regularMode')"
         >
           <i :style="playMode" class="material-icons">repeat</i>
@@ -209,6 +215,7 @@
           "
           class="action"
           @click="switchRevisePlan"
+          @dblclick.prevent
           :title="$t('repeater.revise')"
         >
           <i
@@ -554,8 +561,30 @@
           <p style="color: blue; font-weight: bold; padding-top: 2em">
             {{ $t("repeater.settings") }}
           </p>
-          <div style="display: flex; align-items: center">
-            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
+
+          <div>
+            <p style="color: white; margin-bottom: 0">
+              <input type="radio" value="No" v-model="isPrivate" />
+              {{ $t("repeater.publicConfig") }}
+            </p>
+            <p v-if="!hasPrivate" style="color: white; margin-top: 0">
+              {{ $t("repeater.addPrivate") }}
+              <button class="action" @click="addPrivate">
+                <i style="color: blue" class="material-icons">save</i>
+              </button>
+            </p>
+            <p v-if="hasPrivate" style="color: white">
+              <input type="radio" value="Yes" v-model="isPrivate" />
+              {{ $t("repeater.privateConfig") }}
+            </p>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
+          <div
+            style="display: flex; flex-direction: row; align-items: center"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject"
               >{{ $t("repeater.sentencePlaybackTimes") }}
             </span>
             <input
@@ -566,10 +595,11 @@
               v-model.number.lazy="repeatTimes"
             />
           </div>
-          <div style="display: flex; align-items: center">
-            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >{{ $t("repeater.interval") }}
-            </span>
+          <div
+            style="display: flex; flex-direction: row; align-items: center"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject">{{ $t("repeater.interval") }} </span>
             <input
               class="input input--repeater"
               type="number"
@@ -578,10 +608,11 @@
               v-model.number.lazy="interval"
             />
           </div>
-          <div style="display: flex; align-items: center">
-            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >{{ $t("repeater.timestampMove") }}
-            </span>
+          <div
+            style="display: flex; flex-direction: row; align-items: center"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject">{{ $t("repeater.timestampMove") }} </span>
             <input
               class="input input--repeater"
               type="number"
@@ -590,10 +621,11 @@
               v-model.number.lazy="timeStampChangeStart"
             />
           </div>
-          <div style="display: flex; align-items: center">
-            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >{{ $t("repeater.timestampMoveEnd") }}
-            </span>
+          <div
+            style="display: flex; flex-direction: row; align-items: center"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject">{{ $t("repeater.timestampMoveEnd") }} </span>
             <input
               class="input input--repeater"
               type="number"
@@ -602,14 +634,15 @@
               v-model.number.lazy="timeStampChangeEnd"
             />
           </div>
-          <div style="display: flex; align-items: center">
-            <span class="subject" :style="{ width: isMobile ? '14em' : '16em' }"
-              >{{ $t("repeater.speedEachTime") }}
-            </span>
+          <div
+            style="display: flex; flex-direction: row; align-items: center"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject">{{ $t("repeater.speedEachTime") }} </span>
             <input
               class="input input--repeater"
               type="text"
-              placeholder="0.8, 0.5"
+              placeholder="sep.:, or space"
               v-model.lazy="currentSpeed"
             />
           </div>
@@ -645,26 +678,27 @@
               {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
 
-            <p style="color: white">
+            <p style="color: white; margin-bottom: 0">
               <input type="checkbox" v-model="nextLoopPlay" />
               {{ $t("repeater.nextLoopPlay") }}
               <input
+                class="input input--repeater"
                 style="width: 4em"
                 type="number"
                 step="1"
                 v-model.lazy="loopStart"
               />
-              To:
+              to
               <input
+                class="input input--repeater"
                 style="width: 4em"
                 type="number"
                 step="1"
                 v-model.lazy="loopEnd"
               />
             </p>
-
             <p
-              style="padding-left: 1em"
+              style="padding-left: 1em; margin-top: 0"
               :style="{
                 color: !nextLoopPlay ? '#bbbaba' : 'white',
               }"
@@ -673,6 +707,7 @@
               <input v-if="nextLoopPlay" type="checkbox" v-model="autoStop" />
               {{ $t("repeater.autoStop") }}
               <input
+                class="input input--repeater"
                 :disabled="!nextLoopPlay"
                 style="width: 4em"
                 type="number"
@@ -680,6 +715,11 @@
                 v-model.lazy="autoStopMins"
               />
               Mins
+            </p>
+
+            <p style="color: white">
+              <input type="checkbox" v-model="random" />
+              {{ $t("repeater.random") }}
             </p>
 
             <p style="color: white">
@@ -740,7 +780,10 @@
                 {{ $t("repeater.SystemTTSnote") }}
               </p>
 
-              <div style="display: flex; align-items: center">
+              <div
+                style="display: flex; flex-direction: row; align-items: center"
+                :style="{ width: isMobile ? '100%' : '70%' }"
+              >
                 <span
                   :style="{
                     color:
@@ -768,7 +811,10 @@
                   v-model="langInTransLine"
                 />
               </div>
-              <div style="display: flex; align-items: center">
+              <div
+                style="display: flex; flex-direction: row; align-items: center"
+                :style="{ width: isMobile ? '100%' : '70%' }"
+              >
                 <span
                   :style="{
                     color:
@@ -797,7 +843,7 @@
                   type="number"
                   v-model.number.lazy="reader"
                   :style="{
-                    width: isMobile ? '3em' : '6em',
+                    width: isMobile ? '5.5em' : '6.5em',
                   }"
                 />
                 <button
@@ -807,6 +853,7 @@
                     !hasSpeechSynthesis
                   "
                   class="action"
+                  style="height: 1.5em"
                   @click="testTTSVoice"
                   :title="$t('repeater.testTTSVoice')"
                 >
@@ -817,13 +864,17 @@
                           ? '#bbbaba'
                           : 'blue',
                     }"
+                    style="width: 1em; padding: 0; margin: 0"
                     class="material-icons"
                     >play_circle_outline</i
                   >
                 </button>
               </div>
 
-              <div style="display: flex; align-items: center">
+              <div
+                style="display: flex; flex-direction: row; align-items: center"
+                :style="{ width: isMobile ? '100%' : '70%' }"
+              >
                 <span
                   :style="{
                     color:
@@ -925,7 +976,10 @@
                 {{ $t("repeater.notSystemTTSnote") }}
               </p>
             </div>
-            <div style="display: flex; align-items: center">
+            <div
+              style="display: flex; flex-direction: row; align-items: center"
+              :style="{ width: isMobile ? '100%' : '70%' }"
+            >
               <span
                 :style="{
                   color: isUtterTransLine ? 'white' : '#bbbaba',
@@ -945,7 +999,10 @@
               />
             </div>
 
-            <div style="display: flex; align-items: center">
+            <div
+              style="display: flex; flex-direction: row; align-items: center"
+              :style="{ width: isMobile ? '100%' : '70%' }"
+            >
               <span
                 :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
                 style="margin-left: 1em"
@@ -1004,6 +1061,44 @@
               {{ $t("repeater.playFullFavList") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
+
+            <p
+              style="
+                display: flex;
+                flex-direction: row;
+                text-align: justify;
+                text-align-last: left;
+                margin-bottom: 0;
+                color: white;
+                align-items: center;
+              "
+            >
+              {{ $t("repeater.transUrl") }}
+
+              <input
+                style="flex-grow: 1; text-align: left"
+                class="input input--repeater"
+                type="text"
+                v-model.lazy="transUrl"
+              />
+            </p>
+
+            <p
+              style="
+                margin: 0 0 1em 0;
+                text-align: justify;
+                text-align-last: left;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                word-break: break-all;
+                font-size: 0.8em;
+                color: white;
+              "
+            >
+              {{ $t("repeater.transUrlNote") }}
+            </p>
+
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="color: white; text-align: justify; text-align-last: left">
               <input
                 :disabled="allowOffline"
@@ -1015,6 +1110,7 @@
             <p style="color: white; text-align: justify; text-align-last: left">
               {{ $t("repeater.cached1") }}
               <input
+                class="input input--repeater"
                 style="width: 4em"
                 type="number"
                 v-model.lazy="maxCacheNum"
@@ -1058,7 +1154,11 @@
               </div>
 
               <p>
-                <button :disabled="numOfKeys == 0" @click="cacheCleanUp">
+                <button
+                  :disabled="numOfKeys == 0"
+                  style="border-radius: 5px"
+                  @click="cacheCleanUp"
+                >
                   {{ $t("repeater.cleanUpCache") }}
                 </button>
               </p>
@@ -1258,6 +1358,7 @@
           @mousedown="startDragS"
           @mouseup="endDragS"
           @touchstart="startTouchS"
+          @touchmove="touchMoveS"
           @touchend="endTouchS"
           @dblclick="dblClick"
           v-if="isMediaType > 0 && srtSubtitles && !isEditSubandNotes"
@@ -1347,7 +1448,7 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="yellow" size="5">&#8711;</font
+                ><font color="yellow" size="3">&#10134;</font
                 ><font color="black">-</font></span
               >
             </span>
@@ -1383,7 +1484,7 @@
                   color: white;
                 "
                 ><font color="black">-</font
-                ><font color="yellow" size="5">&#916;</font></span
+                ><font color="yellow" size="3">&#10133;</font></span
               >
             </span>
             ----------
@@ -1403,7 +1504,7 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="yellow" size="5">&#8711;</font
+                ><font color="yellow" size="3">&#10134;</font
                 ><font color="black">-</font></span
               >
             </span>
@@ -1439,7 +1540,7 @@
                   color: white;
                 "
                 ><font color="black">-</font
-                ><font color="yellow" size="5">&#916;</font></span
+                ><font color="yellow" size="3">&#10133;</font></span
               >
             </span>
           </p>
@@ -1449,6 +1550,7 @@
             id="editArea1"
             name="editAreaM"
             @mouseup="endDragM"
+            @touchmove="touchMoveM"
             @touchend="endTouchM"
             v-model.lazy="subFirstLine"
             placeholder="...Subtitle First Line..."
@@ -1468,6 +1570,7 @@
             id="editArea2"
             name="editAreaM"
             @mouseup="endDragM"
+            @touchmove="touchMoveG"
             @touchend="endTouchM"
             v-model.lazy="subSecLine"
             placeholder="...Subtitle Second Line..."
@@ -1486,6 +1589,7 @@
             v-show="!isEmpty && isShowLine3"
             id="editArea3"
             @mouseup="endDragG"
+            @touchmove="touchMoveF"
             @touchend="endTouchG"
             rows="2"
             v-model.lazy="note"
@@ -1572,7 +1676,14 @@
           </button>
         </span>
 
-        <div v-if="isMediaType > 0 && srtSubtitles && !isEmpty">
+        <div
+          v-if="isMediaType > 0 && srtSubtitles && !isEmpty"
+          @mousedown="startDragS"
+          @mouseup="endDragS"
+          @touchstart="startTouchS"
+          @touchmove.prevent
+          @touchend="endTouchS"
+        >
           <button
             v-if="isFav"
             class="action"
@@ -1747,6 +1858,9 @@ export default {
       timeOutId2: null,
       autoPlayNext: true,
       nextLoopPlay: false,
+      random: false,
+      orderedReq: [],
+      randomReq: [],
       autoStop: true,
       autoStopMins: 60,
       loopStart: 1,
@@ -1754,7 +1868,7 @@ export default {
       autoPlay: true,
       timeStampChangeStart: 0,
       timeStampChangeEnd: 0,
-      currentSpeed: "0.8, 0.5",
+      currentSpeed: "0.8 0.5",
       listing: null,
       isSetting: false,
       isEmpty: false,
@@ -1846,6 +1960,9 @@ export default {
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       searchList: "",
       isSwitching: false,
+      isPrivate: "Yes",
+      hasPrivate: true,
+      transUrl: "https://fanyi.baidu.com/#zh/en/",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -1856,7 +1973,7 @@ export default {
 
     isMobile() {
       return (
-        /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 736
+        /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 1000
       );
     },
 
@@ -2168,6 +2285,21 @@ export default {
       }
     },
 
+    pr() {
+      var playRange = [1, 2];
+      if (this.nextLoopPlay) {
+        playRange[0] = this.loopStart;
+        playRange[1] = this.loopEnd;
+        if (playRange[0] < 1) playRange[0] = 1;
+        if (playRange[1] > this.srtSubtitles.length)
+          playRange[1] = this.srtSubtitles.length;
+      } else {
+        playRange[0] = 1;
+        playRange[1] = this.srtSubtitles.length;
+      }
+      return playRange;
+    },
+
     subtitleContent() {
       if (this.srtSubtitles[this.sentenceIndex - 1].content) {
         var contentLine1 =
@@ -2286,6 +2418,14 @@ export default {
       this.updatePreview();
     },
 
+    hasPrivate: function () {
+      if (!this.hasPrivate) this.isPrivate = "No";
+    },
+
+    isPrivate: function () {
+      this.readyStatus();
+    },
+
     maxCacheNum: function () {
       if (
         window.localStorage.getItem("max") &&
@@ -2402,6 +2542,10 @@ export default {
       this.save();
     },
 
+    random: function () {
+      this.save();
+    },
+
     autoStop: function () {
       this.save();
     },
@@ -2422,7 +2566,7 @@ export default {
     },
 
     currentSpeed: function () {
-      if (this.currentSpeed == "") this.currentSpeed = "0.8, 0.5";
+      if (this.currentSpeed == "") this.currentSpeed = "0.8 0.5";
       this.save();
     },
 
@@ -2500,6 +2644,12 @@ export default {
     },
 
     isPlayFullFavList: function () {
+      this.save();
+    },
+
+    transUrl: function () {
+      if (this.transUrl == "" || this.transUrl == " ")
+        this.transUrl = "https://fanyi.baidu.com/#zh/en/";
       this.save();
     },
 
@@ -2619,45 +2769,17 @@ export default {
       }, 500);
 
       if (PDJcontent !== "") {
-        this.repeatTimes = Number(JSON.parse(PDJcontent.split("::")[1]));
-        this.interval = Number(JSON.parse(PDJcontent.split("::")[2]));
-        this.autoPlayNext = JSON.parse(PDJcontent.split("::")[3]);
-        this.timeStampChangeStart = Number(
-          JSON.parse(PDJcontent.split("::")[4])
-        );
-        this.timeStampChangeEnd = Number(
-          JSON.parse(PDJcontent.split("::")[20])
-        );
-        this.currentSpeed = JSON.parse(PDJcontent.split("::")[5]);
-        this.subtitleLang = JSON.parse(PDJcontent.split("::")[6]);
-        this.switchSubtitleMini();
-        this.pauseTimeTransLine = Number(JSON.parse(PDJcontent.split("::")[8]));
-        this.speedOfUtter = Number(JSON.parse(PDJcontent.split("::")[9]));
-        this.isUtterTransLineFirstly = JSON.parse(PDJcontent.split("::")[10]);
-        this.isPauseAfterFirstDone = JSON.parse(PDJcontent.split("::")[14]);
-        this.autoPlay = JSON.parse(PDJcontent.split("::")[15]);
-        this.isSystemTTS = JSON.parse(PDJcontent.split("::")[16]);
-        this.TTSurl = JSON.parse(PDJcontent.split("::")[17]);
-        this.replayFromStart = JSON.parse(PDJcontent.split("::")[18]);
-        this.isPlayFullFavList = JSON.parse(PDJcontent.split("::")[19]);
-        this.notAllowSaveInOffline = JSON.parse(PDJcontent.split("::")[21]);
-        this.reviseData = JSON.parse(PDJcontent.split("::")[22]);
-        this.revisePlan = JSON.parse(PDJcontent.split("::")[23]);
-        this.revisePlan = JSON.parse(PDJcontent.split("::")[23]);
-        this.nextLoopPlay = JSON.parse(PDJcontent.split("::")[24]);
-        this.loopStart = Number(JSON.parse(PDJcontent.split("::")[25]));
-        this.loopEnd = Number(JSON.parse(PDJcontent.split("::")[26]));
-        this.autoStop = JSON.parse(PDJcontent.split("::")[27]);
-        this.autoStopMins = Number(JSON.parse(PDJcontent.split("::")[28]));
+        if (PDJcontent.includes(this.reqF.name + "privatecustomConfig::")) {
+          this.hasPrivate = true;
+        } else this.hasPrivate = false;
 
-        if (!this.isAutoDetectLang) {
-          this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
-          this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
-          this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
-        } else {
-          this.autoDetectLangInTrans();
-          this.langInTransLine = navigator.language || navigator.userLanguage;
-        }
+        if (this.isPrivate == "Yes" && this.hasPrivate) {
+          this.setPara(
+            PDJcontent.split(this.reqF.name + "private")[1].split("\n\n")[0]
+          );
+        } else this.setPara(PDJcontent.split("\n\n")[0]);
+
+        this.reviseData = JSON.parse(PDJcontent.split("\n\n\n\n")[1]);
         this.favList = JSON.parse(PDJcontent.split("Subtitle:")[1]);
         this.calcFav();
         if (!this.hasSpeechSynthesis) {
@@ -2672,6 +2794,44 @@ export default {
       ) {
         this.notSaveFav = false;
         this.save();
+      }
+    },
+
+    setPara(PDJcontent) {
+      this.repeatTimes = Number(JSON.parse(PDJcontent.split("::")[1]));
+      this.interval = Number(JSON.parse(PDJcontent.split("::")[2]));
+      this.autoPlayNext = JSON.parse(PDJcontent.split("::")[3]);
+      this.timeStampChangeStart = Number(JSON.parse(PDJcontent.split("::")[4]));
+      this.timeStampChangeEnd = Number(JSON.parse(PDJcontent.split("::")[20]));
+      this.currentSpeed = JSON.parse(PDJcontent.split("::")[5]);
+      this.subtitleLang = JSON.parse(PDJcontent.split("::")[6]);
+      this.switchSubtitleMini();
+      this.pauseTimeTransLine = Number(JSON.parse(PDJcontent.split("::")[8]));
+      this.speedOfUtter = Number(JSON.parse(PDJcontent.split("::")[9]));
+      this.isUtterTransLineFirstly = JSON.parse(PDJcontent.split("::")[10]);
+      this.isAutoDetectLang = JSON.parse(PDJcontent.split("::")[13]);
+      this.isPauseAfterFirstDone = JSON.parse(PDJcontent.split("::")[14]);
+      this.autoPlay = JSON.parse(PDJcontent.split("::")[15]);
+      this.isSystemTTS = JSON.parse(PDJcontent.split("::")[16]);
+      this.TTSurl = JSON.parse(PDJcontent.split("::")[17]);
+      this.replayFromStart = JSON.parse(PDJcontent.split("::")[18]);
+      this.isPlayFullFavList = JSON.parse(PDJcontent.split("::")[19]);
+      this.notAllowSaveInOffline = JSON.parse(PDJcontent.split("::")[21]);
+      this.revisePlan = JSON.parse(PDJcontent.split("::")[22]);
+      this.nextLoopPlay = JSON.parse(PDJcontent.split("::")[23]);
+      this.loopStart = Number(JSON.parse(PDJcontent.split("::")[24]));
+      this.loopEnd = Number(JSON.parse(PDJcontent.split("::")[25]));
+      this.autoStop = JSON.parse(PDJcontent.split("::")[26]);
+      this.autoStopMins = Number(JSON.parse(PDJcontent.split("::")[27]));
+      this.transUrl = JSON.parse(PDJcontent.split("::")[28]);
+      this.random = JSON.parse(PDJcontent.split("::")[29]);
+      if (!this.isAutoDetectLang) {
+        this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
+        this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
+        this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
+      } else {
+        this.autoDetectLangInTrans();
+        this.langInTransLine = navigator.language || navigator.userLanguage;
       }
     },
 
@@ -2751,8 +2911,23 @@ export default {
       }
     },
 
+    addPrivate() {
+      let customConfig = this.getConfig();
+      let favContent = window.localStorage.getItem(this.favFileName);
+      let allConfig = favContent.split("\n\n\n\n")[0];
+      favContent = favContent.replace(
+        allConfig,
+        allConfig + "\n\n" + this.reqF.name + "private" + customConfig
+      );
+      this.tempFavContent = favContent;
+      this.saveNow(this.tempFavContent);
+      setTimeout(() => {
+        this.isPrivate = "Yes";
+      }, 50);
+    },
+
     showTransPage() {
-      let url = "https://fanyi.baidu.com/#zh/en/" + this.newWord;
+      let url = this.transUrl + this.newWord;
       window.open(url, "_blank");
     },
     wrongSrc() {
@@ -2764,8 +2939,8 @@ export default {
 
     getDateAfterDays(n) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这么算最简单，直截了当。其他的太麻烦。
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样算最简单，直接了当。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3256,7 +3431,8 @@ export default {
               !this.isEditSubandNotes &&
               !this.showNewWordList
             ) {
-              if (
+              if (this.random) this.sentenceIndex = this.getRandomInt();
+              else if (
                 this.nextLoopPlay &&
                 this.sentenceIndex >=
                   Math.min(this.loopEnd, this.srtSubtitles.length)
@@ -3403,10 +3579,11 @@ export default {
 
     formatAll(x) {
       x = x.replace(/\n\n$/, "");
+      if (x.includes("\t\t")) x = x.replaceAll("\t\t", "\t");
+      if (x.includes("\t")) x = x.replaceAll("\t", "\n");
       if (x.includes("\r\n")) x = x.replaceAll("\r\n", "\n");
       if (x.includes("\n\n\n\n")) x = x.replaceAll("\n\n\n\n", "\n\n");
       if (x.includes("\n\n\n")) x = x.replaceAll("\n\n\n", "\n\n");
-      if (x.includes("\t")) x = x.replaceAll("\t", " ");
       x = x.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       x = x.replace(/^\n+|\n+$/g, "");
 
@@ -3543,7 +3720,7 @@ export default {
           if (!this.hasSpeechSynthesis) {
             this.isSystemTTS = "No";
           }
-          this.save();
+          this.saveInit();
           setTimeout(() => {
             this.currentMedia.pause();
           }, 1);
@@ -3847,6 +4024,54 @@ export default {
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
     },
+    touchMoveS(event) {
+      if (
+        !(
+          window.getSelection().toString() &&
+          window.getSelection().toString() !== "" &&
+          document.getElementById("subArea") &&
+          document.getElementById("subArea").contains(event.target)
+        )
+      )
+        event.preventDefault();
+    },
+
+    touchMoveM(event) {
+      if (
+        !(
+          window.getSelection().toString() &&
+          window.getSelection().toString() !== "" &&
+          document.getElementById("editArea1") &&
+          document.getElementById("editArea1").contains(event.target)
+        )
+      )
+        event.preventDefault();
+    },
+
+    touchMoveG(event) {
+      if (
+        !(
+          window.getSelection().toString() &&
+          window.getSelection().toString() !== "" &&
+          document.getElementById("editArea2") &&
+          document.getElementById("editArea2").contains(event.target)
+        )
+      )
+        event.preventDefault();
+    },
+
+    touchMoveF(event) {
+      if (
+        !(
+          window.getSelection().toString() &&
+          window.getSelection().toString() !== "" &&
+          document.getElementById("editArea3") &&
+          document.getElementById("editArea3").contains(event.target)
+        )
+      )
+        event.preventDefault();
+    },
+
     endTouch(event) {
       event.preventDefault();
       this.endTouchS(event);
@@ -3969,6 +4194,34 @@ export default {
       }
     },
 
+    getRandomInt() {
+      let p = this.pr[1] - 1 - this.pr[0] + 1;
+      let tempReq = Array.from({ length: p }, (_, i) => i + this.pr[0]);
+      if (
+        JSON.stringify(this.orderedReq) !== JSON.stringify(tempReq) ||
+        this.randomReq.length == 0
+      ) {
+        this.orderedReq = tempReq;
+        let aReq = this.shuffle(tempReq);
+        this.randomReq = aReq.filter(
+          (element) => element !== this.sentenceIndex
+        );
+        this.randomReq.push(this.pr[1]);
+      }
+      let a = this.randomReq[0];
+      this.randomReq.splice(0, 1); // 删除从索引0开始的1个元素
+      return a;
+    },
+
+    shuffle(arr) {
+      let res = [...arr]; // 创建一个数组的副本，以避免修改原始数组
+      for (let i = res.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [res[i], res[j]] = [res[j], res[i]]; // 交换元素
+      }
+      return res;
+    },
+
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
         if (this.isEditSubandNotes) {
@@ -3979,7 +4232,8 @@ export default {
         if (this.sentenceIndex == 1) return;
         setTimeout(() => {
           this.isSwitching = true;
-          this.sentenceIndex = this.sentenceIndex - 1;
+          if (this.random) this.sentenceIndex = this.getRandomInt();
+          else this.sentenceIndex = this.sentenceIndex - 1;
           setTimeout(() => {
             this.isSwitching = false;
           }, 200);
@@ -4013,7 +4267,8 @@ export default {
         if (this.sentenceIndex == this.srtSubtitles.length) return;
         setTimeout(() => {
           this.isSwitching = true;
-          this.sentenceIndex = this.sentenceIndex + 1;
+          if (this.random) this.sentenceIndex = this.getRandomInt();
+          else this.sentenceIndex = this.sentenceIndex + 1;
           setTimeout(() => {
             this.isSwitching = false;
           }, 200);
@@ -4043,7 +4298,9 @@ export default {
         this.switchIsFav();
         return;
       } else if (x > 0 && mode == "VERTICAL") {
-        this.close();
+        this.cleanUp1();
+        this.touches = 0;
+        if (this.timeOutId2) clearTimeout(this.timeOutId2);
         return;
       }
     },
@@ -4119,9 +4376,12 @@ export default {
             this.currentMedia.play();
           }, 20);
         } else this.currentMedia.play();
-        if (this.currentSpeed.split(",")[this.playCount]) {
+        var cSpeed = this.currentSpeed.replaceAll(",", " ");
+        cSpeed = cSpeed.replaceAll("   ", " ");
+        cSpeed = cSpeed.replaceAll("  ", " ");
+        if (cSpeed.split(" ")[this.playCount]) {
           this.currentMedia.playbackRate = Number(
-            this.currentSpeed.split(",")[this.playCount]
+            cSpeed.split(" ")[this.playCount]
           );
         } else {
           this.currentMedia.playbackRate = 1;
@@ -4203,7 +4463,8 @@ export default {
                   (this.nextLoopPlay &&
                     this.sentenceIndex == this.srtSubtitles.length))
               ) {
-                if (
+                if (this.random) this.sentenceIndex = this.getRandomInt();
+                else if (
                   this.nextLoopPlay &&
                   this.sentenceIndex >=
                     Math.min(this.loopEnd, this.srtSubtitles.length)
@@ -4276,7 +4537,8 @@ export default {
               (this.nextLoopPlay &&
                 this.sentenceIndex == this.srtSubtitles.length))
           ) {
-            if (
+            if (this.random) this.sentenceIndex = this.getRandomInt();
+            else if (
               this.nextLoopPlay &&
               this.sentenceIndex >=
                 Math.min(this.loopEnd, this.srtSubtitles.length)
@@ -4324,14 +4586,31 @@ export default {
       } else this.isUtterTransLine = false;
     },
 
-    save() {
+    saveInit() {
       if (
         (!this.isReadyToPlay &&
           !(this.isFavOnPlay && this.isPlayFullFavList)) ||
         this.notSaveFav
       )
         return;
-      let customConfig =
+      let customConfig = this.getConfig();
+
+      let favContent =
+        "public" +
+        customConfig +
+        "\n\n\n\n" +
+        JSON.stringify(this.reviseData) +
+        "\n\n\n\n" +
+        "Subtitle:" +
+        JSON.stringify(this.favList);
+      this.hasPrivate = false;
+      if (this.serverFav == favContent) return;
+      this.tempFavContent = favContent;
+      this.saveNow(this.tempFavContent);
+    },
+
+    getConfig() {
+      return (
         "customConfig" +
         "::" +
         JSON.stringify(this.repeatTimes) +
@@ -4376,8 +4655,6 @@ export default {
         "::" +
         JSON.stringify(this.notAllowSaveInOffline) +
         "::" +
-        JSON.stringify(this.reviseData) +
-        "::" +
         JSON.stringify(this.revisePlan) +
         "::" +
         JSON.stringify(this.nextLoopPlay) +
@@ -4389,10 +4666,46 @@ export default {
         JSON.stringify(this.autoStop) +
         "::" +
         JSON.stringify(this.autoStopMins) +
-        "::";
+        "::" +
+        JSON.stringify(this.transUrl) +
+        "::" +
+        JSON.stringify(this.random) +
+        "::"
+      );
+    },
 
-      let favContent =
-        customConfig + "Subtitle:" + JSON.stringify(this.favList);
+    save() {
+      if (
+        (!this.isReadyToPlay &&
+          !(this.isFavOnPlay && this.isPlayFullFavList)) ||
+        this.notSaveFav
+      )
+        return;
+      let customConfig = this.getConfig();
+
+      let favContent = window.localStorage.getItem(this.favFileName);
+      var allConfig = favContent.split("\n\n\n\n")[0];
+      let oldConfig = "";
+      if (this.isPrivate == "Yes" && this.hasPrivate) {
+        oldConfig = allConfig
+          .split(this.reqF.name + "privatecustomConfig::")[1]
+          .split("\n\n")[0];
+        allConfig = allConfig.replace(
+          this.reqF.name + "privatecustomConfig::" + oldConfig,
+          this.reqF.name + "private" + customConfig
+        );
+      } else {
+        oldConfig = allConfig.split("\n\n")[0];
+        allConfig = allConfig.replace(oldConfig, "public" + customConfig);
+      }
+
+      favContent =
+        allConfig +
+        "\n\n\n\n" +
+        JSON.stringify(this.reviseData) +
+        "\n\n\n\n" +
+        "Subtitle:" +
+        JSON.stringify(this.favList);
       if (this.serverFav == favContent) return;
       this.tempFavContent = favContent;
       this.saveNow(this.tempFavContent);
@@ -5166,7 +5479,8 @@ export default {
           return;
         this.cleanUp2();
         this.cleanUp1();
-        this.sentenceIndex = this.sentenceIndex + 1;
+        if (this.random) this.sentenceIndex = this.getRandomInt();
+        else this.sentenceIndex = this.sentenceIndex + 1;
         if (
           (this.isSingle && !this.autoPlay) ||
           (this.isFavOnPlay && this.isPlayFullFavList)
@@ -5214,7 +5528,8 @@ export default {
           return;
         this.cleanUp2();
         this.cleanUp1();
-        this.sentenceIndex = this.sentenceIndex - 1;
+        if (this.random) this.sentenceIndex = this.getRandomInt();
+        else this.sentenceIndex = this.sentenceIndex - 1;
         if (
           (this.isSingle && !this.autoPlay) ||
           (this.isFavOnPlay && this.isPlayFullFavList)
@@ -5354,12 +5669,15 @@ export default {
   background-color: white;
 }
 input.input.input--repeater {
-  margin-bottom: 0.5em;
+  margin: 0.3em 0;
   display: inline;
   width: 8em;
+  padding: 0.2em;
+  border-radius: 3px;
 }
 span.subject {
-  margin-bottom: 0.5em;
+  flex-grow: 1;
+  margin: 0;
   display: inline-block;
   width: 15em;
   color: white;
@@ -5410,7 +5728,7 @@ input:disabled {
   background-color: #bbbaba;
 }
 
-@media (max-width: 736px) {
+@media (max-width: 1000px) {
   #repeater .repeater {
     margin: 0;
   }
@@ -5425,11 +5743,9 @@ input:disabled {
     width: 100%;
   }
   input.input.input--repeater {
-    margin-bottom: 0.5em;
-    display: inline;
-    width: 5em;
-    padding: 0;
-    margin: 0;
+    width: 7em;
+    margin: 0.3em 0;
+    border-radius: 3px;
   }
 }
 </style>
