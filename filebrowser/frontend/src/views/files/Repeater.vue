@@ -104,7 +104,8 @@
             !isSingle ||
             showSubtitleList ||
             showNewWordList ||
-            showRevision
+            showRevision ||
+            isEditSubandNotes
           "
           class="action"
           @click="onSetting"
@@ -114,7 +115,11 @@
           <i
             :style="{
               color:
-                !isSingle || showSubtitleList || showNewWordList || showRevision
+                !isSingle ||
+                showSubtitleList ||
+                showNewWordList ||
+                showRevision ||
+                isEditSubandNotes
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -635,6 +640,19 @@
             />
           </div>
           <div
+            style="
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              color: white;
+              margin-left: 1em;
+              font-size: 0.9em;
+            "
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span>{{ $t("repeater.timeNote") }} </span>
+          </div>
+          <div
             style="display: flex; flex-direction: row; align-items: center"
             :style="{ width: isMobile ? '100%' : '70%' }"
           >
@@ -1061,6 +1079,12 @@
               {{ $t("repeater.playFullFavList") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="defaultWaveSurfer" />
+              {{ $t("repeater.wavesurfer") }} &#9810;
+              {{ $t("repeater.wavesurfer2") }}
+            </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
 
             <p
               style="
@@ -1101,7 +1125,7 @@
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="color: white; text-align: justify; text-align-last: left">
               <input
-                :disabled="allowOffline"
+                :disabled="onOffline"
                 type="checkbox"
                 v-model="allowCache"
               />
@@ -1166,18 +1190,8 @@
               <p
                 style="color: white; text-align: justify; text-align-last: left"
               >
-                <input disabled="true" type="checkbox" v-model="allowOffline" />
+                <input disabled="true" type="checkbox" v-model="onOffline" />
                 {{ $t("repeater.offlineApp") }}
-              </p>
-              <p
-                style="color: white; text-align: justify; text-align-last: left"
-              >
-                <input
-                  :disabled="allowOffline"
-                  type="checkbox"
-                  v-model="notAllowSaveInOffline"
-                />
-                {{ $t("repeater.notAllowSaveInoffline") }}
               </p>
             </div>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
@@ -1306,7 +1320,16 @@
           style="padding-bottom: 1em; padding-top: 0.2em; object-position: top"
           :style="{
             width: isMobile ? '100%' : 'auto',
-            height: isMobile && isLandscape ? '0' : isMobile ? '40%' : '60%',
+            height:
+              isMobile && isLandscape
+                ? '0'
+                : isMobile && isWaveSurfer
+                ? '30%'
+                : isMobile
+                ? '40%'
+                : isWaveSurfer
+                ? '45%'
+                : '60%',
           }"
           id="myVideo"
           :src="raw"
@@ -1415,7 +1438,7 @@
               {{
                 !isEmpty
                   ? srtSubtitles[sentenceIndex - 1].content.split("\r\n")[2]
-                  : "     "
+                  : " "
               }}
             </p>
           </div>
@@ -1431,7 +1454,10 @@
             padding-top: 0;
           "
         >
-          <p style="font-size: 1em; padding: 0; margin: 0 0 1.5em 0">
+          <p
+            @touchmove.prevent
+            style="font-size: 1em; padding: 0; margin: 0.5em 0"
+          >
             <span
               @click="startTimeMinus()"
               :style="{
@@ -1448,9 +1474,10 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="yellow" size="3">&#10134;</font
-                ><font color="black">-</font></span
               >
+                <font color="yellow" size="3">&#10134;</font>
+                <font color="black">-</font>
+              </span>
             </span>
             &#32;
             <input
@@ -1483,11 +1510,22 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="black">-</font
-                ><font color="yellow" size="3">&#10133;</font></span
               >
+                <font color="black">-</font>
+                <font color="yellow" size="3">&#10133;</font>
+              </span>
             </span>
-            ----------
+            --
+            <span
+              @click="showWaveSurfer()"
+              :style="{
+                pointerEvents: !isSingle ? 'none' : 'auto',
+              }"
+              style="cursor: pointer; user-select: none; color: yellow"
+            >
+              &#9810;
+            </span>
+            --
             <span
               @click="endTimeMinus()"
               :style="{
@@ -1504,9 +1542,10 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="yellow" size="3">&#10134;</font
-                ><font color="black">-</font></span
               >
+                <font color="yellow" size="3">&#10134;</font>
+                <font color="black">-</font>
+              </span>
             </span>
             &#32;
             <input
@@ -1539,20 +1578,23 @@
                   margin: 0;
                   color: white;
                 "
-                ><font color="black">-</font
-                ><font color="yellow" size="3">&#10133;</font></span
               >
+                <font color="black">-</font>
+                <font color="yellow" size="3">&#10133;</font>
+              </span>
             </span>
           </p>
 
           <textarea
-            v-if="isShowLine1"
+            v-if="isShowLine1 && !isMoveAll"
             id="editArea1"
             name="editAreaM"
-            @mouseup="endDragM"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchend="endTouchS"
             @touchmove="touchMoveM"
-            @touchend="endTouchM"
-            v-model.lazy="subFirstLine"
+            v-model="subFirstLine"
             placeholder="...Subtitle First Line..."
             :rows="rowsNum"
             style="
@@ -1566,13 +1608,15 @@
             "
           ></textarea>
           <textarea
-            v-if="isShowLine2"
+            v-if="isShowLine2 && !isMoveAll"
             id="editArea2"
             name="editAreaM"
-            @mouseup="endDragM"
             @touchmove="touchMoveG"
-            @touchend="endTouchM"
-            v-model.lazy="subSecLine"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchend="endTouchS"
+            v-model="subSecLine"
             placeholder="...Subtitle Second Line..."
             :rows="rowsNum"
             style="
@@ -1582,15 +1626,17 @@
               color: white;
               border: none;
               resize: none;
-              padding: 0.5em 0;
+              padding: 0.25em 0;
             "
           ></textarea>
           <textarea
-            v-show="!isEmpty && isShowLine3"
+            v-show="!isEmpty && isShowLine3 && !isMoveAll"
             id="editArea3"
-            @mouseup="endDragG"
             @touchmove="touchMoveF"
-            @touchend="endTouchG"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchend="endTouchS"
             rows="2"
             v-model.lazy="note"
             placeholder="...NOTES..., use format [Original Text: Translation] to add a New Word or Phrase."
@@ -1606,74 +1652,133 @@
               white-space: pre-wrap;
             "
           ></textarea>
-          <button
-            class="action"
-            @click="confirmDelete"
-            :title="$t('repeater.infoDelete')"
-          >
-            <i style="color: red; font-size: 1.5em" class="material-icons"
-              >delete</i
-            >
-          </button>
+          <p v-if="isMoveAll" style="color: white">
+            {{ $t("repeater.moveAllStamp") }}
+            <input
+              class="input input--repeater"
+              type="number"
+              v-model.number="moveAll"
+              step="50"
+            />
 
-          <button
-            :disabled="lastSentence"
-            class="action"
-            @click="confirmMerge"
-            :title="$t('repeater.infoMerge')"
-          >
-            <i
-              style="font-size: 1.5em"
-              :style="{
-                color: lastSentence ? 'grey' : 'red',
-              }"
-              class="material-icons"
-              >merge</i
+            <button
+              class="action"
+              :disabled="moveAll == 0"
+              @click="saveMoveAll"
+              :title="$t('buttons.save')"
             >
-          </button>
+              <i style="color: red; font-size: 1.5em" class="material-icons"
+                >save</i
+              >
+            </button>
+          </p>
+          <p
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchmove.prevent
+            @touchend="endTouchS"
+            style="padding: 0.25em 0; margin: 0"
+          >
+            <button
+              class="action"
+              name="buttons"
+              @click="confirmDelete"
+              :title="$t('repeater.infoDelete')"
+            >
+              <i style="color: red; font-size: 1.5em" class="material-icons"
+                >delete</i
+              >
+            </button>
 
-          <button
-            class="action"
-            @click="confirmAdd"
-            :title="$t('repeater.infoAdd')"
-          >
-            <i style="color: red; font-size: 1.5em" class="material-icons"
-              >call_split</i
+            <button
+              :disabled="lastSentence"
+              class="action"
+              name="buttons"
+              @click="confirmMerge"
+              :title="$t('repeater.infoMerge')"
             >
-          </button>
+              <i
+                style="font-size: 1.5em"
+                :style="{
+                  color: lastSentence ? 'grey' : 'red',
+                }"
+                class="material-icons"
+                >merge</i
+              >
+            </button>
 
-          <button
-            :disabled="loading || historyIndex < 1"
-            class="action"
-            @click="changeUndo"
-            :title="$t('repeater.undo')"
-          >
-            <i
-              :style="{
-                color: loading || historyIndex < 1 ? 'grey' : 'red',
-              }"
-              style="font-size: 1.5em"
-              class="material-icons"
-              >undo</i
+            <button
+              class="action"
+              name="buttons"
+              @click="confirmSplit"
+              :title="$t('repeater.infoSplit')"
             >
-          </button>
+              <i style="color: red; font-size: 1.5em" class="material-icons"
+                >call_split</i
+              >
+            </button>
 
-          <button
-            :disabled="loading || historyIndex >= changeNew.length"
-            class="action"
-            @click="changeRedo"
-            :title="$t('repeater.redo')"
-          >
-            <i
-              :style="{
-                color:
-                  loading || historyIndex >= changeNew.length ? 'grey' : 'red',
-              }"
-              style="font-size: 1.5em"
-              class="material-icons"
-              >redo</i
+            <button
+              v-if="isEditSubandNotes"
+              class="action"
+              name="buttons"
+              @click="showMoveAll"
+              :title="$t('repeater.infoMoveAll')"
             >
-          </button>
+              <i style="color: red; font-size: 1.5em" class="material-icons"
+                >autofps_select</i
+              >
+            </button>
+
+            <button
+              class="action"
+              name="buttons"
+              @click="confirmAdd"
+              :title="$t('repeater.infoAdd')"
+            >
+              <i style="color: red; font-size: 1.5em" class="material-icons"
+                >alt_route</i
+              >
+            </button>
+
+            <button
+              :disabled="loading || historyIndex < 1"
+              class="action"
+              name="buttons"
+              @click="changeUndo"
+              :title="$t('repeater.undo')"
+            >
+              <i
+                :style="{
+                  color: loading || historyIndex < 1 ? 'grey' : 'red',
+                }"
+                style="font-size: 1.5em"
+                class="material-icons"
+                >undo</i
+              >
+            </button>
+
+            <button
+              :disabled="loading || historyIndex >= changeNew.length"
+              class="action"
+              name="buttons"
+              @click="changeRedo"
+              :title="$t('repeater.redo')"
+            >
+              <i
+                :style="{
+                  color:
+                    loading || historyIndex >= changeNew.length
+                      ? 'grey'
+                      : 'red',
+                }"
+                style="font-size: 1.5em"
+                class="material-icons"
+                >redo</i
+              >
+            </button>
+          </p>
         </span>
 
         <div
@@ -1687,6 +1792,7 @@
           <button
             v-if="isFav"
             class="action"
+            name="buttons"
             @click="switchIsFav"
             :title="$t('repeater.fav')"
           >
@@ -1699,6 +1805,7 @@
           <button
             v-if="!isFav && isReadyToPlay"
             class="action"
+            name="buttons"
             @click="switchIsFav"
             :title="$t('repeater.fav')"
           >
@@ -1715,8 +1822,35 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles"
+          v-show="srtSubtitles"
           style="width: 100%; flex-grow: 1"
+        ></div>
+
+        <p
+          v-show="isWaveSurfer && isEditSubandNotes"
+          style="margin-bottom: 2px"
+        >
+          <label style="color: white">
+            <input type="checkbox" v-model="autoCenter" /> AutoCenter
+          </label>
+          <label style="color: white; margin-left: 0.5em">
+            <input
+              type="range"
+              min="10"
+              max="100"
+              style="width: 35%"
+              v-model="minPxPerSec"
+            />
+          </label>
+          <label style="color: white; margin-left: 0.5em">
+            <input type="checkbox" v-model="regionPlay" /> RegionPlay
+          </label>
+        </p>
+
+        <div
+          id="waveform"
+          v-show="isWaveSurfer && isEditSubandNotes"
+          style="background-color: #ffffffdb"
         ></div>
       </div>
 
@@ -1766,7 +1900,10 @@
       <div
         v-if="showAddNew"
         :disabled="loading || isSetting || !isSingle"
-        style="z-index: 1011; position: fixed; bottom: 2.5em; right: 1em"
+        style="z-index: 1011; position: fixed; right: 1em"
+        :style="{
+          bottom: isWaveSurfer ? '6.5em' : '2.5em',
+        }"
       >
         <button
           v-if="!showEditNew"
@@ -1830,6 +1967,8 @@ import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
 import { setTimeout } from "core-js";
 import localforage from "localforage";
+import WaveSurfer from "wavesurfer.js";
+import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 
 export default {
   name: "repeater",
@@ -1839,6 +1978,20 @@ export default {
   },
   data: function () {
     return {
+      hasConfirmed: false,
+      isMoveAll: false,
+      moveAll: 0,
+      hasMoveAll: false,
+      wavesurfer: null,
+      audioContext: null,
+      minPxPerSec: 45,
+      scrollbar: false,
+      fillParent: false,
+      autoCenter: true,
+      regions: null,
+      isWaveSurfer: false,
+      cont: false,
+      regionPlay: true,
       sentenceIndex: 1,
       startTime: null,
       startX: null,
@@ -1946,7 +2099,7 @@ export default {
       raw: " ",
       mediaCached: false,
       allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
-      allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
+      onOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
       tempFavContent: "",
       notSaveFav: false,
@@ -1954,7 +2107,6 @@ export default {
       fromMerge: false,
       RUdoAlert: false,
       fetchCount: 0,
-      notAllowSaveInOffline: false,
       favFileName: "PDJ-Repeater.txt",
       favNotUpload: "PDJ-Repeater.txtfavNotUpload",
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
@@ -1962,6 +2114,7 @@ export default {
       isSwitching: false,
       isPrivate: "Yes",
       hasPrivate: true,
+      defaultWaveSurfer: true,
       transUrl: "https://fanyi.baidu.com/#zh/en/",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
@@ -2157,6 +2310,10 @@ export default {
       }
     },
 
+    srtSubtitlesLength() {
+      return this.srtSubtitles.length;
+    },
+
     srtSubtitlesSearch() {
       var searchKey = this.searchList.replaceAll("；", ";");
       searchKey = searchKey.replaceAll(";;", ";");
@@ -2301,7 +2458,10 @@ export default {
     },
 
     subtitleContent() {
-      if (this.srtSubtitles[this.sentenceIndex - 1].content) {
+      if (
+        this.srtSubtitles[this.sentenceIndex - 1] &&
+        this.srtSubtitles[this.sentenceIndex - 1].content
+      ) {
         var contentLine1 =
           !this.isEmpty &&
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] !==
@@ -2418,12 +2578,51 @@ export default {
       this.updatePreview();
     },
 
+    isEditSubandNotes: function () {
+      if (!this.isEditSubandNotes) {
+        this.isWaveSurfer = false;
+        this.isMoveAll = false;
+        this.moveAll = 0;
+      }
+    },
+
+    isWaveSurfer: function () {
+      if (this.isWaveSurfer && this.isEditSubandNotes) {
+        this.initWaveSurfer();
+      } else {
+        if (this.wavesurfer) {
+          this.wavesurfer.destroy();
+        }
+        if (this.audioContext) {
+          this.audioContext.close();
+        }
+      }
+    },
+
+    autoCenter: function () {
+      if (this.wavesurfer) {
+        this.wavesurfer.setOptions({
+          autoCenter: this.autoCenter,
+        });
+      }
+    },
+
+    regionPlay: function () {
+      if (this.wavesurfer) {
+        this.regions.unAll();
+        this.updateRegions();
+      }
+    },
+
+    minPxPerSec(newValue) {
+      if (this.wavesurfer) this.wavesurfer.zoom(newValue);
+    },
     hasPrivate: function () {
       if (!this.hasPrivate) this.isPrivate = "No";
     },
 
     isPrivate: function () {
-      this.readyStatus();
+      if (this.isSetting) this.readyStatus();
     },
 
     maxCacheNum: function () {
@@ -2451,12 +2650,35 @@ export default {
       this.notFromStarttimeTempChg = false;
       this.onEdit = true;
       this.saveSub1();
+      if (
+        !this.hasMoveAll &&
+        this.isWaveSurfer &&
+        this.regions &&
+        this.regions.getRegions()[this.sentenceIndex - 1]
+      ) {
+        this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
+          start: this.startTimeTemp,
+        });
+      }
+      if (this.hasMoveAll && this.isWaveSurfer && this.regions) {
+        this.updateRgns();
+        this.hasMoveAll = false;
+      }
     },
 
     endTimeTemp: function () {
       if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub2();
+      if (
+        this.isWaveSurfer &&
+        this.regions &&
+        this.regions.getRegions()[this.sentenceIndex - 1]
+      ) {
+        this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
+          end: this.endTimeTemp - 0.03,
+        });
+      }
     },
 
     subFirstLine: function () {
@@ -2497,6 +2719,12 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
+        if (this.isWaveSurfer && this.regions) {
+          this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
+            start: this.startTimeTemp,
+            end: this.endTimeTemp - 0.03,
+          });
+        }
       }
       this.calcFav();
       if (this.showSubtitleList) {
@@ -2535,6 +2763,10 @@ export default {
     },
 
     autoPlayNext: function () {
+      this.save();
+    },
+
+    defaultWaveSurfer: function () {
       this.save();
     },
 
@@ -2599,10 +2831,6 @@ export default {
     pauseTimeTransLine: function () {
       if (this.pauseTimeTransLine < 0) this.pauseTimeTransLine = 0;
       this.pauseTimeTransLine = Math.floor(this.pauseTimeTransLine);
-      this.save();
-    },
-
-    notAllowSaveInOffline: function () {
       this.save();
     },
 
@@ -2671,6 +2899,12 @@ export default {
       } else this.reader = 0;
     },
 
+    srtSubtitlesLength: function () {
+      if (!this.RUdoAlert && this.wavesurfer && this.regions) {
+        this.updateRgns();
+      }
+    },
+
     raw: function () {
       this.isReadyToPlay = false;
       this.playCount = 0;
@@ -2681,17 +2915,19 @@ export default {
 
       if (!this.isFavOnPlay && !this.onRevision && !this.showRevision) {
         if (
-          (this.allowOffline ||
-            window.localStorage.getItem(this.srtNotUpload)) &&
+          !this.onOffline &&
+          window.localStorage.getItem(this.srtNotUpload) &&
+          window.localStorage.getItem(this.mediaName)
+        ) {
+          this.confirmType = "saveUnsavedSub";
+          this.showConfirm();
+        } else if (
+          this.onOffline &&
           window.localStorage.getItem(this.mediaName)
         ) {
           this.reqF.content = window.localStorage.getItem(this.mediaName);
-          if (window.localStorage.getItem(this.srtNotUpload)) {
-            this.onRUdo = true;
-            this.saveSubNow();
-          }
         } else if (
-          !this.allowOffline &&
+          !this.onOffline &&
           !window.localStorage.getItem(this.srtNotUpload)
         ) {
           window.localStorage.setItem(this.mediaName, this.reqF.content);
@@ -2722,7 +2958,7 @@ export default {
       this.close();
     }
     this.reqF.content = this.formatAll(this.reqF.content);
-    if (this.allowOffline) this.allowCache = true;
+    if (this.onOffline) this.allowCache = true;
     this.getReader();
   },
 
@@ -2730,17 +2966,216 @@ export default {
     window.removeEventListener("keydown", this.key);
     window.removeEventListener("resize", this.handleResize);
     this.cleanUp1();
+    if (this.wavesurfer) {
+      this.wavesurfer.destroy();
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
   },
 
   methods: {
+    async initWaveSurfer() {
+      var peaks = [];
+      if (window.localStorage.getItem(this.mediaName + "peaks")) {
+        peaks = JSON.parse(
+          window.localStorage.getItem(this.mediaName + "peaks")
+        );
+      } else {
+        peaks = await this.readPeaks();
+      }
+
+      this.regions = RegionsPlugin.create();
+      if (peaks.length > 0) {
+        this.wavesurfer = WaveSurfer.create({
+          container: "#waveform",
+          height: 80,
+          cursorColor: "black",
+          progressColor: "black",
+          waveColor: "blue",
+          minPxPerSec: 45,
+          normalize: true,
+          hideScrollbar: false,
+          autoCenter: this.autoCenter,
+          plugins: [this.regions],
+          mediaControls: false,
+          media: this.currentMedia,
+          peaks: peaks,
+        });
+      } else {
+        this.wavesurfer = WaveSurfer.create({
+          container: "#waveform",
+          height: 80,
+          cursorColor: "black",
+          progressColor: "black",
+          waveColor: "blue",
+          minPxPerSec: 45,
+          normalize: true,
+          hideScrollbar: false,
+          autoCenter: this.autoCenter,
+          plugins: [this.regions],
+          mediaControls: false,
+          media: this.currentMedia,
+        });
+      }
+
+      this.scrollbars();
+      this.updateRegions();
+    },
+
+    updateRegions() {
+      this.wavesurfer.on("decode", () => {
+        this.updateRgns();
+      });
+      this.regions.on("region-updated", (region) => {
+        if (this.sentenceIndex !== region.id) {
+          this.sentenceIndex = region.id;
+        }
+
+        this.startTimeTemp = region.start;
+        this.endTimeTemp = region.end + 0.03;
+        this.cleanUp2();
+        this.cleanUp1();
+        region.play();
+      });
+
+      let activeRegion = null;
+      this.regions.on("region-in", (region) => {
+        activeRegion = region;
+        if (this.sentenceIndex !== region.id) {
+          this.sentenceIndex = region.id;
+        }
+      });
+      this.regions.on("region-out", (region) => {
+        if (activeRegion === region) {
+          if (this.sentenceIndex == region.id && !this.cont) {
+            this.cleanUp2();
+            this.cleanUp1();
+            this.wavesurfer.pause();
+          }
+        }
+      });
+      if (this.regionPlay) {
+        this.regions.on("region-clicked", (region, e) => {
+          e.stopPropagation();
+          this.sentenceIndex = region.id;
+          activeRegion = region;
+          this.cleanUp2();
+          this.cleanUp1();
+          this.cont = false;
+          region.play();
+        });
+      }
+
+      this.regions.on("region-double-clicked", (region, e) => {
+        e.stopPropagation();
+        this.sentenceIndex = region.id;
+        activeRegion = region;
+        this.cleanUp2();
+        this.cleanUp1();
+        this.cont = false;
+      });
+
+      this.wavesurfer.on("interaction", () => {
+        activeRegion = null;
+      });
+
+      this.wavesurfer.on("click", () => {
+        this.cleanUp1();
+        this.cleanUp2();
+        if (!this.regionPlay) this.cont = true;
+        else this.cont = false;
+        this.wavesurfer.play();
+      });
+
+      this.wavesurfer.on("dblclick", () => {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.wavesurfer.pause();
+      });
+
+      this.wavesurfer.once("decode", () => {
+        this.wavesurfer.on("zoom", (minPxPerSec) => {
+          this.minPxPerSec = minPxPerSec;
+        });
+        if (!window.localStorage.getItem(this.mediaName + "peaks")) {
+          const peaks = this.wavesurfer.exportPeaks({
+            channels: 2,
+            precision: 10_000,
+            maxLength: this.currentMedia.duration * 50,
+          });
+          window.localStorage.setItem(
+            this.mediaName + "peaks",
+            JSON.stringify(peaks)
+          );
+          this.savePeaks(peaks);
+        }
+      });
+    },
+
+    async readPeaks() {
+      var peaks = [];
+      try {
+        var peaksAll = await api.fetch(
+          "/files/!PDJ/Repeater-backup/" + this.mediaName + ".peaks.txt"
+        );
+        peaks = JSON.parse(peaksAll.content);
+        window.localStorage.setItem(
+          this.mediaName + "peaks",
+          JSON.stringify(peaks)
+        );
+
+        return peaks;
+      } catch (e) {
+        console.log(e);
+        peaks = [];
+        return peaks;
+      }
+    },
+
+    updateRgns() {
+      this.regions.clearRegions();
+      for (var i = 1; i <= this.srtSubtitles.length; ++i) {
+        this.regions.addRegion({
+          start: this.srtSubtitles[i - 1].startTime,
+          end: this.srtSubtitles[i - 1].endTime - 0.03,
+          id: i,
+          content: i.toString(),
+          color: "rgba(0, 255, 0, 0.25)",
+          drag: false,
+          resize: true,
+        });
+      }
+    },
+
+    scrollbars() {
+      const style = document.createElement("style");
+      style.textContent = `{scrollbar-width: thin;scrollbar-color:#eee;} ::-webkit-scrollbar{width:5px;height:10px;} ::-webkit-scrollbar-track{background:	#C0C0C0;} ::-webkit-scrollbar-thumb{background-color:#444;border-radius:5px;border:1px solid #ddd;}`;
+      this.wavesurfer.getWrapper().appendChild(style);
+    },
+
+    showWaveSurfer() {
+      if (this.isWaveSurfer) this.isWaveSurfer = false;
+      else this.isWaveSurfer = true;
+    },
+
     async readyStatus() {
       if (this.currentMedia) this.currentMedia.pause();
       var PDJcontent = "";
-      var PDJserverContent = null;
-
       if (
-        (this.allowOffline ||
-          window.localStorage.getItem(this.favNotUpload) ||
+        !this.hasConfirmed &&
+        !this.onOffline &&
+        window.localStorage.getItem(this.favNotUpload) &&
+        this.user.id == window.localStorage.getItem("userIDRepeater") &&
+        window.localStorage.getItem(this.favFileName)
+      ) {
+        this.confirmType = "saveUnsavedFav";
+        this.showConfirm();
+        return;
+      } else if (
+        (this.onOffline ||
+          (this.hasConfirmed &&
+            window.localStorage.getItem(this.favNotUpload)) ||
           (this.isFavOnPlay && this.isPlayFullFavList) ||
           this.showRevision) &&
         this.user.id == window.localStorage.getItem("userIDRepeater") &&
@@ -2749,12 +3184,13 @@ export default {
         PDJcontent = window.localStorage.getItem(this.favFileName);
       } else {
         try {
-          if (this.allowOffline) window.localStorage.removeItem("isOffline");
+          if (this.onOffline) window.localStorage.removeItem("isOffline");
+          var PDJserverContent = null;
           PDJserverContent = await api.fetch("/files/!PDJ/" + this.favFileName);
-          if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+          if (this.onOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
-          this.serverFav = PDJcontent;
-          window.localStorage.setItem(this.favFileName, this.serverFav);
+          window.localStorage.setItem("server" + this.favFileName, PDJcontent);
+          window.localStorage.setItem(this.favFileName, PDJcontent);
           window.localStorage.setItem("userIDRepeater", this.user.id);
         } catch (e) {
           this.isReadyToPlay = true;
@@ -2762,11 +3198,6 @@ export default {
           this.showConfirm();
         }
       }
-
-      this.notSaveFav = true;
-      setTimeout(() => {
-        this.notSaveFav = false;
-      }, 500);
 
       if (PDJcontent !== "") {
         if (PDJcontent.includes(this.reqF.name + "privatecustomConfig::")) {
@@ -2792,7 +3223,6 @@ export default {
         window.localStorage.getItem(this.favNotUpload) ||
         !window.localStorage.getItem(this.favFileName)
       ) {
-        this.notSaveFav = false;
         this.save();
       }
     },
@@ -2816,15 +3246,15 @@ export default {
       this.TTSurl = JSON.parse(PDJcontent.split("::")[17]);
       this.replayFromStart = JSON.parse(PDJcontent.split("::")[18]);
       this.isPlayFullFavList = JSON.parse(PDJcontent.split("::")[19]);
-      this.notAllowSaveInOffline = JSON.parse(PDJcontent.split("::")[21]);
-      this.revisePlan = JSON.parse(PDJcontent.split("::")[22]);
-      this.nextLoopPlay = JSON.parse(PDJcontent.split("::")[23]);
-      this.loopStart = Number(JSON.parse(PDJcontent.split("::")[24]));
-      this.loopEnd = Number(JSON.parse(PDJcontent.split("::")[25]));
-      this.autoStop = JSON.parse(PDJcontent.split("::")[26]);
-      this.autoStopMins = Number(JSON.parse(PDJcontent.split("::")[27]));
-      this.transUrl = JSON.parse(PDJcontent.split("::")[28]);
-      this.random = JSON.parse(PDJcontent.split("::")[29]);
+      this.revisePlan = JSON.parse(PDJcontent.split("::")[21]);
+      this.nextLoopPlay = JSON.parse(PDJcontent.split("::")[22]);
+      this.loopStart = Number(JSON.parse(PDJcontent.split("::")[23]));
+      this.loopEnd = Number(JSON.parse(PDJcontent.split("::")[24]));
+      this.autoStop = JSON.parse(PDJcontent.split("::")[25]);
+      this.autoStopMins = Number(JSON.parse(PDJcontent.split("::")[26]));
+      this.transUrl = JSON.parse(PDJcontent.split("::")[27]);
+      this.random = JSON.parse(PDJcontent.split("::")[28]);
+      this.defaultWaveSurfer = JSON.parse(PDJcontent.split("::")[29]);
       if (!this.isAutoDetectLang) {
         this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -2837,6 +3267,88 @@ export default {
 
     checkLandscape() {
       return window.matchMedia("(orientation: landscape)").matches;
+    },
+
+    showMoveAll() {
+      this.isMoveAll = !this.isMoveAll;
+    },
+
+    async saveMoveAll() {
+      this.hasMoveAll = true;
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
+      var textSubtitles = formatContent.split("\n\n");
+
+      for (var i = 0; i < textSubtitles.length; i++) {
+        var time1 = this.convertToHMS(
+          this.srtSubtitles[i].startTime * 1000 -
+            this.timeStampChangeStart +
+            this.moveAll
+        );
+
+        var startTimeFormat =
+          time1.hours +
+          ":" +
+          time1.minutes +
+          ":" +
+          time1.seconds +
+          "," +
+          time1.milliseconds;
+        var time2 = this.convertToHMS(
+          this.srtSubtitles[i].endTime * 1000 -
+            this.timeStampChangeEnd +
+            1 +
+            this.moveAll
+        );
+        var endTimeFormat =
+          time2.hours +
+          ":" +
+          time2.minutes +
+          ":" +
+          time2.seconds +
+          "," +
+          time2.milliseconds;
+        var newContent = textSubtitles[i].replace(
+          this.srtSubtitles[i].timeStamp,
+          startTimeFormat + " --> " + endTimeFormat
+        );
+        formatContent = formatContent.replace(textSubtitles[i], newContent);
+      }
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      var srtFullPath = "";
+      const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.changeNew[this.historyIndex] = formatContent;
+
+      this.historyIndex = this.historyIndex + 1;
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+      this.sentenceIndex = this.sentenceIndex + 1;
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+      }, 10);
+      window.localStorage.setItem(this.mediaName, formatContent);
+      if (this.onOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
+      window.localStorage.setItem(this.srtNotUpload, "1");
+      try {
+        await api.post(srtFullPath, formatContent, true);
+        window.localStorage.removeItem(this.srtNotUpload);
+      } catch (error) {
+        return;
+      }
     },
 
     cacheMedia() {
@@ -2940,7 +3452,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样算最简单，直接了当。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3025,18 +3537,18 @@ export default {
         this.oReq = await api.fetch(this.srtRevisePath);
         var tempMediaName = name + "srtNotUpload";
         if (
-          (this.allowOffline || window.localStorage.getItem(tempMediaName)) &&
+          (this.onOffline || window.localStorage.getItem(tempMediaName)) &&
           window.localStorage.getItem(name)
         ) {
           this.oReq.content = window.localStorage.getItem(name);
         } else if (
-          !this.allowOffline &&
+          !this.onOffline &&
           !window.localStorage.getItem(tempMediaName)
         ) {
           window.localStorage.setItem(name, this.oReq.content);
         }
         this.onRevision = true;
-        this.serverFav = this.tempSentenceIndex = this.sentenceIndex;
+        this.tempSentenceIndex = this.sentenceIndex;
         this.sentenceIndex = startIndex;
         this.showRevision = false;
       } catch (e) {
@@ -3685,6 +4197,7 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
+        if (!this.isMobile && this.defaultWaveSurfer) this.isWaveSurfer = true;
       } else this.switchSubtitleMini();
     },
 
@@ -3799,6 +4312,49 @@ export default {
           return;
         }
       }
+
+      if (this.confirmType == "split") {
+        var userConfirmationsplit = window.confirm(
+          this.$t("repeater.confirmSplit")
+        );
+        if (userConfirmationsplit) {
+          this.splitSentence();
+        } else {
+          return;
+        }
+      }
+
+      if (this.confirmType == "saveUnsavedSub") {
+        var userConfirmationSave = window.confirm(
+          this.$t("repeater.saveUnsavedSub")
+        );
+        if (userConfirmationSave) {
+          this.saveUnsavedSrt();
+        } else {
+          window.localStorage.removeItem(this.srtNotUpload);
+          window.localStorage.setItem(this.mediaName, this.reqF.content);
+          return;
+        }
+      }
+
+      if (this.confirmType == "saveUnsavedFav") {
+        this.hasConfirmed = true;
+        var userConfirmationSaveFav = window.confirm(
+          this.$t("repeater.saveUnsavedFav")
+        );
+        if (userConfirmationSaveFav) {
+          this.readyStatus();
+        } else {
+          window.localStorage.removeItem(this.favNotUpload);
+          this.readyStatus();
+        }
+      }
+    },
+
+    saveUnsavedSrt() {
+      this.reqF.content = window.localStorage.getItem(this.mediaName);
+      this.onRUdo = true;
+      this.saveSubNow();
     },
 
     onSingle() {
@@ -3932,6 +4488,7 @@ export default {
       event.preventDefault();
       this.endDragS(event);
     },
+
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.timeDiff = new Date().getTime() - this.startTime;
@@ -3954,6 +4511,37 @@ export default {
         this.checkNav(this.distanceY, "VERTICAL");
         return;
       }
+      if (
+        (document.getElementById("editArea1") &&
+          document.getElementById("editArea1").contains(event.target)) ||
+        (document.getElementById("editArea2") &&
+          document.getElementById("editArea2").contains(event.target))
+      ) {
+        this.endDragM(event);
+        return;
+      }
+
+      if (
+        document.getElementById("editArea3") &&
+        document.getElementById("editArea3").contains(event.target)
+      ) {
+        this.endDragG(event);
+        return;
+      }
+
+      if (
+        this.isEditSubandNotes &&
+        document.getElementsByName("buttons") &&
+        (document.getElementsByName("buttons")[0].contains(event.target) ||
+          document.getElementsByName("buttons")[1].contains(event.target) ||
+          document.getElementsByName("buttons")[2].contains(event.target) ||
+          document.getElementsByName("buttons")[3].contains(event.target) ||
+          document.getElementsByName("buttons")[4].contains(event.target) ||
+          document.getElementsByName("buttons")[5].contains(event.target))
+      ) {
+        return;
+      }
+
       if (
         window.getSelection().toString() &&
         window.getSelection().toString() !== "" &&
@@ -3991,7 +4579,6 @@ export default {
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
-        // window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
       }
@@ -4099,6 +4686,37 @@ export default {
         return;
       }
       if (
+        (document.getElementById("editArea1") &&
+          document.getElementById("editArea1").contains(event.target)) ||
+        (document.getElementById("editArea2") &&
+          document.getElementById("editArea2").contains(event.target))
+      ) {
+        this.endTouchM(event);
+        return;
+      }
+
+      if (
+        document.getElementById("editArea3") &&
+        document.getElementById("editArea3").contains(event.target)
+      ) {
+        this.endTouchG(event);
+        return;
+      }
+
+      if (
+        this.isEditSubandNotes &&
+        document.getElementsByName("buttons") &&
+        (document.getElementsByName("buttons")[0].contains(event.target) ||
+          document.getElementsByName("buttons")[1].contains(event.target) ||
+          document.getElementsByName("buttons")[2].contains(event.target) ||
+          document.getElementsByName("buttons")[3].contains(event.target) ||
+          document.getElementsByName("buttons")[4].contains(event.target) ||
+          document.getElementsByName("buttons")[5].contains(event.target))
+      ) {
+        return;
+      }
+
+      if (
         window.getSelection().toString() &&
         window.getSelection().toString() !== "" &&
         window.getSelection().toString() !== " " &&
@@ -4134,7 +4752,6 @@ export default {
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
-        // window.getSelection().removeAllRanges();
         this.showAddNew = false;
         this.showEditNew = false;
       }
@@ -4587,11 +5204,7 @@ export default {
     },
 
     saveInit() {
-      if (
-        (!this.isReadyToPlay &&
-          !(this.isFavOnPlay && this.isPlayFullFavList)) ||
-        this.notSaveFav
-      )
+      if (!this.isReadyToPlay && !(this.isFavOnPlay && this.isPlayFullFavList))
         return;
       let customConfig = this.getConfig();
 
@@ -4604,8 +5217,8 @@ export default {
         "Subtitle:" +
         JSON.stringify(this.favList);
       this.hasPrivate = false;
-      if (this.serverFav == favContent) return;
       this.tempFavContent = favContent;
+      this.hasConfirmed = true;
       this.saveNow(this.tempFavContent);
     },
 
@@ -4653,8 +5266,6 @@ export default {
         "::" +
         JSON.stringify(this.timeStampChangeEnd) +
         "::" +
-        JSON.stringify(this.notAllowSaveInOffline) +
-        "::" +
         JSON.stringify(this.revisePlan) +
         "::" +
         JSON.stringify(this.nextLoopPlay) +
@@ -4670,6 +5281,8 @@ export default {
         JSON.stringify(this.transUrl) +
         "::" +
         JSON.stringify(this.random) +
+        "::" +
+        JSON.stringify(this.defaultWaveSurfer) +
         "::"
       );
     },
@@ -4681,6 +5294,12 @@ export default {
         this.notSaveFav
       )
         return;
+
+      this.notSaveFav = true;
+      setTimeout(() => {
+        this.notSaveFav = false;
+      }, 400);
+
       let customConfig = this.getConfig();
 
       let favContent = window.localStorage.getItem(this.favFileName);
@@ -4706,23 +5325,39 @@ export default {
         "\n\n\n\n" +
         "Subtitle:" +
         JSON.stringify(this.favList);
-      if (this.serverFav == favContent) return;
       this.tempFavContent = favContent;
       this.saveNow(this.tempFavContent);
     },
 
     async saveNow(favContent) {
+      if (
+        window.localStorage.getItem("server" + this.favFileName) &&
+        window.localStorage.getItem("server" + this.favFileName) == favContent
+      )
+        return;
       window.localStorage.setItem(this.favFileName, favContent);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.onOffline) {
         window.localStorage.setItem(this.favNotUpload, "1");
         return;
       }
-      let vm = this;
       window.localStorage.setItem(this.favNotUpload, "1");
       try {
         await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
-        vm.serverFav = favContent;
+        window.localStorage.setItem("server" + this.favFileName, favContent);
         window.localStorage.removeItem(this.favNotUpload);
+      } catch (error) {
+        return;
+      }
+    },
+
+    async savePeaks(peaks) {
+      let p = JSON.stringify(peaks);
+      try {
+        await api.post(
+          "/files/!PDJ/Repeater-backup/" + this.mediaName + ".peaks.txt",
+          p,
+          true
+        );
       } catch (error) {
         return;
       }
@@ -5007,6 +5642,13 @@ export default {
       this.showConfirm();
     },
 
+    confirmSplit() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "split";
+      this.showConfirm();
+    },
+
     async deleteSentence() {
       this.onRUdo = true;
       setTimeout(() => {
@@ -5036,7 +5678,7 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
       this.refresh();
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5139,7 +5781,7 @@ export default {
       }, 10);
 
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5201,7 +5843,94 @@ export default {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.onOffline) {
+        window.localStorage.setItem(this.srtNotUpload, "1");
+        return;
+      }
+      window.localStorage.setItem(this.srtNotUpload, "1");
+      try {
+        await api.post(srtFullPath, formatContent, true);
+        window.localStorage.removeItem(this.srtNotUpload);
+      } catch (error) {
+        return;
+      }
+    },
+
+    async splitSentence() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
+      var textSubtitles = formatContent.split("\n\n");
+
+      var timeInterval =
+        this.srtSubtitles[this.sentenceIndex - 1].endTime -
+        (this.timeStampChangeEnd - 1) / 1000 -
+        (this.srtSubtitles[this.sentenceIndex - 1].startTime -
+          this.timeStampChangeStart / 1000);
+      var midTime =
+        this.srtSubtitles[this.sentenceIndex - 1].startTime -
+        this.timeStampChangeStart / 1000 +
+        timeInterval / 2;
+      var time1 = this.convertToHMS(midTime * 1000 - 1);
+      var midTimeFormat1 =
+        time1.hours +
+        ":" +
+        time1.minutes +
+        ":" +
+        time1.seconds +
+        "," +
+        time1.milliseconds;
+      var time2 = this.convertToHMS(midTime * 1000);
+      var midTimeFormat2 =
+        time2.hours +
+        ":" +
+        time2.minutes +
+        ":" +
+        time2.seconds +
+        "," +
+        time2.milliseconds;
+      var newContent1 = textSubtitles[this.sentenceIndex - 1].replace(
+        this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[1],
+        midTimeFormat1
+      );
+
+      var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
+      var line2 =
+        midTimeFormat2 +
+        " --> " +
+        textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[1];
+
+      var line3 = "First Line";
+      var line4 = " ";
+      let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
+      let newContent = newContent1 + "\n\n" + newLine;
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex - 1],
+        newContent
+      );
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      var srtFullPath = "";
+      const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
+      this.changeNew[this.historyIndex] = formatContent;
+
+      this.historyIndex = this.historyIndex + 1;
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex + 1;
+      }, 10);
+      window.localStorage.setItem(this.mediaName, formatContent);
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5246,7 +5975,7 @@ export default {
         }, 10);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5254,6 +5983,21 @@ export default {
       try {
         await api.post(srtFullPath, this.reqF.content, true);
         window.localStorage.removeItem(this.srtNotUpload);
+        if (this.confirmType == "saveUnsavedSub") {
+          this.confirmType = "none";
+          var currentTime = new Date();
+          let id = Math.floor(currentTime.getTime() / 1000);
+          let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
+          let pdjBackUp = today + "-" + id + "-";
+          await api.post(
+            "/files/!PDJ/Repeater-backup/" +
+              "backup-" +
+              pdjBackUp +
+              this.reqF.name,
+            this.req.content,
+            true
+          );
+        }
       } catch (error) {
         return;
       }
@@ -5287,7 +6031,10 @@ export default {
         }, 2000);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.wavesurfer && this.regions) {
+        this.updateRgns();
+      }
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5327,7 +6074,10 @@ export default {
         }, 2000);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
-      if (this.allowOffline && this.notAllowSaveInOffline) {
+      if (this.wavesurfer && this.regions) {
+        this.updateRgns();
+      }
+      if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
@@ -5642,6 +6392,7 @@ export default {
   z-index: 1005;
   overflow: hidden;
 }
+
 #repeater .repeater {
   text-align: center;
   height: 100%;
@@ -5650,12 +6401,14 @@ export default {
   flex-direction: column;
   justify-content: space-evenly;
 }
+
 #repeater .repeater audio {
   width: 100%;
   left: 0;
   right: 0;
   margin: auto;
 }
+
 #repeater .spinner {
   text-align: center;
   position: fixed;
@@ -5663,11 +6416,13 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
 #repeater .spinner > div {
   width: 18px;
   height: 18px;
   background-color: white;
 }
+
 input.input.input--repeater {
   margin: 0.3em 0;
   display: inline;
@@ -5675,6 +6430,7 @@ input.input.input--repeater {
   padding: 0.2em;
   border-radius: 3px;
 }
+
 span.subject {
   flex-grow: 1;
   margin: 0;
@@ -5732,16 +6488,20 @@ input:disabled {
   #repeater .repeater {
     margin: 0;
   }
+
   header {
     display: flex;
     justify-content: space-around !important;
   }
+
   span.subject {
     width: 13em;
   }
+
   #settingBoxContainer {
     width: 100%;
   }
+
   input.input.input--repeater {
     width: 7em;
     margin: 0.3em 0;
