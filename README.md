@@ -48,24 +48,24 @@ Both of these can be used online or offline.
 
 ## Assets Download
 
-Updated: 01-01-2025
+Updated: 01-03-2025
 
-5.2: Add waveform to adjust timestamps easily.
+5.2: small fixes
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/18292261/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/18295449/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/18292266/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/18295454/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/18292269/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/18295455/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/18292272/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/18295459/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/18292275/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/18295461/filebrowser-darwin-arm64.for.mac.zip)
 
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/18292282/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/18295463/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
