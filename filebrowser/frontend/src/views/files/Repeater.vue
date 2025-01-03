@@ -1999,6 +1999,7 @@ export default {
   },
   data: function () {
     return {
+      fromClick: true,
       hasConfirmed: false,
       isMoveAll: false,
       moveAll: 0,
@@ -2011,7 +2012,7 @@ export default {
       autoCenter: true,
       regions: null,
       isWaveSurfer: false,
-      cont: false,
+      cont: true,
       regionPlay: true,
       sentenceIndex: 1,
       startTime: null,
@@ -2030,6 +2031,7 @@ export default {
       intervalId: null,
       timeOutId1: null,
       timeOutId2: null,
+      timeOutId3: null,
       autoPlayNext: true,
       nextLoopPlay: false,
       random: false,
@@ -3063,13 +3065,14 @@ export default {
       let activeRegion = null;
       this.regions.on("region-in", (region) => {
         activeRegion = region;
-        if (this.sentenceIndex !== region.id) {
+        if (this.sentenceIndex !== region.id && !this.fromClick) {
           this.sentenceIndex = region.id;
         }
       });
       this.regions.on("region-out", (region) => {
         if (activeRegion === region) {
           if (this.sentenceIndex == region.id && !this.cont) {
+            this.cont = true;
             this.cleanUp2();
             this.cleanUp1();
             this.wavesurfer.pause();
@@ -3084,6 +3087,7 @@ export default {
           this.cleanUp2();
           this.cleanUp1();
           this.cont = false;
+          this.fromClick = false;
           region.play();
         });
       }
@@ -3094,7 +3098,8 @@ export default {
         activeRegion = region;
         this.cleanUp2();
         this.cleanUp1();
-        this.cont = false;
+        this.wavesurfer.pause();
+        this.cont = true;
       });
 
       this.wavesurfer.on("interaction", () => {
@@ -3106,6 +3111,7 @@ export default {
         this.cleanUp2();
         if (!this.regionPlay) this.cont = true;
         else this.cont = false;
+        this.fromClick = false;
         this.wavesurfer.play();
       });
 
@@ -4448,6 +4454,7 @@ export default {
     click: function () {
       if (this.isFirstClick) this.firstClick();
       this.touches++;
+      this.fromClick = true;
       this.cleanUp1();
       if (this.isEditSubandNotes) {
         this.toBlur();
@@ -4597,8 +4604,6 @@ export default {
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
         !this.isFavOnPlay
       ) {
-        this.cleanUp1();
-        this.cleanUp2();
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
@@ -4766,8 +4771,6 @@ export default {
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
         !this.isFavOnPlay
       ) {
-        this.cleanUp1();
-        this.cleanUp2();
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
@@ -5394,13 +5397,6 @@ export default {
       if (this.subFirstLine !== undefined) {
         this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
         if (
-          this.subFirstLine !== "" ||
-          this.subFirstLine !== " " ||
-          this.subFirstLine !== "  " ||
-          this.subFirstLine !== "     "
-        )
-          this.subFirstLine = this.subFirstLine.trim();
-        if (
           this.subFirstLine == "" &&
           ((this.subSecLine !== undefined && this.subSecLine !== "") ||
             (this.note !== undefined && this.note !== ""))
@@ -5446,7 +5442,10 @@ export default {
       newContent =
         this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + newContent;
       this.reqF.content = tempContent.replace(oldContent, newContent);
-      this.saveSubNow();
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubNow();
+      }, 2500);
     },
 
     saveSub1() {
