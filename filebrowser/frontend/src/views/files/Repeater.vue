@@ -1455,10 +1455,15 @@
           "
         >
           <p
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
             @touchmove.prevent
+            @touchend="endTouchS"
             style="font-size: 1em; padding: 0; margin: 0.5em 0"
           >
             <span
+              name="buttons"
               @click="startTimeMinus()"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
@@ -1482,6 +1487,7 @@
             &#32;
             <input
               class="input input--repeater"
+              name="buttons"
               type="number"
               v-model.number.lazy="startTimeTemp"
               id="editArea0"
@@ -1496,6 +1502,7 @@
             &#32;
             <span
               @click="startTimeAdd()"
+              name="buttons"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1518,6 +1525,7 @@
             --
             <span
               @click="showWaveSurfer()"
+              name="buttons"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1528,6 +1536,7 @@
             --
             <span
               @click="endTimeMinus()"
+              name="buttons"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1550,6 +1559,7 @@
             &#32;
             <input
               class="input input--repeater"
+              name="buttons"
               type="number"
               v-model.number.lazy="endTimeTemp"
               step="0.001"
@@ -1564,6 +1574,7 @@
             &#32;
             <span
               @click="endTimeAdd()"
+              name="buttons"
               :style="{
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
@@ -1652,10 +1663,19 @@
               white-space: pre-wrap;
             "
           ></textarea>
-          <p v-if="isMoveAll" style="color: white">
+          <p
+            v-if="isMoveAll"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchmove.prevent
+            @touchend="endTouchS"
+            style="color: white"
+          >
             {{ $t("repeater.moveAllStamp") }}
             <input
               class="input input--repeater"
+              name="buttons"
               type="number"
               v-model.number="moveAll"
               step="50"
@@ -1663,6 +1683,7 @@
 
             <button
               class="action"
+              name="buttons"
               :disabled="moveAll == 0"
               @click="saveMoveAll"
               :title="$t('buttons.save')"
@@ -3601,6 +3622,7 @@ export default {
           return;
         }
         let keyName = this.mediaName;
+        // console.log(this.cachedKeys);
         if (!this.cachedKeys.includes(";;" + keyName)) {
           this.calcRaw();
           this.playFromCache = false;
@@ -3617,9 +3639,14 @@ export default {
             vm.playFromCache = true;
           })
           .catch(function () {
-            alert(
-              "Something Wrong with your Browser Database for Cached Media. Please Clean Up the Cached Media and try again!"
-            );
+            vm.cachedKeys = vm.cachedKeys.replace(";;" + keyName, "");
+            window.localStorage.setItem("cKeys", vm.cachedKeys);
+            vm.calcRaw();
+            vm.playFromCache = false;
+            vm.fetchCount++;
+            if (vm.fetchCount > 2) return;
+            vm.cacheMedia();
+            return;
           });
       }, 50);
     },
@@ -4529,17 +4556,13 @@ export default {
         return;
       }
 
-      if (
-        this.isEditSubandNotes &&
-        document.getElementsByName("buttons") &&
-        (document.getElementsByName("buttons")[0].contains(event.target) ||
-          document.getElementsByName("buttons")[1].contains(event.target) ||
-          document.getElementsByName("buttons")[2].contains(event.target) ||
-          document.getElementsByName("buttons")[3].contains(event.target) ||
-          document.getElementsByName("buttons")[4].contains(event.target) ||
-          document.getElementsByName("buttons")[5].contains(event.target))
-      ) {
-        return;
+      if (this.isEditSubandNotes && document.getElementsByName("buttons")) {
+        var a = document.getElementsByName("buttons");
+        for (var i = 0; i < a.length; i++) {
+          if (a[i].contains(event.target)) {
+            return;
+          }
+        }
       }
 
       if (
@@ -4703,17 +4726,13 @@ export default {
         return;
       }
 
-      if (
-        this.isEditSubandNotes &&
-        document.getElementsByName("buttons") &&
-        (document.getElementsByName("buttons")[0].contains(event.target) ||
-          document.getElementsByName("buttons")[1].contains(event.target) ||
-          document.getElementsByName("buttons")[2].contains(event.target) ||
-          document.getElementsByName("buttons")[3].contains(event.target) ||
-          document.getElementsByName("buttons")[4].contains(event.target) ||
-          document.getElementsByName("buttons")[5].contains(event.target))
-      ) {
-        return;
+      if (this.isEditSubandNotes && document.getElementsByName("buttons")) {
+        var a = document.getElementsByName("buttons");
+        for (var i = 0; i < a.length; i++) {
+          if (a[i].contains(event.target)) {
+            return;
+          }
+        }
       }
 
       if (
