@@ -3786,6 +3786,8 @@ export default {
         this.note;
       this.onEdit = true;
       this.saveSub();
+      this.showAddNew = false;
+      this.showEditNew = false;
     },
 
     getReader() {
@@ -4974,7 +4976,7 @@ export default {
         this.randomReq.push(this.pr[1]);
       }
       let a = this.randomReq[0];
-      this.randomReq.splice(0, 1); // 删除从索引0开始的1个元素
+      this.randomReq.splice(0, 1);
       return a;
     },
 
@@ -4982,7 +4984,7 @@ export default {
       let res = [...arr]; // 创建一个副本，以避免修改原数组。
       for (let i = res.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [res[i], res[j]] = [res[j], res[i]]; // 交换元素
+        [res[i], res[j]] = [res[j], res[i]];
       }
       return res;
     },
