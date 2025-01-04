@@ -27,7 +27,8 @@
               showSubtitleList ||
               showNewWordList ||
               withTrans ||
-              showRevision
+              showRevision ||
+              showTools
                 ? 'red'
                 : 'blue',
           }"
@@ -164,6 +165,7 @@
           >
         </button>
         <button
+          v-if="!showTools"
           :disabled="
             loading ||
             isSetting ||
@@ -178,6 +180,15 @@
           :title="$t('repeater.switchsubtitleLanguages')"
         >
           <i :style="subSwitch" class="material-icons">closed_caption</i>
+        </button>
+        <button
+          v-if="showTools"
+          class="action"
+          @click="switchSubtitle"
+          @dblclick.prevent
+          :title="$t('repeater.switchsubtitleLanguages')"
+        >
+          <i style="color: red" class="material-icons">plumbing</i>
         </button>
         <button
           v-if="isSingle"
@@ -250,6 +261,113 @@
       <div v-if="isSlowInternet" class="showMsg" style="bottom: 2.5em">
         <p style="color: red">
           {{ $t("repeater.slowInternet") }}
+        </p>
+      </div>
+
+      <div
+        v-if="showTools"
+        style="
+          background-color: gray;
+          color: white;
+          z-index: 1011;
+          display: flex;
+          flex-direction: column;
+          position: fixed;
+          left: 50%;
+          transform: translate(-50%, 0);
+          top: 4.2em;
+          bottom: 0.2em;
+          border-radius: 10px;
+          overflow-y: auto;
+        "
+        :style="{
+          width: isMobile ? '100%' : '65%',
+        }"
+      >
+        <p style="padding: 0 1em; color: blue">
+          {{ $t("repeater.tools") }}
+        </p>
+
+        <p style="padding: 0 1em; margin: 0">
+          {{ $t("repeater.toolsNote") }}
+        </p>
+
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(1)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool1") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(2)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool2") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(3)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool3") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(4)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool4") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(5)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool5") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(6)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool6") }}
+        </p>
+        <p style="padding: 0 1em; margin: 0">
+          <button
+            class="action"
+            style="color: blue"
+            @click="saveSpecialSub(7)"
+            :title="$t('repeater.saveas')"
+          >
+            <i class="material-icons">save_as</i>
+          </button>
+          {{ $t("repeater.tool7") }}
         </p>
       </div>
 
@@ -1999,6 +2117,7 @@ export default {
   },
   data: function () {
     return {
+      showTools: false,
       fromClick: true,
       hasConfirmed: false,
       isMoveAll: false,
@@ -3055,12 +3174,9 @@ export default {
         if (this.sentenceIndex !== region.id) {
           this.sentenceIndex = region.id;
         }
-
         this.startTimeTemp = region.start;
         this.endTimeTemp = region.end + 0.03;
-        this.cleanUp2();
-        this.cleanUp1();
-        region.play();
+        this.click();
       });
 
       let activeRegion = null;
@@ -3085,11 +3201,7 @@ export default {
           e.stopPropagation();
           this.sentenceIndex = region.id;
           activeRegion = region;
-          this.cleanUp2();
-          this.cleanUp1();
-          this.cont = false;
-          this.fromClick = false;
-          region.play();
+          this.click();
         });
       }
 
@@ -3469,7 +3581,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样计算简单。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3618,7 +3730,6 @@ export default {
           return;
         }
         let keyName = this.mediaName;
-        // console.log(this.cachedKeys);
         if (!this.cachedKeys.includes(";;" + keyName)) {
           this.calcRaw();
           this.playFromCache = false;
@@ -4005,7 +4116,16 @@ export default {
       this.ShowSwitchSubtitle = true;
       if (this.timeOutId1) clearTimeout(this.timeOutId1);
       this.subtitleLang = this.subtitleLang + 1;
-      if (this.subtitleLang == 9) this.subtitleLang = 1;
+      if (this.subtitleLang == 9) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.showTools = true;
+        this.ShowSwitchSubtitle = false;
+      }
+      if (this.subtitleLang >= 10) {
+        this.showTools = false;
+        this.subtitleLang = 1;
+      }
       this.switchSubtitleMini();
       this.timeOutId1 = setTimeout(() => {
         this.ShowSwitchSubtitle = false;
@@ -4443,6 +4563,7 @@ export default {
       if (this.isFirstClick) this.firstClick();
       this.touches++;
       this.fromClick = true;
+      if (this.isEditSubandNotes) this.cleanUp2();
       this.cleanUp1();
       if (this.isEditSubandNotes) {
         this.toBlur();
@@ -4493,6 +4614,7 @@ export default {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.handleAutoStop();
       this.isSetting = false;
+      if (this.showTools) this.switchSubtitle();
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -4618,6 +4740,7 @@ export default {
       if (!this.isReadyToPlay) return;
       this.handleAutoStop();
       this.isSetting = false;
+      if (this.showTools) this.switchSubtitle();
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -4856,7 +4979,7 @@ export default {
     },
 
     shuffle(arr) {
-      let res = [...arr]; // 创建一个数组副本，以避免修改原数组。
+      let res = [...arr]; // 创建一个副本，以避免修改原数组。
       for (let i = res.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [res[i], res[j]] = [res[j], res[i]]; // 交换元素
@@ -5644,6 +5767,151 @@ export default {
       this.saveSubNow();
     },
 
+    async saveSpecialSub(x) {
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      var textSubtitles = formatContent.split("\n\n");
+
+      for (var i = 0; i < textSubtitles.length; i++) {
+        var newContent = " ";
+        if (x == 2) {
+          newContent =
+            textSubtitles[i].split("\n")[0] +
+            "\n" +
+            textSubtitles[i].split("\n")[1] +
+            "\n" +
+            textSubtitles[i].split("\n")[2];
+        }
+        if (textSubtitles[i].split("\n").length >= 5) {
+          if (x == 3) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          } else if (x == 4) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          } else if (x == 5) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[3] +
+              "\n" +
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[4];
+          } else if (x >= 6) {
+            newContent =
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3] +
+              "\n" +
+              textSubtitles[i].split("\n")[4];
+          }
+        } else if (textSubtitles[i].split("\n").length == 4) {
+          if (x == 3) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          } else if (x == 4) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          } else if (x == 5) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[3] +
+              "\n" +
+              textSubtitles[i].split("\n")[2];
+          } else if (x >= 6) {
+            newContent =
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          }
+        } else if (textSubtitles[i].split("\n").length == 3) {
+          if (x == 3) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              " ";
+          } else if (x == 4) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              " ";
+          } else if (x == 5) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[1] +
+              "\n" +
+              " " +
+              "\n" +
+              textSubtitles[i].split("\n")[2];
+          } else if (x >= 6) {
+            newContent = textSubtitles[i].split("\n")[2];
+          }
+        }
+
+        if (x !== 1)
+          formatContent = formatContent.replace(textSubtitles[i], newContent);
+      }
+
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      if (x == 7) formatContent = this.formatAll(formatContent);
+
+      var currentTime = new Date();
+      let id = Math.floor(currentTime.getTime() / 1000);
+      let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
+      var pdjBackUp = " ";
+      if (x == 1) pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
+      else if (x == 2) pdjBackUp = "FirstLine-" + today + "-" + id + ".srt";
+      else if (x == 3) pdjBackUp = "SecLine-" + today + "-" + id + ".srt";
+      else if (x == 4)
+        pdjBackUp = "First-Two-Lines-" + today + "-" + id + ".srt";
+      else if (x == 5) pdjBackUp = "Switch-" + today + "-" + id + ".srt";
+      else if (x == 6) pdjBackUp = "text-" + today + "-" + id + ".txt";
+      try {
+        await api.post(
+          "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
+          formatContent,
+          true
+        );
+        alert("File saved successfully.");
+      } catch (error) {
+        alert("Sorry. Can't save the file to the Server.");
+        return;
+      }
+    },
+
     confirmDelete() {
       this.cleanUp1();
       this.cleanUp2();
@@ -5965,12 +6233,9 @@ export default {
           var currentTime = new Date();
           let id = Math.floor(currentTime.getTime() / 1000);
           let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
-          let pdjBackUp = today + "-" + id + "-";
+          let pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
           await api.post(
-            "/files/!PDJ/Repeater-backup/" +
-              "backup-" +
-              pdjBackUp +
-              this.reqF.name,
+            "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
             this.req.content,
             true
           );
@@ -6153,12 +6418,8 @@ export default {
     },
 
     key(event) {
-      if (!this.isReadyToPlay) return;
-      if (
-        event.which === 39 &&
-        this.sentenceIndex < this.srtSubtitles.length &&
-        !this.isSetting
-      ) {
+      if (!this.isReadyToPlay || this.showTools || this.isSetting) return;
+      if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
         // right arrow
         if (
           (document.getElementById("editArea0") &&
@@ -6203,11 +6464,7 @@ export default {
           }, 1);
         }
         return;
-      } else if (
-        event.which === 37 &&
-        this.sentenceIndex > 1 &&
-        !this.isSetting
-      ) {
+      } else if (event.which === 37 && this.sentenceIndex > 1) {
         // left arrow
         if (
           (document.getElementById("editArea0") &&
@@ -6255,7 +6512,7 @@ export default {
       } else if (event.which === 38) {
         // up arrow
         this.cleanUp1(); //stop play
-      } else if (event.which === 40 && !this.isSetting) {
+      } else if (event.which === 40) {
         // down arrow
         this.cleanUp1();
         if (this.isFirstClick) this.firstClick();
@@ -6288,6 +6545,10 @@ export default {
     close() {
       if (this.isSetting) {
         this.onSetting();
+        return;
+      }
+      if (this.showTools) {
+        this.switchSubtitle();
         return;
       }
       if (this.isFavOnPlay) {
