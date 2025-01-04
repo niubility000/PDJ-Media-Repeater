@@ -1605,7 +1605,7 @@
             @touchstart="startTouchS"
             @touchend="endTouchS"
             @touchmove="touchMoveM"
-            v-model="subFirstLine"
+            v-model.lazy="subFirstLine"
             placeholder="...Subtitle First Line..."
             :rows="rowsNum"
             style="
@@ -1627,7 +1627,7 @@
             @mouseup="endDragS"
             @touchstart="startTouchS"
             @touchend="endTouchS"
-            v-model="subSecLine"
+            v-model.lazy="subSecLine"
             placeholder="...Subtitle Second Line..."
             :rows="rowsNum"
             style="
@@ -2032,6 +2032,7 @@ export default {
       timeOutId1: null,
       timeOutId2: null,
       timeOutId3: null,
+      timeOutId4: null,
       autoPlayNext: true,
       nextLoopPlay: false,
       random: false,
@@ -3300,7 +3301,7 @@ export default {
       this.isMoveAll = !this.isMoveAll;
     },
 
-    async saveMoveAll() {
+    saveMoveAll() {
       this.hasMoveAll = true;
       this.onRUdo = true;
       setTimeout(() => {
@@ -3349,10 +3350,6 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
 
       this.historyIndex = this.historyIndex + 1;
@@ -3365,17 +3362,10 @@ export default {
         this.sentenceIndex = this.sentenceIndex - 1;
       }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubFinal();
+      }, 1000);
     },
 
     cacheMedia() {
@@ -3479,7 +3469,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样计算简单。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -4070,8 +4060,6 @@ export default {
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
-      this.showAddNew = false;
-      this.showEditNew = false;
       this.newTranslation = "";
     },
     cleanUp2() {
@@ -4586,6 +4574,7 @@ export default {
         this.showAddNew = true;
       } else {
         window.getSelection().removeAllRanges();
+        this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
         if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
@@ -4604,9 +4593,11 @@ export default {
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
         !this.isFavOnPlay
       ) {
+        this.fixbug1();
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
+        this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
       }
@@ -4614,6 +4605,7 @@ export default {
 
     endDragG() {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
+      this.fixbug1();
       this.showAddNew = false;
       this.showEditNew = false;
     },
@@ -4754,6 +4746,7 @@ export default {
         this.showAddNew = true;
       } else {
         window.getSelection().removeAllRanges();
+        this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
         if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
@@ -4771,15 +4764,25 @@ export default {
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
         !this.isFavOnPlay
       ) {
+        this.fixbug1();
         this.newWord = window.getSelection().toString();
         this.showAddNew = true;
       } else {
+        this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
       }
     },
 
+    fixbug1() {
+      if (this.isEditSubandNotes) {
+        this.subFirstLine = document.getElementById("editArea1").value;
+        this.subSecLine = document.getElementById("editArea2").value;
+      }
+    },
+
     endTouchG() {
+      this.fixbug1();
       this.showAddNew = false;
       this.showEditNew = false;
     },
@@ -4853,7 +4856,7 @@ export default {
     },
 
     shuffle(arr) {
-      let res = [...arr]; // 创建一个数组的副本，以避免修改原始数组
+      let res = [...arr]; // 创建一个数组副本，以避免修改原数组。
       for (let i = res.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [res[i], res[j]] = [res[j], res[i]]; // 交换元素
@@ -5348,7 +5351,11 @@ export default {
         "Subtitle:" +
         JSON.stringify(this.favList);
       this.tempFavContent = favContent;
-      this.saveNow(this.tempFavContent);
+
+      if (this.timeOutId4) clearTimeout(this.timeOutId4);
+      this.timeOutId4 = setTimeout(() => {
+        this.saveNow(this.tempFavContent);
+      }, 1000);
     },
 
     async saveNow(favContent) {
@@ -5362,6 +5369,7 @@ export default {
         window.localStorage.setItem(this.favNotUpload, "1");
         return;
       }
+      // console.log("saveFav");
       window.localStorage.setItem(this.favNotUpload, "1");
       try {
         await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
@@ -5442,10 +5450,7 @@ export default {
       newContent =
         this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + newContent;
       this.reqF.content = tempContent.replace(oldContent, newContent);
-      if (this.timeOutId3) clearTimeout(this.timeOutId3);
-      this.timeOutId3 = setTimeout(() => {
-        this.saveSubNow();
-      }, 2500);
+      this.saveSubNow();
     },
 
     saveSub1() {
@@ -5667,7 +5672,7 @@ export default {
       this.showConfirm();
     },
 
-    async deleteSentence() {
+    deleteSentence() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -5686,7 +5691,6 @@ export default {
       );
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      const path = url.removeLastDir(this.$route.path);
       this.changeNew[this.historyIndex] = formatContent;
 
       this.historyIndex = this.historyIndex + 1;
@@ -5696,20 +5700,10 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
       this.refresh();
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(path + "/" + this.reqF.name, formatContent, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      this.saveSubFinal();
     },
 
-    async mergeSentence() {
+    mergeSentence() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -5779,10 +5773,6 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
 
       this.historyIndex = this.historyIndex + 1;
@@ -5799,20 +5789,10 @@ export default {
       }, 10);
 
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      this.saveSubFinal();
     },
 
-    async addSentence() {
+    addSentence() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -5846,12 +5826,7 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
-
       this.historyIndex = this.historyIndex + 1;
       formatContent = this.formatAll(formatContent);
       this.reqF.content = formatContent;
@@ -5861,20 +5836,10 @@ export default {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      this.saveSubFinal();
     },
 
-    async splitSentence() {
+    splitSentence() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -5933,10 +5898,6 @@ export default {
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       this.changeNew[this.historyIndex] = formatContent;
 
       this.historyIndex = this.historyIndex + 1;
@@ -5948,25 +5909,11 @@ export default {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
       window.localStorage.setItem(this.mediaName, formatContent);
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, formatContent, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      this.saveSubFinal();
     },
 
-    async saveSubNow() {
+    saveSubNow() {
       if (this.tempOldContent == this.reqF.content) return;
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       if (!this.onRUdo) {
         this.changeOld[this.historyIndex] = this.tempOldContent;
         this.changeNew[this.historyIndex] = this.reqF.content;
@@ -5993,10 +5940,22 @@ export default {
         }, 10);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubFinal();
+      }, 1000);
+    },
+
+    async saveSubFinal() {
       if (this.onOffline) {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
+      // console.log("saveSrt");
+      var srtFullPath = "";
+      const path = url.removeLastDir(this.$route.path);
+      if (this.onRevision) srtFullPath = this.srtRevisePath;
+      else srtFullPath = path + "/" + this.reqF.name;
       window.localStorage.setItem(this.srtNotUpload, "1");
       try {
         await api.post(srtFullPath, this.reqF.content, true);
@@ -6021,15 +5980,12 @@ export default {
       }
     },
 
-    async changeUndo() {
+    changeUndo() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
+
       this.historyIndex = this.historyIndex - 1;
       this.reqF.content = this.changeOld[this.historyIndex];
       this.cleanUp1();
@@ -6052,28 +6008,17 @@ export default {
       if (this.wavesurfer && this.regions) {
         this.updateRgns();
       }
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubFinal();
+      }, 1000);
     },
 
-    async changeRedo() {
+    changeRedo() {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
-      var srtFullPath = "";
-      const path = url.removeLastDir(this.$route.path);
-      if (this.onRevision) srtFullPath = this.srtRevisePath;
-      else srtFullPath = path + "/" + this.reqF.name;
       this.reqF.content = this.changeNew[this.historyIndex];
       this.historyIndex = this.historyIndex + 1;
       this.cleanUp1();
@@ -6095,17 +6040,10 @@ export default {
       if (this.wavesurfer && this.regions) {
         this.updateRgns();
       }
-      if (this.onOffline) {
-        window.localStorage.setItem(this.srtNotUpload, "1");
-        return;
-      }
-      window.localStorage.setItem(this.srtNotUpload, "1");
-      try {
-        await api.post(srtFullPath, this.reqF.content, true);
-        window.localStorage.removeItem(this.srtNotUpload);
-      } catch (error) {
-        return;
-      }
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubFinal();
+      }, 1000);
     },
 
     refresh() {
@@ -6113,17 +6051,17 @@ export default {
         this.sentenceIndex = this.sentenceIndex + 1;
         setTimeout(() => {
           this.sentenceIndex = this.sentenceIndex - 1;
-        }, 10);
+        }, 1);
       } else if (this.sentenceIndex == this.srtSubtitles.length + 1) {
         this.sentenceIndex = this.sentenceIndex - 2;
         setTimeout(() => {
           this.sentenceIndex = this.sentenceIndex + 1;
-        }, 10);
+        }, 1);
       } else {
         this.sentenceIndex = this.sentenceIndex - 1;
         setTimeout(() => {
           this.sentenceIndex = this.sentenceIndex + 1;
-        }, 10);
+        }, 1);
       }
     },
 
