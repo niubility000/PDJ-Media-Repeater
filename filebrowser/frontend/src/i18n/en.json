@@ -45,7 +45,7 @@
     "wavesurfer": "Enable Visual waveform chart by default in editing mode in a non-mobile browser . Click ",
     "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, it may cause the browser to crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ folder on the server, this media file will no longer cause browser crashes in the future.",    
     "transUrl": "New Word Translation Url:",
-    "transUrlNote": "eg. https://fanyi.baidu.com/#zh/en/, https://translate.sogou.com/text?keyword=, https://www.deepl.com/zh/translator#en/zh-hans/",
+    "transUrlNote": "eg. https://fanyi.baidu.com/#zh/en/, https://translate.sogou.com/text?keyword=, https://cn.bing.com/translator?ref=TThis&from=&to=cn&text=, https://www.deepl.com/en/translator#en/zh-hans/",
     "allowCache": "Cache Media - Enable to Save Visited Media Files in Browser's Cache. This will hugely save traffic usage in the next visit, but will take up storage space on this device (After this setting is changed, it will automatically reload current page to make it effective). In 'Offline APP Mode', 'Cache Media' will be selected automatically and cannot be changed.",
     "cached1": "Max number of latest files to cache:",
     "savedfiles": "Number of media files saved in this Browser's Cache: {numOfKeys}",

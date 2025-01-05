@@ -2151,7 +2151,6 @@ export default {
       timeOutId1: null,
       timeOutId2: null,
       timeOutId3: null,
-      timeOutId4: null,
       autoPlayNext: true,
       nextLoopPlay: false,
       random: false,
@@ -5476,11 +5475,7 @@ export default {
         "Subtitle:" +
         JSON.stringify(this.favList);
       this.tempFavContent = favContent;
-
-      if (this.timeOutId4) clearTimeout(this.timeOutId4);
-      this.timeOutId4 = setTimeout(() => {
-        this.saveNow(this.tempFavContent);
-      }, 1000);
+      this.saveNow(this.tempFavContent);
     },
 
     async saveNow(favContent) {

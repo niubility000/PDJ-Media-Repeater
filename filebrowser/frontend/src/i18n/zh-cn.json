@@ -45,7 +45,7 @@
     "wavesurfer": "在使用非移动端浏览器访问时，编辑页面中默认开启可视化波形图。可点击 ",
     "wavesurfer2": " 进行切换。注意：在移动端浏览器中可手动开启可视化波形图，若媒体文件过大，可能会引起浏览器崩溃。可在登录页面清除缓存后再试，或先在电脑端浏览器中访问。当首次成功加载可视化波形图后，系统将自动保存此媒体文件的peaks数据到服务器用户根目录下!PDJ文件夹内，之后此媒体文件将不会再引起浏览器崩溃。",    
     "transUrl": "生词翻译网址：",
-    "transUrlNote": "例如：https://fanyi.baidu.com/#zh/en/， https://translate.sogou.com/text?keyword=， https://www.deepl.com/zh/translator#en/zh-hans/。",
+    "transUrlNote": "例如：https://fanyi.baidu.com/#zh/en/， https://translate.sogou.com/text?keyword=， https://cn.bing.com/translator?ref=TThis&from=&to=cn&text=，https://www.deepl.com/en/translator#en/zh-hans/",
     "allowCache": "媒体缓存 - 允许将访问过的媒体文件保存到此浏览器的缓存。这将在以后访问时大幅节省流量使用，但会占用本机的存储空间（此设置改变后将自动刷新当前页以使设置生效）。在'离线APP模式'下，'媒体缓存'将被自动置为选中状态，并不可更改。",
     "cached1": "允许缓存的最近媒体文件的最大数量：",
     "savedfiles": "当前在浏览器中缓存的媒体文件数：{numOfKeys}",
