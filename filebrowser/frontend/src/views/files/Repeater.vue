@@ -58,7 +58,9 @@
           @click="switchShowList()"
           :style="{
             pointerEvents:
-              isSetting || !isSingle || showRevision ? 'none' : 'auto',
+              isSetting || !isSingle || showRevision || showTools
+                ? 'none'
+                : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -73,7 +75,7 @@
             "
             :style="{
               color:
-                isSetting || !isSingle || showRevision
+                isSetting || !isSingle || showRevision || showTools
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
@@ -90,7 +92,8 @@
             favList.length == 0 ||
             isSetting ||
             !isSingle ||
-            showRevision
+            showRevision ||
+            showTools
           "
           class="action"
           @click="playFavList"
@@ -106,7 +109,8 @@
             showSubtitleList ||
             showNewWordList ||
             showRevision ||
-            isEditSubandNotes
+            isEditSubandNotes ||
+            showTools
           "
           class="action"
           @click="onSetting"
@@ -120,7 +124,8 @@
                 showSubtitleList ||
                 showNewWordList ||
                 showRevision ||
-                isEditSubandNotes
+                isEditSubandNotes ||
+                showTools
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -139,7 +144,8 @@
             showSubtitleList ||
             showNewWordList ||
             isFavOnPlay ||
-            showRevision
+            showRevision ||
+            showTools
           "
           class="action"
           @click="switchEditSubandNote"
@@ -154,7 +160,8 @@
                 showSubtitleList ||
                 showNewWordList ||
                 isFavOnPlay ||
-                showRevision
+                showRevision ||
+                showTools
                   ? 'grey'
                   : isEditSubandNotes
                   ? 'red'
@@ -199,7 +206,8 @@
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
-            showRevision
+            showRevision ||
+            showTools
           "
           class="action"
           @click="onSingle"
@@ -210,7 +218,7 @@
         </button>
         <button
           v-if="!isSingle"
-          :disabled="loading || showRevision"
+          :disabled="loading || showRevision || showTools"
           class="action"
           @click="onSingle"
           @dblclick.prevent
@@ -227,7 +235,8 @@
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
-            !isReadyToPlay
+            !isReadyToPlay ||
+            showTools
           "
           class="action"
           @click="switchRevisePlan"
@@ -244,7 +253,8 @@
                 showSubtitleList ||
                 showNewWordList ||
                 isEditSubandNotes ||
-                !isReadyToPlay
+                !isReadyToPlay ||
+                showTools
                   ? 'grey'
                   : showRevision
                   ? 'red'
@@ -281,14 +291,14 @@
           overflow-y: auto;
         "
         :style="{
-          width: isMobile ? '100%' : '65%',
+          width: mobileScreen ? '100%' : '65%',
         }"
       >
-        <p style="padding: 0 1em; color: blue">
+        <p style="padding: 0 1em; color: blue; font-size: 1.2em">
           {{ $t("repeater.tools") }}
         </p>
 
-        <p style="padding: 0 1em; margin: 0">
+        <p style="padding: 0 1em 1em 1em; margin: 0">
           {{ $t("repeater.toolsNote") }}
         </p>
 
@@ -388,7 +398,7 @@
           overflow-y: auto;
         "
         :style="{
-          width: isMobile ? '100%' : '65%',
+          width: mobileScreen ? '100%' : '65%',
         }"
       >
         <p style="padding: 0 1em; color: blue">
@@ -529,7 +539,7 @@
           background-color: black;
         "
         :style="{
-          width: isMobile ? '100%' : '65%',
+          width: mobileScreen ? '100%' : '65%',
         }"
       >
         <input
@@ -589,7 +599,7 @@
           overflow-y: auto;
         "
         :style="{
-          width: isMobile ? '100%' : '65%',
+          width: mobileScreen ? '100%' : '65%',
         }"
       >
         <p v-if="!this.withTrans" style="padding: 0 1em; color: yellow">
@@ -693,7 +703,7 @@
             <p v-if="!hasPrivate" style="color: white; margin-top: 0">
               {{ $t("repeater.addPrivate") }}
               <button class="action" @click="addPrivate">
-                <i style="color: blue" class="material-icons">save</i>
+                <i style="color: blue" class="material-icons">verified</i>
               </button>
             </p>
             <p v-if="hasPrivate" style="color: white">
@@ -1807,7 +1817,7 @@
               :title="$t('buttons.save')"
             >
               <i style="color: red; font-size: 1.5em" class="material-icons"
-                >save</i
+                >verified</i
               >
             </button>
           </p>
@@ -2243,6 +2253,7 @@ export default {
       allowCache: Number(window.localStorage.getItem("cacheOff")) !== 1,
       onOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
+      mobileScreen: this.checkMobileScreen(),
       tempFavContent: "",
       notSaveFav: false,
       notFromStarttimeTempChg: true,
@@ -2286,7 +2297,12 @@ export default {
     },
 
     favListStatus() {
-      if (this.isSetting || !this.isSingle || this.showRevision)
+      if (
+        this.isSetting ||
+        !this.isSingle ||
+        this.showRevision ||
+        this.showTools
+      )
         return { color: "grey" };
       if (!this.isPlayFullFavList) {
         if (this.currentFileFavList.length == 0) {
@@ -2371,7 +2387,8 @@ export default {
         this.showSubtitleList ||
         this.showNewWordList ||
         this.isEditSubandNotes ||
-        this.showRevision
+        this.showRevision ||
+        this.showTools
       ) {
         return { color: "grey" };
       } else if (this.playFromCache) {
@@ -3408,6 +3425,10 @@ export default {
       return window.matchMedia("(orientation: landscape)").matches;
     },
 
+    checkMobileScreen() {
+      return window.matchMedia("(max-width: 1000px)").matches;
+    },
+
     showMoveAll() {
       this.isMoveAll = !this.isMoveAll;
     },
@@ -3580,7 +3601,7 @@ export default {
     getDateAfterDays(n) {
       const date = new Date();
       const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样计算最简单。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -4899,7 +4920,11 @@ export default {
     },
 
     fixbug1() {
-      if (this.isEditSubandNotes) {
+      if (
+        this.isEditSubandNotes &&
+        document.getElementById("editArea1") &&
+        document.getElementById("editArea2")
+      ) {
         this.subFirstLine = document.getElementById("editArea1").value;
         this.subSecLine = document.getElementById("editArea2").value;
       }
@@ -4980,7 +5005,7 @@ export default {
     },
 
     shuffle(arr) {
-      let res = [...arr]; // 创建一个副本，以避免修改原数组。
+      let res = [...arr]; // 创建一个数组副本，以避免修改原数组。
       for (let i = res.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [res[i], res[j]] = [res[j], res[i]];
@@ -6537,15 +6562,16 @@ export default {
     },
     handleResize() {
       this.isLandscape = this.checkLandscape();
+      this.mobileScreen = this.checkMobileScreen();
       this.resized = true;
     },
     close() {
-      if (this.isSetting) {
-        this.onSetting();
-        return;
-      }
       if (this.showTools) {
         this.switchSubtitle();
+        return;
+      }
+      if (this.isSetting) {
+        this.onSetting();
         return;
       }
       if (this.isFavOnPlay) {
