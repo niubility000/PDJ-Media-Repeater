@@ -1192,6 +1192,23 @@
               />
               {{ $t("repeater.autoPauseAfterFirstDone") }}
             </p>
+            <p
+              :style="{
+                color: isUtterTransLine ? 'white' : '#bbbaba',
+              }"
+              style="
+                text-align: justify;
+                text-align-last: left;
+                margin-left: 1em;
+              "
+            >
+              <input
+                :disabled="!isUtterTransLine"
+                type="checkbox"
+                v-model="dubbingMode"
+              />
+              {{ $t("repeater.dubbingMode") }}
+            </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p
               :style="{
@@ -1479,14 +1496,18 @@
         >
           {{ $t("repeater.warning1") }}
         </p>
-
-        <p
+        <div
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
           class="showMsg"
           style="color: grey; bottom: 1.5em"
         >
-          Loading Media...
-        </p>
+          <p style="font-size: 1.2em">
+            {{ $t("repeater.warning2") }}
+          </p>
+          <p style="font-size: 0.9em">
+            {{ $t("repeater.warning3") }}
+          </p>
+        </div>
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
@@ -1999,6 +2020,7 @@
         <div
           id="waveform"
           v-show="isWaveSurfer && isEditSubandNotes"
+          @contextmenu.prevent
           style="background-color: #ffffffdb"
         ></div>
       </div>
@@ -2018,6 +2040,12 @@
       <div v-if="mediaCached" class="showMsg" style="bottom: 2.5em">
         <span style="color: blue; padding: 0.3em; background-color: grey">
           {{ $t("repeater.cached") }}
+        </span>
+      </div>
+
+      <div v-if="showWaveformInfo" class="showMsg" style="bottom: 2.5em">
+        <span style="color: blue; padding: 0.3em; background-color: grey">
+          {{ $t("repeater.showWaveformInfo") }}
         </span>
       </div>
 
@@ -2269,6 +2297,11 @@ export default {
       hasPrivate: true,
       defaultWaveSurfer: true,
       transUrl: "https://fanyi.baidu.com/#zh/en/",
+      ctrlPressed: false,
+      shiftPressed: false,
+      dubbingMode: true,
+      showWaveformInfo: false,
+      localPeaks: [],
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -2737,6 +2770,12 @@ export default {
       this.updatePreview();
     },
 
+    newWord: function () {
+      if (this.showAddNew) {
+        this.getTrans();
+      }
+    },
+
     isEditSubandNotes: function () {
       if (!this.isEditSubandNotes) {
         this.isWaveSurfer = false;
@@ -2818,6 +2857,10 @@ export default {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           start: this.startTimeTemp,
         });
+        if (this.sentenceIndex > 1 && !this.shiftPressed)
+          this.regions.getRegions()[this.sentenceIndex - 2].setOptions({
+            end: this.srtSubtitles[this.sentenceIndex - 2].endTime - 0.03,
+          });
       }
       if (this.hasMoveAll && this.isWaveSurfer && this.regions) {
         this.updateRgns();
@@ -2837,6 +2880,10 @@ export default {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           end: this.endTimeTemp - 0.03,
         });
+        if (this.sentenceIndex < this.srtSubtitles.length && !this.shiftPressed)
+          this.regions.getRegions()[this.sentenceIndex].setOptions({
+            start: this.srtSubtitles[this.sentenceIndex].startTime,
+          });
       }
     },
 
@@ -2862,6 +2909,12 @@ export default {
 
     sentenceIndex: function () {
       this.onLoop();
+      this.calcFav();
+      if (!this.isSingle && this.dubbingMode && this.isUtterTransLine) {
+        if (this.utterThis) window.speechSynthesis.cancel();
+        this.utterTransLine();
+        return;
+      }
       if (this.isEditSubandNotes) {
         this.onRUdo = true;
         setTimeout(() => {
@@ -2885,7 +2938,7 @@ export default {
           });
         }
       }
-      this.calcFav();
+
       if (this.showSubtitleList) {
         document
           .getElementById(this.sentenceIndex)
@@ -3026,6 +3079,10 @@ export default {
       this.save();
     },
 
+    dubbingMode: function () {
+      this.save();
+    },
+
     autoPlay: function () {
       this.save();
     },
@@ -3098,6 +3155,7 @@ export default {
   async mounted() {
     window.localStorage.setItem("cachedOther", 1);
     window.addEventListener("keydown", this.key);
+    window.addEventListener("keyup", this.keyUp);
     window.addEventListener("resize", this.handleResize);
     this.listing = this.oldReq.items;
     this.updatePreview();
@@ -3119,10 +3177,14 @@ export default {
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.onOffline) this.allowCache = true;
     this.getReader();
+    if (!this.checkLocalStorageSpace()) {
+      alert(this.$t("repeater.alertSpace"));
+    }
   },
 
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
+    window.removeEventListener("keyup", this.keyUp);
     window.removeEventListener("resize", this.handleResize);
     this.cleanUp1();
     if (this.wavesurfer) {
@@ -3134,16 +3196,35 @@ export default {
   },
 
   methods: {
+    checkLocalStorageSpace() {
+      try {
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data
+        localStorage.removeItem("__checkSpace");
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+
     async initWaveSurfer() {
       var peaks = [];
-      if (window.localStorage.getItem(this.mediaName + "peaks")) {
-        peaks = JSON.parse(
-          window.localStorage.getItem(this.mediaName + "peaks")
-        );
-      } else {
-        peaks = await this.readPeaks();
+      let vmm = this;
+      let tmediaName = this.mediaName + "peaks";
+
+      try {
+        const value = await localforage.getItem(tmediaName);
+        if (value) {
+          peaks = JSON.parse(value);
+          vmm.localPeaks = peaks;
+        }
+      } catch (err) {
+        console.error(err);
       }
 
+      if (peaks.length == 0) {
+        peaks = await this.readPeaks();
+      }
+      this.showWaveformInfo = true;
       this.regions = RegionsPlugin.create();
       if (peaks.length > 0) {
         this.wavesurfer = WaveSurfer.create({
@@ -3217,7 +3298,14 @@ export default {
           e.stopPropagation();
           this.sentenceIndex = region.id;
           activeRegion = region;
-          this.click();
+          if (this.ctrlPressed || this.shiftPressed) {
+            const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
+            const { width } = bbox;
+            const offsetX = e.clientX - bbox.left;
+            const relX = Math.min(1, Math.max(0, offsetX / width));
+            let timeStamp = (relX * this.wavesurfer.getDuration()).toFixed(3);
+            this.editHotkeys(timeStamp, e);
+          } else this.click();
         });
       }
 
@@ -3251,20 +3339,24 @@ export default {
       });
 
       this.wavesurfer.once("decode", () => {
+        this.showWaveformInfo = false;
         this.wavesurfer.on("zoom", (minPxPerSec) => {
           this.minPxPerSec = minPxPerSec;
         });
-        if (!window.localStorage.getItem(this.mediaName + "peaks")) {
+        if (this.localPeaks.length == 0) {
           const peaks = this.wavesurfer.exportPeaks({
             channels: 2,
             precision: 10_000,
             maxLength: this.currentMedia.duration * 50,
           });
-          window.localStorage.setItem(
-            this.mediaName + "peaks",
-            JSON.stringify(peaks)
-          );
           this.savePeaks(peaks);
+          this.localPeaks = peaks;
+          let tmediaName = this.mediaName + "peaks";
+          localforage.setItem(
+            tmediaName,
+            JSON.stringify(peaks),
+            function () {}
+          );
         }
       });
     },
@@ -3276,10 +3368,9 @@ export default {
           "/files/!PDJ/Repeater-backup/" + this.mediaName + ".peaks.txt"
         );
         peaks = JSON.parse(peaksAll.content);
-        window.localStorage.setItem(
-          this.mediaName + "peaks",
-          JSON.stringify(peaks)
-        );
+        this.localPeaks = peaks;
+        let tmediaName = this.mediaName + "peaks";
+        localforage.setItem(tmediaName, JSON.stringify(peaks), function () {});
 
         return peaks;
       } catch (e) {
@@ -3409,8 +3500,12 @@ export default {
       this.autoStop = JSON.parse(PDJcontent.split("::")[25]);
       this.autoStopMins = Number(JSON.parse(PDJcontent.split("::")[26]));
       this.transUrl = JSON.parse(PDJcontent.split("::")[27]);
-      this.random = JSON.parse(PDJcontent.split("::")[28]);
-      this.defaultWaveSurfer = JSON.parse(PDJcontent.split("::")[29]);
+      if (PDJcontent.split("::")[28])
+        this.random = JSON.parse(PDJcontent.split("::")[28]);
+      if (PDJcontent.split("::")[29])
+        this.defaultWaveSurfer = JSON.parse(PDJcontent.split("::")[29]);
+      if (PDJcontent.split("::")[30])
+        this.dubbingMode = JSON.parse(PDJcontent.split("::")[30]);
       if (!this.isAutoDetectLang) {
         this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -3538,9 +3633,11 @@ export default {
               localforage
                 .getItem(keyName)
                 .then(function (value) {
-                  vmm.raw = URL.createObjectURL(value);
-                  vmm.playFromCache = true;
-                  vmm.mediaCached = true;
+                  if (value) {
+                    vmm.raw = URL.createObjectURL(value);
+                    vmm.playFromCache = true;
+                    vmm.mediaCached = true;
+                  }
                 })
                 .catch(function () {});
             }, 200);
@@ -3762,8 +3859,10 @@ export default {
         localforage
           .getItem(keyName)
           .then(function (value) {
-            vm.raw = URL.createObjectURL(value);
-            vm.playFromCache = true;
+            if (value) {
+              vm.raw = URL.createObjectURL(value);
+              vm.playFromCache = true;
+            }
           })
           .catch(function () {
             vm.cachedKeys = vm.cachedKeys.replace(";;" + keyName, "");
@@ -3782,6 +3881,19 @@ export default {
       var ck = window.localStorage.getItem("cKeys");
       if (ck) this.numOfKeys = ck.split(";;").length - 1;
       else this.numOfKeys = 0;
+    },
+
+    async getTrans() {
+      this.newTranslation = await fetch(
+        "https://api.oick.cn/api/fanyi?text=" + this.newWord
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          return data.data.result;
+        })
+        .catch((error) => {
+          console.error("Error fetching translation:", error);
+        });
     },
 
     addANewWord() {
@@ -3839,6 +3951,10 @@ export default {
           if (this.audio) this.audio.muted = false;
           this.cleanUp2();
           this.cleanUp1();
+          if (this.utterThis) {
+            window.speechSynthesis.stop();
+            window.speechSynthesis.cancel();
+          }
 
           if (
             this.firstMount &&
@@ -4016,6 +4132,7 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
+        if (this.isFirstClick) this.utterThis.text = "e";
         if (this.langInTransLine == "") {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
@@ -4029,6 +4146,10 @@ export default {
           return voice.lang.includes(formattedLang);
         })[this.reader - 1];
         window.speechSynthesis.speak(this.utterThis);
+        if (!this.isSingle) {
+          this.utterInProcess = false;
+          return;
+        }
         this.utterThis.onend = () => {
           this.endUtter();
         };
@@ -4048,14 +4169,22 @@ export default {
           .then(() => {
             this.audio.src = ttsFullUrl;
             this.audio.play();
+            if (!this.isSingle && this.dubbingMode) {
+              this.utterInProcess = false;
+              return;
+            }
             this.audio.addEventListener("ended", this.endUtter, false);
           })
-          .catch((error) => console.error("Error Uttering Trans Line:", error));
+          .catch((error) => {
+            alert("Error Uttering Trans Line:", error);
+            this.endUtter();
+          });
       }
     },
 
     endUtter() {
       this.audio.removeEventListener("ended", this.endUtter, false);
+      if (!this.isSingle && this.dubbingMode) return;
       if (
         this.isEditSubandNotes &&
         this.isUtterTransLine &&
@@ -4527,10 +4656,16 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
         this.handleAutoStop();
+
         this.regularPlay();
         this.currentMedia.currentTime =
           this.srtSubtitles[this.sentenceIndex - 1].startTime;
         this.currentMedia.addEventListener("focus", this.removeFocus);
+        if (!this.isSingle && this.dubbingMode && this.isUtterTransLine) {
+          if (this.utterThis) window.speechSynthesis.cancel();
+          this.utterTransLine();
+          return;
+        }
       }
       if (this.isSingle) {
         this.cleanUp2();
@@ -5457,6 +5592,8 @@ export default {
         JSON.stringify(this.random) +
         "::" +
         JSON.stringify(this.defaultWaveSurfer) +
+        "::" +
+        JSON.stringify(this.dubbingMode) +
         "::"
       );
     },
@@ -5514,7 +5651,6 @@ export default {
         window.localStorage.setItem(this.favNotUpload, "1");
         return;
       }
-      // console.log("saveFav");
       window.localStorage.setItem(this.favNotUpload, "1");
       try {
         await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
@@ -5787,6 +5923,20 @@ export default {
       }
       this.reqF.content = tempContent;
       this.saveSubNow();
+    },
+
+    editHotkeys(timeStamp, event) {
+      if (this.ctrlPressed && event.button == 0) {
+        event.preventDefault();
+        this.cleanUp1();
+        this.cleanUp2();
+        this.splitSentence(timeStamp);
+      } else if (this.shiftPressed && event.button == 0) {
+        event.preventDefault();
+        this.cleanUp1();
+        this.cleanUp2();
+        this.mergeSentence();
+      }
     },
 
     async saveSpecialSub(x) {
@@ -6071,10 +6221,11 @@ export default {
       this.reqF.content = formatContent;
       this.cleanUp1();
       this.cleanUp2();
+      let tempI = this.sentenceIndex;
 
-      this.sentenceIndex = this.sentenceIndex + 1;
+      this.sentenceIndex = 1;
       setTimeout(() => {
-        this.sentenceIndex = this.sentenceIndex - 1;
+        this.sentenceIndex = tempI;
         if (hasFav) this.switchIsFav();
       }, 10);
 
@@ -6094,17 +6245,41 @@ export default {
       var textSubtitles = formatContent.split("\n\n");
       var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
       var line2 = " ";
-      var tempEndTime = textSubtitles[this.sentenceIndex - 1]
+
+      var newStartTime = textSubtitles[this.sentenceIndex - 1]
         .split("\n")[1]
         .split(" --> ")[1];
-      if (this.sentenceIndex == this.srtSubtitles.length) {
-        line2 = tempEndTime + " --> " + tempEndTime.split(",")[0] + "," + "999";
+
+      var newEndTime;
+      if (
+        this.sentenceIndex < this.srtSubtitles.length &&
+        this.srtSubtitles[this.sentenceIndex].startTime -
+          this.srtSubtitles[this.sentenceIndex - 1].endTime <=
+          3
+      ) {
+        newEndTime = textSubtitles[this.sentenceIndex]
+          .split("\n")[1]
+          .split(" --> ")[0];
       } else {
-        line2 =
-          tempEndTime +
-          " --> " +
-          textSubtitles[this.sentenceIndex].split("\n")[1].split(" --> ")[0];
+        var time = this.convertToHMS(
+          this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
+            this.timeStampChangeEnd +
+            1 +
+            3000
+        );
+
+        newEndTime =
+          time.hours +
+          ":" +
+          time.minutes +
+          ":" +
+          time.seconds +
+          "," +
+          time.milliseconds;
       }
+
+      line2 = newStartTime + " --> " + newEndTime;
+
       var line3 = "First Line";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
@@ -6129,7 +6304,7 @@ export default {
       this.saveSubFinal();
     },
 
-    splitSentence() {
+    splitSentence(timeStamp) {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -6144,10 +6319,18 @@ export default {
         (this.timeStampChangeEnd - 1) / 1000 -
         (this.srtSubtitles[this.sentenceIndex - 1].startTime -
           this.timeStampChangeStart / 1000);
-      var midTime =
-        this.srtSubtitles[this.sentenceIndex - 1].startTime -
-        this.timeStampChangeStart / 1000 +
-        timeInterval / 2;
+      var midTime;
+      if (
+        timeStamp &&
+        timeStamp >= this.srtSubtitles[this.sentenceIndex - 1].startTime &&
+        timeStamp <= this.srtSubtitles[this.sentenceIndex - 1].endTime
+      )
+        midTime = Number(timeStamp) + 0.015;
+      else
+        midTime =
+          this.srtSubtitles[this.sentenceIndex - 1].startTime -
+          this.timeStampChangeStart / 1000 +
+          timeInterval / 2;
       var time1 = this.convertToHMS(midTime * 1000 - 1);
       var midTimeFormat1 =
         time1.hours +
@@ -6198,6 +6381,9 @@ export default {
       setTimeout(() => {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+      }, 20);
       window.localStorage.setItem(this.mediaName, formatContent);
       this.saveSubFinal();
     },
@@ -6241,7 +6427,6 @@ export default {
         window.localStorage.setItem(this.srtNotUpload, "1");
         return;
       }
-      // console.log("saveSrt");
       var srtFullPath = "";
       const path = url.removeLastDir(this.$route.path);
       if (this.onRevision) srtFullPath = this.srtRevisePath;
@@ -6441,6 +6626,23 @@ export default {
 
     key(event) {
       if (!this.isReadyToPlay || this.showTools || this.isSetting) return;
+
+      if (
+        (event.key === "Control" || event.keyCode === 17) &&
+        this.isEditSubandNotes
+      ) {
+        this.ctrlPressed = true;
+      } else if (
+        (event.key === "Delete" || event.keyCode === 46) &&
+        this.ctrlPressed &&
+        this.isEditSubandNotes
+      ) {
+        // Ctrl 和 Delete 键同时被按下
+        this.deleteSentence();
+      } else if (event.key === "Shift" && this.isEditSubandNotes) {
+        this.shiftPressed = true;
+      }
+
       if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
         // right arrow
         if (
@@ -6560,6 +6762,16 @@ export default {
         this.close();
       }
     },
+
+    keyUp(event) {
+      if (event.key === "Control" || event.keyCode === 17) {
+        this.ctrlPressed = false;
+      }
+      if (event.key === "Shift") {
+        this.shiftPressed = false;
+      }
+    },
+
     handleResize() {
       this.isLandscape = this.checkLandscape();
       this.mobileScreen = this.checkMobileScreen();
