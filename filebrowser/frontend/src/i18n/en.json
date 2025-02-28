@@ -44,7 +44,7 @@
     "dubbingMode": "When playing in Regular Mode, enable the dubbing function (simultaneously playing media and reading translations using TTS, you can manually adjusting the media volume).",
     "playFullFavList": "Play All Favorite Sentenses in Current User's Root Folder When Playing Favorite List (In this mode, autoPlay current sentence is not allowed due to browser's restriction.)",
     "wavesurfer": "Enable Visual waveform chart by default in editing mode in a non-mobile browser . Click ",
-    "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, the browser may crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ folder on the server, this media file will no longer cause browser crashes in the future. (If there is a waveform disorder, you can clear the browser cache on the login page and delete the .peaks.txt file on the server to regenerate the waveform.)",    
+    "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, the browser may crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ folder on the server, this media file will no longer cause browser crashes in the future. (If the waveform cannot be displayed for a long time, it may be due to the media file being too large or insufficient browser cache space.)",    
     "transUrl": "New Word Translation Url:",
     "transUrlNote": "eg. https://fanyi.baidu.com/#zh/en/, https://translate.sogou.com/text?keyword=, https://cn.bing.com/translator?ref=TThis&from=&to=cn&text=, https://www.deepl.com/en/translator#en/zh-hans/, https://m.iciba.com/word?w=",
     "allowCache": "Cache Media - Enable to Save Visited Media Files in Browser's Cache. This will hugely save traffic usage in the next visit, but will take up storage space on this device (This setting's default value is true, and will only be saved in current browser cache after being changed). In 'Offline APP Mode', 'Cache Media' will be automatically selected.",
@@ -126,7 +126,8 @@
     "newWordList": "New Words and Phrases List",    
     "RUdoAlert": "Done! When restoring deleted or merged sentence, the favorite status may not be restored correctly, please adjust manually.",           
     "cached": "Media Cached! Switching...",
-    "showWaveformInfo": "Generating waveform... It may cause mobile browser crashes, please use a PC browser to generate it first.",
+    "showWaveformInfo": "Generating waveform... ",
+    "showWaveformInfo2": "If it cause a mobile browser crash, please use a PC browser to generate it first.",
     "cleanCache": "Clean up specified browser cache.",
     "cleanCacheDone": "Selected caches have been cleaned up!",
     "alertSpace": "The remaining cache space for storing subtitles, configuration files, etc. in this browser is less than 200KB. Please clear the third cache item on the login page as soon as possible to avoid confusion in content reading. If necessary, you can first synchronize the unsaved subtitle files to the server in non Offline APP mode",
@@ -138,8 +139,7 @@
     "noFavoriteFile": "Unable to read the user config file '{favFileName}' in current user's /!PDJ folder on the server! If you are using the PDJ Media Repeater for the first time, please click 'confirm' and this config file will be automatically created; If it is due to network issues, please click 'Cancel' to exit, and try again after connecting to the internet or switching to 'Offline APP Mode'. The PDJ media repeater will automatically cache accessed data for offline use, which can be cleared on the login page. Meanwhile, when using the subtitle editing function in non Offline APP Mode, the original .srt file will be modified. If necessary, please make a backup in advance.", 
     "speechsynthesisAlert": "Sorry, your browser does not support standard 'speechSynthesis API', and it can't utter the subtitle's translation line with system embedded TTS, this setting is disabled automatically. It is recommended to use a standard browser. Android phone users in China are recommended to use the original Firefox browser, which can call the system's built-in TTS service on Android phones without Google Framework.",
     "warning1": "Video or audeo tag is hijacked by this browser. This browser may not fully comply with HTML5 standard. Please restart your browser to retry. Or change to a standard browser: Edge, Chrome, Safari or Firefox to ensure PDJ Media Repeater can work correctly.",    
-    "warning2": "Loading media... ",
-    "warning3": "If it takes too long time, it may be due to slow internet or insufficient browser cache space. Please clear up caches on the login page and try again."       
+    "warning2": "Loading media... "
   },
   "reminder": {
     "reminder": "PDJ Universal To Do List",

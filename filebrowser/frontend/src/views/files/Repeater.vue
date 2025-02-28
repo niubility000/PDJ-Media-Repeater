@@ -145,7 +145,8 @@
             showNewWordList ||
             isFavOnPlay ||
             showRevision ||
-            showTools
+            showTools ||
+            !isReadyToPlay
           "
           class="action"
           @click="switchEditSubandNote"
@@ -161,6 +162,7 @@
                 showNewWordList ||
                 isFavOnPlay ||
                 showRevision ||
+                !isReadyToPlay ||
                 showTools
                   ? 'grey'
                   : isEditSubandNotes
@@ -279,7 +281,7 @@
         style="
           background-color: gray;
           color: white;
-          z-index: 1011;
+          z-index: 1025;
           display: flex;
           flex-direction: column;
           position: fixed;
@@ -1499,13 +1501,10 @@
         <div
           v-if="!isReadyToPlay && isMediaType > 0 && !browserHiJack"
           class="showMsg"
-          style="color: grey; bottom: 1.5em"
+          style="color: grey; bottom: 1.5em; z-index: 1008"
         >
           <p style="font-size: 1.2em">
             {{ $t("repeater.warning2") }}
-          </p>
-          <p style="font-size: 0.9em">
-            {{ $t("repeater.warning3") }}
           </p>
         </div>
         <span
@@ -2037,16 +2036,27 @@
         </span>
       </div>
 
-      <div v-if="mediaCached" class="showMsg" style="bottom: 2.5em">
+      <div
+        v-if="mediaCached && !isWaveSurfer"
+        class="showMsg"
+        style="bottom: 2.5em"
+      >
         <span style="color: blue; padding: 0.3em; background-color: grey">
           {{ $t("repeater.cached") }}
         </span>
       </div>
 
-      <div v-if="showWaveformInfo" class="showMsg" style="bottom: 2.5em">
-        <span style="color: blue; padding: 0.3em; background-color: grey">
+      <div
+        v-if="showWaveformInfo && isWaveSurfer && isEditSubandNotes"
+        class="showMsg"
+        style="bottom: 0"
+      >
+        <p style="color: blue">
           {{ $t("repeater.showWaveformInfo") }}
-        </span>
+        </p>
+        <p style="color: blue; font-size: 0.9em; margin: 0em">
+          {{ $t("repeater.showWaveformInfo2") }}
+        </p>
       </div>
 
       <div v-if="RUdoAlert" class="showMsg" style="bottom: 1em">
@@ -3633,11 +3643,9 @@ export default {
               localforage
                 .getItem(keyName)
                 .then(function (value) {
-                  if (value) {
-                    vmm.raw = URL.createObjectURL(value);
-                    vmm.playFromCache = true;
-                    vmm.mediaCached = true;
-                  }
+                  vmm.raw = URL.createObjectURL(value);
+                  vmm.playFromCache = true;
+                  vmm.mediaCached = true;
                 })
                 .catch(function () {});
             }, 200);
@@ -3697,8 +3705,8 @@ export default {
 
     getDateAfterDays(n) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算一天的毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。这样计算最简单。
+      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算1天毫秒数。
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -3859,10 +3867,8 @@ export default {
         localforage
           .getItem(keyName)
           .then(function (value) {
-            if (value) {
-              vm.raw = URL.createObjectURL(value);
-              vm.playFromCache = true;
-            }
+            vm.raw = URL.createObjectURL(value);
+            vm.playFromCache = true;
           })
           .catch(function () {
             vm.cachedKeys = vm.cachedKeys.replace(";;" + keyName, "");
@@ -6924,7 +6930,7 @@ header {
 }
 
 .showMsg {
-  z-index: 1011;
+  z-index: 1025;
   position: fixed;
   text-align: center;
   width: 100%;
