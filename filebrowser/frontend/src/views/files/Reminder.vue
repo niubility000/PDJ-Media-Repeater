@@ -2650,6 +2650,9 @@ export default {
     this.getItemContent();
     this.getReader();
     this.initUtter();
+    if (!this.checkLocalStorageSpace()) {
+      alert(this.$t("repeater.alertSpace"));
+    }
   },
 
   beforeDestroy() {
@@ -2660,6 +2663,15 @@ export default {
 
   methods: {
     logout: auth.logout,
+    checkLocalStorageSpace() {
+      try {
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data
+        localStorage.removeItem("__checkSpace");
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
     async readToDoList() {
       var PDJcontent = "";
       var PDJserverContent = null;

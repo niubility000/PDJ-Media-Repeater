@@ -4138,7 +4138,6 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
-        if (this.isFirstClick) this.utterThis.text = "e";
         if (this.langInTransLine == "") {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
