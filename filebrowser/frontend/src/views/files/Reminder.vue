@@ -1452,6 +1452,7 @@
                   !hasSpeechSynthesis
                 "
                 class="input input--repeater"
+                style="width: 7em"
                 type="text"
                 :placeholder="langInTransLinedefault"
                 v-model="langInFrontSide"
@@ -1468,7 +1469,7 @@
                       ? '#868686'
                       : 'black',
                 }"
-                style="margin-left: 3em; width: calc(60% - 1em)"
+                style="margin-left: 3em; width: 60%"
                 class="subject"
               >
                 {{
@@ -1486,9 +1487,7 @@
                 class="input input--repeater"
                 type="number"
                 v-model.number.lazy="readerFront"
-                :style="{
-                  width: isMobile ? '3em' : '6em',
-                }"
+                style="width: 4.3em"
               />
               <button
                 :disabled="
@@ -1498,7 +1497,7 @@
                 "
                 class="action"
                 @click="testTTSVoiceFront"
-                :title="$t('repeater.testTTSVoiceFront')"
+                :title="$t('repeater.testTTSurl')"
               >
                 <i
                   :style="{
@@ -1535,6 +1534,7 @@
                   !hasSpeechSynthesis
                 "
                 class="input input--repeater"
+                style="width: 7em"
                 type="text"
                 v-model.number.lazy="speedOfUtterFront"
               />
@@ -1563,6 +1563,7 @@
                   !hasSpeechSynthesis
                 "
                 class="input input--repeater"
+                style="width: 7em"
                 type="text"
                 :placeholder="langInTransLinedefault"
                 v-model="langInBackSide"
@@ -1597,9 +1598,7 @@
                 class="input input--repeater"
                 type="number"
                 v-model.number.lazy="readerBack"
-                :style="{
-                  width: isMobile ? '3em' : '6em',
-                }"
+                style="width: 4.3em"
               />
               <button
                 :disabled="
@@ -1609,7 +1608,7 @@
                 "
                 class="action"
                 @click="testTTSVoiceBack"
-                :title="$t('repeater.testTTSVoiceBack')"
+                :title="$t('repeater.testTTSurl')"
               >
                 <i
                   :style="{
@@ -1646,6 +1645,7 @@
                   !hasSpeechSynthesis
                 "
                 class="input input--repeater"
+                style="width: 7em"
                 type="text"
                 v-model.number.lazy="speedOfUtterBack"
               />
@@ -1946,7 +1946,6 @@ export default {
       isCurve: true,
       numOf: 1,
       selectedType: "1",
-      initSave: false,
       tpyeOptions: [
         { value: "1", text: "Day(s)" },
         { value: "2", text: "Week(s)" },
@@ -3148,8 +3147,11 @@ export default {
     },
 
     testTTSurl() {
-      let transLineContent =
-        this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
+      this.cleanUp();
+      let transLineContent = "testing TTS.";
+      if (this.itemContent[this.sentenceIndex - 1])
+        transLineContent =
+          this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
       let text =
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
@@ -3172,8 +3174,10 @@ export default {
     testTTSVoiceFront() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         this.cleanUp();
-        let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
+        let transLineContent = "testing TTS.";
+        if (this.itemContent[this.sentenceIndex - 1])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -3203,8 +3207,10 @@ export default {
     testTTSVoiceBack() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         this.cleanUp();
-        let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n\t")[2];
+        let transLineContent = "testing TTS.";
+        if (this.itemContent[this.sentenceIndex - 1])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[2];
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -3438,12 +3444,8 @@ export default {
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
         }
-        this.initSave = true;
         this.allowBackUp = true;
         this.save();
-        setTimeout(() => {
-          this.initSave = false;
-        }, 500);
       }
     },
 
@@ -3936,11 +3938,12 @@ export default {
         if (this.contentIndex == 1) {
           langInTransLine = this.langInFrontSide;
         } else langInTransLine = this.langInBackSide;
-
-        let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n\t")[
-            this.contentIndex
-          ];
+        let transLineContent = " ";
+        if (this.itemContent[this.sentenceIndex - 1])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[
+              this.contentIndex
+            ];
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -3965,10 +3968,12 @@ export default {
         })[this.reader - 1];
         window.speechSynthesis.speak(this.utterThis);
       } else if (this.isUtterTransLine && this.isSystemTTS == "No") {
-        let transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n\t")[
-            this.contentIndex
-          ];
+        let transLineContent = " ";
+        if (this.itemContent[this.sentenceIndex - 1])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[
+              this.contentIndex
+            ];
         let text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -4453,19 +4458,11 @@ export default {
         this.tags +
         ";.\n\t\n\t" +
         this.itemList;
-      if (!this.initSave) this.compareContent();
+      this.compareContent();
     },
 
     async saveNow() {
       if (this.browserContent == "") return;
-      if (
-        this.browserContent.includes("tags: ;.") &&
-        this.browserContent.split("tags: ;.")[1].trim() == "" &&
-        !this.initSave
-      ) {
-        this.showConfirm();
-        return;
-      }
       var currentTime = new Date();
       let id = Math.floor(currentTime.getTime() / 1000);
       let pdjBackUp = "PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";

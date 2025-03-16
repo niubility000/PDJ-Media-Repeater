@@ -22,6 +22,8 @@
             color:
               isSetting ||
               onRevision ||
+              isDictation ||
+              !isSingle ||
               isEditSubandNotes ||
               isFavOnPlay ||
               showSubtitleList ||
@@ -58,9 +60,7 @@
           @click="switchShowList()"
           :style="{
             pointerEvents:
-              isSetting || !isSingle || showRevision || showTools
-                ? 'none'
-                : 'auto',
+              isSetting || showRevision || showTools ? 'none' : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -75,11 +75,13 @@
             "
             :style="{
               color:
-                isSetting || !isSingle || showRevision || showTools
+                isSetting || showRevision || showTools
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
-                  : showNewWordList
+                  : showNewWordList && !withTrans
+                  ? 'greenyellow'
+                  : withTrans
                   ? 'black'
                   : 'blue',
             }"
@@ -89,9 +91,9 @@
         <button
           :disabled="
             loading ||
+            !isSingle ||
             favList.length == 0 ||
             isSetting ||
-            !isSingle ||
             showRevision ||
             showTools
           "
@@ -105,11 +107,9 @@
         <button
           :disabled="
             loading ||
-            !isSingle ||
             showSubtitleList ||
             showNewWordList ||
             showRevision ||
-            isEditSubandNotes ||
             showTools
           "
           class="action"
@@ -120,12 +120,7 @@
           <i
             :style="{
               color:
-                !isSingle ||
-                showSubtitleList ||
-                showNewWordList ||
-                showRevision ||
-                isEditSubandNotes ||
-                showTools
+                showSubtitleList || showNewWordList || showRevision || showTools
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -178,6 +173,7 @@
           :disabled="
             loading ||
             isSetting ||
+            isDictation ||
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
@@ -195,15 +191,14 @@
           class="action"
           @click="switchSubtitle"
           @dblclick.prevent
-          :title="$t('repeater.switchsubtitleLanguages')"
+          :title="$t('repeater.subTools')"
         >
           <i style="color: red" class="material-icons">plumbing</i>
         </button>
         <button
-          v-if="isSingle"
+          v-if="isSingle && !isDictation"
           :disabled="
             loading ||
-            isFavOnPlay ||
             isSetting ||
             showSubtitleList ||
             showNewWordList ||
@@ -218,6 +213,27 @@
         >
           <i :style="playMode" class="material-icons">repeat_one</i>
         </button>
+
+        <button
+          v-if="isSingle && isDictation"
+          :disabled="
+            loading ||
+            isFavOnPlay ||
+            isSetting ||
+            showSubtitleList ||
+            showNewWordList ||
+            isEditSubandNotes ||
+            showRevision ||
+            showTools
+          "
+          class="action"
+          @click="onSingle"
+          @dblclick.prevent
+          :title="$t('repeater.dictation')"
+        >
+          <i :style="playMode" class="material-icons">hearing</i>
+        </button>
+
         <button
           v-if="!isSingle"
           :disabled="loading || showRevision || showTools"
@@ -232,7 +248,6 @@
           :disabled="
             loading ||
             isSetting ||
-            !isSingle ||
             isFavOnPlay ||
             showSubtitleList ||
             showNewWordList ||
@@ -250,7 +265,6 @@
               color:
                 loading ||
                 isSetting ||
-                !isSingle ||
                 isFavOnPlay ||
                 showSubtitleList ||
                 showNewWordList ||
@@ -877,15 +891,15 @@
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p>
               <span style="color: white">
-                <input
-                  :disabled="isAutoDetectLang"
-                  type="checkbox"
-                  v-model="isUtterTransLine"
-                />
+                <input type="checkbox" v-model="isUtterTransLine" />
                 {{ $t("repeater.utterSubtitle") }}
               </span>
               <span style="color: white">
-                (<input type="checkbox" v-model="isAutoDetectLang" />
+                (<input
+                  :disabled="!isUtterTransLine"
+                  type="checkbox"
+                  v-model="isAutoDetectLang"
+                />
                 {{ $t("repeater.autoDetect") }})
               </span>
             </p>
@@ -1370,13 +1384,19 @@
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">repeat_one</i
-              >{{ $t("repeater.instruction7") }}
+              <i style="color: white" class="material-icons">repeat_one</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">hearing</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">repeat</i>
+              {{ $t("repeater.instruction7") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
-              <i style="color: white" class="material-icons">closed_caption</i
-              >{{ $t("repeater.instruction8") }}
+              <i style="color: white" class="material-icons">closed_caption</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">plumbing</i>
+              {{ $t("repeater.instruction8") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
@@ -1532,7 +1552,9 @@
           @touchmove="touchMoveS"
           @touchend="endTouchS"
           @dblclick="dblClick"
-          v-if="isMediaType > 0 && srtSubtitles && !isEditSubandNotes"
+          v-if="
+            isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isCheck
+          "
           style="
             color: yellow;
             overflow-wrap: break-word;
@@ -1559,7 +1581,12 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="isMediaType > 0 && srtSubtitles && !isEditSubandNotes"
+          v-if="
+            isMediaType > 0 &&
+            srtSubtitles &&
+            !isEditSubandNotes &&
+            !isDictation
+          "
           style="
             color: white;
             width: 100%;
@@ -1591,6 +1618,68 @@
             </p>
           </div>
         </span>
+
+        <div
+          v-if="
+            isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
+          "
+        >
+          <textarea
+            v-show="!isEmpty"
+            id="editArea3"
+            @touchmove="touchMoveF"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchend="endTouchS"
+            rows="2"
+            v-model="dictationContent"
+            placeholder="input your dictation here..."
+            style="
+              width: 100%;
+              font-size: 1.5em;
+              background-color: black;
+              color: white;
+              border: none;
+              resize: none;
+              text-align: center;
+              padding: 0;
+              white-space: pre-wrap;
+            "
+          ></textarea>
+          <span>
+            <p
+              @mousedown="startDragS"
+              @mouseup="endDragS"
+              @touchstart="startTouchS"
+              @touchmove.prevent
+              @touchend="endTouchS"
+              style="padding: 0.25em 0; margin: 0"
+            >
+              <button
+                class="action"
+                name="buttons"
+                @click="confirmDelete1"
+                :title="$t('repeater.clearAllDictationInCache')"
+              >
+                <i style="color: red; font-size: 1.5em" class="material-icons"
+                  >delete</i
+                >
+              </button>
+              <button
+                class="action"
+                name="buttons"
+                @click="dictationCheck"
+                :title="$t('repeater.dictationCheck')"
+              >
+                <i style="color: red; font-size: 1.5em" class="material-icons"
+                  >spellcheck</i
+                >
+              </button>
+            </p>
+          </span>
+        </div>
+
         <span
           v-if="srtSubtitles && isEditSubandNotes && !isEmpty"
           style="
@@ -1608,7 +1697,7 @@
             @touchstart="startTouchS"
             @touchmove.prevent
             @touchend="endTouchS"
-            style="font-size: 1em; padding: 0; margin: 0.5em 0"
+            style="color: black; font-size: 1em; padding: 0; margin: 0.5em 0"
           >
             <span
               name="buttons"
@@ -1678,6 +1767,7 @@
                 pointerEvents: !isSingle ? 'none' : 'auto',
               }"
               style="cursor: pointer; user-select: none; color: yellow"
+              :title="$t('repeater.showWaveSurfer')"
             >
               &#9810;
             </span>
@@ -1855,7 +1945,7 @@
               @click="confirmDelete"
               :title="$t('repeater.infoDelete')"
             >
-              <i style="color: red; font-size: 1.5em" class="material-icons"
+              <i style="color: red; font-size: 1.3em" class="material-icons"
                 >delete</i
               >
             </button>
@@ -1868,7 +1958,7 @@
               :title="$t('repeater.infoMerge')"
             >
               <i
-                style="font-size: 1.5em"
+                style="font-size: 1.3em"
                 :style="{
                   color: lastSentence ? 'grey' : 'red',
                 }"
@@ -1883,7 +1973,7 @@
               @click="confirmSplit"
               :title="$t('repeater.infoSplit')"
             >
-              <i style="color: red; font-size: 1.5em" class="material-icons"
+              <i style="color: red; font-size: 1.3em" class="material-icons"
                 >call_split</i
               >
             </button>
@@ -1895,7 +1985,7 @@
               @click="showMoveAll"
               :title="$t('repeater.infoMoveAll')"
             >
-              <i style="color: red; font-size: 1.5em" class="material-icons"
+              <i style="color: red; font-size: 1.3em" class="material-icons"
                 >autofps_select</i
               >
             </button>
@@ -1906,7 +1996,7 @@
               @click="confirmAdd"
               :title="$t('repeater.infoAdd')"
             >
-              <i style="color: red; font-size: 1.5em" class="material-icons"
+              <i style="color: red; font-size: 1.3em" class="material-icons"
                 >alt_route</i
               >
             </button>
@@ -1922,7 +2012,7 @@
                 :style="{
                   color: loading || historyIndex < 1 ? 'grey' : 'red',
                 }"
-                style="font-size: 1.5em"
+                style="font-size: 1.3em"
                 class="material-icons"
                 >undo</i
               >
@@ -1942,7 +2032,7 @@
                       ? 'grey'
                       : 'red',
                 }"
-                style="font-size: 1.5em"
+                style="font-size: 1.3em"
                 class="material-icons"
                 >redo</i
               >
@@ -2036,11 +2126,7 @@
         </span>
       </div>
 
-      <div
-        v-if="mediaCached && !isWaveSurfer"
-        class="showMsg"
-        style="bottom: 2.5em"
-      >
+      <div v-if="mediaCached" class="showMsg" style="bottom: 2.5em">
         <span style="color: blue; padding: 0.3em; background-color: grey">
           {{ $t("repeater.cached") }}
         </span>
@@ -2165,6 +2251,9 @@ export default {
   },
   data: function () {
     return {
+      isCheck: true,
+      dictationContent: "",
+      dictationArray: [],
       showTools: false,
       fromClick: true,
       hasConfirmed: false,
@@ -2251,6 +2340,7 @@ export default {
       sessionLength: null,
       isSlowInternet: false,
       isEditSubandNotes: false,
+      isDictation: false,
       subFirstLine: "     ",
       startTimeTemp: 0,
       endTimeTemp: 0,
@@ -2309,7 +2399,7 @@ export default {
       transUrl: "https://fanyi.baidu.com/#zh/en/",
       ctrlPressed: false,
       shiftPressed: false,
-      dubbingMode: true,
+      dubbingMode: false,
       showWaveformInfo: false,
       localPeaks: [],
       TTSurl:
@@ -2382,16 +2472,17 @@ export default {
       if (
         this.isSetting ||
         this.showSubtitleList ||
+        this.isDictation ||
         this.showNewWordList ||
         this.isEditSubandNotes ||
         this.showRevision
       )
         return { color: "grey" };
-      if (this.subtitleLang == 1 || this.subtitleLang == 2) {
+      if (this.subtitleLang == 1) {
         return { color: "blue" };
-      } else if (this.subtitleLang == 3) {
-        return { color: "red" };
       } else if (
+        this.subtitleLang == 2 ||
+        this.subtitleLang == 3 ||
         this.subtitleLang == 4 ||
         this.subtitleLang == 5 ||
         this.subtitleLang == 6 ||
@@ -2429,13 +2520,15 @@ export default {
         this.isSetting ||
         this.showSubtitleList ||
         this.showNewWordList ||
-        this.isEditSubandNotes ||
+        (this.isEditSubandNotes && !this.playFromCache) ||
         this.showRevision ||
         this.showTools
       ) {
         return { color: "grey" };
       } else if (this.playFromCache) {
-        return { color: "red" };
+        if (this.isEditSubandNotes || this.isFavOnPlay) {
+          return { color: "pink" };
+        } else return { color: "red" };
       } else {
         return { color: "blue" };
       }
@@ -2692,7 +2785,45 @@ export default {
           contentAll = " ";
         }
         var highLightWord = "";
-        if (
+        if (this.isDictation) {
+          var contentDictation = this.dictationContent;
+          if (this.dictationContent == "") return contentAll;
+          for (var ii = 1; ii <= contentDictation.split(" ").length; ++ii) {
+            highLightWord = contentDictation.split(" ")[ii - 1];
+            if (highLightWord !== "" && highLightWord !== " ") {
+              contentLine1 = contentLine1.replace(
+                highLightWord,
+                "#@" + highLightWord + "@#"
+              );
+              contentLine2 = contentLine2.replace(
+                highLightWord,
+                "#@" + highLightWord + "@#"
+              );
+            }
+          }
+
+          for (var iii = 1; iii <= 5; ++iii) {
+            contentLine1 = contentLine1
+              .replaceAll("#@#@", "#@")
+              .replaceAll("@#@#", "@#");
+            contentLine2 = contentLine2
+              .replaceAll("#@#@", "#@")
+              .replaceAll("@#@#", "@#");
+          }
+
+          contentLine1 = contentLine1
+            .replaceAll("#@", "<font color=green>")
+            .replaceAll("@#", "</font>");
+          contentLine2 = contentLine2
+            .replaceAll("#@", "<font color=green>")
+            .replaceAll("@#", "</font>");
+          contentAll =
+            "<p style='margin-top: 0px'>" +
+            contentLine1 +
+            "</p><p>" +
+            contentLine2 +
+            "</p>";
+        } else if (
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
           this.srtSubtitles[this.sentenceIndex - 1].content
             .split("\r\n")[2]
@@ -2722,9 +2853,47 @@ export default {
                 .split("[")
                 [i].split("]")[0];
             }
-            var reg = new RegExp("(" + highLightWord + ")", "g");
-            if (highLightWord !== "" && highLightWord !== " ")
-              contentAll = contentAll.replace(reg, "<font color=red>$1</font>");
+
+            if (highLightWord !== "" && highLightWord !== " ") {
+              contentLine1 = contentLine1.replaceAll(
+                highLightWord,
+                "#@" + highLightWord + "@#"
+              );
+              contentLine2 = contentLine2.replaceAll(
+                highLightWord,
+                "#@" + highLightWord + "@#"
+              );
+            }
+          }
+
+          for (var iiii = 1; iiii <= 5; ++iiii) {
+            contentLine1 = contentLine1
+              .replaceAll("#@#@", "#@")
+              .replaceAll("@#@#", "@#");
+            contentLine2 = contentLine2
+              .replaceAll("#@#@", "#@")
+              .replaceAll("@#@#", "@#");
+          }
+
+          contentLine1 = contentLine1
+            .replaceAll("#@", "<font color=red>")
+            .replaceAll("@#", "</font>");
+          contentLine2 = contentLine2
+            .replaceAll("#@", "<font color=red>")
+            .replaceAll("@#", "</font>");
+          if (this.isShowLine1 && this.isShowLine2) {
+            contentAll =
+              "<p style='margin-top: 0px'>" +
+              contentLine1 +
+              "</p><p>" +
+              contentLine2 +
+              "</p>";
+          } else if (this.isShowLine1 && !this.isShowLine2) {
+            contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
+          } else if (!this.isShowLine1 && this.isShowLine2) {
+            contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
+          } else {
+            contentAll = " ";
           }
         }
         return contentAll;
@@ -2806,7 +2975,43 @@ export default {
         }
       }
     },
-
+    isDictation: function () {
+      if (this.isDictation) {
+        this.dictationArray =
+          JSON.parse(
+            window.sessionStorage.getItem(this.mediaName + "dictation")
+          ) || [];
+        this.dictationContent = "";
+        if (this.dictationArray.length > 0) {
+          const tempCon = this.dictationArray.find(
+            (item) => item.id === this.sentenceIndex
+          );
+          if (tempCon) this.dictationContent = tempCon.con;
+        }
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
+        this.isShowLine3 = false;
+      } else {
+        this.switchSubtitleMini();
+      }
+    },
+    dictationContent: function () {
+      if (this.dictationContent !== "" || this.dictationContent !== " ") {
+        let filteredArray = this.dictationArray.filter(
+          (item) => item.id !== this.sentenceIndex
+        );
+        let newItem = {
+          id: this.sentenceIndex,
+          con: this.dictationContent,
+        };
+        filteredArray.push(newItem);
+        window.sessionStorage.setItem(
+          this.mediaName + "dictation",
+          JSON.stringify(filteredArray)
+        );
+        this.dictationArray = filteredArray;
+      }
+    },
     autoCenter: function () {
       if (this.wavesurfer) {
         this.wavesurfer.setOptions({
@@ -2850,6 +3055,34 @@ export default {
         )
           window.localStorage.setItem(this.mediaName, this.reqF.content);
         this.getCacheMedia();
+      }
+    },
+
+    playFromCache: function () {
+      if (this.playFromCache) {
+        if (this.isEditSubandNotes) {
+          setTimeout(() => {
+            this.isShowLine1 = true;
+            this.isShowLine2 = true;
+            this.isShowLine3 = true;
+            this.startTimeTemp =
+              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            this.endTimeTemp =
+              this.srtSubtitles[this.sentenceIndex - 1].endTime;
+            this.subFirstLine =
+              this.srtSubtitles[this.sentenceIndex - 1].content.split(
+                "\r\n"
+              )[0];
+            this.subSecLine =
+              this.srtSubtitles[this.sentenceIndex - 1].content.split(
+                "\r\n"
+              )[1];
+            this.note =
+              this.srtSubtitles[this.sentenceIndex - 1].content.split(
+                "\r\n"
+              )[2];
+          }, 100);
+        }
       }
     },
 
@@ -2954,9 +3187,28 @@ export default {
           .getElementById(this.sentenceIndex)
           .scrollIntoView({ block: "center", behavior: "smooth" });
       }
+      if (this.isDictation) {
+        this.dictationContent = "";
+        if (this.dictationArray.length > 0) {
+          const tempCon = this.dictationArray.find(
+            (item) => item.id === this.sentenceIndex
+          );
+          if (tempCon) this.dictationContent = tempCon.con;
+        }
+      }
     },
 
     isSetting: function () {
+      if (this.isEditSubandNotes) {
+        this.switchEditSubandNote();
+        let temp1 = this.isWaveSurfer;
+        let temp2 = this.isMoveAll;
+        setTimeout(() => {
+          this.switchEditSubandNote();
+          this.isWaveSurfer = temp1;
+          this.isMoveAll = temp2;
+        }, 10);
+      }
       this.onLoop();
     },
 
@@ -3516,8 +3768,8 @@ export default {
         this.defaultWaveSurfer = JSON.parse(PDJcontent.split("::")[29]);
       if (PDJcontent.split("::")[30])
         this.dubbingMode = JSON.parse(PDJcontent.split("::")[30]);
+      this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
-        this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
         this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
       } else {
@@ -3665,6 +3917,10 @@ export default {
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
         });
+    },
+
+    dictationCheck() {
+      this.isCheck = !this.isCheck;
     },
 
     onLoop() {
@@ -4191,7 +4447,7 @@ export default {
       this.audio.removeEventListener("ended", this.endUtter, false);
       if (!this.isSingle && this.dubbingMode) return;
       if (
-        this.isEditSubandNotes &&
+        (this.isEditSubandNotes || this.isDictation) &&
         this.isUtterTransLine &&
         !this.isUtterTransLineFirstly
       ) {
@@ -4589,6 +4845,16 @@ export default {
           return;
         }
       }
+      if (this.confirmType == "deleteDictation") {
+        var userConfirmationDelete1 = window.confirm(
+          this.$t("repeater.confirmDeleteDictation")
+        );
+        if (userConfirmationDelete1) {
+          this.deleteDictation();
+        } else {
+          return;
+        }
+      }
       if (this.confirmType == "merge") {
         var userConfirmationMerge = window.confirm(
           this.$t("repeater.confirmMerge")
@@ -4648,6 +4914,12 @@ export default {
       }
     },
 
+    deleteDictation() {
+      window.sessionStorage.removeItem(this.mediaName + "_dictation");
+      this.dictationArray = [];
+      this.dictationContent = "";
+    },
+
     saveUnsavedSrt() {
       this.reqF.content = window.localStorage.getItem(this.mediaName);
       this.onRUdo = true;
@@ -4655,7 +4927,18 @@ export default {
     },
 
     onSingle() {
-      this.isSingle = !this.isSingle;
+      if (this.isSingle && !this.isDictation) {
+        this.isDictation = true;
+        this.isCheck = false;
+      } else if (this.isSingle && this.isDictation) {
+        this.isSingle = false;
+        this.isDictation = false;
+        this.isCheck = true;
+      } else {
+        this.isSingle = true;
+        this.isDictation = false;
+        this.isCheck = true;
+      }
       if (!this.isSingle) {
         this.isEditSubandNotes = false;
         this.cleanUp2();
@@ -4712,6 +4995,7 @@ export default {
         this.cleanUp2();
         this.cleanUp1();
       } else {
+        if (!this.isSingle) return;
         setTimeout(() => {
           this.cleanUp2();
           if (this.isFirstClick) this.firstClick();
@@ -4727,7 +5011,7 @@ export default {
       this.fromClick = true;
       if (this.isEditSubandNotes) this.cleanUp2();
       this.cleanUp1();
-      if (this.isEditSubandNotes) {
+      if (this.isEditSubandNotes || this.isDictation) {
         this.toBlur();
       }
       if (this.touches == 1) {
@@ -5155,7 +5439,7 @@ export default {
 
     checkNav(x, mode) {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
-        if (this.isEditSubandNotes) {
+        if (this.isEditSubandNotes || this.isDictation) {
           this.toBlur();
         }
         this.cleanUp2();
@@ -5190,7 +5474,7 @@ export default {
         mode == "SWITCHIMG" &&
         this.sentenceIndex <= this.srtSubtitles.length
       ) {
-        if (this.isEditSubandNotes) {
+        if (this.isEditSubandNotes || this.isDictation) {
           this.toBlur();
         }
         this.cleanUp2();
@@ -5389,6 +5673,7 @@ export default {
               if (
                 this.autoPlayNext &&
                 !this.isEditSubandNotes &&
+                !this.isDictation &&
                 !this.showNewWordList &&
                 (this.sentenceIndex < this.srtSubtitles.length ||
                   (this.nextLoopPlay &&
@@ -5463,6 +5748,7 @@ export default {
           if (
             this.autoPlayNext &&
             !this.isEditSubandNotes &&
+            !this.isDictation &&
             !this.showNewWordList &&
             (this.sentenceIndex < this.srtSubtitles.length ||
               (this.nextLoopPlay &&
@@ -5502,7 +5788,6 @@ export default {
             " "
         )
       ) {
-        this.isUtterTransLine = true;
         this.lineNumOfTrans = 1;
       } else if (
         !this.isEnglishLine2 &&
@@ -5512,9 +5797,8 @@ export default {
             " "
         )
       ) {
-        this.isUtterTransLine = true;
         this.lineNumOfTrans = 2;
-      } else this.isUtterTransLine = false;
+      }
     },
 
     saveInit() {
@@ -6093,6 +6377,12 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
       this.confirmType = "delete";
+      this.showConfirm();
+    },
+    confirmDelete1() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "deleteDictation";
       this.showConfirm();
     },
 
@@ -6783,16 +7073,12 @@ export default {
       this.resized = true;
     },
     close() {
-      if (this.showTools) {
-        this.switchSubtitle();
-        return;
-      }
       if (this.isSetting) {
         this.onSetting();
         return;
       }
-      if (this.isFavOnPlay) {
-        this.playFavList();
+      if (this.showRevision) {
+        this.switchRevisePlan();
         return;
       }
       if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
@@ -6806,8 +7092,25 @@ export default {
         this.withTrans = false;
         return;
       }
-      if (this.showRevision) {
-        this.switchRevisePlan();
+      if (this.isEditSubandNotes) {
+        this.switchEditSubandNote();
+        return;
+      }
+      if (this.showTools) {
+        this.switchSubtitle();
+        return;
+      }
+      if (this.isFavOnPlay) {
+        this.playFavList();
+        return;
+      }
+      if (this.isDictation) {
+        this.isSingle = false;
+        this.onSingle();
+        return;
+      }
+      if (!this.isSingle) {
+        this.onSingle();
         return;
       }
       if (this.onRevision) {
@@ -6817,10 +7120,6 @@ export default {
         this.onRevision = false;
         this.showRevision = true;
         this.reqF.content = window.localStorage.getItem(this.mediaName);
-        return;
-      }
-      if (this.isEditSubandNotes) {
-        this.switchEditSubandNote();
         return;
       }
       this.cleanUp1();
