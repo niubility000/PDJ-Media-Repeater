@@ -2791,11 +2791,11 @@ export default {
           for (var ii = 1; ii <= contentDictation.split(" ").length; ++ii) {
             highLightWord = contentDictation.split(" ")[ii - 1];
             if (highLightWord !== "" && highLightWord !== " ") {
-              contentLine1 = contentLine1.replace(
+              contentLine1 = contentLine1.replaceAll(
                 highLightWord,
                 "#@" + highLightWord + "@#"
               );
-              contentLine2 = contentLine2.replace(
+              contentLine2 = contentLine2.replaceAll(
                 highLightWord,
                 "#@" + highLightWord + "@#"
               );
