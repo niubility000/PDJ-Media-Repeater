@@ -2791,14 +2791,14 @@ export default {
           for (var ii = 1; ii <= contentDictation.split(" ").length; ++ii) {
             highLightWord = contentDictation.split(" ")[ii - 1];
             if (highLightWord !== "" && highLightWord !== " ") {
-              contentLine1 = contentLine1.replaceAll(
-                highLightWord,
-                "#@" + highLightWord + "@#"
-              );
-              contentLine2 = contentLine2.replaceAll(
-                highLightWord,
-                "#@" + highLightWord + "@#"
-              );
+              let temp1 = " " + contentLine1;
+              let temp2 = " " + contentLine2;
+              contentLine1 = temp1
+                .replace(" " + highLightWord, " #@" + highLightWord + "@#")
+                .trim();
+              contentLine2 = temp2
+                .replace(" " + highLightWord, " #@" + highLightWord + "@#")
+                .trim();
             }
           }
 
