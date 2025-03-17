@@ -1241,6 +1241,11 @@
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="autoCloseCheck" />
+              {{ $t("repeater.autoCloseCheck") }}
+            </p>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <p style="text-align: justify; text-align-last: left; color: white">
               <input type="checkbox" v-model="defaultWaveSurfer" />
               {{ $t("repeater.wavesurfer") }} &#9810;
               {{ $t("repeater.wavesurfer2") }}
@@ -2331,6 +2336,7 @@ export default {
         !!window.speechSynthesis || "speechSynthesis" in window,
       utterThis: null,
       isPlayFullFavList: false,
+      autoCloseCheck: true,
       audio: null,
       isSystemTTS: "Yes",
       note: "     ",
@@ -3195,6 +3201,9 @@ export default {
           );
           if (tempCon) this.dictationContent = tempCon.con;
         }
+        if (this.autoCloseCheck) {
+          this.isCheck = false;
+        }
       }
     },
 
@@ -3350,6 +3359,10 @@ export default {
     },
 
     isPlayFullFavList: function () {
+      this.save();
+    },
+
+    autoCloseCheck: function () {
       this.save();
     },
 
@@ -3768,6 +3781,8 @@ export default {
         this.defaultWaveSurfer = JSON.parse(PDJcontent.split("::")[29]);
       if (PDJcontent.split("::")[30])
         this.dubbingMode = JSON.parse(PDJcontent.split("::")[30]);
+      if (PDJcontent.split("::")[31])
+        this.autoCloseCheck = JSON.parse(PDJcontent.split("::")[31]);
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -5883,6 +5898,8 @@ export default {
         JSON.stringify(this.defaultWaveSurfer) +
         "::" +
         JSON.stringify(this.dubbingMode) +
+        "::" +
+        JSON.stringify(this.autoCloseCheck) +
         "::"
       );
     },

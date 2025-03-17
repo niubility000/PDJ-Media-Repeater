@@ -44,6 +44,7 @@
     "autoPauseAfterFirstDone": "AutoPause After Uttering Translation Line or Playing Current Sentence Firstly, And Click To Continue.",
     "dubbingMode": "When playing in Regular Mode, enable the dubbing function (simultaneously playing media and reading translations using TTS, you can manually adjusting the media volume).",
     "playFullFavList": "Play All Favorite Sentenses in Current User's Root Folder When Playing Favorite List (In this mode, autoPlay current sentence is not allowed due to browser's restriction.)",
+    "autoCloseCheck": "Turn off 'Check with Original Text' automatically when switching sentences in dictation mode.",
     "wavesurfer": "Enable Visual waveform chart by default in editing mode in a non-mobile browser . Click ",
     "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, the browser may crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ folder on the server, this media file will no longer cause browser crashes in the future. (If the waveform cannot be displayed for a long time, it may be due to the media file being too large or insufficient browser cache space.)",    
     "transUrl": "New Word Translation Url:",
@@ -81,8 +82,8 @@
     "learnLang3": "With PDJ Media Repeater, you can do shadowing and reciting easier, and the 'Review' function will ensure that you can obtain efficient and sufficient repetition times. Just choose a video or audio with 20-50 sentences every week, and repeat shadowing and reciting them every morning and evening 2 or 3 times. You can lie in your bed, close your eyes, and click, or swipe left, up in your cell phone to learn the language. Thus, in one year, you may master thousands of sentences as fluent as your mother language. That will be a big improvement.",        
     "dictation": "Dictation Mode",
     "dictationCheck": "Check with Original Text",
-    "confirmDeleteDictation": "Are you sure to clear all dictation content?",
-    "clearAllDictationInCache": "clear all dictation content",
+    "confirmDeleteDictation": "Are you sure to clear all dictation content in cache?",
+    "clearAllDictationInCache": "clear all dictation content in cache",
 
     "reciteWordUsingPDJ": "To Recite Vocabulary Using PDJ Media Repeater",
     "learnWord1": "The PDJ media repeater can easily accumulate and recite vocabulary. The advantage is that it can create own word list, customize word definitions, add mnemonics, analogies, etc. in the note line, read words or translations or even note using TTS, add favorites, and customize review time. This is something that other word memorization software, dictionary pens, and learning machines cannot do.",
