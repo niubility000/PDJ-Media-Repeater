@@ -790,11 +790,10 @@
               align-items: center;
               color: white;
               margin-left: 1em;
-              font-size: 0.9em;
             "
             :style="{ width: isMobile ? '100%' : '70%' }"
           >
-            <span>{{ $t("repeater.timeNote") }} </span>
+            <span style="font-size: 0.9em">{{ $t("repeater.timeNote") }} </span>
           </div>
           <div
             style="display: flex; flex-direction: row; align-items: center"
@@ -807,6 +806,20 @@
               placeholder="sep.:, or space"
               v-model.lazy="currentSpeed"
             />
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              color: white;
+              margin-left: 1em;
+            "
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span style="font-size: 0.9em"
+              >{{ $t("repeater.speedNote") }}
+            </span>
           </div>
           <div style="display: block">
             <p
@@ -1548,6 +1561,36 @@
         >
         </span>
 
+        <div
+          v-if="
+            isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
+          "
+        >
+          <textarea
+            v-show="!isEmpty"
+            id="editArea3"
+            @touchmove="touchMoveF"
+            @mousedown="startDragS"
+            @mouseup="endDragS"
+            @touchstart="startTouchS"
+            @touchend="endTouchS"
+            rows="2"
+            v-model="dictationContent"
+            placeholder="input your dictation here..."
+            style="
+              width: 100%;
+              font-size: 1.5em;
+              background-color: black;
+              color: white;
+              border: none;
+              resize: none;
+              text-align: center;
+              padding: 0;
+              white-space: pre-wrap;
+            "
+          ></textarea>
+        </div>
+
         <span
           v-html="subtitleContent"
           id="subArea"
@@ -1560,14 +1603,12 @@
           v-if="
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isCheck
           "
-          style="
-            color: yellow;
-            overflow-wrap: break-word;
-            width: 100%;
-            font-size: 1.5em;
-            margin: 0;
-          "
-          :style="{ top: isMediaType == 1 ? 0 : '4em' }"
+          style="overflow-wrap: break-word; width: 100%; margin: 0"
+          :style="{
+            color: isDictation ? 'wheat' : 'yellow',
+            fontSize: isDictation ? '1.4em' : '1.5em',
+            top: isMediaType == 1 ? 0 : '4em',
+          }"
         >
         </span>
         <p v-if="isMediaType == 0" style="color: red">
@@ -1629,29 +1670,6 @@
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
           "
         >
-          <textarea
-            v-show="!isEmpty"
-            id="editArea3"
-            @touchmove="touchMoveF"
-            @mousedown="startDragS"
-            @mouseup="endDragS"
-            @touchstart="startTouchS"
-            @touchend="endTouchS"
-            rows="2"
-            v-model="dictationContent"
-            placeholder="input your dictation here..."
-            style="
-              width: 100%;
-              font-size: 1.5em;
-              background-color: black;
-              color: white;
-              border: none;
-              resize: none;
-              text-align: center;
-              padding: 0;
-              white-space: pre-wrap;
-            "
-          ></textarea>
           <span>
             <p
               @mousedown="startDragS"
@@ -1664,21 +1682,21 @@
               <button
                 class="action"
                 name="buttons"
-                @click="confirmDelete1"
-                :title="$t('repeater.clearAllDictationInCache')"
-              >
-                <i style="color: red; font-size: 1.5em" class="material-icons"
-                  >delete</i
-                >
-              </button>
-              <button
-                class="action"
-                name="buttons"
                 @click="dictationCheck"
                 :title="$t('repeater.dictationCheck')"
               >
                 <i style="color: red; font-size: 1.5em" class="material-icons"
                   >spellcheck</i
+                >
+              </button>
+              <button
+                class="action"
+                name="buttons"
+                @click="confirmDelete1"
+                :title="$t('repeater.clearAllDictationInCache')"
+              >
+                <i style="color: red; font-size: 1.5em" class="material-icons"
+                  >delete</i
                 >
               </button>
             </p>
@@ -1859,6 +1877,7 @@
               border: none;
               resize: none;
               padding: 0;
+              margin-top: 0.5em;
             "
           ></textarea>
           <textarea
@@ -5540,7 +5559,14 @@ export default {
       if (!this.isReadyToPlay) return;
       const media = this.currentMedia;
       if (media) {
-        media.playbackRate = 1.0;
+        var cSpeed = this.currentSpeed.replaceAll(",", " ");
+        cSpeed = cSpeed.replaceAll("   ", " ");
+        cSpeed = cSpeed.replaceAll("  ", " ");
+        if (cSpeed.split(" ")[0]) {
+          media.playbackRate = Number(cSpeed.split(" ")[0]);
+        } else {
+          media.playbackRate = 1;
+        }
         media
           .play()
           .then(() => {
