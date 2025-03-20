@@ -2846,7 +2846,13 @@ export default {
                 if (temp11.includes(" " + highLightWord)) {
                   var part1 = temp11.split(" " + highLightWord)[0];
                   var part3 = temp11.replace(part1 + " " + highLightWord, "");
-                  highLightWord = temp1.slice(part1.length + 1, -part3.length);
+                  if (part3 == "") {
+                    highLightWord = temp1.slice(part1.length + 1);
+                  } else
+                    highLightWord = temp1.slice(
+                      part1.length + 1,
+                      -part3.length
+                    );
                 }
                 if (temp21.includes(" " + highLightWord1)) {
                   var parta = temp21.split(" " + highLightWord1)[0];
