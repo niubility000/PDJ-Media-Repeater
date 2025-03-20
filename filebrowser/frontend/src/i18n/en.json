@@ -45,6 +45,7 @@
     "dubbingMode": "When playing in Regular Mode, enable the dubbing function (simultaneously playing media and reading translations using TTS, you can manually adjusting the media volume).",
     "playFullFavList": "Play All Favorite Sentenses in Current User's Root Folder When Playing Favorite List (In this mode, autoPlay current sentence is not allowed due to browser's restriction.)",
     "autoCloseCheck": "Turn off 'Check with Original Text' automatically when switching sentences in dictation mode.",
+    "ignoreC": "Ignore capitalization and punctuation at the end of words when 'checking with original text' in dictation mode.",
     "wavesurfer": "Enable Visual waveform chart by default in editing mode in a non-mobile browser . Click ",
     "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, the browser may crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ folder on the server, this media file will no longer cause browser crashes in the future. (If the waveform cannot be displayed for a long time, it may be due to the media file being too large or insufficient browser cache space.)",    
     "transUrl": "New Word Translation Url:",

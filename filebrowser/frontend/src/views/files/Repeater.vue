@@ -508,7 +508,7 @@
                         Number(today.replaceAll('-', ''))
                           ? 'white'
                           : itm.split('**')[1] == '1'
-                          ? 'red'
+                          ? 'springgreen'
                           : 'black',
                       pointerEvents:
                         Number(itm.split('^^')[0].replaceAll('-', '')) >
@@ -1257,6 +1257,10 @@
               <input type="checkbox" v-model="autoCloseCheck" />
               {{ $t("repeater.autoCloseCheck") }}
             </p>
+            <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="ignoreC" />
+              {{ $t("repeater.ignoreC") }}
+            </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="text-align: justify; text-align-last: left; color: white">
               <input type="checkbox" v-model="defaultWaveSurfer" />
@@ -1576,7 +1580,7 @@
             @touchend="endTouchS"
             rows="2"
             v-model="dictationContent"
-            placeholder="input your dictation here..."
+            placeholder="Type what you hear here..."
             style="
               width: 100%;
               font-size: 1.5em;
@@ -1603,9 +1607,13 @@
           v-if="
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isCheck
           "
-          style="overflow-wrap: break-word; width: 100%; margin: 0"
+          style="
+            color: yellow;
+            overflow-wrap: break-word;
+            width: 100%;
+            margin: 0;
+          "
           :style="{
-            color: isDictation ? 'wheat' : 'yellow',
             fontSize: isDictation ? '1.4em' : '1.5em',
             top: isMediaType == 1 ? 0 : '4em',
           }"
@@ -2356,6 +2364,7 @@ export default {
       utterThis: null,
       isPlayFullFavList: false,
       autoCloseCheck: true,
+      ignoreC: false,
       audio: null,
       isSystemTTS: "Yes",
       note: "     ",
@@ -2795,7 +2804,14 @@ export default {
             ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1]
             : " ";
         var contentAll = "    ";
-        if (this.isShowLine1 && this.isShowLine2) {
+        if (this.isShowLine1 && this.isShowLine2 && this.isDictation) {
+          contentAll =
+            "<p style='margin-top: 0px; color: green'>" +
+            contentLine1 +
+            "</p><p style='color: green'>" +
+            contentLine2 +
+            "</p>";
+        } else if (this.isShowLine1 && this.isShowLine2 && !this.isDictation) {
           contentAll =
             "<p style='margin-top: 0px'>" +
             contentLine1 +
@@ -2814,16 +2830,49 @@ export default {
           var contentDictation = this.dictationContent;
           if (this.dictationContent == "") return contentAll;
           for (var ii = 1; ii <= contentDictation.split(" ").length; ++ii) {
-            highLightWord = contentDictation.split(" ")[ii - 1];
-            if (highLightWord !== "" && highLightWord !== " ") {
+            if (this.ignoreC)
+              highLightWord = contentDictation
+                .split(" ")
+                [ii - 1].replace(/[\p{P}\s]+$/u, "")
+                .toLowerCase();
+            else highLightWord = contentDictation.split(" ")[ii - 1];
+            if (highLightWord.trim() !== "") {
               let temp1 = " " + contentLine1;
               let temp2 = " " + contentLine2;
-              contentLine1 = temp1
-                .replace(" " + highLightWord, " #@" + highLightWord + "@#")
-                .trim();
-              contentLine2 = temp2
-                .replace(" " + highLightWord, " #@" + highLightWord + "@#")
-                .trim();
+              var highLightWord1 = highLightWord;
+              if (this.ignoreC) {
+                var temp11 = temp1.toLowerCase();
+                var temp21 = temp2.toLowerCase();
+                if (temp11.includes(" " + highLightWord)) {
+                  var part1 = temp11.split(" " + highLightWord)[0];
+                  var part3 = temp11.replace(part1 + " " + highLightWord, "");
+                  highLightWord = temp1.slice(part1.length + 1, -part3.length);
+                }
+                if (temp21.includes(" " + highLightWord1)) {
+                  var parta = temp21.split(" " + highLightWord1)[0];
+                  var partc = temp21.replace(parta + " " + highLightWord1, "");
+                  if (partc == "") {
+                    highLightWord1 = temp2.slice(parta.length + 1);
+                  } else
+                    highLightWord1 = temp2.slice(
+                      parta.length + 1,
+                      -partc.length
+                    );
+                }
+                contentLine1 = temp1
+                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
+                  .trim();
+                contentLine2 = temp2
+                  .replace(" " + highLightWord1, " #@" + highLightWord1 + "@#")
+                  .trim();
+              } else {
+                contentLine1 = temp1
+                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
+                  .trim();
+                contentLine2 = temp2
+                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
+                  .trim();
+              }
             }
           }
 
@@ -2837,15 +2886,15 @@ export default {
           }
 
           contentLine1 = contentLine1
-            .replaceAll("#@", "<font color=green>")
+            .replaceAll("#@", "<font color=yellow>")
             .replaceAll("@#", "</font>");
           contentLine2 = contentLine2
-            .replaceAll("#@", "<font color=green>")
+            .replaceAll("#@", "<font color=yellow>")
             .replaceAll("@#", "</font>");
           contentAll =
-            "<p style='margin-top: 0px'>" +
+            "<p style='margin-top: 0px; color: green'>" +
             contentLine1 +
-            "</p><p>" +
+            "</p><p style='color: green'>" +
             contentLine2 +
             "</p>";
         } else if (
@@ -2879,7 +2928,7 @@ export default {
                 [i].split("]")[0];
             }
 
-            if (highLightWord !== "" && highLightWord !== " ") {
+            if (highLightWord.trim() !== "") {
               contentLine1 = contentLine1.replaceAll(
                 highLightWord,
                 "#@" + highLightWord + "@#"
@@ -3021,7 +3070,7 @@ export default {
       }
     },
     dictationContent: function () {
-      if (this.dictationContent !== "" || this.dictationContent !== " ") {
+      if (this.dictationContent.trim() !== "") {
         let filteredArray = this.dictationArray.filter(
           (item) => item.id !== this.sentenceIndex
         );
@@ -3156,8 +3205,7 @@ export default {
     },
 
     subFirstLine: function () {
-      if (this.subFirstLine == "  " || this.subFirstLine == " ")
-        this.subFirstLine = "";
+      if (this.subFirstLine.trim() == "") this.subFirstLine = "";
       if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
@@ -3385,8 +3433,12 @@ export default {
       this.save();
     },
 
+    ignoreC: function () {
+      this.save();
+    },
+
     transUrl: function () {
-      if (this.transUrl == "" || this.transUrl == " ")
+      if (this.transUrl.trim() == "")
         this.transUrl = "https://fanyi.baidu.com/#zh/en/";
       this.save();
     },
@@ -3802,6 +3854,8 @@ export default {
         this.dubbingMode = JSON.parse(PDJcontent.split("::")[30]);
       if (PDJcontent.split("::")[31])
         this.autoCloseCheck = JSON.parse(PDJcontent.split("::")[31]);
+      if (PDJcontent.split("::")[32])
+        this.ignoreC = JSON.parse(PDJcontent.split("::")[32]);
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -5164,8 +5218,7 @@ export default {
 
       if (
         window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
+        window.getSelection().toString().trim() !== "" &&
         document.getElementById("subArea") &&
         document.getElementById("subArea").contains(event.target) &&
         !this.isFavOnPlay
@@ -5188,8 +5241,7 @@ export default {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       if (
         window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
+        window.getSelection().toString().trim() !== "" &&
         document.getElementsByName("editAreaM") &&
         (document.getElementsByName("editAreaM")[0].contains(event.target) ||
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
@@ -5337,8 +5389,7 @@ export default {
 
       if (
         window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
+        window.getSelection().toString().trim() !== "" &&
         document.getElementById("subArea") &&
         document.getElementById("subArea").contains(event.target) &&
         !this.isFavOnPlay
@@ -5360,8 +5411,7 @@ export default {
     endTouchM(event) {
       if (
         window.getSelection().toString() &&
-        window.getSelection().toString() !== "" &&
-        window.getSelection().toString() !== " " &&
+        window.getSelection().toString().trim() !== "" &&
         document.getElementsByName("editAreaM") &&
         (document.getElementsByName("editAreaM")[0].contains(event.target) ||
           document.getElementsByName("editAreaM")[1].contains(event.target)) &&
@@ -5926,6 +5976,8 @@ export default {
         JSON.stringify(this.dubbingMode) +
         "::" +
         JSON.stringify(this.autoCloseCheck) +
+        "::" +
+        JSON.stringify(this.ignoreC) +
         "::"
       );
     },

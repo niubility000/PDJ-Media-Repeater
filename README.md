@@ -48,24 +48,23 @@ Both of these can be used online or offline.
 
 ## Assets Download
 
-Updated: 03-18-2025
+Updated: 03-20-2025
 
-5.3 add a dictation function and small fixes.
+5.3 add a dictation function and some small fixes.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19305257/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19359324/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19305259/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19359328/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19305260/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19359329/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19305263/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19359332/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19305264/filebrowser-darwin-arm64.for.mac.zip)
-
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19359335/filebrowser-darwin-arm64.for.mac.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/19305267/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/19359337/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
