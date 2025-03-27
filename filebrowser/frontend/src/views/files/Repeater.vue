@@ -80,7 +80,7 @@
                   : showSubtitleList
                   ? 'red'
                   : showNewWordList && !withTrans
-                  ? 'greenyellow'
+                  ? 'green'
                   : withTrans
                   ? 'black'
                   : 'blue',
@@ -656,7 +656,36 @@
               {{ index + 1 }}.
               {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
                 newWord.trans
-              }}
+              }}&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;{{
+                srtSubtitles[newWord.num].content.split("\r\n")[0]
+              }}&nbsp;&nbsp; -
+              {{ srtSubtitles[newWord.num].content.split("\r\n")[1] }}&nbsp;]
+              <button
+                v-if="isFav"
+                class="action"
+                name="buttons"
+                @click="switchIsFav"
+                :title="$t('repeater.fav')"
+              >
+                <i
+                  style="color: yellow; padding: 0; font-size: 1.2em"
+                  class="material-icons"
+                  >star</i
+                >
+              </button>
+              <button
+                v-if="!isFav && isReadyToPlay"
+                class="action"
+                name="buttons"
+                @click="switchIsFav"
+                :title="$t('repeater.fav')"
+              >
+                <i
+                  style="color: springgreen; padding: 0; font-size: 1.2em"
+                  class="material-icons"
+                  >star_outline</i
+                >
+              </button>
             </p>
             <p
               v-if="withTrans"
@@ -665,7 +694,10 @@
               {{ index + 1 }}.
               {{ newWord.origin }}&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;{{
                 newWord.trans
-              }}
+              }}&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;{{
+                srtSubtitles[newWord.num].content.split("\r\n")[0]
+              }}&nbsp;&nbsp; -
+              {{ srtSubtitles[newWord.num].content.split("\r\n")[1] }}&nbsp;]
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
           </li>
@@ -821,7 +853,25 @@
               >{{ $t("repeater.speedNote") }}
             </span>
           </div>
+
           <div style="display: block">
+            <p style="color: white">
+              <input type="checkbox" v-model.lazy="showTempSpeed" />
+              {{ $t("repeater.tempSpeed") }}
+            </p>
+            <p style="color: white">
+              <input type="checkbox" v-model.lazy="showRetracePlay" />
+              {{ $t("repeater.showRetracePlay1") }}
+              <input
+                class="input input--repeater"
+                style="width: 4em"
+                type="number"
+                placeholder="2"
+                step="0.5"
+                v-model.number.lazy="retraceTime"
+              />
+              {{ $t("repeater.showRetracePlay2") }}
+            </p>
             <p
               :style="{
                 color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
@@ -1580,7 +1630,7 @@
             @touchend="endTouchS"
             rows="2"
             v-model="dictationContent"
-            placeholder="Type what you hear here..."
+            :placeholder="$t('repeater.dictationDefault')"
             style="
               width: 100%;
               font-size: 1.5em;
@@ -1680,11 +1730,11 @@
         >
           <span>
             <p
-              @mousedown="startDragS"
-              @mouseup="endDragS"
-              @touchstart="startTouchS"
+              @mousedown.self="startDragS"
+              @mouseup.self="endDragS"
+              @touchstart.self="startTouchS"
               @touchmove.prevent
-              @touchend="endTouchS"
+              @touchend.self="endTouchS"
               style="padding: 0.25em 0; margin: 0"
             >
               <button
@@ -1693,17 +1743,120 @@
                 @click="dictationCheck"
                 :title="$t('repeater.dictationCheck')"
               >
-                <i style="color: red; font-size: 1.5em" class="material-icons"
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: isCheck ? 'red' : 'springgreen',
+                  }"
+                  class="material-icons"
                   >spellcheck</i
                 >
               </button>
               <button
+                v-if="canRecording"
                 class="action"
-                name="buttons"
-                @click="confirmDelete1"
-                :title="$t('repeater.clearAllDictationInCache')"
+                :disabled="loading || isSetting"
+                @click="recording"
+                :title="$t('repeater.recording')"
               >
-                <i style="color: red; font-size: 1.5em" class="material-icons"
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: isRecording ? 'red' : 'springgreen',
+                  }"
+                  class="material-icons"
+                  >mic</i
+                >
+              </button>
+              <button
+                v-if="!canRecording"
+                class="action"
+                @click="showRecordingSetNote"
+                :title="$t('repeater.cannotRecording')"
+              >
+                <i style="font-size: 1.7em; color: green" class="material-icons"
+                  >mic_off</i
+                >
+              </button>
+              <button
+                :disabled="loading || isSetting || isRecording || !audioUrl"
+                class="action"
+                @click="playRecording"
+                :title="$t('repeater.playRecording')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: !isRecording && audioUrl ? 'springgreen' : 'grey',
+                  }"
+                  class="material-icons"
+                  >campaign</i
+                >
+              </button>
+              <button
+                :disabled="
+                  loading ||
+                  isSetting ||
+                  isRecording ||
+                  (dictationArray.length == 0 && audioRecordArray.length == 0)
+                "
+                class="action"
+                @click="confirmUploadDictation"
+                :title="$t('repeater.uploadDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color:
+                      !isRecording &&
+                      (dictationArray.length > 0 || audioRecordArray.length > 0)
+                        ? 'springgreen'
+                        : 'grey',
+                  }"
+                  class="material-icons"
+                  >cloud_upload</i
+                >
+              </button>
+              <button
+                :disabled="loading || isSetting || isRecording || !canDownload"
+                class="action"
+                @click="confirmDownloadDictation"
+                :title="$t('repeater.downloadDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: !isRecording && canDownload ? 'springgreen' : 'grey',
+                  }"
+                  class="material-icons"
+                  >cloud_download</i
+                >
+              </button>
+              <button
+                :disabled="
+                  loading ||
+                  isSetting ||
+                  isRecording ||
+                  (dictationArray.length == 0 &&
+                    audioRecordArray.length == 0 &&
+                    !canDownload)
+                "
+                class="action"
+                @click="confirmDelDicRec"
+                :title="$t('repeater.clearAllDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color:
+                      !isRecording &&
+                      (dictationArray.length > 0 ||
+                        audioRecordArray.length > 0 ||
+                        canDownload)
+                        ? 'springgreen'
+                        : 'grey',
+                  }"
+                  class="material-icons"
                   >delete</i
                 >
               </button>
@@ -1964,11 +2117,11 @@
             </button>
           </p>
           <p
-            @mousedown="startDragS"
-            @mouseup="endDragS"
-            @touchstart="startTouchS"
+            @mousedown.self="startDragS"
+            @mouseup.self="endDragS"
+            @touchstart.self="startTouchS"
             @touchmove.prevent
-            @touchend="endTouchS"
+            @touchend.self="endTouchS"
             style="padding: 0.25em 0; margin: 0"
           >
             <button
@@ -2074,11 +2227,11 @@
 
         <div
           v-if="isMediaType > 0 && srtSubtitles && !isEmpty"
-          @mousedown="startDragS"
-          @mouseup="endDragS"
-          @touchstart="startTouchS"
+          @mousedown.self="startDragS"
+          @mouseup.self="endDragS"
+          @touchstart.self="startTouchS"
           @touchmove.prevent
-          @touchend="endTouchS"
+          @touchend.self="endTouchS"
         >
           <button
             v-if="isFav"
@@ -2205,7 +2358,7 @@
       <div
         v-if="showAddNew"
         :disabled="loading || isSetting || !isSingle"
-        style="z-index: 1011; position: fixed; right: 1em"
+        style="z-index: 1008; position: fixed; right: 1em"
         :style="{
           bottom: isWaveSurfer ? '6.5em' : '2.5em',
         }"
@@ -2216,7 +2369,7 @@
           @click="addANewWord"
           :title="$t('repeater.addnewWord')"
         >
-          <i style="color: white; font-size: 2.5em" class="material-icons"
+          <i style="color: white; font-size: 2em" class="material-icons"
             >add_circle</i
           >
         </button>
@@ -2259,6 +2412,62 @@
           </p>
         </div>
       </div>
+
+      <div
+        v-if="(showRetracePlay || showTempSpeed) && !showEditNew && !showAddNew"
+        :disabled="loading || isSetting"
+        style="z-index: 1007; position: fixed; left: 1em"
+        :style="{
+          bottom: isWaveSurfer ? '6.5em' : '2.5em',
+        }"
+      >
+        <button
+          v-if="showRetracePlay"
+          class="action"
+          @click="retracePlay"
+          :title="
+            $t('repeater.retracePlay', {
+              rT: retraceTime,
+            })
+          "
+        >
+          <i style="font-size: 2em; color: springgreen" class="material-icons"
+            >replay_circle_filled</i
+          >
+        </button>
+        <span v-if="showTempSpeed">
+          <button
+            class="action"
+            @click="switchTempSpeed"
+            :title="$t('repeater.switchTempSpeed')"
+          >
+            <i
+              style="font-size: 2em"
+              :style="{ color: onTempSpeed ? 'springgreen' : 'white' }"
+              class="material-icons"
+              >slow_motion_video</i
+            >
+          </button>
+          <span v-if="onTempSpeed" style="color: springgreen">
+            <input
+              type="range"
+              min="0.2"
+              max="2"
+              step="0.1"
+              v-model.lazy="tempSpeed"
+              style="
+                width: 8em;
+                height: 1em;
+                background-color: white;
+                border-radius: 10px;
+                margin: 0.5em 0;
+                padding: 0;
+              "
+            />&nbsp;
+            {{ tempSpeed }}
+          </span>
+        </span>
+      </div>
     </template>
   </div>
 </template>
@@ -2283,6 +2492,22 @@ export default {
   },
   data: function () {
     return {
+      canDownload: false,
+      netStatus: true,
+      audioRecordArray: [],
+      audioRecorded: null,
+      mediaRecorder: null,
+      audioChunks: [],
+      audioBlob: null,
+      audioUrl: null,
+      isRecording: false,
+      fromRetrace: false,
+      retraceTime: 2,
+      showRetracePlay: false,
+      normalSpeed: 1,
+      onTempSpeed: false,
+      tempSpeed: 0.5,
+      showTempSpeed: false,
       isCheck: true,
       dictationContent: "",
       dictationArray: [],
@@ -2448,6 +2673,10 @@ export default {
       return (
         /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 1000
       );
+    },
+
+    canRecording() {
+      return navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     },
 
     reqF() {
@@ -3029,6 +3258,20 @@ export default {
       this.updatePreview();
     },
 
+    tempSpeed: function () {
+      if (this.onTempSpeed) {
+        this.click();
+      }
+      this.save();
+    },
+
+    showTempSpeed: function () {
+      if (!this.showTempSpeed) {
+        this.onTempSpeed = false;
+      }
+      this.save();
+    },
+
     newWord: function () {
       if (this.showAddNew) {
         this.getTrans();
@@ -3057,21 +3300,49 @@ export default {
     },
     isDictation: function () {
       if (this.isDictation) {
-        this.dictationArray =
-          JSON.parse(
-            window.sessionStorage.getItem(this.mediaName + "dictation")
-          ) || [];
-        this.dictationContent = "";
-        if (this.dictationArray.length > 0) {
-          const tempCon = this.dictationArray.find(
-            (item) => item.id === this.sentenceIndex
-          );
-          if (tempCon) this.dictationContent = tempCon.con;
+        if (this.dictationArray.length == 0) {
+          this.dictationArray =
+            JSON.parse(
+              window.sessionStorage.getItem(this.mediaName + "dictation")
+            ) || [];
         }
+        this.dictationContent = "";
+
+        const tempCon = this.dictationArray.find(
+          (item) => item.id === this.sentenceIndex
+        );
+        if (tempCon) this.dictationContent = tempCon.con;
+
         this.isShowLine1 = true;
         this.isShowLine2 = true;
         this.isShowLine3 = false;
+
+        this.audioBlob = null;
+        this.audioUrl = null;
+        let vmm = this;
+        localforage
+          .getItem(this.mediaName + "recordAudio")
+          .then(function (value) {
+            vmm.audioRecordArray = value;
+            if (!vmm.audioRecordArray) {
+              vmm.audioRecordArray = [];
+              return;
+            }
+
+            const tempRec = vmm.audioRecordArray.find(
+              (item) => item.id === vmm.sentenceIndex
+            );
+            if (tempRec) {
+              vmm.audioBlob = tempRec.con;
+              vmm.audioUrl = URL.createObjectURL(vmm.audioBlob);
+            }
+          })
+          .catch(function () {
+            return;
+          });
       } else {
+        if (this.isRecording) this.stopRecording();
+
         this.switchSubtitleMini();
       }
     },
@@ -3085,6 +3356,15 @@ export default {
           con: this.dictationContent,
         };
         filteredArray.push(newItem);
+        window.sessionStorage.setItem(
+          this.mediaName + "dictation",
+          JSON.stringify(filteredArray)
+        );
+        this.dictationArray = filteredArray;
+      } else {
+        let filteredArray = this.dictationArray.filter(
+          (item) => item.id !== this.sentenceIndex
+        );
         window.sessionStorage.setItem(
           this.mediaName + "dictation",
           JSON.stringify(filteredArray)
@@ -3129,6 +3409,7 @@ export default {
 
     mediaName: function () {
       if (this.isMediaType !== -1) {
+        this.checkDownload();
         if (
           !window.localStorage.getItem(this.mediaName) &&
           !(this.isFavOnPlay && this.isPlayFullFavList)
@@ -3276,6 +3557,17 @@ export default {
         }
         if (this.autoCloseCheck) {
           this.isCheck = false;
+        }
+        this.audioBlob = null;
+        this.audioUrl = null;
+        if (this.audioRecordArray.length > 0) {
+          const tempRec = this.audioRecordArray.find(
+            (item) => item.id === this.sentenceIndex
+          );
+          if (tempRec) {
+            this.audioBlob = tempRec.con;
+            this.audioUrl = URL.createObjectURL(this.audioBlob);
+          }
         }
       }
     },
@@ -3442,6 +3734,12 @@ export default {
     ignoreC: function () {
       this.save();
     },
+    showRetracePlay: function () {
+      this.save();
+    },
+    retraceTime: function () {
+      this.save();
+    },
 
     transUrl: function () {
       if (this.transUrl.trim() == "")
@@ -3548,6 +3846,300 @@ export default {
   },
 
   methods: {
+    async checkDownload() {
+      try {
+        var content = await api.fetch(
+          "/files/!PDJ/Repeater-backup/" +
+            this.mediaName.slice(0, -4) +
+            "-dictation.txt"
+        );
+        let temp2 = JSON.parse(content.content);
+        if (temp2.length > 0) {
+          this.canDownload = true;
+          return;
+        }
+        let path =
+          "/files/" +
+          "!PDJ/Repeater-backup/Rec-" +
+          this.mediaName.slice(0, -4) +
+          "/";
+        let baseItems = (await api.fetch(path)).items;
+        if (baseItems.length > 0) {
+          this.canDownload = true;
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    },
+
+    showRecordingSetNote() {
+      alert(this.$t("repeater.noRecordPermission"));
+    },
+
+    recording() {
+      if (this.isRecording) {
+        this.stopRecording();
+      } else {
+        this.startRecording();
+      }
+    },
+    async startRecording() {
+      this.cleanUp1();
+      this.cleanUp2();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.start();
+        this.isRecording = true;
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          this.audioChunks.push(event.data);
+        };
+
+        this.mediaRecorder.onstop = () => {
+          this.audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+          this.audioUrl = URL.createObjectURL(this.audioBlob);
+          this.audioChunks = [];
+          this.isRecording = false;
+          this.saveRecording();
+        };
+      } catch (error) {
+        alert(this.$t("repeater.noRecordPermission"));
+      }
+    },
+
+    stopRecording() {
+      if (this.mediaRecorder) {
+        this.mediaRecorder.stop();
+        setTimeout(() => {
+          this.playRecording();
+        }, 10);
+      }
+    },
+
+    playRecording() {
+      if (this.audioUrl) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.audioRecorded = new Audio(this.audioUrl);
+        this.audioRecorded.play();
+      }
+    },
+
+    saveRecording() {
+      let filteredArray = this.audioRecordArray.filter(
+        (item) => item.id !== this.sentenceIndex
+      );
+      let newItem = {
+        id: this.sentenceIndex,
+        con: this.audioBlob,
+      };
+      filteredArray.push(newItem);
+      this.audioRecordArray = filteredArray;
+      localforage
+        .setItem(this.mediaName + "recordAudio", filteredArray, function () {})
+        .catch((error) => {
+          console.error(error);
+        });
+    },
+
+    async uploadDicRec() {
+      await this.deleteAudioRec();
+      if (!this.netStatus) {
+        this.netStatus = true;
+        return;
+      }
+      this.canDownload = true;
+      let path =
+        "/files/!PDJ/Repeater-backup/" +
+        this.mediaName.slice(0, -4) +
+        "-dictation.txt";
+      try {
+        api.remove(path);
+      } catch (e) {
+        console.log(e);
+      }
+      this.saveServerDictation();
+      this.saveServerRecordAll();
+    },
+
+    saveServerRecordAll() {
+      this.audioRecordArray.forEach((item) => {
+        let itemBlob = item.con;
+        let itemIndex = item.id;
+        this.saveServerRecord(itemIndex, itemBlob);
+      });
+    },
+
+    async saveServerRecord(itemIndex, itemBlob) {
+      let saveUrl =
+        "/files/!PDJ/Repeater-backup/Rec-" +
+        this.mediaName.slice(0, -4) +
+        "/" +
+        itemIndex +
+        ".wav";
+      const arrayBuffer = await itemBlob.arrayBuffer();
+
+      try {
+        await api.post(saveUrl, arrayBuffer, true);
+      } catch (error) {
+        return;
+      }
+    },
+
+    async saveServerDictation() {
+      try {
+        this.dictationArray =
+          JSON.parse(
+            window.sessionStorage.getItem(this.mediaName + "dictation")
+          ) || [];
+        await api.post(
+          "/files/!PDJ/Repeater-backup/" +
+            this.mediaName.slice(0, -4) +
+            "-dictation.txt",
+          JSON.stringify(this.dictationArray),
+          true
+        );
+      } catch (error) {
+        return;
+      }
+    },
+
+    async downloadDicRec() {
+      await this.readServerDictation();
+      if (!this.netStatus) {
+        this.netStatus = true;
+        return;
+      }
+
+      this.audioRecordArray = [];
+      this.audioBlob = null;
+      this.audioUrl = null;
+      await localforage
+        .removeItem(this.mediaName + "recordAudio")
+        .then(() => {
+          console.log("we just removed: " + "recordAudio");
+        })
+        .catch((error) => {
+          console.error("Error removing data:", error);
+        });
+      let path =
+        "/files/" +
+        "!PDJ/Repeater-backup/Rec-" +
+        this.mediaName.slice(0, -4) +
+        "/";
+      try {
+        let baseItems = (await api.fetch(path)).items;
+        for (let item of baseItems) {
+          let itemUrl = item.path.split("!PDJ/Repeater-backup/Rec-")[1];
+          if (itemUrl.includes(".wav")) {
+            await this.readServerRecord(itemUrl);
+          }
+        }
+        let tempIndex = this.sentenceIndex;
+        if (tempIndex > 1) this.sentenceIndex = 1;
+        else this.sentenceIndex = 2;
+        setTimeout(() => {
+          this.sentenceIndex = tempIndex;
+        }, 10);
+      } catch (e) {
+        return;
+      }
+    },
+
+    async readServerRecord(itemUrl) {
+      let srtUrl = api.getDownloadURL(this.req, true);
+      let playUrl =
+        srtUrl.split("/api/raw/")[0] +
+        "/api/raw/" +
+        "!PDJ/Repeater-backup/Rec-" +
+        itemUrl +
+        srtUrl.split(".srt")[1];
+      let index = Number(itemUrl.split("/")[1].split(".wav")[0]);
+      try {
+        let response = await fetch(playUrl);
+        if (!response.ok) {
+          return;
+        }
+        const arrayBuffer = await response.arrayBuffer();
+
+        // 创建 Blob 并指定 MIME 类型为 'audio/wav'
+        this.audioBlob = new Blob([arrayBuffer], { type: "audio/wav" });
+        this.audioUrl = URL.createObjectURL(this.audioBlob);
+        let filteredArray = this.audioRecordArray.filter(
+          (item) => item.id !== index
+        );
+        let newItem = {
+          id: index,
+          con: this.audioBlob,
+        };
+        filteredArray.push(newItem);
+        this.audioRecordArray = filteredArray;
+        localforage.setItem(
+          this.mediaName + "recordAudio",
+          filteredArray,
+          function () {}
+        );
+      } catch (error) {
+        return;
+      }
+    },
+
+    async readServerDictation() {
+      try {
+        var content = await api.fetch(
+          "/files/!PDJ/Repeater-backup/" +
+            this.mediaName.slice(0, -4) +
+            "-dictation.txt"
+        );
+        this.dictationArray = JSON.parse(content.content);
+        if (this.dictationArray.length > 0) {
+          window.sessionStorage.setItem(
+            this.mediaName + "dictation",
+            JSON.stringify(this.dictationArray)
+          );
+          const tempCon = this.dictationArray.find(
+            (item) => item.id === this.sentenceIndex
+          );
+          if (tempCon) this.dictationContent = tempCon.con;
+        } else {
+          window.sessionStorage.removeItem(this.mediaName + "dictation");
+          this.dictationArray = [];
+          this.dictationContent = "";
+        }
+      } catch (e) {
+        if (!e.message.includes("404")) {
+          this.netStatus = false;
+          alert(this.$t("repeater.failDownload"));
+        } else {
+          window.sessionStorage.removeItem(this.mediaName + "dictation");
+          this.dictationArray = [];
+          this.dictationContent = "";
+        }
+      }
+    },
+
+    retracePlay() {
+      this.fromRetrace = true;
+      if (this.isSingle) {
+        this.cleanUp1();
+        this.playSection();
+      } else this.click();
+    },
+
+    switchTempSpeed() {
+      if (!this.onTempSpeed) {
+        this.normalSpeed = this.currentMedia.playbackRate;
+      } else {
+        this.currentMedia.playbackRate = this.normalSpeed;
+      }
+      this.onTempSpeed = !this.onTempSpeed;
+      this.click();
+    },
+
     checkLocalStorageSpace() {
       try {
         localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data
@@ -3645,21 +4237,20 @@ export default {
           }
         }
       });
-      if (this.regionPlay) {
-        this.regions.on("region-clicked", (region, e) => {
-          e.stopPropagation();
-          this.sentenceIndex = region.id;
-          activeRegion = region;
-          if (this.ctrlPressed || this.shiftPressed) {
-            const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
-            const { width } = bbox;
-            const offsetX = e.clientX - bbox.left;
-            const relX = Math.min(1, Math.max(0, offsetX / width));
-            let timeStamp = (relX * this.wavesurfer.getDuration()).toFixed(3);
-            this.editHotkeys(timeStamp, e);
-          } else this.click();
-        });
-      }
+
+      this.regions.on("region-clicked", (region, e) => {
+        if (this.regionPlay) e.stopPropagation();
+        this.sentenceIndex = region.id;
+        activeRegion = region;
+        if (this.ctrlPressed || this.shiftPressed) {
+          const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
+          const { width } = bbox;
+          const offsetX = e.clientX - bbox.left;
+          const relX = Math.min(1, Math.max(0, offsetX / width));
+          let timeStamp = (relX * this.wavesurfer.getDuration()).toFixed(3);
+          this.editHotkeys(timeStamp, e);
+        } else if (this.regionPlay) this.click();
+      });
 
       this.regions.on("region-double-clicked", (region, e) => {
         e.stopPropagation();
@@ -3704,11 +4295,11 @@ export default {
           this.savePeaks(peaks);
           this.localPeaks = peaks;
           let tmediaName = this.mediaName + "peaks";
-          localforage.setItem(
-            tmediaName,
-            JSON.stringify(peaks),
-            function () {}
-          );
+          localforage
+            .setItem(tmediaName, JSON.stringify(peaks), function () {})
+            .catch((error) => {
+              console.error(error);
+            });
         }
       });
     },
@@ -3717,12 +4308,16 @@ export default {
       var peaks = [];
       try {
         var peaksAll = await api.fetch(
-          "/files/!PDJ/Repeater-backup/" + this.mediaName + ".peaks.txt"
+          "/files/!PDJ/Repeater-backup/peaks/" + this.mediaName + ".txt"
         );
         peaks = JSON.parse(peaksAll.content);
         this.localPeaks = peaks;
         let tmediaName = this.mediaName + "peaks";
-        localforage.setItem(tmediaName, JSON.stringify(peaks), function () {});
+        localforage
+          .setItem(tmediaName, JSON.stringify(peaks), function () {})
+          .catch((error) => {
+            console.error("Error removing data:", error);
+          });
 
         return peaks;
       } catch (e) {
@@ -3862,6 +4457,14 @@ export default {
         this.autoCloseCheck = JSON.parse(PDJcontent.split("::")[31]);
       if (PDJcontent.split("::")[32])
         this.ignoreC = JSON.parse(PDJcontent.split("::")[32]);
+      if (PDJcontent.split("::")[33])
+        this.showTempSpeed = JSON.parse(PDJcontent.split("::")[33]);
+      if (PDJcontent.split("::")[34])
+        this.tempSpeed = Number(JSON.parse(PDJcontent.split("::")[34]));
+      if (PDJcontent.split("::")[35])
+        this.showRetracePlay = JSON.parse(PDJcontent.split("::")[35]);
+      if (PDJcontent.split("::")[36])
+        this.retraceTime = Number(JSON.parse(PDJcontent.split("::")[36]));
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -3963,50 +4566,60 @@ export default {
         .then((response) => response.blob())
         .then((blob) => {
           let vmm = this;
-          localforage.setItem(keyName, blob, function () {
-            vmcachedKeys = vmcachedKeys + ";;" + keyName;
-            window.localStorage.setItem("cKeys", vmcachedKeys);
-            var ck = vmcachedKeys.split(";;");
-            if (ck.length > vmmax) {
-              var keyName1 = ck[1];
-              localforage.removeItem(keyName1, function () {
-                console.log("we just removed: " + keyName1);
-              });
-              vmcachedKeys = vmcachedKeys.replace(";;" + ck[1], "");
+          localforage
+            .setItem(keyName, blob, function () {
+              vmcachedKeys = vmcachedKeys + ";;" + keyName;
               window.localStorage.setItem("cKeys", vmcachedKeys);
-            }
-            vmm.cachedKeys = vmcachedKeys;
-            setTimeout(() => {
-              if (keyName !== vmm.mediaName) {
-                return; // may multiple running at the same time. but limited up to 2. this to avoid saved wrong name.
-              }
-              if (!vmm.isSingle && !vmm.currentMedia.paused) {
-                window.localStorage.setItem(
-                  "onFullPlaying",
-                  vmm.currentMedia.currentTime
-                );
-              }
-              localforage
-                .getItem(keyName)
-                .then(function (value) {
-                  vmm.raw = URL.createObjectURL(value);
-                  vmm.playFromCache = true;
-                  vmm.mediaCached = true;
-                })
-                .catch(function () {});
-            }, 200);
+              var ck = vmcachedKeys.split(";;");
+              if (ck.length > vmmax) {
+                var keyName1 = ck[1];
+                localforage
+                  .removeItem(keyName1)
+                  .then(() => {
+                    console.log("we just removed: " + keyName1);
+                  })
+                  .catch((error) => {
+                    console.error("Error removing data:", error);
+                  });
 
-            setTimeout(() => {
-              vmm.mediaCached = false;
-              if (window.localStorage.getItem("onFullPlaying")) {
-                vmm.regularPlay();
-                vmm.currentMedia.currentTime = Number(
-                  window.localStorage.getItem("onFullPlaying")
-                );
-                window.localStorage.removeItem("onFullPlaying");
+                vmcachedKeys = vmcachedKeys.replace(";;" + ck[1], "");
+                window.localStorage.setItem("cKeys", vmcachedKeys);
               }
-            }, 2000);
-          });
+              vmm.cachedKeys = vmcachedKeys;
+              setTimeout(() => {
+                if (keyName !== vmm.mediaName) {
+                  return; // may multiple running at the same time. but limited up to 2. this to avoid saved wrong name.
+                }
+                if (!vmm.isSingle && !vmm.currentMedia.paused) {
+                  window.localStorage.setItem(
+                    "onFullPlaying",
+                    vmm.currentMedia.currentTime
+                  );
+                }
+                localforage
+                  .getItem(keyName)
+                  .then(function (value) {
+                    vmm.raw = URL.createObjectURL(value);
+                    vmm.playFromCache = true;
+                    vmm.mediaCached = true;
+                  })
+                  .catch(function () {});
+              }, 200);
+
+              setTimeout(() => {
+                vmm.mediaCached = false;
+                if (window.localStorage.getItem("onFullPlaying")) {
+                  vmm.regularPlay();
+                  vmm.currentMedia.currentTime = Number(
+                    window.localStorage.getItem("onFullPlaying")
+                  );
+                  window.localStorage.removeItem("onFullPlaying");
+                }
+              }, 2000);
+            })
+            .catch((error) => {
+              console.error(error);
+            });
         })
         .catch((error) => {
           console.error("Error fetching or converting URL:", error);
@@ -4681,6 +5294,7 @@ export default {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
       if (this.audio) this.audio.pause();
+      if (this.audioRecorded) this.audioRecorded.pause();
       if (this.intervalId) clearInterval(this.intervalId);
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
@@ -4939,16 +5553,47 @@ export default {
           return;
         }
       }
-      if (this.confirmType == "deleteDictation") {
+      if (this.confirmType == "deleteDicRec") {
+        let dictationFile =
+          "!PDJ/Repeater-backup/" +
+          this.mediaName.slice(0, -4) +
+          "-dictation.txt";
+
+        let recordDir =
+          "!PDJ/Repeater-backup/Rec-" + this.mediaName.slice(0, -4) + "/";
         var userConfirmationDelete1 = window.confirm(
-          this.$t("repeater.confirmDeleteDictation")
+          this.$t("repeater.confirmdeleteDicRec", {
+            dictationFile: dictationFile,
+            recordDir: recordDir,
+          })
         );
         if (userConfirmationDelete1) {
-          this.deleteDictation();
+          this.deleteDicRec();
         } else {
           return;
         }
       }
+      if (this.confirmType == "uploadDictation") {
+        var userConfirmationUp = window.confirm(
+          this.$t("repeater.confirmUploadDictation2")
+        );
+        if (userConfirmationUp) {
+          this.uploadDicRec();
+        } else {
+          return;
+        }
+      }
+      if (this.confirmType == "downloadDictation") {
+        var userConfirmationDown = window.confirm(
+          this.$t("repeater.confirmDownloadDictation2")
+        );
+        if (userConfirmationDown) {
+          this.downloadDicRec();
+        } else {
+          return;
+        }
+      }
+
       if (this.confirmType == "merge") {
         var userConfirmationMerge = window.confirm(
           this.$t("repeater.confirmMerge")
@@ -5008,10 +5653,55 @@ export default {
       }
     },
 
-    deleteDictation() {
-      window.sessionStorage.removeItem(this.mediaName + "_dictation");
+    async deleteDicRec() {
+      window.sessionStorage.removeItem(this.mediaName + "dictation");
       this.dictationArray = [];
       this.dictationContent = "";
+      this.canDownload = false;
+      let path =
+        "/files/!PDJ/Repeater-backup/" +
+        this.mediaName.slice(0, -4) +
+        "-dictation.txt";
+      try {
+        api.remove(path);
+      } catch (e) {
+        console.log(e);
+      }
+      this.deleteRecording();
+    },
+
+    deleteRecording() {
+      this.audioRecordArray = [];
+      this.audioBlob = null;
+      this.audioUrl = null;
+      localforage
+        .removeItem(this.mediaName + "recordAudio")
+        .then(() => {
+          console.log("we just removed: " + "recordAudio");
+        })
+        .catch((error) => {
+          console.error("Error removing data:", error);
+        });
+
+      this.deleteAudioRec();
+    },
+
+    async deleteAudioRec() {
+      let path =
+        "/files/" +
+        "!PDJ/Repeater-backup/Rec-" +
+        this.mediaName.slice(0, -4) +
+        "/";
+      try {
+        let promises = [];
+        promises.push(api.remove(path));
+        await Promise.all(promises);
+      } catch (e) {
+        if (!e.message.includes("404")) {
+          this.netStatus = false;
+          alert(this.$t("repeater.failUpload"));
+        }
+      }
     },
 
     saveUnsavedSrt() {
@@ -5122,8 +5812,15 @@ export default {
         } else {
           setTimeout(() => {
             this.regularPlay();
-            this.currentMedia.currentTime =
-              this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            if (this.fromRetrace) {
+              this.currentMedia.currentTime = Math.max(
+                this.currentMedia.currentTime - this.retraceTime,
+                this.srtSubtitles[this.sentenceIndex - 1].startTime
+              );
+              this.fromRetrace = false;
+            } else
+              this.currentMedia.currentTime =
+                this.srtSubtitles[this.sentenceIndex - 1].startTime;
           }, 1);
         }
       }
@@ -5618,11 +6315,23 @@ export default {
         var cSpeed = this.currentSpeed.replaceAll(",", " ");
         cSpeed = cSpeed.replaceAll("   ", " ");
         cSpeed = cSpeed.replaceAll("  ", " ");
+
         if (cSpeed.split(" ")[0]) {
-          media.playbackRate = Number(cSpeed.split(" ")[0]);
+          if (this.onTempSpeed) {
+            this.normalSpeed = Number(cSpeed.split(" ")[0]);
+            this.currentMedia.playbackRate = this.tempSpeed;
+          } else {
+            this.currentMedia.playbackRate = Number(cSpeed.split(" ")[0]);
+          }
         } else {
-          media.playbackRate = 1;
+          if (this.onTempSpeed) {
+            this.normalSpeed = 1;
+            this.currentMedia.playbackRate = this.tempSpeed;
+          } else {
+            this.currentMedia.playbackRate = 1;
+          }
         }
+
         media
           .play()
           .then(() => {
@@ -5692,11 +6401,21 @@ export default {
         cSpeed = cSpeed.replaceAll("   ", " ");
         cSpeed = cSpeed.replaceAll("  ", " ");
         if (cSpeed.split(" ")[this.playCount]) {
-          this.currentMedia.playbackRate = Number(
-            cSpeed.split(" ")[this.playCount]
-          );
+          if (this.onTempSpeed) {
+            this.normalSpeed = Number(cSpeed.split(" ")[this.playCount]);
+            this.currentMedia.playbackRate = this.tempSpeed;
+          } else {
+            this.currentMedia.playbackRate = Number(
+              cSpeed.split(" ")[this.playCount]
+            );
+          }
         } else {
-          this.currentMedia.playbackRate = 1;
+          if (this.onTempSpeed) {
+            this.normalSpeed = 1;
+            this.currentMedia.playbackRate = this.tempSpeed;
+          } else {
+            this.currentMedia.playbackRate = 1;
+          }
         }
         this.sessionLength =
           (this.srtSubtitles[this.sentenceIndex - 1].endTime -
@@ -5708,8 +6427,22 @@ export default {
             this.srtSubtitles[this.sentenceIndex - 1].startTime) /
             this.currentMedia.playbackRate -
           0.2;
-        this.currentMedia.currentTime =
-          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+
+        if (this.fromRetrace) {
+          this.currentMedia.currentTime = Math.max(
+            this.currentMedia.currentTime - this.retraceTime,
+            this.srtSubtitles[this.sentenceIndex - 1].startTime
+          );
+          playLength =
+            (this.srtSubtitles[this.sentenceIndex - 1].endTime -
+              this.currentMedia.currentTime) /
+              this.currentMedia.playbackRate -
+            0.3;
+          this.fromRetrace = false;
+        } else
+          this.currentMedia.currentTime =
+            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+
         this.startTime = new Date().getTime();
         this.timeOutId = setTimeout(() => {
           this.isEnd();
@@ -5984,6 +6717,14 @@ export default {
         JSON.stringify(this.autoCloseCheck) +
         "::" +
         JSON.stringify(this.ignoreC) +
+        "::" +
+        JSON.stringify(this.showTempSpeed) +
+        "::" +
+        JSON.stringify(this.tempSpeed) +
+        "::" +
+        JSON.stringify(this.showRetracePlay) +
+        "::" +
+        JSON.stringify(this.retraceTime) +
         "::"
       );
     },
@@ -6055,7 +6796,7 @@ export default {
       let p = JSON.stringify(peaks);
       try {
         await api.post(
-          "/files/!PDJ/Repeater-backup/" + this.mediaName + ".peaks.txt",
+          "/files/!PDJ/Repeater-backup/peaks/" + this.mediaName + ".txt",
           p,
           true
         );
@@ -6480,10 +7221,24 @@ export default {
       this.confirmType = "delete";
       this.showConfirm();
     },
-    confirmDelete1() {
+    confirmDelDicRec() {
       this.cleanUp1();
       this.cleanUp2();
-      this.confirmType = "deleteDictation";
+      this.confirmType = "deleteDicRec";
+      this.showConfirm();
+    },
+
+    confirmUploadDictation() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "uploadDictation";
+      this.showConfirm();
+    },
+
+    confirmDownloadDictation() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.confirmType = "downloadDictation";
       this.showConfirm();
     },
 

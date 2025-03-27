@@ -124,6 +124,7 @@
       v-if="showCleanUp"
       style="
         background-color: gray;
+        overflow-y: auto;
         color: white;
         z-index: 1010;
         display: flex;
