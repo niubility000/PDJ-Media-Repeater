@@ -1199,6 +1199,12 @@
                 }"
               >
                 {{ $t("repeater.notSystemTTSnote") }}
+                <span
+                  style="cursor: pointer; color: blue; font-size: 1.2em"
+                  @click="showTTSSetting"
+                >
+                  Details
+                </span>
               </p>
             </div>
             <div
@@ -1738,21 +1744,6 @@
               style="padding: 0.25em 0; margin: 0"
             >
               <button
-                class="action"
-                name="buttons"
-                @click="dictationCheck"
-                :title="$t('repeater.dictationCheck')"
-              >
-                <i
-                  style="font-size: 1.7em"
-                  :style="{
-                    color: isCheck ? 'red' : 'springgreen',
-                  }"
-                  class="material-icons"
-                  >spellcheck</i
-                >
-              </button>
-              <button
                 v-if="canRecording"
                 class="action"
                 :disabled="loading || isSetting"
@@ -1779,6 +1770,36 @@
                 >
               </button>
               <button
+                :disabled="loading || isSetting || isRecording || !canDownload"
+                class="action"
+                @click="confirmDownloadDictation"
+                :title="$t('repeater.downloadDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: !isRecording && canDownload ? 'springgreen' : 'grey',
+                  }"
+                  class="material-icons"
+                  >cloud_download</i
+                >
+              </button>
+              <button
+                class="action"
+                name="buttons"
+                @click="dictationCheck"
+                :title="$t('repeater.dictationCheck')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: isCheck ? 'red' : 'springgreen',
+                  }"
+                  class="material-icons"
+                  >spellcheck</i
+                >
+              </button>
+              <button
                 :disabled="loading || isSetting || isRecording || !audioUrl"
                 class="action"
                 @click="playRecording"
@@ -1787,7 +1808,12 @@
                 <i
                   style="font-size: 1.7em"
                   :style="{
-                    color: !isRecording && audioUrl ? 'springgreen' : 'grey',
+                    color:
+                      !isRecording && audioUrl && !onRecPlay
+                        ? 'springgreen'
+                        : onRecPlay
+                        ? 'red'
+                        : 'grey',
                   }"
                   class="material-icons"
                   >campaign</i
@@ -1815,21 +1841,6 @@
                   }"
                   class="material-icons"
                   >cloud_upload</i
-                >
-              </button>
-              <button
-                :disabled="loading || isSetting || isRecording || !canDownload"
-                class="action"
-                @click="confirmDownloadDictation"
-                :title="$t('repeater.downloadDicRec')"
-              >
-                <i
-                  style="font-size: 1.7em"
-                  :style="{
-                    color: !isRecording && canDownload ? 'springgreen' : 'grey',
-                  }"
-                  class="material-icons"
-                  >cloud_download</i
                 >
               </button>
               <button
@@ -2492,6 +2503,7 @@ export default {
   },
   data: function () {
     return {
+      onRecPlay: false,
       canDownload: false,
       netStatus: true,
       audioRecordArray: [],
@@ -3900,14 +3912,14 @@ export default {
         };
 
         this.mediaRecorder.onstop = () => {
-          this.audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+          this.audioBlob = new Blob(this.audioChunks, { type: "audio/mp3" });
           this.audioUrl = URL.createObjectURL(this.audioBlob);
           this.audioChunks = [];
           this.isRecording = false;
           this.saveRecording();
         };
       } catch (error) {
-        alert(this.$t("repeater.noRecordPermission"));
+        alert(this.$t("repeater.noRecordFound"));
       }
     },
 
@@ -3926,7 +3938,15 @@ export default {
         this.cleanUp2();
         this.audioRecorded = new Audio(this.audioUrl);
         this.audioRecorded.play();
+        setTimeout(() => {
+          this.onRecPlay = true;
+        }, 100);
+        this.audioRecorded.addEventListener("ended", this.endRecPlay, false);
       }
+    },
+    endRecPlay() {
+      this.audioRecorded.removeEventListener("ended", this.endRecPlay, false);
+      this.onRecPlay = false;
     },
 
     saveRecording() {
@@ -3980,7 +4000,7 @@ export default {
         this.mediaName.slice(0, -4) +
         "/" +
         itemIndex +
-        ".wav";
+        ".mp3";
       const arrayBuffer = await itemBlob.arrayBuffer();
 
       try {
@@ -4035,7 +4055,7 @@ export default {
         let baseItems = (await api.fetch(path)).items;
         for (let item of baseItems) {
           let itemUrl = item.path.split("!PDJ/Repeater-backup/Rec-")[1];
-          if (itemUrl.includes(".wav")) {
+          if (itemUrl.includes(".mp3")) {
             await this.readServerRecord(itemUrl);
           }
         }
@@ -4058,7 +4078,7 @@ export default {
         "!PDJ/Repeater-backup/Rec-" +
         itemUrl +
         srtUrl.split(".srt")[1];
-      let index = Number(itemUrl.split("/")[1].split(".wav")[0]);
+      let index = Number(itemUrl.split("/")[1].split(".mp3")[0]);
       try {
         let response = await fetch(playUrl);
         if (!response.ok) {
@@ -4066,8 +4086,8 @@ export default {
         }
         const arrayBuffer = await response.arrayBuffer();
 
-        // 创建 Blob 并指定 MIME 类型为 'audio/wav'
-        this.audioBlob = new Blob([arrayBuffer], { type: "audio/wav" });
+        // 创建 Blob 并指定 MIME 类型为 'audio/mp3'
+        this.audioBlob = new Blob([arrayBuffer], { type: "audio/mp3" });
         this.audioUrl = URL.createObjectURL(this.audioBlob);
         let filteredArray = this.audioRecordArray.filter(
           (item) => item.id !== index
@@ -4138,6 +4158,10 @@ export default {
       }
       this.onTempSpeed = !this.onTempSpeed;
       this.click();
+    },
+
+    showTTSSetting() {
+      alert(this.$t("repeater.TTSSetting"));
     },
 
     checkLocalStorageSpace() {
@@ -5041,15 +5065,126 @@ export default {
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
           : "no content";
-      let ttsFullUrl = this.TTSurl + text;
-      fetch(ttsFullUrl)
-        .then(() => {
-          this.audio.src = ttsFullUrl;
-          this.audio.play();
-          this.audio.addEventListener("ended", this.endTestUtter, false);
-        })
-        .catch((error) => console.error("Error Uttering Trans Line:", error));
+      if (this.TTSurl.startsWith("azure-tts:")) {
+        this.azureTTS(text, 2);
+      } else {
+        let ttsFullUrl = this.TTSurl + text;
+        fetch(ttsFullUrl)
+          .then(() => {
+            this.audio.src = ttsFullUrl;
+            this.audio.play();
+            this.audio.addEventListener("ended", this.endTestUtter, false);
+          })
+          .catch((error) => console.error("Error Uttering Trans Line:", error));
+      }
     },
+
+    azureTTS(text, type) {
+      let r = "";
+      let v = "";
+      let s = "";
+      let x;
+      if (this.TTSurl.startsWith("azure-tts:defaultKey1")) {
+        x = this.getvalue(1);
+        s = x[0];
+        r = x[1];
+        v = this.TTSurl.split(",")[2].trim();
+      } else if (this.TTSurl.startsWith("azure-tts:defaultKey2")) {
+        x = this.getvalue(2);
+        s = x[0];
+        r = x[1];
+        v = this.TTSurl.split(",")[2].trim();
+      } else if (this.TTSurl.startsWith("azure-tts:defaultKey3")) {
+        x = this.getvalue(3);
+        s = x[0];
+        r = x[1];
+        v = this.TTSurl.split(",")[2].trim();
+      } else {
+        s = this.TTSurl.split("azure-tts:")[1].split(",")[0].trim();
+        r = this.TTSurl.split(",")[1].trim();
+        v = this.TTSurl.split(",")[2].trim();
+      }
+
+      const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
+      const accessToken = this.gT(s, r);
+
+      accessToken
+        .then((token) => {
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
+            "User-Agent": "YourAppName",
+          };
+
+          const body = `
+          <speak version='1.0' xml:lang='${v.replace(/-[^-]*$/, "")}'>
+            <voice name='${v}'>
+              ${text}
+            </voice>
+          </speak>
+        `;
+
+          fetch(endpoint, {
+            method: "POST",
+            headers: headers,
+            body: body,
+          })
+            .then((response) => response.blob())
+            .then((blob) => {
+              this.audio.src = URL.createObjectURL(blob);
+              this.audio.play();
+              if (type == 1) {
+                if (!this.isSingle && this.dubbingMode) {
+                  this.utterInProcess = false;
+                  return;
+                }
+                this.audio.addEventListener("ended", this.endUtter, false);
+              } else
+                this.audio.addEventListener("ended", this.endTestUtter, false);
+            })
+            .catch((error) => {
+              alert("wrong Language:", error);
+              if (type == 1) {
+                this.endUtter();
+              }
+            });
+        })
+        .catch((error) => {
+          alert("wrong key or region:", error);
+        });
+    },
+
+    gT(s, r) {
+      const tokenEndpoint = `https://${r}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
+      const headers = {
+        "Ocp-Apim-Subscription-Key": s,
+      };
+
+      return fetch(tokenEndpoint, {
+        method: "POST",
+        headers: headers,
+      }).then((response) => response.text());
+    },
+
+    getvalue(x) {
+      const encryptedMap = {
+        1: [
+          atob("YWYyZjRhODVkNzk3NGFhOWJhNDVlNzMwZDI5YThjN2E="),
+          atob("ZWFzdGFzaWE="),
+        ],
+        2: [
+          atob("YWYyZDRhYTIzNDhiNGI3M2I2MDQ4N2M3M2UwZWI0MzE="),
+          atob("ZWFzdHVz"),
+        ],
+        3: [
+          atob("OGI3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI="),
+          atob("c291dGhlYXN0YXNpYQ=="),
+        ],
+      };
+      return encryptedMap[x];
+    },
+
     testTTSVoice() {
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
         this.cleanUp1();
@@ -5132,21 +5267,25 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
-        let ttsFullUrl = this.TTSurl + text;
-        fetch(ttsFullUrl)
-          .then(() => {
-            this.audio.src = ttsFullUrl;
-            this.audio.play();
-            if (!this.isSingle && this.dubbingMode) {
-              this.utterInProcess = false;
-              return;
-            }
-            this.audio.addEventListener("ended", this.endUtter, false);
-          })
-          .catch((error) => {
-            alert("Error Uttering Trans Line:", error);
-            this.endUtter();
-          });
+        if (this.TTSurl.startsWith("azure-tts:")) {
+          this.azureTTS(text, 1);
+        } else {
+          let ttsFullUrl = this.TTSurl + text;
+          fetch(ttsFullUrl)
+            .then(() => {
+              this.audio.src = ttsFullUrl;
+              this.audio.play();
+              if (!this.isSingle && this.dubbingMode) {
+                this.utterInProcess = false;
+                return;
+              }
+              this.audio.addEventListener("ended", this.endUtter, false);
+            })
+            .catch((error) => {
+              alert("Error Uttering Trans Line:", error);
+              this.endUtter();
+            });
+        }
       }
     },
 
@@ -5295,11 +5434,20 @@ export default {
       if (this.currentMedia) this.currentMedia.pause();
       if (this.audio) this.audio.pause();
       if (this.audioRecorded) this.audioRecorded.pause();
+      if (this.onRecPlay) this.onRecPlay = false;
       if (this.intervalId) clearInterval(this.intervalId);
       if (this.timeOutId) clearTimeout(this.timeOutId);
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
+      if (this.audioRecorded && this.audioRecorded.removeEventListener) {
+        this.audioRecorded.removeEventListener("ended", this.endRecPlay, false);
+      }
+      if (this.audio && this.audio.removeEventListener) {
+        this.audio.removeEventListener("ended", this.endUtter, false);
+        this.audio.removeEventListener("ended", this.endTestUtter, false);
+      }
+
       this.newTranslation = "";
     },
     cleanUp2() {

@@ -34,7 +34,8 @@
     "SystemTTSnote": "Simple, Fast and Steady",
     "notSystemTTS": "Use Online TTS Service",
     "testTTSurl": "Test Online TTS Service",
-    "notSystemTTSnote": "The default TTS API address maybe invalid. You can change it to any other online (get interface) TTS API address (Test it firstly). e.g.: http://api.voicerss.org/?key=c3c059ecf47e489c8db0d038867e75c1&hl=zh-cn&c=MP3&v=Wang&r=0&f=16khz_16bit_stereo&src=",
+    "notSystemTTSnote": "The default TTS API address maybe invalid. You can change it to any other online (get interface) TTS API address (Test it firstly). e.g.: http://api.voicerss.org/?key=c3c059ecf47e489c8db0d038867e75c1&hl=zh-cn&c=MP3&v=Wang&r=0&f=16khz_16bit_stereo&src=  Or azure-tts:defaultKey1,defaultRegion1,zh-CN-YunyiMultilingualNeural",
+    "TTSSetting": "When using voiceRSS, the daily call limit is 350 times. c3c059ecf47e489c8db0d038867e75c1 can be replaced with 66e82191c8df46dc8e03e217ae557f91. Users can also apply for a free account (email required) and replace the key value in the address; When using Azure TTS, you can replace defaultKey1,defaultRegion1 with defaultKey2, defaultRegion2，Or defaultKey3,defaultRegion3. Please test before use, as these built-in default values may become invalid. Users can also apply for a free Azure account and activate free TTS services, and replace defaultKey1,defaultRegion1 with the 'subscription key,region value' of your own account. For example: azure-tts:d5da5b312758xxxxxxxxxxxxxxxxxxxxxx,eastasia,zh-CN-YunyiMultilingualNeural. zh-CN-YunyiMultilingualNeural can be replaced with other speakers supported in the region, which can be queried here using a computer browser: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=tts#text-to-speech, for example: en-US-AriaNeural, zh-CN-XiaoshuangNeural.",
     "langInTransLine": "Language Used In translation Line:",
     "lineNumOfTrans": "Line Number Of Translation In Subtitle:",
     "testTTSVoice": "Voice Test",
@@ -99,6 +100,7 @@
     "failUpload": "Upload failed. Check network and ensure this user has write/delete permissions.",
     "confirmdeleteDicRec": "Permanently delete ALL dictation/shadowing recordings of this media file (from both browser cache and server)? Dictation file on the server: {dictationFile}, shadowing recordings Dir on the server: {recordDir}",
     "noRecordPermission": "Microphone access denied due to browser security policy: Websites starting with 'http://' cannot access system microphones. Solutions: 1. For EDGE/Chrome in Windows/Mac/Android system: Visit chrome://flags/#unsafely-treat-insecure-origin-as-secure in address bar, then add this site's URL (with http:// and port), choose 'Enable' on the right side, and then restart the browser! Please search Internet for Other browsers' setting method. (All Browsers for IOS currently do not support this setting.) 2. Use the browser on the server and access via IP '127.0.0.1:PORT'. 3. Apply for 'https://' certification (a little bit complex) to enable microphone access universally.",
+    "noRecordFound": "Microphone not found.",
     "playRecording": "Play recording",
     "dictationDefault": "Type what you hear here...",
     "updatesandComments": "UPDATES、COMMENTS and Resource Sharing",
@@ -168,7 +170,7 @@
     "addNew": "Add A New Task",
     "return": "return without saving",
     "upload": "Upload to server", 
-    "isBackUp": "Automatically backup PDJ-ToDoList.txt to the folder !PDJ\\ToDoList-attachments when task content changes.",
+    "isBackUp": "Automatically backup PDJ-ToDoList.txt to the folder !PDJ\\ToDoList-attachments\\backup when task content changes.",
     "tags": "Tags:",
     "tag": "Tags",
     "lastReviewedDate": "Last Done:",
@@ -212,6 +214,7 @@
     "comingDate": "Doublecheck the latest 4 coming Repitation Dates:",
     "execTime": "Execution Time:",
     "attach": "Attachment",
+    "attachVoice": "Attachment-voice",
     "mon": "Monday",
     "tue": "Tuesday",
     "wed": "Wednesday",
@@ -268,7 +271,7 @@
     "ins22": "Remarks:",    
     "ins23": "The PDJ Universal To Do List can be used both OnLine and OffLine (When using Offline, Offline APP Mode needs to be enabled on the Login page).",
     "ins24": "You can set the account language in the PDJ Media Repeater to change the display language of the PDJ Universal To Do List.",  
-    "ins25": "You can back up the complete PDJ Universal To Do List by backing up the !PDJ folder in the user's root directory on the server. And the PDJ Universal To Do List will automatically backup the file PDJ-ToDoList.txt to the folder !PDJ/ToDoList-attachments after each task modification." 
+    "ins25": "You can back up the complete PDJ Universal To Do List by backing up the !PDJ folder in the user's root directory on the server. All attachments are saved in !PDJ/ToDoList-attachments/ folder. And the PDJ Universal To Do List will automatically backup the file PDJ-ToDoList.txt to the folder !PDJ/ToDoList-attachments/backup after each task modification (Can be periodically deleted)." 
   },
   "buttons": {
     "cancel": "Cancel",

@@ -206,6 +206,32 @@
             >attachment</i
           >
         </button>
+
+        <button
+          v-if="canRecording"
+          class="action"
+          @click="recording(3)"
+          :title="$t('repeater.recording')"
+        >
+          <i
+            style="font-size: 1.2em"
+            :style="{
+              color: isRecording && mic == 'front' ? 'red' : 'blue',
+            }"
+            class="material-icons"
+            >mic</i
+          >
+        </button>
+        <button
+          v-if="!canRecording"
+          class="action"
+          @click="showRecordingSetNote"
+          :title="$t('repeater.cannotRecording')"
+        >
+          <i style="font-size: 1.2em; color: blue" class="material-icons"
+            >mic_off</i
+          >
+        </button>
       </p>
       <input
         style="display: none"
@@ -236,7 +262,12 @@
             style="margin: 0 10px; color: blue; cursor: pointer"
           >
             <i @click="calcHref(subtitle)"
-              >{{ $t("reminder.attach") }} {{ index + 1 }}</i
+              >{{
+                !subtitle.includes(".mp3")
+                  ? $t("reminder.attach")
+                  : $t("reminder.attachVoice")
+              }}
+              {{ index + 1 }}</i
             >
             <button class="action" @click="deleteAttach(index, 1)">
               <i style="color: grey; font-size: 0.8em" class="material-icons"
@@ -268,6 +299,32 @@
             >attachment</i
           >
         </button>
+
+        <button
+          v-if="canRecording"
+          class="action"
+          @click="recording(4)"
+          :title="$t('repeater.recording')"
+        >
+          <i
+            style="font-size: 1.2em"
+            :style="{
+              color: isRecording && mic == 'back' ? 'red' : 'blue',
+            }"
+            class="material-icons"
+            >mic</i
+          >
+        </button>
+        <button
+          v-if="!canRecording"
+          class="action"
+          @click="showRecordingSetNote"
+          :title="$t('repeater.cannotRecording')"
+        >
+          <i style="font-size: 1.2em; color: blue" class="material-icons"
+            >mic_off</i
+          >
+        </button>
       </p>
       <input
         style="display: none"
@@ -297,7 +354,12 @@
             style="margin: 0 10px; color: blue; cursor: pointer"
           >
             <i @click="calcHref(subtitle)"
-              >{{ $t("reminder.attach") }} {{ index + 1 }}</i
+              >{{
+                !subtitle.includes(".mp3")
+                  ? $t("reminder.attach")
+                  : $t("reminder.attachVoice")
+              }}
+              {{ index + 1 }}</i
             >
             <button class="action" @click="deleteAttach(index, 2)">
               <i style="color: grey; font-size: 0.8em" class="material-icons"
@@ -1124,7 +1186,12 @@
               style="margin: 0; color: blue; cursor: pointer"
             >
               <i @click="calcHref(subtitle, 1)"
-                >{{ $t("reminder.attach") }} {{ index + 1 }}</i
+                >{{
+                  !subtitle.includes(".mp3")
+                    ? $t("reminder.attach")
+                    : $t("reminder.attachVoice")
+                }}
+                {{ index + 1 }}</i
               >
             </li>
           </ul>
@@ -1151,7 +1218,12 @@
               style="margin: 0; color: blue; cursor: pointer"
             >
               <i @click="calcHref(subtitle, 1)"
-                >{{ $t("reminder.attach") }} {{ index + 1 }}</i
+                >{{
+                  !subtitle.includes(".mp3")
+                    ? $t("reminder.attach")
+                    : $t("reminder.attachVoice")
+                }}
+                {{ index + 1 }}</i
               >
             </li>
           </ul>
@@ -1660,6 +1732,15 @@
                 v-model="isSystemTTS"
               />
               <span>{{ $t("repeater.notSystemTTS") }}</span>
+            </p>
+            <p
+              style="margin: 0 0 0 2em"
+              :style="{
+                color:
+                  isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
+              }"
+            >
+              {{ $t("reminder.frontWithLang") }}
               <button
                 :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                 class="action"
@@ -1694,15 +1775,6 @@
                   >play_circle_outline</i
                 >
               </button>
-            </p>
-            <p
-              style="margin: 0 0 0 2em"
-              :style="{
-                color:
-                  isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
-              }"
-            >
-              {{ $t("reminder.frontWithLang") }}
             </p>
             <input
               style="
@@ -1744,6 +1816,12 @@
               }"
             >
               {{ $t("repeater.notSystemTTSnote") }}
+              <span
+                style="cursor: pointer; color: blue; font-size: 1.2em"
+                @click="showTTSSetting"
+              >
+                Details
+              </span>
             </p>
           </div>
 
@@ -1922,6 +2000,13 @@ export default {
   },
   data: function () {
     return {
+      mic: "front",
+      audioRecorded: null,
+      mediaRecorder: null,
+      audioChunks: [],
+      audioBlob: null,
+      audioUrl: null,
+      isRecording: false,
       sentenceIndex: 1,
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isLandscape: this.checkLandscape(),
@@ -2035,6 +2120,10 @@ export default {
       return (
         /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 736
       );
+    },
+
+    canRecording() {
+      return navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     },
 
     arrAllCachedAttach() {
@@ -2671,6 +2760,86 @@ export default {
         return false;
       }
     },
+
+    showTTSSetting() {
+      alert(this.$t("repeater.TTSSetting"));
+    },
+
+    showRecordingSetNote() {
+      alert(this.$t("repeater.noRecordPermission"));
+    },
+
+    recording(x) {
+      if (x == 3) {
+        this.mic = "front";
+      } else this.mic = "back";
+      if (this.isRecording) {
+        this.stopRecording(x);
+      } else {
+        this.startRecording();
+      }
+    },
+    async startRecording() {
+      this.cleanUp();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.start();
+        this.isRecording = true;
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          this.audioChunks.push(event.data);
+        };
+
+        this.mediaRecorder.onstop = () => {
+          this.audioBlob = new Blob(this.audioChunks, { type: "audio/mp3" });
+          this.audioUrl = URL.createObjectURL(this.audioBlob);
+          this.audioChunks = [];
+          this.isRecording = false;
+          // this.saveRecording();
+        };
+      } catch (error) {
+        alert(this.$t("repeater.noRecordFound"));
+      }
+    },
+
+    stopRecording(x) {
+      if (this.mediaRecorder) {
+        this.mediaRecorder.stop();
+        setTimeout(() => {
+          this.playRecording();
+          this.uploadInput(null, x);
+        }, 10);
+      }
+    },
+
+    playRecording() {
+      if (this.audioUrl) {
+        this.cleanUp();
+        this.audioRecorded = new Audio(this.audioUrl);
+        this.audioRecorded.play();
+      }
+    },
+
+    // saveRecording() {
+    //   let filteredArray = this.audioRecordArray.filter(
+    //     (item) => item.id !== this.sentenceIndex
+    //   );
+    //   let newItem = {
+    //     id: this.sentenceIndex,
+    //     con: this.audioBlob,
+    //   };
+    //   filteredArray.push(newItem);
+    //   this.audioRecordArray = filteredArray;
+    //   localforage
+    //     .setItem(this.mediaName + "recordAudio", filteredArray, function () {})
+    //     .catch((error) => {
+    //       console.error(error);
+    //     });
+    // },
+
     async readToDoList() {
       var PDJcontent = "";
       var PDJserverContent = null;
@@ -3156,15 +3325,115 @@ export default {
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
           : this.$t("reminder.noContent");
-      let ttsFullUrl = this.TTSurlFront + text;
+      if (this.TTSurlFront.startsWith("azure-tts:")) {
+        this.azureTTS(this.TTSurlFront, text);
+      } else {
+        let ttsFullUrl = this.TTSurlFront + text;
 
-      fetch(ttsFullUrl)
-        .then(() => {
-          this.audio.src = ttsFullUrl;
-          this.audio.play();
-        })
-        .catch((error) => console.error("Error Uttering Trans Line:", error));
+        fetch(ttsFullUrl)
+          .then(() => {
+            this.audio.src = ttsFullUrl;
+            this.audio.play();
+          })
+          .catch((error) => console.error("Error Uttering Trans Line:", error));
+      }
     },
+
+    azureTTS(TTSurl, text) {
+      let r = "";
+      let v = "";
+      let s = "";
+      let x;
+      if (TTSurl.startsWith("azure-tts:defaultKey1")) {
+        x = this.getvalue(1);
+        s = x[0];
+        r = x[1];
+        v = TTSurl.split(",")[2].trim();
+      } else if (TTSurl.startsWith("azure-tts:defaultKey2")) {
+        x = this.getvalue(2);
+        s = x[0];
+        r = x[1];
+        v = TTSurl.split(",")[2].trim();
+      } else if (TTSurl.startsWith("azure-tts:defaultKey3")) {
+        x = this.getvalue(3);
+        s = x[0];
+        r = x[1];
+        v = TTSurl.split(",")[2].trim();
+      } else {
+        s = TTSurl.split("azure-tts:")[1].split(",")[0].trim();
+        r = TTSurl.split(",")[1].trim();
+        v = TTSurl.split(",")[2].trim();
+      }
+
+      const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
+      const accessToken = this.gT(s, r);
+
+      accessToken
+        .then((token) => {
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
+            "User-Agent": "YourAppName",
+          };
+
+          const body = `
+          <speak version='1.0' xml:lang='${v.replace(/-[^-]*$/, "")}'>
+            <voice name='${v}'>
+              ${text}
+            </voice>
+          </speak>
+        `;
+
+          fetch(endpoint, {
+            method: "POST",
+            headers: headers,
+            body: body,
+          })
+            .then((response) => response.blob())
+            .then((blob) => {
+              this.audio.src = URL.createObjectURL(blob);
+              this.audio.play();
+            })
+            .catch((error) => {
+              alert("wrong Language:", error);
+            });
+        })
+        .catch((error) => {
+          alert("wrong key or region:", error);
+        });
+    },
+
+    gT(s, r) {
+      const tokenEndpoint = `https://${r}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
+      const headers = {
+        "Ocp-Apim-Subscription-Key": s,
+      };
+
+      return fetch(tokenEndpoint, {
+        method: "POST",
+        headers: headers,
+      }).then((response) => response.text());
+    },
+
+    getvalue(x) {
+      const encryptedMap = {
+        1: [
+          atob("YWYyZjRhODVkNzk3NGFhOWJhNDVlNzMwZDI5YThjN2E="),
+          atob("ZWFzdGFzaWE="),
+        ],
+        2: [
+          atob("YWYyZDRhYTIzNDhiNGI3M2I2MDQ4N2M3M2UwZWI0MzE="),
+          atob("ZWFzdHVz"),
+        ],
+        3: [
+          atob("OGI3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI="),
+          atob("c291dGhlYXN0YXNpYQ=="),
+        ],
+      };
+      return encryptedMap[x];
+    },
+
     resetTTSurl() {
       this.TTSurlFront =
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
@@ -3980,67 +4249,106 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : this.$t("reminder.noContent");
-        let ttsFullUrl = "";
-        if (this.contentIndex == 1) ttsFullUrl = this.TTSurlFront + text;
-        else ttsFullUrl = this.TTSurlBack + text;
-        fetch(ttsFullUrl)
-          .then(() => {
-            this.audio.src = ttsFullUrl;
-            this.audio.play();
-          })
-          .catch((error) => console.error("Error Uttering Trans Line:", error));
+
+        let TTSurl = "";
+        if (this.contentIndex == 1) TTSurl = this.TTSurlFront;
+        else TTSurl = this.TTSurlBack;
+
+        if (TTSurl.startsWith("azure-tts:")) {
+          this.azureTTS(TTSurl, text);
+        } else {
+          let ttsFullUrl = TTSurl + text;
+
+          fetch(ttsFullUrl)
+            .then(() => {
+              this.audio.src = ttsFullUrl;
+              this.audio.play();
+            })
+            .catch((error) =>
+              console.error("Error Uttering Trans Line:", error)
+            );
+        }
       }
     },
 
     uploadInput(event, x) {
       if (this.isEditItem) this.attachChanged = true;
-      this.$store.commit("closeHovers");
-      let files = event.currentTarget.files;
-      let folder_upload =
-        files[0].webkitRelativePath !== undefined &&
-        files[0].webkitRelativePath !== "";
+      if (x == 1 || x == 2) {
+        this.$store.commit("closeHovers");
+        let files = event.currentTarget.files;
+        let folder_upload =
+          files[0].webkitRelativePath !== undefined &&
+          files[0].webkitRelativePath !== "";
 
-      if (folder_upload) {
-        for (let i = 0; i < files.length; i++) {
-          let file = files[i];
-          files[i].fullPath = file.webkitRelativePath;
+        if (folder_upload) {
+          for (let i = 0; i < files.length; i++) {
+            let file = files[i];
+            files[i].fullPath = file.webkitRelativePath;
+          }
         }
-      }
-      var currentTime = new Date();
-      let id = Math.floor(currentTime.getTime() / 1000);
-      if (files[0].size > 314572800) {
-        id = id + "noCacheAllowed";
-        let tempName = id + "-" + files[0].name;
-        let path = this.$route.path.endsWith("/")
-          ? this.$route.path + "!PDJ/ToDoList-attachments/"
-          : this.$route.path + "/!PDJ/ToDoList-attachments/";
-        if (x == 1) {
-          this.frontAttach = this.frontAttach + ":::" + tempName;
+        var currentTime = new Date();
+        let id = Math.floor(currentTime.getTime() / 1000);
+        if (files[0].size > 314572800) {
+          id = id + "noCacheAllowed";
+          let tempName = id + "-" + files[0].name;
+          let path = this.$route.path.endsWith("/")
+            ? this.$route.path + "!PDJ/ToDoList-attachments/"
+            : this.$route.path + "/!PDJ/ToDoList-attachments/";
+          if (x == 1) {
+            this.frontAttach = this.frontAttach + ":::" + tempName;
+          } else {
+            this.backAttach = this.backAttach + ":::" + tempName;
+          }
+          this.uploadNow(path + tempName, files[0], tempName);
+          return;
         } else {
-          this.backAttach = this.backAttach + ":::" + tempName;
+          var keyName = id + "-" + files[0].name;
+          let vmm = this;
+          let path = this.$route.path.endsWith("/")
+            ? this.$route.path + "!PDJ/ToDoList-attachments/"
+            : this.$route.path + "/!PDJ/ToDoList-attachments/";
+          var keyValue;
+          localforage.setItem(keyName, files[0], function () {
+            window.localStorage.setItem("hasCachedAttach", 1);
+            setTimeout(() => {
+              localforage
+                .getItem(keyName)
+                .then(function (value) {
+                  if (x == 1) {
+                    vmm.frontAttach = vmm.frontAttach + ":::" + keyName;
+                  } else {
+                    vmm.backAttach = vmm.backAttach + ":::" + keyName;
+                  }
+                  keyValue = value;
+                  vmm.uploadNow(path + keyName, keyValue, keyName);
+                })
+                .catch(function () {});
+            }, 200);
+          });
         }
-        this.uploadNow(path + tempName, files[0], tempName);
-        return;
       } else {
-        var keyName = id + "-" + files[0].name;
+        var currentTime1 = new Date();
+        let id1 = Math.floor(currentTime1.getTime() / 1000);
+
+        var keyName1 = id1 + "-" + "voiceAttachment.mp3";
         let vmm = this;
-        let path = this.$route.path.endsWith("/")
+        let path1 = this.$route.path.endsWith("/")
           ? this.$route.path + "!PDJ/ToDoList-attachments/"
           : this.$route.path + "/!PDJ/ToDoList-attachments/";
-        var keyValue;
-        localforage.setItem(keyName, files[0], function () {
+        var keyValue1;
+        localforage.setItem(keyName1, this.audioBlob, function () {
           window.localStorage.setItem("hasCachedAttach", 1);
           setTimeout(() => {
             localforage
-              .getItem(keyName)
+              .getItem(keyName1)
               .then(function (value) {
-                if (x == 1) {
-                  vmm.frontAttach = vmm.frontAttach + ":::" + keyName;
+                if (x == 3) {
+                  vmm.frontAttach = vmm.frontAttach + ":::" + keyName1;
                 } else {
-                  vmm.backAttach = vmm.backAttach + ":::" + keyName;
+                  vmm.backAttach = vmm.backAttach + ":::" + keyName1;
                 }
-                keyValue = value;
-                vmm.uploadNow(path + keyName, keyValue, keyName);
+                keyValue1 = value;
+                vmm.uploadNow(path1 + keyName1, keyValue1, keyName1);
               })
               .catch(function () {});
           }, 200);
@@ -4465,7 +4773,8 @@ export default {
       if (this.browserContent == "") return;
       var currentTime = new Date();
       let id = Math.floor(currentTime.getTime() / 1000);
-      let pdjBackUp = "PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
+      let pdjBackUp =
+        "backup/PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
       window.localStorage.setItem("PDJ-ToDoList.txt", this.browserContent);
       window.localStorage.setItem("PDJ-ToDoList.txtNotUpload", "1");
       this.unsavedTask = "1";
