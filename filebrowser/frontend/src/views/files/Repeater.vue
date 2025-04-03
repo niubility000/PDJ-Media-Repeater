@@ -180,7 +180,7 @@
             showRevision
           "
           class="action"
-          @click="switchSubtitle"
+          @click="showModal = true"
           @dblclick.prevent
           :title="$t('repeater.switchsubtitleLanguages')"
         >
@@ -189,7 +189,7 @@
         <button
           v-if="showTools"
           class="action"
-          @click="switchSubtitle"
+          @click="selectOption('10.')"
           @dblclick.prevent
           :title="$t('repeater.subTools')"
         >
@@ -539,7 +539,32 @@
           {{ indicateSub }}
         </p>
       </div>
+      <div v-if="showModal" class="modal-mask">
+        <div class="modal-wrapper">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h3>{{ $t("repeater.subNote1") }}</h3>
+            </div>
 
+            <div class="modal-body">
+              <div
+                v-for="(option, index) in options"
+                :key="index"
+                @click="selectOption(option)"
+                class="option-item"
+              >
+                {{ option }}
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="modal-default-button" @click="showModal = false">
+                {{ $t("buttons.close") }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div
         v-if="showSubtitleList"
         style="
@@ -872,6 +897,10 @@
               />
               {{ $t("repeater.showRetracePlay2") }}
             </p>
+            <p style="color: white">
+              <input type="checkbox" v-model.lazy="showArrow" />
+              {{ $t("repeater.showArrow") }}
+            </p>
             <p
               :style="{
                 color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
@@ -1203,7 +1232,7 @@
                   style="cursor: pointer; color: blue; font-size: 1.2em"
                   @click="showTTSSetting"
                 >
-                  Details
+                  &nbsp;&nbsp;&nbsp;{{ $t("repeater.ttsDetails") }}
                 </span>
               </p>
             </div>
@@ -2436,6 +2465,7 @@
           v-if="showRetracePlay"
           class="action"
           @click="retracePlay"
+          @dblclick.prevent
           :title="
             $t('repeater.retracePlay', {
               rT: retraceTime,
@@ -2450,6 +2480,7 @@
           <button
             class="action"
             @click="switchTempSpeed"
+            @dblclick.prevent
             :title="$t('repeater.switchTempSpeed')"
           >
             <i
@@ -2479,6 +2510,52 @@
           </span>
         </span>
       </div>
+      <button
+        v-if="!isMobile && showArrow"
+        @click="checkNav(1000, 'SWITCHIMG')"
+        style="
+          z-index: 1007;
+          position: fixed;
+          left: 1em;
+          top: 50%;
+          background-color: black;
+          border: 0;
+        "
+        @mouseover="hoverNavLeft = true"
+        @mouseleave="hoverNavLeft = false"
+        :title="$t('repeater.previous')"
+      >
+        <i
+          class="material-icons"
+          :style="{
+            color: hoverNavLeft ? 'white' : '#4f4b4b',
+          }"
+          >arrow_back_ios</i
+        >
+      </button>
+      <button
+        v-if="!isMobile && showArrow"
+        @click="checkNav(-1000, 'SWITCHIMG')"
+        style="
+          z-index: 1007;
+          position: fixed;
+          right: 1em;
+          top: 50%;
+          background-color: black;
+          border: 0;
+        "
+        @mouseover="hoverNavRight = true"
+        @mouseleave="hoverNavRight = false"
+        :title="$t('repeater.next')"
+      >
+        <i
+          class="material-icons"
+          :style="{
+            color: hoverNavRight ? 'white' : '#4f4b4b',
+          }"
+          >arrow_forward_ios</i
+        >
+      </button>
     </template>
   </div>
 </template>
@@ -2503,6 +2580,20 @@ export default {
   },
   data: function () {
     return {
+      hoverNavLeft: false,
+      hoverNavRight: false,
+      showModal: false,
+      options: [
+        this.$t("repeater.option1"),
+        this.$t("repeater.option2"),
+        this.$t("repeater.option3"),
+        this.$t("repeater.option4"),
+        this.$t("repeater.option5"),
+        this.$t("repeater.option6"),
+        this.$t("repeater.option7"),
+        this.$t("repeater.option8"),
+        this.$t("repeater.option9"),
+      ],
       onRecPlay: false,
       canDownload: false,
       netStatus: true,
@@ -2515,6 +2606,7 @@ export default {
       isRecording: false,
       fromRetrace: false,
       retraceTime: 2,
+      showArrow: false,
       showRetracePlay: false,
       normalSpeed: 1,
       onTempSpeed: false,
@@ -2775,11 +2867,11 @@ export default {
       } else if (this.subtitleLang == 2) {
         return "2. show ALL";
       } else if (this.subtitleLang == 3) {
-        return "3. show Note Line only";
+        return "3. show Subtitle's First Line only";
       } else if (this.subtitleLang == 4) {
-        return "4. show Subtitle's First Line only";
+        return "4. show Subtitle's Second Line only";
       } else if (this.subtitleLang == 5) {
-        return "5. show Subtitle's Second Line only";
+        return "5. show Note Line only";
       } else if (this.subtitleLang == 6) {
         return "6. show Subtitle's First Line and Note Line";
       } else if (this.subtitleLang == 7) {
@@ -3525,6 +3617,8 @@ export default {
     sentenceIndex: function () {
       this.onLoop();
       this.calcFav();
+      this.showAddNew = false;
+      this.showEditNew = false;
       if (!this.isSingle && this.dubbingMode && this.isUtterTransLine) {
         if (this.utterThis) window.speechSynthesis.cancel();
         this.utterTransLine();
@@ -3685,6 +3779,7 @@ export default {
     },
 
     TTSurl: function () {
+      this.TTSurl = this.TTSurl.trim();
       this.save();
     },
 
@@ -3750,6 +3845,9 @@ export default {
       this.save();
     },
     retraceTime: function () {
+      this.save();
+    },
+    showArrow: function () {
       this.save();
     },
 
@@ -3883,6 +3981,27 @@ export default {
       } catch (e) {
         console.error(e);
       }
+    },
+
+    selectOption(option) {
+      this.ShowSwitchSubtitle = true;
+      if (this.timeOutId1) clearTimeout(this.timeOutId1);
+      this.subtitleLang = Number(option.split(".")[0]);
+      this.showModal = false;
+      if (this.subtitleLang == 9) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.showTools = true;
+        this.ShowSwitchSubtitle = false;
+      }
+      if (this.subtitleLang >= 10) {
+        this.showTools = false;
+        this.subtitleLang = 1;
+      }
+      this.switchSubtitleMini();
+      this.timeOutId1 = setTimeout(() => {
+        this.ShowSwitchSubtitle = false;
+      }, 3000);
     },
 
     showRecordingSetNote() {
@@ -4489,6 +4608,8 @@ export default {
         this.showRetracePlay = JSON.parse(PDJcontent.split("::")[35]);
       if (PDJcontent.split("::")[36])
         this.retraceTime = Number(JSON.parse(PDJcontent.split("::")[36]));
+      if (PDJcontent.split("::")[37])
+        this.showArrow = JSON.parse(PDJcontent.split("::")[37]);
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -5069,13 +5190,13 @@ export default {
         this.azureTTS(text, 2);
       } else {
         let ttsFullUrl = this.TTSurl + text;
-        fetch(ttsFullUrl)
-          .then(() => {
-            this.audio.src = ttsFullUrl;
-            this.audio.play();
-            this.audio.addEventListener("ended", this.endTestUtter, false);
-          })
-          .catch((error) => console.error("Error Uttering Trans Line:", error));
+        this.audio.src = ttsFullUrl;
+        this.audio.play().catch((error) => {
+          alert("Error Uttering Trans Line with the TTS!");
+          console.log(error);
+          return;
+        });
+        this.audio.addEventListener("ended", this.endTestUtter, false);
       }
     },
 
@@ -5132,6 +5253,10 @@ export default {
           })
             .then((response) => response.blob())
             .then((blob) => {
+              if (blob.size == 0) {
+                alert("Azure TTS with wrong Voice name!");
+                return;
+              }
               this.audio.src = URL.createObjectURL(blob);
               this.audio.play();
               if (type == 1) {
@@ -5144,33 +5269,48 @@ export default {
                 this.audio.addEventListener("ended", this.endTestUtter, false);
             })
             .catch((error) => {
-              alert("wrong Language:", error);
+              alert("Azure TTS with wrong voice name:", error);
               if (type == 1) {
-                this.endUtter();
+                this.cleanUp1();
+                this.cleanUp2();
               }
+              return;
             });
         })
         .catch((error) => {
-          alert("wrong key or region:", error);
+          alert("Azure TTS with wrong key or region:", error);
         });
     },
 
-    gT(s, r) {
+    async gT(s, r) {
       const tokenEndpoint = `https://${r}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
       const headers = {
         "Ocp-Apim-Subscription-Key": s,
       };
 
-      return fetch(tokenEndpoint, {
+      const response = await fetch(tokenEndpoint, {
         method: "POST",
         headers: headers,
-      }).then((response) => response.text());
+      }).catch(() => {
+        alert(
+          "Azure TTS with wrong key or region, or Check the Internet connection!"
+        );
+        return;
+      });
+
+      if (!response.ok) {
+        alert("Azure TTS with wrong key or region!");
+        return;
+      }
+      return response.text();
     },
 
     getvalue(x) {
       const encryptedMap = {
         1: [
-          atob("YWYyZjRhODVkNzk3NGFhOWJhNDVlNzMwZDI5YThjN2E="),
+          atob(
+            "M2M3RXJuOG9nRVdoMHdvc2pTcEJNZnFOb1lzMHd2bkZuZk1VU2dmWThnWVRJbG5tTGxITUpRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0djODZC"
+          ),
           atob("ZWFzdGFzaWE="),
         ],
         2: [
@@ -5271,20 +5411,19 @@ export default {
           this.azureTTS(text, 1);
         } else {
           let ttsFullUrl = this.TTSurl + text;
-          fetch(ttsFullUrl)
-            .then(() => {
-              this.audio.src = ttsFullUrl;
-              this.audio.play();
-              if (!this.isSingle && this.dubbingMode) {
-                this.utterInProcess = false;
-                return;
-              }
-              this.audio.addEventListener("ended", this.endUtter, false);
-            })
-            .catch((error) => {
-              alert("Error Uttering Trans Line:", error);
-              this.endUtter();
-            });
+
+          this.audio.src = ttsFullUrl;
+          this.audio.play().catch(() => {
+            alert("Error Uttering Trans Line with the TTS!");
+            this.cleanUp1();
+            this.cleanUp2();
+            return;
+          });
+          if (!this.isSingle && this.dubbingMode) {
+            this.utterInProcess = false;
+            return;
+          }
+          this.audio.addEventListener("ended", this.endUtter, false);
         }
       }
     },
@@ -5370,25 +5509,6 @@ export default {
       }
     },
 
-    switchSubtitle() {
-      this.ShowSwitchSubtitle = true;
-      if (this.timeOutId1) clearTimeout(this.timeOutId1);
-      this.subtitleLang = this.subtitleLang + 1;
-      if (this.subtitleLang == 9) {
-        this.cleanUp1();
-        this.cleanUp2();
-        this.showTools = true;
-        this.ShowSwitchSubtitle = false;
-      }
-      if (this.subtitleLang >= 10) {
-        this.showTools = false;
-        this.subtitleLang = 1;
-      }
-      this.switchSubtitleMini();
-      this.timeOutId1 = setTimeout(() => {
-        this.ShowSwitchSubtitle = false;
-      }, 3000);
-    },
     switchSubtitleMini() {
       if (this.subtitleLang == 1) {
         this.isShowLine1 = true;
@@ -5399,17 +5519,17 @@ export default {
         this.isShowLine2 = true;
         this.isShowLine3 = true;
       } else if (this.subtitleLang == 3) {
-        this.isShowLine1 = false;
-        this.isShowLine2 = false;
-        this.isShowLine3 = true;
-      } else if (this.subtitleLang == 4) {
         this.isShowLine1 = true;
         this.isShowLine2 = false;
         this.isShowLine3 = false;
-      } else if (this.subtitleLang == 5) {
+      } else if (this.subtitleLang == 4) {
         this.isShowLine1 = false;
         this.isShowLine2 = true;
         this.isShowLine3 = false;
+      } else if (this.subtitleLang == 5) {
+        this.isShowLine1 = false;
+        this.isShowLine2 = false;
+        this.isShowLine3 = true;
       } else if (this.subtitleLang == 6) {
         this.isShowLine1 = true;
         this.isShowLine2 = false;
@@ -5923,30 +6043,31 @@ export default {
       this.cachedNumber();
       this.getReader();
       this.isSetting = !this.isSetting;
-      if (this.isSetting) {
-        this.cleanUp2();
-        this.cleanUp1();
-      } else {
-        if (!this.isSingle) return;
-        setTimeout(() => {
-          this.cleanUp2();
-          if (this.isFirstClick) this.firstClick();
-          this.handleAutoStop();
-          this.singleModePlay();
-        }, 1);
-      }
-      return;
+      this.cleanUp2();
+      this.cleanUp1();
     },
-    click: function () {
-      if (this.isFirstClick) this.firstClick();
+
+    click() {
       this.touches++;
+      if (this.isFirstClick) this.firstClick();
+
       this.fromClick = true;
       if (this.isEditSubandNotes) this.cleanUp2();
       this.cleanUp1();
       if (this.isEditSubandNotes || this.isDictation) {
         this.toBlur();
       }
-      if (this.touches == 1) {
+      if (this.touches == 2) {
+        //double click
+        this.cleanUp1();
+        this.touches = 0;
+        if (this.timeOutId2) clearTimeout(this.timeOutId2);
+        if (this.timeOutId3) clearTimeout(this.timeOutId3);
+        return;
+      }
+
+      this.timeOutId3 = setTimeout(() => {
+        this.touches = 0;
         if (this.isSingle) {
           setTimeout(() => {
             if (this.pauseAfterFirstDone) {
@@ -5971,16 +6092,6 @@ export default {
                 this.srtSubtitles[this.sentenceIndex - 1].startTime;
           }, 1);
         }
-      }
-      setTimeout(() => {
-        if (this.touches == 2) {
-          //double click
-          this.cleanUp1();
-          this.touches = 0;
-          if (this.timeOutId2) clearTimeout(this.timeOutId2);
-          return;
-        }
-        this.touches = 0;
       }, 300);
     },
 
@@ -5999,7 +6110,7 @@ export default {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.handleAutoStop();
       this.isSetting = false;
-      if (this.showTools) this.switchSubtitle();
+      if (this.showTools) this.selectOption("10.");
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -6123,7 +6234,7 @@ export default {
       if (!this.isReadyToPlay) return;
       this.handleAutoStop();
       this.isSetting = false;
-      if (this.showTools) this.switchSubtitle();
+      if (this.showTools) this.selectOption("10.");
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -6873,6 +6984,8 @@ export default {
         JSON.stringify(this.showRetracePlay) +
         "::" +
         JSON.stringify(this.retraceTime) +
+        "::" +
+        JSON.stringify(this.showArrow) +
         "::"
       );
     },
@@ -8101,7 +8214,7 @@ export default {
         return;
       }
       if (this.showTools) {
-        this.switchSubtitle();
+        this.selectOption("10.");
         return;
       }
       if (this.isFavOnPlay) {
@@ -8244,6 +8357,113 @@ input:disabled {
   background-color: #bbbaba;
 }
 
+.modal-mask {
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.modal-wrapper {
+  perspective: 1000px; /* 添加3D透视效果 */
+  touch-action: auto;
+}
+
+.modal-container {
+  width: 400px;
+  padding: 10px 15px;
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* 增加阴影 */
+  text-align: center;
+  transform-style: preserve-3d;
+  animation: rotateIn 0.6s ease-in-out;
+  position: relative;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+  font-weight: bold;
+}
+
+.modal-body {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.option-item {
+  cursor: pointer;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 16px;
+  color: #555;
+  background: #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.option-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: #e8e8e8;
+}
+
+.modal-footer {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.modal-default-button {
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.modal-default-button:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rotateIn {
+  from {
+    transform: rotateY(45deg) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 1000px) {
   #repeater .repeater {
     margin: 0;
@@ -8256,6 +8476,14 @@ input:disabled {
 
   span.subject {
     width: 13em;
+  }
+
+  .modal-body {
+    max-height: 285px;
+  }
+
+  .modal-container {
+    width: 300px;
   }
 
   #settingBoxContainer {

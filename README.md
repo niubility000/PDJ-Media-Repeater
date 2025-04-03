@@ -48,24 +48,24 @@ Both of these can be used online or offline.
 
 ## Assets Download
 
-Updated: 04-01-2025
+**Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser refresh button for the update to take effect.
 
-5.3 add a recording function in the dictation page and more tts.
+Updated: 04-03-2025
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19546320/filebrowser-windows.zip)
+5.3 add navigator arrows for PC browser (set 'false' in setting by default), add a popup box for switch subtitle display mode, modify azure tts.
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19579998/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19546322/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19580002/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19546324/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19580010/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19546326/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19580006/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19546327/filebrowser-darwin-arm64.for.mac.zip)
-
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19580013/filebrowser-darwin-arm64.for.mac.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/19546330/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/19580014/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

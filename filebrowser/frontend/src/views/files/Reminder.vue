@@ -1820,7 +1820,7 @@
                 style="cursor: pointer; color: blue; font-size: 1.2em"
                 @click="showTTSSetting"
               >
-                Details
+                &nbsp;&nbsp;&nbsp;{{ $t("repeater.ttsDetails") }}
               </span>
             </p>
           </div>
@@ -2697,10 +2697,12 @@ export default {
 
     TTSurlFront: function () {
       this.allowBackUp = false;
+      this.TTSurlFront = this.TTSurlFront.trim();
       this.save();
     },
     TTSurlBack: function () {
       this.allowBackUp = false;
+      this.TTSurlBack = this.TTSurlBack.trim();
       this.save();
     },
     searchList: function () {
@@ -3330,12 +3332,12 @@ export default {
       } else {
         let ttsFullUrl = this.TTSurlFront + text;
 
-        fetch(ttsFullUrl)
-          .then(() => {
-            this.audio.src = ttsFullUrl;
-            this.audio.play();
-          })
-          .catch((error) => console.error("Error Uttering Trans Line:", error));
+        this.audio.src = ttsFullUrl;
+        this.audio.play().catch((error) => {
+          alert("Error Uttering Trans Line with the TTS!");
+          console.log(error);
+          return;
+        });
       }
     },
 
@@ -3392,34 +3394,53 @@ export default {
           })
             .then((response) => response.blob())
             .then((blob) => {
+              if (blob.size == 0) {
+                alert("Azure TTS with wrong Voice name!");
+                return;
+              }
               this.audio.src = URL.createObjectURL(blob);
               this.audio.play();
             })
             .catch((error) => {
               alert("wrong Language:", error);
+              return;
             });
         })
         .catch((error) => {
           alert("wrong key or region:", error);
+          return;
         });
     },
 
-    gT(s, r) {
+    async gT(s, r) {
       const tokenEndpoint = `https://${r}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
       const headers = {
         "Ocp-Apim-Subscription-Key": s,
       };
 
-      return fetch(tokenEndpoint, {
+      const response = await fetch(tokenEndpoint, {
         method: "POST",
         headers: headers,
-      }).then((response) => response.text());
+      }).catch(() => {
+        alert(
+          "Azure TTS with wrong key or region, or Check the Internet connection!"
+        );
+        return;
+      });
+
+      if (!response.ok) {
+        alert("Azure TTS with wrong key or region!");
+        return;
+      }
+      return response.text();
     },
 
     getvalue(x) {
       const encryptedMap = {
         1: [
-          atob("YWYyZjRhODVkNzk3NGFhOWJhNDVlNzMwZDI5YThjN2E="),
+          atob(
+            "M2M3RXJuOG9nRVdoMHdvc2pTcEJNZnFOb1lzMHd2bkZuZk1VU2dmWThnWVRJbG5tTGxITUpRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0djODZC"
+          ),
           atob("ZWFzdGFzaWE="),
         ],
         2: [
@@ -4259,14 +4280,11 @@ export default {
         } else {
           let ttsFullUrl = TTSurl + text;
 
-          fetch(ttsFullUrl)
-            .then(() => {
-              this.audio.src = ttsFullUrl;
-              this.audio.play();
-            })
-            .catch((error) =>
-              console.error("Error Uttering Trans Line:", error)
-            );
+          this.audio.src = ttsFullUrl;
+          this.audio.play().catch(() => {
+            alert("Error Uttering Trans Line with the TTS!");
+            return;
+          });
         }
       }
     },
