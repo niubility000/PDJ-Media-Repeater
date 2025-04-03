@@ -53,6 +53,7 @@ Both of these can be used online or offline.
 Updated: 04-03-2025
 
 5.3 add navigator arrows for PC browser (set 'false' in setting by default), add a popup box for switch subtitle display mode, modify azure tts.
+
 [filebrowser-windows.zip](https://github.com/user-attachments/files/19579998/filebrowser-windows.zip)
 
 [filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19580002/filebrowser-linux-amd64.zip)
