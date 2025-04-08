@@ -56,17 +56,17 @@ Updated: 04-09-2025
 
 v5.5 Add azure translator to translate subtitles.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19644029/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19645167/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19644032/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19645174/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19644035/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19645176/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19644037/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19645181/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19644040/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19645183/filebrowser-darwin-arm64.for.mac.zip)
 
-Latest Source Code:
+Source code:
 
 [filebrowser.zip](https://github.com/user-attachments/files/19644046/filebrowser.zip)
 
