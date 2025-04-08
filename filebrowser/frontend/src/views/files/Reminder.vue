@@ -117,7 +117,11 @@
         >
       </button>
     </header-bar>
-
+    <div v-if="ttsWrong" class="showMsg" style="bottom: 2.5em; z-index: 1020">
+      <p style="color: red">
+        {{ $t("repeater.ttsWrong") }}
+      </p>
+    </div>
     <div
       id="showAddNewOrEdit"
       v-if="addNew || isEditItem"
@@ -1815,13 +1819,26 @@
                   isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
               }"
             >
-              {{ $t("repeater.notSystemTTSnote") }}
-              <span
-                style="cursor: pointer; color: blue; font-size: 1.2em"
+              {{ $t("repeater.notSystemTTSnote") }} &nbsp;&nbsp;&nbsp;
+
+              <button
+                :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
+                class="action"
                 @click="showTTSSetting"
+                :title="$t('repeater.ttsDetails')"
               >
-                &nbsp;&nbsp;&nbsp;{{ $t("repeater.ttsDetails") }}
-              </span>
+                <i
+                  style="padding: 0; font-size: 1em"
+                  :style="{
+                    color:
+                      isSystemTTS == 'Yes' || !isUtterTransLine
+                        ? '#868686'
+                        : 'blue',
+                  }"
+                  class="material-icons"
+                  >help</i
+                >
+              </button>
             </p>
           </div>
 
@@ -2000,6 +2017,8 @@ export default {
   },
   data: function () {
     return {
+      ttsWrong: false,
+      timeOutId4: null,
       mic: "front",
       audioRecorded: null,
       mediaRecorder: null,
@@ -2697,12 +2716,12 @@ export default {
 
     TTSurlFront: function () {
       this.allowBackUp = false;
-      this.TTSurlFront = this.TTSurlFront.trim();
+      this.TTSurlFront = this.TTSurlFront.replaceAll(" ", "");
       this.save();
     },
     TTSurlBack: function () {
       this.allowBackUp = false;
-      this.TTSurlBack = this.TTSurlBack.trim();
+      this.TTSurlBack = this.TTSurlBack.replaceAll(" ", "");
       this.save();
     },
     searchList: function () {
@@ -3333,9 +3352,12 @@ export default {
         let ttsFullUrl = this.TTSurlFront + text;
 
         this.audio.src = ttsFullUrl;
-        this.audio.play().catch((error) => {
-          alert("Error Uttering Trans Line with the TTS!");
-          console.log(error);
+        this.audio.play().catch(() => {
+          this.ttsWrong = true;
+          if (this.timeOutId4) clearTimeout(this.timeOutId4);
+          this.timeOutId4 = setTimeout(() => {
+            this.ttsWrong = false;
+          }, 1000);
           return;
         });
       }
@@ -3350,21 +3372,28 @@ export default {
         x = this.getvalue(1);
         s = x[0];
         r = x[1];
-        v = TTSurl.split(",")[2].trim();
+        if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
+        else v = "";
       } else if (TTSurl.startsWith("azure-tts:defaultKey2")) {
         x = this.getvalue(2);
         s = x[0];
         r = x[1];
-        v = TTSurl.split(",")[2].trim();
+        if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
+        else v = "";
       } else if (TTSurl.startsWith("azure-tts:defaultKey3")) {
         x = this.getvalue(3);
         s = x[0];
         r = x[1];
-        v = TTSurl.split(",")[2].trim();
+        if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
+        else v = "";
       } else {
         s = TTSurl.split("azure-tts:")[1].split(",")[0].trim();
-        r = TTSurl.split(",")[1].trim();
-        v = TTSurl.split(",")[2].trim();
+
+        if (TTSurl.split(",")[1]) r = TTSurl.split(",")[1].trim();
+        else r = "";
+
+        if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
+        else v = "";
       }
 
       const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
@@ -3395,19 +3424,31 @@ export default {
             .then((response) => response.blob())
             .then((blob) => {
               if (blob.size == 0) {
-                alert("Azure TTS with wrong Voice name!");
+                this.ttsWrong = true;
+                if (this.timeOutId4) clearTimeout(this.timeOutId4);
+                this.timeOutId4 = setTimeout(() => {
+                  this.ttsWrong = false;
+                }, 1000);
                 return;
               }
               this.audio.src = URL.createObjectURL(blob);
               this.audio.play();
             })
-            .catch((error) => {
-              alert("wrong Language:", error);
+            .catch(() => {
+              this.ttsWrong = true;
+              if (this.timeOutId4) clearTimeout(this.timeOutId4);
+              this.timeOutId4 = setTimeout(() => {
+                this.ttsWrong = false;
+              }, 1000);
               return;
             });
         })
-        .catch((error) => {
-          alert("wrong key or region:", error);
+        .catch(() => {
+          this.ttsWrong = true;
+          if (this.timeOutId4) clearTimeout(this.timeOutId4);
+          this.timeOutId4 = setTimeout(() => {
+            this.ttsWrong = false;
+          }, 1000);
           return;
         });
     },
@@ -3421,17 +3462,7 @@ export default {
       const response = await fetch(tokenEndpoint, {
         method: "POST",
         headers: headers,
-      }).catch(() => {
-        alert(
-          "Azure TTS with wrong key or region, or Check the Internet connection!"
-        );
-        return;
       });
-
-      if (!response.ok) {
-        alert("Azure TTS with wrong key or region!");
-        return;
-      }
       return response.text();
     },
 
@@ -4282,7 +4313,11 @@ export default {
 
           this.audio.src = ttsFullUrl;
           this.audio.play().catch(() => {
-            alert("Error Uttering Trans Line with the TTS!");
+            this.ttsWrong = true;
+            if (this.timeOutId4) clearTimeout(this.timeOutId4);
+            this.timeOutId4 = setTimeout(() => {
+              this.ttsWrong = false;
+            }, 1000);
             return;
           });
         }
@@ -4712,7 +4747,7 @@ export default {
         return;
       } else if (x > 0 && mode == "VERTICAL") {
         if (this.contentIndex == 1) {
-          this.isItemReview = false;
+          // this.isItemReview = false;
           this.cleanUp();
           return;
         }

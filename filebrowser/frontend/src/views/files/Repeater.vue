@@ -29,8 +29,7 @@
               showSubtitleList ||
               showNewWordList ||
               withTrans ||
-              showRevision ||
-              showTools
+              showRevision
                 ? 'red'
                 : 'blue',
           }"
@@ -59,8 +58,7 @@
         <span
           @click="switchShowList()"
           :style="{
-            pointerEvents:
-              isSetting || showRevision || showTools ? 'none' : 'auto',
+            pointerEvents: isSetting || showRevision ? 'none' : 'auto',
           }"
           style="cursor: pointer"
         >
@@ -75,7 +73,7 @@
             "
             :style="{
               color:
-                isSetting || showRevision || showTools
+                isSetting || showRevision
                   ? 'grey'
                   : showSubtitleList
                   ? 'red'
@@ -94,8 +92,7 @@
             !isSingle ||
             favList.length == 0 ||
             isSetting ||
-            showRevision ||
-            showTools
+            showRevision
           "
           class="action"
           @click="playFavList"
@@ -106,11 +103,7 @@
         </button>
         <button
           :disabled="
-            loading ||
-            showSubtitleList ||
-            showNewWordList ||
-            showRevision ||
-            showTools
+            loading || showSubtitleList || showNewWordList || showRevision
           "
           class="action"
           @click="onSetting"
@@ -120,7 +113,7 @@
           <i
             :style="{
               color:
-                showSubtitleList || showNewWordList || showRevision || showTools
+                showSubtitleList || showNewWordList || showRevision
                   ? 'grey'
                   : isSetting
                   ? 'red'
@@ -140,7 +133,6 @@
             showNewWordList ||
             isFavOnPlay ||
             showRevision ||
-            showTools ||
             !isReadyToPlay
           "
           class="action"
@@ -157,8 +149,7 @@
                 showNewWordList ||
                 isFavOnPlay ||
                 showRevision ||
-                !isReadyToPlay ||
-                showTools
+                !isReadyToPlay
                   ? 'grey'
                   : isEditSubandNotes
                   ? 'red'
@@ -169,7 +160,6 @@
           >
         </button>
         <button
-          v-if="!showTools"
           :disabled="
             loading ||
             isSetting ||
@@ -186,15 +176,7 @@
         >
           <i :style="subSwitch" class="material-icons">closed_caption</i>
         </button>
-        <button
-          v-if="showTools"
-          class="action"
-          @click="selectOption('10.')"
-          @dblclick.prevent
-          :title="$t('repeater.subTools')"
-        >
-          <i style="color: red" class="material-icons">plumbing</i>
-        </button>
+
         <button
           v-if="isSingle && !isDictation"
           :disabled="
@@ -203,8 +185,7 @@
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
-            showRevision ||
-            showTools
+            showRevision
           "
           class="action"
           @click="onSingle"
@@ -218,13 +199,11 @@
           v-if="isSingle && isDictation"
           :disabled="
             loading ||
-            isFavOnPlay ||
             isSetting ||
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
-            showRevision ||
-            showTools
+            showRevision
           "
           class="action"
           @click="onSingle"
@@ -236,7 +215,7 @@
 
         <button
           v-if="!isSingle"
-          :disabled="loading || showRevision || showTools"
+          :disabled="loading || showRevision"
           class="action"
           @click="onSingle"
           @dblclick.prevent
@@ -252,8 +231,7 @@
             showSubtitleList ||
             showNewWordList ||
             isEditSubandNotes ||
-            !isReadyToPlay ||
-            showTools
+            !isReadyToPlay
           "
           class="action"
           @click="switchRevisePlan"
@@ -269,8 +247,7 @@
                 showSubtitleList ||
                 showNewWordList ||
                 isEditSubandNotes ||
-                !isReadyToPlay ||
-                showTools
+                !isReadyToPlay
                   ? 'grey'
                   : showRevision
                   ? 'red'
@@ -289,111 +266,9 @@
           {{ $t("repeater.slowInternet") }}
         </p>
       </div>
-
-      <div
-        v-if="showTools"
-        style="
-          background-color: gray;
-          color: white;
-          z-index: 1025;
-          display: flex;
-          flex-direction: column;
-          position: fixed;
-          left: 50%;
-          transform: translate(-50%, 0);
-          top: 4.2em;
-          bottom: 0.2em;
-          border-radius: 10px;
-          overflow-y: auto;
-        "
-        :style="{
-          width: mobileScreen ? '100%' : '65%',
-        }"
-      >
-        <p style="padding: 0 1em; color: blue; font-size: 1.2em">
-          {{ $t("repeater.tools") }}
-        </p>
-
-        <p style="padding: 0 1em 1em 1em; margin: 0">
-          {{ $t("repeater.toolsNote") }}
-        </p>
-
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(1)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool1") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(2)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool2") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(3)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool3") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(4)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool4") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(5)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool5") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(6)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool6") }}
-        </p>
-        <p style="padding: 0 1em; margin: 0">
-          <button
-            class="action"
-            style="color: blue"
-            @click="saveSpecialSub(7)"
-            :title="$t('repeater.saveas')"
-          >
-            <i class="material-icons">save_as</i>
-          </button>
-          {{ $t("repeater.tool7") }}
+      <div v-if="ttsWrong" class="showMsg" style="bottom: 2.5em">
+        <p style="color: red">
+          {{ $t("repeater.ttsWrong") }}
         </p>
       </div>
 
@@ -534,11 +409,6 @@
         </div>
       </div>
 
-      <div v-if="ShowSwitchSubtitle" class="showMsg" style="bottom: 2.5em">
-        <p style="color: yellow">
-          {{ indicateSub }}
-        </p>
-      </div>
       <div v-if="showModal" class="modal-mask">
         <div class="modal-wrapper">
           <div class="modal-container">
@@ -565,6 +435,139 @@
           </div>
         </div>
       </div>
+
+      <div v-if="showsubTools" class="subTools-overlay">
+        <div class="subTools">
+          <div class="subTools-tabs">
+            <button
+              :class="{ active: currentTab === 1 }"
+              @click="currentTab = 1"
+            >
+              {{ $t("repeater.subpage1") }}
+            </button>
+            <button
+              :class="{ active: currentTab === 2 }"
+              @click="currentTab = 2"
+            >
+              {{ $t("repeater.subpage2") }}
+            </button>
+            <button
+              :class="{ active: currentTab === 3 }"
+              @click="currentTab = 3"
+            >
+              {{ $t("repeater.subpage3") }}
+            </button>
+          </div>
+          <div class="subTools-content">
+            <div v-if="currentTab === 1">
+              <p style="color: black">
+                {{ $t("repeater.translator1") }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="srtSubtitles.length"
+                  step="1"
+                  :placeholder="1"
+                  v-model.number.lazy="startNum"
+                />
+                {{ $t("repeater.translator10") }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="srtSubtitles.length"
+                  step="1"
+                  :placeholder="srtSubtitles.length"
+                  v-model.number.lazy="endNum"
+                />
+                {{ $t("repeater.translator100") }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="2"
+                  step="1"
+                  style="width: 2.5em"
+                  v-model.lazy="originLine"
+                />
+                {{ $t("repeater.translator2") }}
+                <input
+                  type="text"
+                  style="width: 4em"
+                  v-model.lazy="targetLanguage"
+                />
+                {{ $t("repeater.translator3", { targetLine: targetLine }) }}
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertTranslatorUrl"
+                  :title="$t('repeater.help')"
+                >
+                  <i style="color: red; font-size: 1em" class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+            </div>
+            <div v-if="currentTab === 2">
+              <p style="color: black">
+                {{ $t("repeater.moveAllStamp") }}
+                <input
+                  class="input input--repeater"
+                  name="buttons"
+                  type="number"
+                  v-model.number="moveAll"
+                  step="50"
+                />
+              </p>
+            </div>
+            <div v-if="currentTab === 3">
+              <select
+                v-model="selectedOption"
+                style="width: 90%; margin-top: 1em"
+              >
+                <option
+                  v-for="option in optionsEdit"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ option }}
+                </option>
+              </select>
+              <p
+                v-if="
+                  selectedOption &&
+                  (selectedOption.includes(1) ||
+                    selectedOption.includes(6) ||
+                    selectedOption.includes(7))
+                "
+                style="font-size: 0.8em"
+              >
+                {{ $t("repeater.toolsNote") }}
+              </p>
+            </div>
+          </div>
+          <div class="subTools-buttons">
+            <button
+              @click="handleCancel"
+              :disabled="inSubProcess"
+              :style="{
+                backgroundColor: inSubProcess ? 'white' : '',
+              }"
+            >
+              {{ $t("buttons.cancel") }}
+            </button>
+            <button
+              @click="handleConfirm"
+              :disabled="inSubProcess"
+              :style="{
+                backgroundColor: inSubProcess ? 'white' : '',
+              }"
+            >
+              {{ $t("buttons.ok") }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div
         v-if="showSubtitleList"
         style="
@@ -776,7 +779,9 @@
             <p v-if="!hasPrivate" style="color: white; margin-top: 0">
               {{ $t("repeater.addPrivate") }}
               <button class="action" @click="addPrivate">
-                <i style="color: blue" class="material-icons">verified</i>
+                <i style="color: blue; font-size: 1.2em" class="material-icons"
+                  >verified</i
+                >
               </button>
             </p>
             <p v-if="hasPrivate" style="color: white">
@@ -1059,6 +1064,9 @@
                     isAutoDetectLang ||
                     !hasSpeechSynthesis
                   "
+                  :style="{
+                    width: isMobile ? '7em' : '8em',
+                  }"
                   class="input input--repeater"
                   type="text"
                   :placeholder="langInTransLinedefault"
@@ -1149,6 +1157,9 @@
                     isSystemTTS == 'No' ||
                     !hasSpeechSynthesis
                   "
+                  :style="{
+                    width: isMobile ? '7em' : '8em',
+                  }"
                   class="input input--repeater"
                   type="text"
                   v-model.number.lazy="speedOfUtter"
@@ -1171,6 +1182,7 @@
                   :title="$t('repeater.resetTTSurl')"
                 >
                   <i
+                    style="font-size: 1.2em"
                     :style="{
                       color:
                         isSystemTTS == 'Yes' || !isUtterTransLine
@@ -1188,6 +1200,7 @@
                   :title="$t('repeater.testTTSurl')"
                 >
                   <i
+                    style="font-size: 1.2em"
                     :style="{
                       color:
                         isSystemTTS == 'Yes' || !isUtterTransLine
@@ -1227,13 +1240,31 @@
                       : '#bbbaba',
                 }"
               >
-                {{ $t("repeater.notSystemTTSnote") }}
-                <span
-                  style="cursor: pointer; color: blue; font-size: 1.2em"
+                {{
+                  $t("repeater.notSystemTTSnote", {
+                    key1: key1,
+                  })
+                }}
+                &nbsp;&nbsp;&nbsp;
+
+                <button
+                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
+                  class="action"
                   @click="showTTSSetting"
+                  :title="$t('repeater.help')"
                 >
-                  &nbsp;&nbsp;&nbsp;{{ $t("repeater.ttsDetails") }}
-                </span>
+                  <i
+                    style="padding: 0; font-size: 1.2em"
+                    :style="{
+                      color:
+                        isSystemTTS == 'Yes' || !isUtterTransLine
+                          ? '#868686'
+                          : 'blue',
+                    }"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
               </p>
             </div>
             <div
@@ -1354,42 +1385,89 @@
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
 
-            <p
-              style="
-                display: flex;
-                flex-direction: row;
-                text-align: justify;
-                text-align-last: left;
-                margin-bottom: 0;
-                color: white;
-                align-items: center;
-              "
-            >
-              {{ $t("repeater.transUrl") }}
+            <span style="margin-bottom: 0; color: white; align-items: center">
+              <p
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  text-align: justify;
+                  text-align-last: left;
+                  margin-bottom: 0;
+                "
+              >
+                {{ $t("repeater.transUrl") }}
+              </p>
+              <p style="margin: 0">
+                <input
+                  style="flex-grow: 1; text-align: left; width: 100%"
+                  class="input input--repeater"
+                  type="text"
+                  v-model.lazy="transUrl"
+                />
+              </p>
 
-              <input
-                style="flex-grow: 1; text-align: left"
-                class="input input--repeater"
-                type="text"
-                v-model.lazy="transUrl"
-              />
-            </p>
-
-            <p
-              style="
-                margin: 0 0 1em 0;
-                text-align: justify;
-                text-align-last: left;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                word-break: break-all;
-                font-size: 0.8em;
-                color: white;
-              "
-            >
-              {{ $t("repeater.transUrlNote") }}
-            </p>
-
+              <p
+                style="
+                  margin: 0 0 1em 0;
+                  text-align: justify;
+                  text-align-last: left;
+                  word-wrap: break-word;
+                  overflow-wrap: break-word;
+                  word-break: break-all;
+                  font-size: 0.8em;
+                  color: white;
+                "
+              >
+                {{ $t("repeater.transUrlNote") }}
+              </p>
+            </span>
+            <span>
+              <p
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  text-align: justify;
+                  text-align-last: left;
+                  margin-bottom: 0;
+                  color: white;
+                  align-items: center;
+                "
+              >
+                {{ $t("repeater.translator0") }}
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="resetTranslatorurl"
+                  :title="$t('repeater.resetTTSurl')"
+                >
+                  <i
+                    style="color: blue; font-size: 1.2em"
+                    class="material-icons"
+                    >settings_backup_restore</i
+                  >
+                </button>
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertTranslatorUrl1"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="color: blue; font-size: 1.2em"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+              <p style="margin-top: 0">
+                <input
+                  style="flex-grow: 1; text-align: left; width: 100%"
+                  class="input input--repeater"
+                  type="text"
+                  v-model.lazy="translatorUrl"
+                />
+              </p>
+            </span>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="color: white; text-align: justify; text-align-last: left">
               <input
@@ -1476,9 +1554,17 @@
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.instruction3") }}
+              <i style="color: white; font-size: 1em" class="material-icons"
+                >arrow_forward_ios</i
+              >
+              {{ $t("repeater.instruction31") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.instruction4") }}
+              <i style="color: white; font-size: 1em" class="material-icons"
+                >arrow_back_ios</i
+              >
+              {{ $t("repeater.instruction41") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.instruction5") }}
@@ -1499,16 +1585,28 @@
               {{ $t("repeater.instruction7") }}
             </p>
             <p style="text-align: justify">
+              {{ $t("repeater.clickButton2") }}
+              <i style="color: white" class="material-icons">spellcheck</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">mic</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">campaign</i>
+              {{ $t("repeater.instruction71") }}
+            </p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">closed_caption</i>
-              {{ $t("repeater.or") }}
-              <i style="color: white" class="material-icons">plumbing</i>
               {{ $t("repeater.instruction8") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">edit</i
               >{{ $t("repeater.instruction13") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickButton1") }}
+              <i style="color: white" class="material-icons">autofps_select</i
+              >{{ $t("repeater.instruction131") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
@@ -1645,7 +1743,7 @@
             margin: 0;
             background-color: black;
             top: 0;
-            height: 20%;
+            height: 30%;
           "
         >
         </span>
@@ -2059,7 +2157,7 @@
           </p>
 
           <textarea
-            v-if="isShowLine1 && !isMoveAll"
+            v-if="isShowLine1"
             id="editArea1"
             name="editAreaM"
             @mousedown="startDragS"
@@ -2074,15 +2172,24 @@
               width: 100%;
               text-align: center;
               background-color: black;
-              color: white;
               border: none;
               resize: none;
               padding: 0;
               margin-top: 0.5em;
             "
+            :style="{
+              color:
+                showsubTools &&
+                currentTab == 1 &&
+                startNum <= sentenceIndex &&
+                sentenceIndex <= endNum &&
+                originLine == 1
+                  ? 'yellow'
+                  : 'white',
+            }"
           ></textarea>
           <textarea
-            v-if="isShowLine2 && !isMoveAll"
+            v-if="isShowLine2"
             id="editArea2"
             name="editAreaM"
             @touchmove="touchMoveG"
@@ -2097,14 +2204,23 @@
               width: 100%;
               text-align: center;
               background-color: black;
-              color: white;
               border: none;
               resize: none;
               padding: 0.25em 0;
             "
+            :style="{
+              color:
+                showsubTools &&
+                currentTab == 1 &&
+                startNum <= sentenceIndex &&
+                sentenceIndex <= endNum &&
+                originLine == 2
+                  ? 'yellow'
+                  : 'white',
+            }"
           ></textarea>
           <textarea
-            v-show="!isEmpty && isShowLine3 && !isMoveAll"
+            v-show="!isEmpty && isShowLine3"
             id="editArea3"
             @touchmove="touchMoveF"
             @mousedown="startDragS"
@@ -2126,36 +2242,7 @@
               white-space: pre-wrap;
             "
           ></textarea>
-          <p
-            v-if="isMoveAll"
-            @mousedown="startDragS"
-            @mouseup="endDragS"
-            @touchstart="startTouchS"
-            @touchmove.prevent
-            @touchend="endTouchS"
-            style="color: white"
-          >
-            {{ $t("repeater.moveAllStamp") }}
-            <input
-              class="input input--repeater"
-              name="buttons"
-              type="number"
-              v-model.number="moveAll"
-              step="50"
-            />
 
-            <button
-              class="action"
-              name="buttons"
-              :disabled="moveAll == 0"
-              @click="saveMoveAll"
-              :title="$t('buttons.save')"
-            >
-              <i style="color: red; font-size: 1.5em" class="material-icons"
-                >verified</i
-              >
-            </button>
-          </p>
           <p
             @mousedown.self="startDragS"
             @mouseup.self="endDragS"
@@ -2170,7 +2257,9 @@
               @click="confirmDelete"
               :title="$t('repeater.infoDelete')"
             >
-              <i style="color: red; font-size: 1.3em" class="material-icons"
+              <i
+                style="color: springgreen; font-size: 1.3em"
+                class="material-icons"
                 >delete</i
               >
             </button>
@@ -2185,7 +2274,7 @@
               <i
                 style="font-size: 1.3em"
                 :style="{
-                  color: lastSentence ? 'grey' : 'red',
+                  color: lastSentence ? 'grey' : 'springgreen',
                 }"
                 class="material-icons"
                 >merge</i
@@ -2198,34 +2287,40 @@
               @click="confirmSplit"
               :title="$t('repeater.infoSplit')"
             >
-              <i style="color: red; font-size: 1.3em" class="material-icons"
+              <i
+                style="color: springgreen; font-size: 1.3em"
+                class="material-icons"
                 >call_split</i
               >
             </button>
-
             <button
               v-if="isEditSubandNotes"
               class="action"
               name="buttons"
-              @click="showMoveAll"
-              :title="$t('repeater.infoMoveAll')"
+              @click="onSubtools"
+              :title="$t('repeater.subTools')"
             >
-              <i style="color: red; font-size: 1.3em" class="material-icons"
+              <i
+                style="font-size: 1.3em"
+                :style="{
+                  color: this.showsubTools ? 'red' : 'springgreen',
+                }"
+                class="material-icons"
                 >autofps_select</i
               >
             </button>
-
             <button
               class="action"
               name="buttons"
               @click="confirmAdd"
               :title="$t('repeater.infoAdd')"
             >
-              <i style="color: red; font-size: 1.3em" class="material-icons"
+              <i
+                style="color: springgreen; font-size: 1.3em"
+                class="material-icons"
                 >alt_route</i
               >
             </button>
-
             <button
               :disabled="loading || historyIndex < 1"
               class="action"
@@ -2235,7 +2330,7 @@
             >
               <i
                 :style="{
-                  color: loading || historyIndex < 1 ? 'grey' : 'red',
+                  color: loading || historyIndex < 1 ? 'grey' : 'springgreen',
                 }"
                 style="font-size: 1.3em"
                 class="material-icons"
@@ -2255,7 +2350,7 @@
                   color:
                     loading || historyIndex >= changeNew.length
                       ? 'grey'
-                      : 'red',
+                      : 'springgreen',
                 }"
                 style="font-size: 1.3em"
                 class="material-icons"
@@ -2580,6 +2675,31 @@ export default {
   },
   data: function () {
     return {
+      inSubProcess: false,
+      showsubTools: false,
+      currentTab: 1,
+      selectedOption: null,
+      optionsEdit: [
+        this.$t("repeater.tool1"),
+        this.$t("repeater.tool2"),
+        this.$t("repeater.tool3"),
+        this.$t("repeater.tool4"),
+        this.$t("repeater.tool5"),
+        this.$t("repeater.tool6"),
+        this.$t("repeater.tool7"),
+      ],
+      textToTranslate: "",
+      targetLanguage: "aa",
+      translatedText: "",
+      startNum: 1,
+      endNum: 1,
+      originLine: 0,
+      apiKey: "", //translator
+      endpoint: "", //translator
+      region: "", // translator
+      ttsWrong: false,
+      translatorUrl:
+        "azure-translator:defaultKey,global,https://api.cognitive.microsofttranslator.com/",
       hoverNavLeft: false,
       hoverNavRight: false,
       showModal: false,
@@ -2592,7 +2712,6 @@ export default {
         this.$t("repeater.option6"),
         this.$t("repeater.option7"),
         this.$t("repeater.option8"),
-        this.$t("repeater.option9"),
       ],
       onRecPlay: false,
       canDownload: false,
@@ -2615,10 +2734,8 @@ export default {
       isCheck: true,
       dictationContent: "",
       dictationArray: [],
-      showTools: false,
       fromClick: true,
       hasConfirmed: false,
-      isMoveAll: false,
       moveAll: 0,
       hasMoveAll: false,
       wavesurfer: null,
@@ -2649,6 +2766,7 @@ export default {
       timeOutId1: null,
       timeOutId2: null,
       timeOutId3: null,
+      timeOutId4: null,
       autoPlayNext: true,
       nextLoopPlay: false,
       random: false,
@@ -2708,7 +2826,6 @@ export default {
       startTimeTemp: 0,
       endTimeTemp: 0,
       subSecLine: "     ",
-      ShowSwitchSubtitle: false,
       firstMount: true,
       numOfKeys: 0,
       playFromCache: false,
@@ -2779,6 +2896,15 @@ export default {
       );
     },
 
+    key1() {
+      return this.getValue2(2)[0];
+    },
+
+    targetLine() {
+      if (this.originLine < 1.5) return 2;
+      else return 1;
+    },
+
     canRecording() {
       return navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     },
@@ -2797,12 +2923,7 @@ export default {
     },
 
     favListStatus() {
-      if (
-        this.isSetting ||
-        !this.isSingle ||
-        this.showRevision ||
-        this.showTools
-      )
+      if (this.isSetting || !this.isSingle || this.showRevision)
         return { color: "grey" };
       if (!this.isPlayFullFavList) {
         if (this.currentFileFavList.length == 0) {
@@ -2861,26 +2982,6 @@ export default {
       }
     },
 
-    indicateSub() {
-      if (this.subtitleLang == 1) {
-        return "1. show Subtitle's First Line and Second Line";
-      } else if (this.subtitleLang == 2) {
-        return "2. show ALL";
-      } else if (this.subtitleLang == 3) {
-        return "3. show Subtitle's First Line only";
-      } else if (this.subtitleLang == 4) {
-        return "4. show Subtitle's Second Line only";
-      } else if (this.subtitleLang == 5) {
-        return "5. show Note Line only";
-      } else if (this.subtitleLang == 6) {
-        return "6. show Subtitle's First Line and Note Line";
-      } else if (this.subtitleLang == 7) {
-        return "7. show Subtitle's Second Line and Note Line";
-      } else {
-        return "8. show NONE";
-      }
-    },
-
     playMode() {
       if (
         this.loading ||
@@ -2889,13 +2990,11 @@ export default {
         this.showNewWordList ||
         (this.isEditSubandNotes && !this.playFromCache) ||
         this.showRevision ||
-        this.showTools
+        this.isEditSubandNote
       ) {
         return { color: "grey" };
       } else if (this.playFromCache) {
-        if (this.isEditSubandNotes || this.isFavOnPlay) {
-          return { color: "pink" };
-        } else return { color: "red" };
+        return { color: "red" };
       } else {
         return { color: "blue" };
       }
@@ -3362,6 +3461,50 @@ export default {
       this.updatePreview();
     },
 
+    showsubTools() {
+      if (!this.showsubTools) {
+        this.inSubProcess = false;
+      }
+    },
+
+    originLine: function () {
+      this.originLine = Math.floor(this.originLine);
+      if (this.originLine < 1) this.originLine = 1;
+      else if (this.originLine > 2) this.originLine = 2;
+      this.save();
+    },
+
+    translatorUrl() {
+      this.translatorUrl = this.translatorUrl.replaceAll(" ", "");
+      this.save();
+    },
+
+    targetLanguage() {
+      this.save();
+    },
+
+    startNum: function () {
+      if (this.startNum > this.endNum) {
+        this.endNum = this.startNum;
+      }
+      if (this.startNum < 1) {
+        this.startNum = 1;
+      }
+      if (this.startNum > this.srtSubtitles.length) {
+        this.startNum = this.srtSubtitles.length;
+      }
+    },
+    endNum: function () {
+      if (this.endNum < this.startNum) {
+        this.startNum = this.endNum;
+      }
+      if (this.endNum > this.srtSubtitles.length) {
+        this.endNum = this.srtSubtitles.length;
+      }
+      if (this.endNum < 1) {
+        this.endNum = 1;
+      }
+    },
     tempSpeed: function () {
       if (this.onTempSpeed) {
         this.click();
@@ -3385,8 +3528,17 @@ export default {
     isEditSubandNotes: function () {
       if (!this.isEditSubandNotes) {
         this.isWaveSurfer = false;
-        this.isMoveAll = false;
         this.moveAll = 0;
+      } else {
+        if (this.startNum == this.endNum) {
+          this.startNum = this.sentenceIndex;
+          this.endNum = this.sentenceIndex;
+        }
+        if (this.originLine == 0)
+          this.originLine = this.lineNumOfTrans == 1 ? 2 : 1;
+        if (this.targetLanguage == "aa") {
+          this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
+        }
       }
     },
 
@@ -3646,6 +3798,10 @@ export default {
             end: this.endTimeTemp - 0.03,
           });
         }
+        if (this.startNum == this.endNum) {
+          this.startNum = this.sentenceIndex;
+          this.endNum = this.sentenceIndex;
+        }
       }
 
       if (this.showSubtitleList) {
@@ -3682,11 +3838,9 @@ export default {
       if (this.isEditSubandNotes) {
         this.switchEditSubandNote();
         let temp1 = this.isWaveSurfer;
-        let temp2 = this.isMoveAll;
         setTimeout(() => {
           this.switchEditSubandNote();
           this.isWaveSurfer = temp1;
-          this.isMoveAll = temp2;
         }, 10);
       }
       this.onLoop();
@@ -3779,7 +3933,7 @@ export default {
     },
 
     TTSurl: function () {
-      this.TTSurl = this.TTSurl.trim();
+      this.TTSurl = this.TTSurl.replaceAll(" ", "");
       this.save();
     },
 
@@ -3956,6 +4110,165 @@ export default {
   },
 
   methods: {
+    onSubtools() {
+      this.showsubTools = true;
+      this.cleanUp1();
+      this.cleanUp2();
+    },
+    handleConfirm() {
+      this.inSubProcess = true;
+      if (this.currentTab === 1) {
+        this.doTranslate();
+      } else if (this.currentTab === 2) {
+        this.saveMoveAll();
+        this.showsubTools = false;
+      } else if (this.currentTab === 3) {
+        if (!this.selectedOption) {
+          this.inSubProcess = false;
+          return;
+        }
+        let selected = Number(this.selectedOption.split(".")[0]);
+        this.saveSpecialSub(selected);
+      }
+    },
+    handleCancel() {
+      this.showsubTools = false;
+    },
+    async doTranslate() {
+      if (
+        this.translatorUrl.includes(
+          "azure-translator:defaultKey,global,https://api."
+        )
+      ) {
+        let x = this.getValue2(1);
+        this.apiKey = x[0];
+        this.region = x[1];
+        this.endpoint = "https://api.cognitive.microsofttranslator.com/";
+      } else if (this.translatorUrl.includes("azure-translator:")) {
+        this.apiKey = this.translatorUrl
+          .split("azure-translator:")[1]
+          .split(",")[0];
+        this.region = this.translatorUrl
+          .split("azure-translator:")[1]
+          .split(",")[1];
+        this.endpoint = this.translatorUrl
+          .split("azure-translator:")[1]
+          .split(",")[2];
+      } else {
+        this.apiKey = "";
+        this.region = "";
+        this.endpoint = "";
+      }
+      let filteredArray = "";
+      for (let ii = this.startNum - 1; ii < this.endNum; ii++) {
+        filteredArray =
+          filteredArray +
+          "<<#>>" +
+          this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
+      }
+      this.textToTranslate = filteredArray;
+      const url = `${this.endpoint}/translate?api-version=3.0&to=${this.targetLanguage}`;
+      const headers = {
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": this.apiKey,
+        "Ocp-Apim-Region": this.region,
+      };
+      const body = [{ text: this.textToTranslate }];
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          alert(`HTTP error! status: ${response.status}`);
+        }
+        const translations = await response.json();
+        this.translatedText = translations[0].translations[0].text;
+        this.saveTranslate();
+      } catch (error) {
+        this.translatedText = "";
+        alert("Error translating text", error);
+      }
+    },
+
+    saveTranslate() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
+      var textSubtitles = formatContent.split("\n\n");
+      var newContent = "";
+      for (let i = this.startNum; i < this.endNum + 1; i++) {
+        var newLineContent =
+          this.translatedText.split("<<#>>")[i - this.startNum + 1];
+        if (
+          this.srtSubtitles[i - 1].content.split("\r\n").length >=
+          this.targetLine
+        ) {
+          if (this.targetLine == 1) {
+            newContent = textSubtitles[i - 1].replace(
+              textSubtitles[i - 1].split("\n")[0] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[1] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[2],
+              textSubtitles[i - 1].split("\n")[0] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[1] +
+                "\n" +
+                newLineContent
+            );
+          } else {
+            newContent = textSubtitles[i - 1].replace(
+              textSubtitles[i - 1].split("\n")[0] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[1] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[2] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[3],
+              textSubtitles[i - 1].split("\n")[0] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[1] +
+                "\n" +
+                textSubtitles[i - 1].split("\n")[2] +
+                "\n" +
+                newLineContent
+            );
+          }
+        } else {
+          newContent = textSubtitles[i - 1] + "\n" + newLineContent;
+        }
+        formatContent = formatContent.replace(textSubtitles[i - 1], newContent);
+      }
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      this.changeNew[this.historyIndex] = formatContent;
+
+      this.historyIndex = this.historyIndex + 1;
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+      this.sentenceIndex = this.sentenceIndex + 1;
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+      }, 10);
+      window.localStorage.setItem(this.mediaName, formatContent);
+      this.showsubTools = false;
+      if (this.timeOutId3) clearTimeout(this.timeOutId3);
+      this.timeOutId3 = setTimeout(() => {
+        this.saveSubFinal();
+      }, 1000);
+    },
+
     async checkDownload() {
       try {
         var content = await api.fetch(
@@ -3984,28 +4297,23 @@ export default {
     },
 
     selectOption(option) {
-      this.ShowSwitchSubtitle = true;
       if (this.timeOutId1) clearTimeout(this.timeOutId1);
       this.subtitleLang = Number(option.split(".")[0]);
       this.showModal = false;
-      if (this.subtitleLang == 9) {
-        this.cleanUp1();
-        this.cleanUp2();
-        this.showTools = true;
-        this.ShowSwitchSubtitle = false;
-      }
-      if (this.subtitleLang >= 10) {
-        this.showTools = false;
-        this.subtitleLang = 1;
-      }
       this.switchSubtitleMini();
-      this.timeOutId1 = setTimeout(() => {
-        this.ShowSwitchSubtitle = false;
-      }, 3000);
     },
 
     showRecordingSetNote() {
       alert(this.$t("repeater.noRecordPermission"));
+    },
+
+    alertTranslatorUrl() {
+      alert(
+        this.$t("repeater.alertTranslatorUrl", { targetLine: this.targetLine })
+      );
+    },
+    alertTranslatorUrl1() {
+      alert(this.$t("repeater.alertTranslatorUrl1"));
     },
 
     recording() {
@@ -4610,6 +4918,12 @@ export default {
         this.retraceTime = Number(JSON.parse(PDJcontent.split("::")[36]));
       if (PDJcontent.split("::")[37])
         this.showArrow = JSON.parse(PDJcontent.split("::")[37]);
+      if (PDJcontent.split("::")[38])
+        this.originLine = Number(JSON.parse(PDJcontent.split("::")[38]));
+      if (PDJcontent.split("::")[39])
+        this.targetLanguage = JSON.parse(PDJcontent.split("::")[39]);
+      if (PDJcontent.split("::")[40])
+        this.translatorUrl = JSON.parse(PDJcontent.split("::")[40]);
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -4626,10 +4940,6 @@ export default {
 
     checkMobileScreen() {
       return window.matchMedia("(max-width: 1000px)").matches;
-    },
-
-    showMoveAll() {
-      this.isMoveAll = !this.isMoveAll;
     },
 
     saveMoveAll() {
@@ -5191,12 +5501,9 @@ export default {
       } else {
         let ttsFullUrl = this.TTSurl + text;
         this.audio.src = ttsFullUrl;
-        this.audio.play().catch((error) => {
+        this.audio.play().catch(() => {
           alert("Error Uttering Trans Line with the TTS!");
-          console.log(error);
-          return;
         });
-        this.audio.addEventListener("ended", this.endTestUtter, false);
       }
     },
 
@@ -5206,24 +5513,31 @@ export default {
       let s = "";
       let x;
       if (this.TTSurl.startsWith("azure-tts:defaultKey1")) {
-        x = this.getvalue(1);
+        x = this.getValue(1);
         s = x[0];
         r = x[1];
-        v = this.TTSurl.split(",")[2].trim();
+        if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
+        else v = "";
       } else if (this.TTSurl.startsWith("azure-tts:defaultKey2")) {
-        x = this.getvalue(2);
+        x = this.getValue(2);
         s = x[0];
         r = x[1];
-        v = this.TTSurl.split(",")[2].trim();
+        if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
+        else v = "";
       } else if (this.TTSurl.startsWith("azure-tts:defaultKey3")) {
-        x = this.getvalue(3);
+        x = this.getValue(3);
         s = x[0];
         r = x[1];
-        v = this.TTSurl.split(",")[2].trim();
+        if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
+        else v = "";
       } else {
         s = this.TTSurl.split("azure-tts:")[1].split(",")[0].trim();
-        r = this.TTSurl.split(",")[1].trim();
-        v = this.TTSurl.split(",")[2].trim();
+
+        if (this.TTSurl.split(",")[1]) r = this.TTSurl.split(",")[1].trim();
+        else r = "";
+
+        if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
+        else v = "";
       }
 
       const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
@@ -5254,8 +5568,18 @@ export default {
             .then((response) => response.blob())
             .then((blob) => {
               if (blob.size == 0) {
-                alert("Azure TTS with wrong Voice name!");
-                return;
+                if (type == 1) {
+                  this.endUtter();
+                  this.ttsWrong = true;
+                  if (this.timeOutId4) clearTimeout(this.timeOutId4);
+                  this.timeOutId4 = setTimeout(() => {
+                    this.ttsWrong = false;
+                  }, 1000);
+                  return;
+                } else {
+                  alert("Wrong Azure TTS settings, or network error!");
+                  return;
+                }
               }
               this.audio.src = URL.createObjectURL(blob);
               this.audio.play();
@@ -5265,20 +5589,36 @@ export default {
                   return;
                 }
                 this.audio.addEventListener("ended", this.endUtter, false);
-              } else
-                this.audio.addEventListener("ended", this.endTestUtter, false);
+              }
             })
             .catch((error) => {
-              alert("Azure TTS with wrong voice name:", error);
               if (type == 1) {
-                this.cleanUp1();
-                this.cleanUp2();
+                this.endUtter();
+                this.ttsWrong = true;
+                if (this.timeOutId4) clearTimeout(this.timeOutId4);
+                this.timeOutId4 = setTimeout(() => {
+                  this.ttsWrong = false;
+                }, 1000);
+                return;
+              } else {
+                alert("Wrong Azure TTS settings, or network error!", error);
+                return;
               }
-              return;
             });
         })
         .catch((error) => {
-          alert("Azure TTS with wrong key or region:", error);
+          if (type == 1) {
+            this.endUtter();
+            this.ttsWrong = true;
+            if (this.timeOutId4) clearTimeout(this.timeOutId4);
+            this.timeOutId4 = setTimeout(() => {
+              this.ttsWrong = false;
+            }, 1000);
+            return;
+          } else {
+            alert("Wrong Azure TTS settings, or network error!", error);
+            return;
+          }
         });
     },
 
@@ -5291,21 +5631,11 @@ export default {
       const response = await fetch(tokenEndpoint, {
         method: "POST",
         headers: headers,
-      }).catch(() => {
-        alert(
-          "Azure TTS with wrong key or region, or Check the Internet connection!"
-        );
-        return;
       });
-
-      if (!response.ok) {
-        alert("Azure TTS with wrong key or region!");
-        return;
-      }
       return response.text();
     },
 
-    getvalue(x) {
+    getValue(x) {
       const encryptedMap = {
         1: [
           atob(
@@ -5320,6 +5650,22 @@ export default {
         3: [
           atob("OGI3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI="),
           atob("c291dGhlYXN0YXNpYQ=="),
+        ],
+      };
+      return encryptedMap[x];
+    },
+
+    getValue2(x) {
+      const encryptedMap = {
+        1: [
+          atob(
+            "Q3FQU2hUb28xdXQ3MGE5QnZmVndtYXZ1WU1FQkUyeEZ1anZOM2hBMnl5TElpblRVc0RsOUpRUUo5OUJEQUNVTHlDcFhKM3czQUFBYkFDT0dISWZZ"
+          ),
+          atob("Z2xvYmFs"),
+        ],
+        2: [
+          atob("YzNjMDU5ZWNmNDdlNDg5YzhkYjBkMDM4ODY3ZTc1YzE="),
+          atob("ZWFzdHVz"),
         ],
       };
       return encryptedMap[x];
@@ -5358,11 +5704,7 @@ export default {
         };
       }
     },
-    endTestUtter() {
-      this.audio.removeEventListener("ended", this.endTestUtter, false);
-      this.cleanUp2();
-      this.cleanUp1();
-    },
+
     utterTransLine() {
       this.utterInProcess = true;
       if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
@@ -5397,37 +5739,42 @@ export default {
           this.endUtter();
         };
       } else if (this.isUtterTransLine && this.isSystemTTS == "No") {
-        let transLineContent =
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
-            this.lineNumOfTrans - 1
-          ];
-        let text =
-          transLineContent !== undefined &&
-          transLineContent !== " " &&
-          transLineContent !== ""
-            ? transLineContent
-            : "no content";
-        if (this.TTSurl.startsWith("azure-tts:")) {
-          this.azureTTS(text, 1);
-        } else {
-          let ttsFullUrl = this.TTSurl + text;
-
-          this.audio.src = ttsFullUrl;
-          this.audio.play().catch(() => {
-            alert("Error Uttering Trans Line with the TTS!");
-            this.cleanUp1();
-            this.cleanUp2();
-            return;
-          });
-          if (!this.isSingle && this.dubbingMode) {
-            this.utterInProcess = false;
-            return;
-          }
-          this.audio.addEventListener("ended", this.endUtter, false);
-        }
+        this.ttsReader();
       }
     },
+    ttsReader() {
+      let transLineContent =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfTrans - 1
+        ];
+      let text =
+        transLineContent !== undefined &&
+        transLineContent !== " " &&
+        transLineContent !== ""
+          ? transLineContent
+          : "no content";
+      if (this.TTSurl.startsWith("azure-tts:")) {
+        this.azureTTS(text, 1);
+      } else {
+        let ttsFullUrl = this.TTSurl + text;
 
+        this.audio.src = ttsFullUrl;
+        this.audio.play().catch(() => {
+          this.endUtter();
+          this.ttsWrong = true;
+          if (this.timeOutId4) clearTimeout(this.timeOutId4);
+          this.timeOutId4 = setTimeout(() => {
+            this.ttsWrong = false;
+          }, 1000);
+          return;
+        });
+        if (!this.isSingle && this.dubbingMode) {
+          this.utterInProcess = false;
+          return;
+        }
+        this.audio.addEventListener("ended", this.endUtter, false);
+      }
+    },
     endUtter() {
       this.audio.removeEventListener("ended", this.endUtter, false);
       if (!this.isSingle && this.dubbingMode) return;
@@ -5549,6 +5896,10 @@ export default {
       this.TTSurl =
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
     },
+    resetTranslatorurl() {
+      this.translatorUrl =
+        "azure-translator:defaultKey,global,https://api.cognitive.microsofttranslator.com/";
+    },
     cleanUp1() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
@@ -5565,7 +5916,6 @@ export default {
       }
       if (this.audio && this.audio.removeEventListener) {
         this.audio.removeEventListener("ended", this.endUtter, false);
-        this.audio.removeEventListener("ended", this.endTestUtter, false);
       }
 
       this.newTranslation = "";
@@ -5982,7 +6332,7 @@ export default {
       if (this.isSingle && !this.isDictation) {
         this.isDictation = true;
         this.isCheck = false;
-      } else if (this.isSingle && this.isDictation) {
+      } else if (this.isSingle && this.isDictation && !this.isFavOnPlay) {
         this.isSingle = false;
         this.isDictation = false;
         this.isCheck = true;
@@ -6110,7 +6460,6 @@ export default {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.handleAutoStop();
       this.isSetting = false;
-      if (this.showTools) this.selectOption("10.");
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -6234,7 +6583,6 @@ export default {
       if (!this.isReadyToPlay) return;
       this.handleAutoStop();
       this.isSetting = false;
-      if (this.showTools) this.selectOption("10.");
       this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
@@ -6986,6 +7334,12 @@ export default {
         JSON.stringify(this.retraceTime) +
         "::" +
         JSON.stringify(this.showArrow) +
+        "::" +
+        JSON.stringify(this.originLine) +
+        "::" +
+        JSON.stringify(this.targetLanguage) +
+        "::" +
+        JSON.stringify(this.translatorUrl) +
         "::"
       );
     },
@@ -7334,6 +7688,13 @@ export default {
     async saveSpecialSub(x) {
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
+      if (x > 1 && x < 6) {
+        this.onRUdo = true;
+        setTimeout(() => {
+          this.onRUdo = false;
+        }, 1000);
+        this.changeOld[this.historyIndex] = formatContent;
+      }
       var textSubtitles = formatContent.split("\n\n");
 
       for (var i = 0; i < textSubtitles.length; i++) {
@@ -7352,6 +7713,8 @@ export default {
               textSubtitles[i].split("\n")[0] +
               "\n" +
               textSubtitles[i].split("\n")[1] +
+              "\n" +
+              " " +
               "\n" +
               textSubtitles[i].split("\n")[3];
           } else if (x == 4) {
@@ -7388,6 +7751,8 @@ export default {
               textSubtitles[i].split("\n")[0] +
               "\n" +
               textSubtitles[i].split("\n")[1] +
+              "\n" +
+              " " +
               "\n" +
               textSubtitles[i].split("\n")[3];
           } else if (x == 4) {
@@ -7451,28 +7816,44 @@ export default {
 
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       if (x == 7) formatContent = this.formatAll(formatContent);
-
-      var currentTime = new Date();
-      let id = Math.floor(currentTime.getTime() / 1000);
-      let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
-      var pdjBackUp = " ";
-      if (x == 1) pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
-      else if (x == 2) pdjBackUp = "FirstLine-" + today + "-" + id + ".srt";
-      else if (x == 3) pdjBackUp = "SecLine-" + today + "-" + id + ".srt";
-      else if (x == 4)
-        pdjBackUp = "First-Two-Lines-" + today + "-" + id + ".srt";
-      else if (x == 5) pdjBackUp = "Switch-" + today + "-" + id + ".srt";
-      else if (x == 6) pdjBackUp = "text-" + today + "-" + id + ".txt";
-      try {
-        await api.post(
-          "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
-          formatContent,
-          true
-        );
-        alert("File saved successfully.");
-      } catch (error) {
-        alert("Sorry. Can't save the file to the Server.");
-        return;
+      if (x > 1 && x < 6) {
+        formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+        this.changeNew[this.historyIndex] = formatContent;
+        this.historyIndex = this.historyIndex + 1;
+        formatContent = this.formatAll(formatContent);
+        this.reqF.content = formatContent;
+        this.cleanUp1();
+        this.cleanUp2();
+        this.sentenceIndex = this.sentenceIndex + 1;
+        setTimeout(() => {
+          this.sentenceIndex = this.sentenceIndex - 1;
+        }, 10);
+        window.localStorage.setItem(this.mediaName, formatContent);
+        this.showsubTools = false;
+        if (this.timeOutId3) clearTimeout(this.timeOutId3);
+        this.timeOutId3 = setTimeout(() => {
+          this.saveSubFinal();
+        }, 1000);
+      } else {
+        var currentTime = new Date();
+        let id = Math.floor(currentTime.getTime() / 1000);
+        let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
+        var pdjBackUp = " ";
+        if (x == 1) pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
+        else if (x == 6) pdjBackUp = "text-" + today + "-" + id + ".txt";
+        else if (x == 7) pdjBackUp = "text-serial-" + today + "-" + id + ".txt";
+        try {
+          await api.post(
+            "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
+            formatContent,
+            true
+          );
+          this.showsubTools = false;
+        } catch (error) {
+          alert("Sorry. Can't save the file to the Server.");
+          this.inSubProcess = false;
+          return;
+        }
       }
     },
 
@@ -8037,7 +8418,7 @@ export default {
     },
 
     key(event) {
-      if (!this.isReadyToPlay || this.showTools || this.isSetting) return;
+      if (!this.isReadyToPlay || this.showsubTools || this.isSetting) return;
 
       if (
         (event.key === "Control" || event.keyCode === 17) &&
@@ -8213,10 +8594,6 @@ export default {
         this.switchEditSubandNote();
         return;
       }
-      if (this.showTools) {
-        this.selectOption("10.");
-        return;
-      }
       if (this.isFavOnPlay) {
         this.playFavList();
         return;
@@ -8357,9 +8734,72 @@ input:disabled {
   background-color: #bbbaba;
 }
 
+.subTools-overlay {
+  z-index: 2010;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: top;
+}
+
+.subTools {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 51%;
+  margin-top: 1em;
+  height: 15em;
+  font-size: 0.9em;
+}
+.subTools-content {
+  flex-grow: 1;
+}
+
+.subTools-tabs {
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid #ccc;
+  position: relative;
+}
+
+.subTools-tabs button {
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  position: relative;
+  bottom: -1px;
+}
+
+.subTools-tabs button.active {
+  font-weight: bold;
+  border-color: #ccc;
+  border-bottom: 1px solid white;
+  background-color: white;
+}
+
+.subTools-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.subTools-buttons button {
+  margin-left: 10px;
+}
+
 .modal-mask {
   position: fixed;
-  z-index: 9998;
+  z-index: 2008;
   top: 0;
   left: 0;
   width: 100%;
@@ -8374,7 +8814,8 @@ input:disabled {
 }
 
 .modal-wrapper {
-  perspective: 1000px; /* 添加3D透视效果 */
+  perspective: 1000px;
+  /* 添加3D透视效果 */
   touch-action: auto;
 }
 
@@ -8383,10 +8824,11 @@ input:disabled {
   padding: 10px 15px;
   background: #ffffff;
   border-radius: 15px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* 增加阴影 */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  /* 增加阴影 */
   text-align: center;
   transform-style: preserve-3d;
-  animation: rotateIn 0.6s ease-in-out;
+  animation: scaleIn 0.6s ease-in-out;
   position: relative;
 }
 
@@ -8448,18 +8890,19 @@ input:disabled {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
-@keyframes rotateIn {
+@keyframes scaleIn {
   from {
-    transform: rotateY(45deg) scale(0.8);
+    transform: scale(0);
     opacity: 0;
   }
   to {
-    transform: rotateY(0deg) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
 }
@@ -8484,6 +8927,10 @@ input:disabled {
 
   .modal-container {
     width: 300px;
+  }
+
+  .subTools {
+    width: 95%;
   }
 
   #settingBoxContainer {
