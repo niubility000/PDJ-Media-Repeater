@@ -52,23 +52,23 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser refresh button for the update to take effect.
 
-Updated: 04-03-2025
+Updated: 04-09-2025
 
-5.3 add navigator arrows for PC browser (set 'false' in setting by default), add a popup box for switch subtitle display mode, modify azure tts.
+v5.5 Add azure translator to translate subtitles.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19579998/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19644029/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19580002/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19644032/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19580010/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19644035/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19580006/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19644037/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19580013/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19644040/filebrowser-darwin-arm64.for.mac.zip)
 
 Latest Source Code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/19580014/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/19644046/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
