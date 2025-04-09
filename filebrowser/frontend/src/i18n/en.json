@@ -145,7 +145,7 @@
     "translator100": "sentences' every line",    
     "translator2": "to",
     "translator3": "language, and save in line {targetLine}.",
-    "alertTranslatorUrl": "The original contents of line {targetLine} will be cleared and can be restored by the undo button; the subtitle translation engine can be changed in 'Settings'; to check the language code, please visit: https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support, or https://learn.microsoft.com/zh-cn/azure/ai-services/translator/language-support. Note: Due to functional limitations, Azure translation service only provides sentence translation and may not translate individual words.",        
+    "alertTranslatorUrl": "The original contents of line {targetLine} will be cleared and can be restored by the undo button; the subtitle translation engine can be changed in 'Settings'; to check the language code, please visit: https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support, or https://learn.microsoft.com/zh-cn/azure/ai-services/translator/language-support",        
     "alertTranslatorUrl1": "The subtitle translation function uses Microsoft Azure's free translation service. In addition to the default account provided here, users can also apply for a free Azure account (requiring a Visa or Mastercard international credit card, or student email), open the Translator Free (F0) service under Azure AI service, and replace the 'defaultKey,global,https://api.cognitive.microsofttranslator.com/' with your own 'subscription-Key,region,endpoint'. for example: azure-tts:d5da5b312758xxxxxxxxxxxxxxxx,global,https://api.cognitive.microsofttranslator.com/",
     "slowInternet": "Slow Internet or Media Source switched! Replay...",
     "undo": "Undo",

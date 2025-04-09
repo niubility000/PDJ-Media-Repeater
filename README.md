@@ -54,21 +54,21 @@ Both of these can be used online or offline.
 
 Updated: 04-09-2025
 
-v5.5 Add azure translator to translate subtitles.
+v5.5 add azure translation, change double click and single click logic, make it faster. 
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19645167/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19659006/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19645174/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19659007/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19645176/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19659008/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19645181/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19659009/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19645183/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19659010/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/19644046/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/19659012/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

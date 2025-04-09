@@ -2675,6 +2675,7 @@ export default {
   },
   data: function () {
     return {
+      clickTimer: null,
       inSubProcess: false,
       showsubTools: false,
       currentTab: 1,
@@ -4163,7 +4164,7 @@ export default {
       for (let ii = this.startNum - 1; ii < this.endNum; ii++) {
         filteredArray =
           filteredArray +
-          "<<#>>" +
+          "\n" +
           this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
       }
       this.textToTranslate = filteredArray;
@@ -4184,6 +4185,8 @@ export default {
 
         if (!response.ok) {
           alert(`HTTP error! status: ${response.status}`);
+          this.inSubProcess = false;
+          return;
         }
         const translations = await response.json();
         this.translatedText = translations[0].translations[0].text;
@@ -4191,6 +4194,7 @@ export default {
       } catch (error) {
         this.translatedText = "";
         alert("Error translating text", error);
+        this.inSubProcess = false;
       }
     },
 
@@ -4206,7 +4210,7 @@ export default {
       var newContent = "";
       for (let i = this.startNum; i < this.endNum + 1; i++) {
         var newLineContent =
-          this.translatedText.split("<<#>>")[i - this.startNum + 1];
+          this.translatedText.split("\n")[i - this.startNum + 1];
         if (
           this.srtSubtitles[i - 1].content.split("\r\n").length >=
           this.targetLine
@@ -6400,23 +6404,61 @@ export default {
     click() {
       this.touches++;
       if (this.isFirstClick) this.firstClick();
-
       this.fromClick = true;
       if (this.isEditSubandNotes) this.cleanUp2();
       this.cleanUp1();
       if (this.isEditSubandNotes || this.isDictation) {
         this.toBlur();
       }
-      if (this.touches == 2) {
-        //double click
-        this.cleanUp1();
-        this.touches = 0;
-        if (this.timeOutId2) clearTimeout(this.timeOutId2);
-        if (this.timeOutId3) clearTimeout(this.timeOutId3);
-        return;
-      }
 
-      this.timeOutId3 = setTimeout(() => {
+      if (!(this.utterInProcess && this.isSystemTTS == "No")) {
+        this.click1();
+      } else {
+        if (this.touches == 2) {
+          //double click
+          this.cleanUp1();
+          this.touches = 0;
+          if (this.timeOutId2) clearTimeout(this.timeOutId2);
+          if (this.timeOutId3) clearTimeout(this.timeOutId3);
+          return;
+        }
+
+        this.timeOutId3 = setTimeout(() => {
+          this.touches = 0;
+          if (this.isSingle) {
+            setTimeout(() => {
+              if (this.pauseAfterFirstDone) {
+                this.pauseAfterFirstDone = false;
+                if (this.isUtterTransLineFirstly) this.loopPlay();
+                else this.utterTransLine();
+              } else {
+                this.singleModePlay();
+              }
+            }, 10);
+          } else {
+            setTimeout(() => {
+              this.regularPlay();
+              if (this.fromRetrace) {
+                this.currentMedia.currentTime = Math.max(
+                  this.currentMedia.currentTime - this.retraceTime,
+                  this.srtSubtitles[this.sentenceIndex - 1].startTime
+                );
+                this.fromRetrace = false;
+              } else
+                this.currentMedia.currentTime =
+                  this.srtSubtitles[this.sentenceIndex - 1].startTime;
+            }, 1);
+          }
+        }, 300);
+      }
+    },
+
+    click1() {
+      if (!this.clickTimer) {
+        this.clickTimer = setTimeout(() => {
+          this.clickTimer = null;
+        }, 300);
+
         this.touches = 0;
         if (this.isSingle) {
           setTimeout(() => {
@@ -6442,7 +6484,16 @@ export default {
                 this.srtSubtitles[this.sentenceIndex - 1].startTime;
           }, 1);
         }
-      }, 300);
+      } else {
+        clearTimeout(this.clickTimer);
+        this.clickTimer = null;
+        //double click
+        this.cleanUp1();
+        this.touches = 0;
+        if (this.timeOutId2) clearTimeout(this.timeOutId2);
+        if (this.timeOutId3) clearTimeout(this.timeOutId3);
+        return;
+      }
     },
 
     dblClick(event) {

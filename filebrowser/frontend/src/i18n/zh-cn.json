@@ -145,7 +145,7 @@
     "translator100": "句的每句第",    
     "translator2": "行翻译成",
     "translator3": "语言，并保存到第{targetLine}行。",
-    "alertTranslatorUrl": "第{targetLine}行原有内容将被清除，可使用撤销按钮来恢复；字幕翻译引擎可在'设置'中更改；查询语言代码，请访问：https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support，或https://learn.microsoft.com/zh-cn/azure/ai-services/translator/language-support。注意：出于功能限制，azure翻译服务只提供句子翻译，可能会不翻译单个单词。",        
+    "alertTranslatorUrl": "第{targetLine}行原有内容将被清除，可使用撤销按钮来恢复；字幕翻译引擎可在'设置'中更改；查询语言代码，请访问：https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support，或https://learn.microsoft.com/zh-cn/azure/ai-services/translator/language-support",        
     "alertTranslatorUrl1": "字幕翻译功能使用的是微软azure的免费翻译服务。除了这里提供的默认账户，用户也可自行申请免费的azure账户(需visa,mastercard国际信用卡或学生邮箱)，开通azure AI service下的translator免费(F0)服务，并将 defaultKey,global,https://api.cognitive.microsofttranslator.com/ 替换为自己的subscription-Key,region,endpoint。如：azure-tts:d5da5b312758xxxxxxxxxxxxxxxx,global,https://api.cognitive.microsofttranslator.com/",
     "slowInternet": "网络卡顿或媒体源已切换，正在重播...",
     "undo": "撤销",
