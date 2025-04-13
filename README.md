@@ -50,25 +50,25 @@ Both of these can be used online or offline.
 
 ## Assets Download
 
-**Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser refresh button for the update to take effect.
+**Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-Updated: 04-09-2025
+updated: 04-12-2025
 
-v5.5 add azure translation, change double click and single click logic, make it faster. 
+v5.5 Seperate settings for different users. 
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/19659006/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/19723712/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19659007/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/19723713/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19659008/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/19723714/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19659009/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/19723715/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19659010/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/19723716/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/19659012/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/19723719/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
@@ -86,14 +86,6 @@ In windows, just double click the filebrowser.exe, then you can visit it at your
 
 Double click **the .srt file** with yellow icon in the webpage to launch PDJ Media Repeater. 
 
-Note: To change the settings or add/remove a favorite sentence, you need login the filebrowser with an account which has the permission as below:  It will add a "PDJ-Repeater.txt" file in current user's /!PDJ folder. 
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot3.jpg)
-
-And the following account permission settings in filebrowser will not allow the account user to change the settings and add/remove a favorite sentence in PDJ media repeater.
-![Preview](https://github.com/niubility000/PDJ-Media-Repeater/blob/main/!!!attachments/screenshot12.jpg)
-
-
-To change the password, the root dir, the port..., please see [Filebrowser Settings with command lines](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#filebrowser-settings-with-command-lines). 
 
 ## Media Files Requirements
 
@@ -103,7 +95,7 @@ Media file should be .mp3 or .mp4 (case sensitive).
 
 If the .srt file has language other than English, it should use utf8 encoding. (To change it, just open it with windows NotePad and choose "save as", select "utf8" encoding.)
 
-## Operating Instructions
+## Basic Operations:
 
 Click on the screen (DOWN arrow key on keyboard): replay current sentence
 
@@ -115,27 +107,39 @@ Swipe Right on the screen(LEFT arrow key on keyboard): jump to previous sentence
 
 Swipe Up on the screen: add to favorites (Or remove a favorite when playing Favorite List)
 
-Swipe Down on the screen: close this player
 
-Click top-right button: switch Playback Mode between "Single Sentence Repetition Mode" and "Regular Mode".
+## Main Functions:
 
-## Functions:
+-Three Play modes: Sentence Repetition Mode, Dictation and shadowing Recording Mode, Regular Mode.
 
--Switch subtitle languages.
+--In Sentence Repetition Mode:
 
--Jump to a certain sentence by inputting the sentence number
+---Set the repetition times, intervals, playback speed for each time, and more...
 
--Switch between Sentence Repetition Mode and Regular Mode
+---Edit subtitles's contents and timestamps in a very effective way.
 
--In Sentence Repetition Mode:
+---Utter the translation lines with online or offline TTS.
 
---Set the repetition times, intervals, playback speed for each time
+---Translate the subtitles with online azure service.
 
---add or remove favorite sentences 
+--In Dictation and shadowing Recording Mode:
 
---play the favorite list
+---Record your shadowing voices and play them.
 
---Utter the translation lines in the subtitles with TTS in the beginning or in the end.
+---Check your dictations word by word.
+
+--In Regular Mode:
+
+---Jump to previous or next sentence by swiping the screen or left/right arrow.
+
+---Enable/disable dubbing mode.
+
+-Add or remove favorite sentences, and play the favorite list.
+
+-Check, add, recite, export new words and phrases.
+
+-Create a revision plan.
+
 
 ## To Learn A Language Using PDJ Media Repeater
 
@@ -144,56 +148,6 @@ There are two very effective methods to learn a language: Shadowing and Reciting
 The key to success is REPETITION. For the same sentence, you need to repeat shadowing and reciting it again and again (maybe 100 times in a month) to make it as familiar as your mother language. This is a boring and time-consuming job with no obvious effects in short time.
 
 With PDJ Media Repeater, you can do shadowing and reciting easier. Just choose a video or audio with 20-50 sentences every week, and repeat shadowing and reciting them every morning and evening 2 or 3 times. You can lie in your bed, close your eyes, and click, or swipe left, up in your cell phone to learn the language. Thus, in one year, you may master thousands of sentences as fluent as your mother language. That will be a big improvement. 
-
-## Source Files Changed in this Project based on Filebrowser v2.28.0
-
-Added:
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/files/Repeater.vue
-
-Modified:
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Files.vue
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/cmd/root.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/version/version.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/en.json
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/i18n/zh-cn.json
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/public/img/logo.svg
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/css/login.css
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/utils/constants.js
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/auth.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/css/listing-icons.css
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package.json
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/package-lock.json
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/headers.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/headers_dev.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/preview.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/raw.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/static.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/http/tus_handlers.go
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/utils/auth.js
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/api/utils.js
-
-https://github.com/niubility000/PDJ-Media-Repeater/blob/main/filebrowser/frontend/src/views/Login.vue
 
 
 <span id="lable"> </span>
@@ -222,6 +176,7 @@ run filebrowser:
 stop filebrowser:
 
 ctrl+c
+
 
 ## Method of Compiling Filebrowser Source Codes in windows
 

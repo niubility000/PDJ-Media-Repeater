@@ -541,7 +541,11 @@
                 "
                 style="font-size: 0.8em"
               >
-                {{ $t("repeater.toolsNote") }}
+                {{
+                  $t("repeater.toolsNote", {
+                    xx: user.id,
+                  })
+                }}
               </p>
             </div>
           </div>
@@ -742,11 +746,8 @@
             top: 1em;
           "
         >
-          <p>No New Words defined!</p>
-          <p>
-            Add a new word or phrase in sentence's note line in Edit Mode with
-            format [Original Text:Translation].
-          </p>
+          <p>{{ $t("repeater.noNewWord") }}</p>
+          <p>{{ $t("repeater.newWordInstruction") }}</p>
         </div>
       </div>
 
@@ -956,18 +957,11 @@
                 v-model.lazy="loopEnd"
               />
             </p>
-            <p
-              style="padding-left: 1em; margin-top: 0"
-              :style="{
-                color: !nextLoopPlay ? '#bbbaba' : 'white',
-              }"
-            >
-              <input v-if="!nextLoopPlay" disabled type="checkbox" />
-              <input v-if="nextLoopPlay" type="checkbox" v-model="autoStop" />
+            <p style="padding-left: 0; margin-top: 0; color: white">
+              <input type="checkbox" v-model="autoStop" />
               {{ $t("repeater.autoStop") }}
               <input
                 class="input input--repeater"
-                :disabled="!nextLoopPlay"
                 style="width: 4em"
                 type="number"
                 step="1"
@@ -997,7 +991,22 @@
                   type="checkbox"
                   v-model="isAutoDetectLang"
                 />
-                {{ $t("repeater.autoDetect") }})
+                {{ $t("repeater.autoDetect") }}
+
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertAutoDetect"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="color: blue; font-size: 1.2em"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+
+                )
               </span>
             </p>
             <div :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }">
@@ -1258,7 +1267,7 @@
                     :style="{
                       color:
                         isSystemTTS == 'Yes' || !isUtterTransLine
-                          ? '#868686'
+                          ? '#bbbaba'
                           : 'blue',
                     }"
                     class="material-icons"
@@ -1565,6 +1574,9 @@
                 >arrow_back_ios</i
               >
               {{ $t("repeater.instruction41") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.instruction50") }}
             </p>
             <p style="text-align: justify">
               {{ $t("repeater.instruction5") }}
@@ -2511,6 +2523,7 @@
 
         <div
           v-if="showEditNew"
+          id="showEditNew"
           style="border-radius: 10px; background: grey; padding: 0.3em"
         >
           <p style="text-align: justify; text-align-last: left; color: white">
@@ -2519,7 +2532,8 @@
               style="padding: 0.2em; width: 10.5em; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
-              v-model="newWord"
+              v-model.lazy="newWord"
+              placeholder="New Word"
             />
             <button class="action" @click="showTransPage">
               <i
@@ -2688,6 +2702,9 @@ export default {
         this.$t("repeater.tool5"),
         this.$t("repeater.tool6"),
         this.$t("repeater.tool7"),
+        this.$t("repeater.tool8"),
+        this.$t("repeater.tool9"),
+        this.$t("repeater.tool10"),
       ],
       textToTranslate: "",
       targetLanguage: "aa",
@@ -2695,9 +2712,9 @@ export default {
       startNum: 1,
       endNum: 1,
       originLine: 0,
-      apiKey: "", //translator
-      endpoint: "", //translator
-      region: "", // translator
+      apiKey: "",
+      endpoint: "",
+      region: "",
       ttsWrong: false,
       translatorUrl:
         "azure-translator:defaultKey,global,https://api.cognitive.microsofttranslator.com/",
@@ -2869,8 +2886,6 @@ export default {
       fromMerge: false,
       RUdoAlert: false,
       fetchCount: 0,
-      favFileName: "PDJ-Repeater.txt",
-      favNotUpload: "PDJ-Repeater.txtfavNotUpload",
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       searchList: "",
       isSwitching: false,
@@ -2895,6 +2910,14 @@ export default {
       return (
         /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 1000
       );
+    },
+
+    favNotUpload() {
+      return this.user.id + "favNotUpload";
+    },
+
+    favFileName() {
+      return "/!PDJ/userID-" + this.user.id + "/PDJ-Repeater.txt";
     },
 
     key1() {
@@ -3413,30 +3436,6 @@ export default {
       } else return "";
     },
 
-    isEnglishLine1() {
-      let str = this.srtSubtitles[this.sentenceIndex - 1].content
-        .split("\r\n")[0]
-        .replace(/^\s\s*/, "")
-        .replace(/\s\s*$/, "");
-      return /^[a-zA-Z]/.test(str);
-    },
-
-    isEnglishLine2() {
-      if (
-        !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ==
-          " "
-      )
-        return false;
-      else {
-        let str = this.srtSubtitles[this.sentenceIndex - 1].content
-          .split("\r\n")[1]
-          .replace(/^\s\s*/, "")
-          .replace(/\s\s*$/, "");
-        return /^[a-zA-Z]/.test(str);
-      }
-    },
-
     isTouchDevice() {
       return (
         "ontouchstart" in window ||
@@ -3521,8 +3520,9 @@ export default {
     },
 
     newWord: function () {
-      if (this.showAddNew) {
-        this.getTrans();
+      if (this.showAddNew || this.showEditNew) {
+        this.newTranslation = "";
+        this.doTranslate();
       }
     },
 
@@ -3560,7 +3560,9 @@ export default {
         if (this.dictationArray.length == 0) {
           this.dictationArray =
             JSON.parse(
-              window.sessionStorage.getItem(this.mediaName + "dictation")
+              window.sessionStorage.getItem(
+                this.mediaName + this.user.id + "dictation"
+              )
             ) || [];
         }
         this.dictationContent = "";
@@ -3578,7 +3580,7 @@ export default {
         this.audioUrl = null;
         let vmm = this;
         localforage
-          .getItem(this.mediaName + "recordAudio")
+          .getItem(this.mediaName + this.user.id + "recordAudio")
           .then(function (value) {
             vmm.audioRecordArray = value;
             if (!vmm.audioRecordArray) {
@@ -3614,7 +3616,7 @@ export default {
         };
         filteredArray.push(newItem);
         window.sessionStorage.setItem(
-          this.mediaName + "dictation",
+          this.mediaName + this.user.id + "dictation",
           JSON.stringify(filteredArray)
         );
         this.dictationArray = filteredArray;
@@ -3623,7 +3625,7 @@ export default {
           (item) => item.id !== this.sentenceIndex
         );
         window.sessionStorage.setItem(
-          this.mediaName + "dictation",
+          this.mediaName + this.user.id + "dictation",
           JSON.stringify(filteredArray)
         );
         this.dictationArray = filteredArray;
@@ -3673,6 +3675,7 @@ export default {
         )
           window.localStorage.setItem(this.mediaName, this.reqF.content);
         this.getCacheMedia();
+        this.detectLangAuto();
       }
     },
 
@@ -3966,10 +3969,10 @@ export default {
 
     isAutoDetectLang: function () {
       if (this.isAutoDetectLang) {
-        this.langInTransLine = navigator.language || navigator.userLanguage;
-        this.autoDetectLangInTrans();
+        window.localStorage.removeItem(this.mediaName + "line1");
+        window.localStorage.removeItem(this.mediaName + "line2");
+        this.detectLangAuto();
       }
-
       this.save();
     },
 
@@ -4041,8 +4044,7 @@ export default {
       this.playCount = 0;
       this.firstMount = false;
       this.isFirstClick = true;
-      if (this.isFavOnPlay && this.isAutoDetectLang)
-        this.autoDetectLangInTrans();
+      if (this.isFavOnPlay && this.isAutoDetectLang) this.detectLangAuto();
 
       if (!this.isFavOnPlay && !this.onRevision && !this.showRevision) {
         if (
@@ -4111,8 +4113,119 @@ export default {
   },
 
   methods: {
+    detectLangAuto() {
+      this.isOriginalLine1 =
+        Number(window.localStorage.getItem(this.mediaName + "line1")) || 0;
+      this.isOriginalLine2 =
+        Number(window.localStorage.getItem(this.mediaName + "line2")) || 0;
+      if (
+        this.isOriginalLine1 == 0 &&
+        this.isOriginalLine2 == 0 &&
+        !(
+          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ||
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ==
+            " "
+        )
+      ) {
+        this.getAzureLangDetect();
+      } else {
+        this.autoSet();
+      }
+    },
+
+    async getAzureLangDetect() {
+      let inputText = this.srtSubtitles[this.sentenceIndex - 1].content
+        .split("\r\n")[0]
+        .replace(/^\s\s*/, "")
+        .replace(/\s\s*$/, "");
+      let x = this.getValue2(3);
+      const subscriptionKey = x[0];
+      const endpoint = x[1];
+      const url = `${endpoint}/text/analytics/v3.1/languages`;
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Ocp-Apim-Subscription-Key": subscriptionKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            documents: [
+              {
+                id: "1",
+                text: inputText,
+              },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          console.log("query failed");
+          this.originDectLang();
+        }
+        let detectedLanguage = "";
+        const data = await response.json();
+        if (data.documents && data.documents.length > 0) {
+          const detected = data.documents[0].detectedLanguage;
+          if (detected) {
+            detectedLanguage = detected.iso6391Name;
+            if (detectedLanguage.includes(this.langInTransLine.split("-")[0])) {
+              this.isOriginalLine1 = 0;
+              this.isOriginalLine2 = 1;
+            } else {
+              this.isOriginalLine1 = 1;
+              this.isOriginalLine2 = 0;
+            }
+            window.localStorage.setItem(
+              this.mediaName + "line1",
+              this.isOriginalLine1
+            );
+            window.localStorage.setItem(
+              this.mediaName + "line2",
+              this.isOriginalLine2
+            );
+            this.autoSet();
+          } else {
+            console.log("can't detect Lang");
+            this.originDectLang();
+          }
+        } else {
+          console.log("no valid response");
+          this.originDectLang();
+        }
+      } catch (error) {
+        console.log("error:", error);
+        this.originDectLang();
+      }
+    },
+
+    originDectLang() {
+      let str1 = this.srtSubtitles[this.sentenceIndex - 1].content
+        .split("\r\n")[0]
+        .replace(/^\s\s*/, "")
+        .replace(/\s\s*$/, "");
+      if (/^[a-zA-Z]/.test(str1)) {
+        this.isOriginalLine1 = 1;
+        this.isOriginalLine2 = 0;
+      } else {
+        this.isOriginalLine1 = 0;
+        this.isOriginalLine2 = 1;
+      }
+      window.localStorage.setItem(
+        this.mediaName + "line1",
+        this.isOriginalLine1
+      );
+      window.localStorage.setItem(
+        this.mediaName + "line2",
+        this.isOriginalLine2
+      );
+      this.autoSet();
+    },
+
     onSubtools() {
       this.showsubTools = true;
+      this.showAddNew = false;
       this.cleanUp1();
       this.cleanUp2();
     },
@@ -4161,11 +4274,18 @@ export default {
         this.endpoint = "";
       }
       let filteredArray = "";
-      for (let ii = this.startNum - 1; ii < this.endNum; ii++) {
-        filteredArray =
-          filteredArray +
-          "\n" +
-          this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
+      if (this.showAddNew) {
+        if (this.targetLanguage == "aa") {
+          this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
+        }
+        filteredArray = this.newWord;
+      } else {
+        for (let ii = this.startNum - 1; ii < this.endNum; ii++) {
+          filteredArray =
+            filteredArray +
+            "\n" +
+            this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
+        }
       }
       this.textToTranslate = filteredArray;
       const url = `${this.endpoint}/translate?api-version=3.0&to=${this.targetLanguage}`;
@@ -4190,11 +4310,17 @@ export default {
         }
         const translations = await response.json();
         this.translatedText = translations[0].translations[0].text;
-        this.saveTranslate();
+        if (this.showAddNew && this.newTranslation == "") {
+          this.newTranslation = this.translatedText;
+        } else this.saveTranslate();
       } catch (error) {
         this.translatedText = "";
-        alert("Error translating text", error);
-        this.inSubProcess = false;
+        if (this.showAddNew || this.showEditNew) {
+          this.getTrans();
+        } else {
+          alert("Error translating text", error);
+          this.inSubProcess = false;
+        }
       }
     },
 
@@ -4276,7 +4402,9 @@ export default {
     async checkDownload() {
       try {
         var content = await api.fetch(
-          "/files/!PDJ/Repeater-backup/" +
+          "/files/!PDJ/userID-" +
+            this.user.id +
+            "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt"
         );
@@ -4286,8 +4414,9 @@ export default {
           return;
         }
         let path =
-          "/files/" +
-          "!PDJ/Repeater-backup/Rec-" +
+          "/files/!PDJ/userID-" +
+          this.user.id +
+          "/Repeater-backup/Rec-" +
           this.mediaName.slice(0, -4) +
           "/";
         let baseItems = (await api.fetch(path)).items;
@@ -4318,6 +4447,9 @@ export default {
     },
     alertTranslatorUrl1() {
       alert(this.$t("repeater.alertTranslatorUrl1"));
+    },
+    alertAutoDetect() {
+      alert(this.$t("repeater.alertAutoDetect"));
     },
 
     recording() {
@@ -4359,7 +4491,7 @@ export default {
         this.mediaRecorder.stop();
         setTimeout(() => {
           this.playRecording();
-        }, 10);
+        }, 100);
       }
     },
 
@@ -4391,7 +4523,11 @@ export default {
       filteredArray.push(newItem);
       this.audioRecordArray = filteredArray;
       localforage
-        .setItem(this.mediaName + "recordAudio", filteredArray, function () {})
+        .setItem(
+          this.mediaName + this.user.id + "recordAudio",
+          filteredArray,
+          function () {}
+        )
         .catch((error) => {
           console.error(error);
         });
@@ -4405,7 +4541,9 @@ export default {
       }
       this.canDownload = true;
       let path =
-        "/files/!PDJ/Repeater-backup/" +
+        "/files/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/" +
         this.mediaName.slice(0, -4) +
         "-dictation.txt";
       try {
@@ -4427,7 +4565,9 @@ export default {
 
     async saveServerRecord(itemIndex, itemBlob) {
       let saveUrl =
-        "/files/!PDJ/Repeater-backup/Rec-" +
+        "/files/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/" +
         itemIndex +
@@ -4445,10 +4585,14 @@ export default {
       try {
         this.dictationArray =
           JSON.parse(
-            window.sessionStorage.getItem(this.mediaName + "dictation")
+            window.sessionStorage.getItem(
+              this.mediaName + this.user.id + "dictation"
+            )
           ) || [];
         await api.post(
-          "/files/!PDJ/Repeater-backup/" +
+          "/files/!PDJ/userID-" +
+            this.user.id +
+            "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt",
           JSON.stringify(this.dictationArray),
@@ -4470,7 +4614,7 @@ export default {
       this.audioBlob = null;
       this.audioUrl = null;
       await localforage
-        .removeItem(this.mediaName + "recordAudio")
+        .removeItem(this.mediaName + this.user.id + "recordAudio")
         .then(() => {
           console.log("we just removed: " + "recordAudio");
         })
@@ -4478,14 +4622,15 @@ export default {
           console.error("Error removing data:", error);
         });
       let path =
-        "/files/" +
-        "!PDJ/Repeater-backup/Rec-" +
+        "/files/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/";
       try {
         let baseItems = (await api.fetch(path)).items;
         for (let item of baseItems) {
-          let itemUrl = item.path.split("!PDJ/Repeater-backup/Rec-")[1];
+          let itemUrl = item.path.split("/Repeater-backup/Rec-")[1];
           if (itemUrl.includes(".mp3")) {
             await this.readServerRecord(itemUrl);
           }
@@ -4505,8 +4650,9 @@ export default {
       let srtUrl = api.getDownloadURL(this.req, true);
       let playUrl =
         srtUrl.split("/api/raw/")[0] +
-        "/api/raw/" +
-        "!PDJ/Repeater-backup/Rec-" +
+        "/api/raw/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/Rec-" +
         itemUrl +
         srtUrl.split(".srt")[1];
       let index = Number(itemUrl.split("/")[1].split(".mp3")[0]);
@@ -4516,8 +4662,6 @@ export default {
           return;
         }
         const arrayBuffer = await response.arrayBuffer();
-
-        // 创建 Blob 并指定 MIME 类型为 'audio/mp3'
         this.audioBlob = new Blob([arrayBuffer], { type: "audio/mp3" });
         this.audioUrl = URL.createObjectURL(this.audioBlob);
         let filteredArray = this.audioRecordArray.filter(
@@ -4530,7 +4674,7 @@ export default {
         filteredArray.push(newItem);
         this.audioRecordArray = filteredArray;
         localforage.setItem(
-          this.mediaName + "recordAudio",
+          this.mediaName + this.user.id + "recordAudio",
           filteredArray,
           function () {}
         );
@@ -4542,14 +4686,16 @@ export default {
     async readServerDictation() {
       try {
         var content = await api.fetch(
-          "/files/!PDJ/Repeater-backup/" +
+          "/files/!PDJ/userID-" +
+            this.user.id +
+            "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt"
         );
         this.dictationArray = JSON.parse(content.content);
         if (this.dictationArray.length > 0) {
           window.sessionStorage.setItem(
-            this.mediaName + "dictation",
+            this.mediaName + this.user.id + "dictation",
             JSON.stringify(this.dictationArray)
           );
           const tempCon = this.dictationArray.find(
@@ -4557,7 +4703,9 @@ export default {
           );
           if (tempCon) this.dictationContent = tempCon.con;
         } else {
-          window.sessionStorage.removeItem(this.mediaName + "dictation");
+          window.sessionStorage.removeItem(
+            this.mediaName + this.user.id + "dictation"
+          );
           this.dictationArray = [];
           this.dictationContent = "";
         }
@@ -4566,7 +4714,9 @@ export default {
           this.netStatus = false;
           alert(this.$t("repeater.failDownload"));
         } else {
-          window.sessionStorage.removeItem(this.mediaName + "dictation");
+          window.sessionStorage.removeItem(
+            this.mediaName + this.user.id + "dictation"
+          );
           this.dictationArray = [];
           this.dictationContent = "";
         }
@@ -4665,6 +4815,12 @@ export default {
     updateRegions() {
       this.wavesurfer.on("decode", () => {
         this.updateRgns();
+        // to locate to current sentence.
+        this.click();
+        setTimeout(() => {
+          this.cleanUp1();
+          this.cleanUp2();
+        }, 10);
       });
       this.regions.on("region-updated", (region) => {
         if (this.sentenceIndex !== region.id) {
@@ -4763,7 +4919,7 @@ export default {
       var peaks = [];
       try {
         var peaksAll = await api.fetch(
-          "/files/!PDJ/Repeater-backup/peaks/" + this.mediaName + ".txt"
+          "/files/!PDJ/peaks/" + this.mediaName + ".txt"
         );
         peaks = JSON.parse(peaksAll.content);
         this.localPeaks = peaks;
@@ -4815,7 +4971,7 @@ export default {
         !this.hasConfirmed &&
         !this.onOffline &&
         window.localStorage.getItem(this.favNotUpload) &&
-        this.user.id == window.localStorage.getItem("userIDRepeater") &&
+        this.user.id == window.localStorage.getItem(this.user.id) &&
         window.localStorage.getItem(this.favFileName)
       ) {
         this.confirmType = "saveUnsavedFav";
@@ -4827,7 +4983,7 @@ export default {
             window.localStorage.getItem(this.favNotUpload)) ||
           (this.isFavOnPlay && this.isPlayFullFavList) ||
           this.showRevision) &&
-        this.user.id == window.localStorage.getItem("userIDRepeater") &&
+        this.user.id == window.localStorage.getItem(this.user.id) &&
         window.localStorage.getItem(this.favFileName)
       ) {
         PDJcontent = window.localStorage.getItem(this.favFileName);
@@ -4835,12 +4991,13 @@ export default {
         try {
           if (this.onOffline) window.localStorage.removeItem("isOffline");
           var PDJserverContent = null;
-          PDJserverContent = await api.fetch("/files/!PDJ/" + this.favFileName);
+          PDJserverContent = await api.fetch("/files" + this.favFileName);
           if (this.onOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
+          this.notSaveFav = true;
           window.localStorage.setItem("server" + this.favFileName, PDJcontent);
           window.localStorage.setItem(this.favFileName, PDJcontent);
-          window.localStorage.setItem("userIDRepeater", this.user.id);
+          window.localStorage.setItem(this.user.id, this.user.id);
         } catch (e) {
           this.isReadyToPlay = true;
           this.confirmType = "fetch";
@@ -4932,12 +5089,15 @@ export default {
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
         this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
-      } else {
+      }
+    },
+
+    autoSet() {
+      if (this.isAutoDetectLang) {
         this.autoDetectLangInTrans();
         this.langInTransLine = navigator.language || navigator.userLanguage;
       }
     },
-
     checkLandscape() {
       return window.matchMedia("(orientation: landscape)").matches;
     },
@@ -5108,7 +5268,7 @@ export default {
         allConfig + "\n\n" + this.reqF.name + "private" + customConfig
       );
       this.tempFavContent = favContent;
-      this.saveNow(this.tempFavContent);
+      this.saveNow();
       setTimeout(() => {
         this.isPrivate = "Yes";
       }, 50);
@@ -5312,16 +5472,17 @@ export default {
     },
 
     async getTrans() {
-      this.newTranslation = await fetch(
-        "https://api.oick.cn/api/fanyi?text=" + this.newWord
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          return data.data.result;
-        })
-        .catch((error) => {
-          console.error("Error fetching translation:", error);
-        });
+      if (this.newTranslation == "") {
+        await fetch("https://api.oick.cn/api/fanyi?text=" + this.newWord)
+          .then((response) => response.json())
+          .then((data) => {
+            if (this.newTranslation == "")
+              this.newTranslation = data.data.result;
+          })
+          .catch((error) => {
+            console.error("Error fetching translation:", error);
+          });
+      }
     },
 
     addANewWord() {
@@ -5670,6 +5831,14 @@ export default {
         2: [
           atob("YzNjMDU5ZWNmNDdlNDg5YzhkYjBkMDM4ODY3ZTc1YzE="),
           atob("ZWFzdHVz"),
+        ],
+        3: [
+          atob(
+            "QXNRVHlsUjBTcVpTUko2eXYzakJDcnNsUlY5Mk9TczE1Y2ZDMXRtU2d6bTZKdEttRklnUUpRUUo5OUJEQUMzcEthUlhKM3czQUFBYUFDT0dBOWU2"
+          ),
+          atob(
+            "aHR0cHM6Ly9wZGotbGFuZ2RldGVjdC5jb2duaXRpdmVzZXJ2aWNlcy5henVyZS5jb20v"
+          ),
         ],
       };
       return encryptedMap[x];
@@ -6177,12 +6346,18 @@ export default {
       }
       if (this.confirmType == "deleteDicRec") {
         let dictationFile =
-          "!PDJ/Repeater-backup/" +
+          "!PDJ/userID-" +
+          this.user.id +
+          "/Repeater-backup/" +
           this.mediaName.slice(0, -4) +
           "-dictation.txt";
 
         let recordDir =
-          "!PDJ/Repeater-backup/Rec-" + this.mediaName.slice(0, -4) + "/";
+          "!PDJ/userID-" +
+          this.user.id +
+          "/Repeater-backup/Rec-" +
+          this.mediaName.slice(0, -4) +
+          "/";
         var userConfirmationDelete1 = window.confirm(
           this.$t("repeater.confirmdeleteDicRec", {
             dictationFile: dictationFile,
@@ -6196,8 +6371,13 @@ export default {
         }
       }
       if (this.confirmType == "uploadDictation") {
+        let path =
+          "/!PDJ/userID-" +
+          this.user.id +
+          "/Repeater-backup/Rec-" +
+          this.mediaName.slice(0, -4);
         var userConfirmationUp = window.confirm(
-          this.$t("repeater.confirmUploadDictation2")
+          this.$t("repeater.confirmUploadDictation2", { recordingDir: path })
         );
         if (userConfirmationUp) {
           this.uploadDicRec();
@@ -6264,24 +6444,31 @@ export default {
       if (this.confirmType == "saveUnsavedFav") {
         this.hasConfirmed = true;
         var userConfirmationSaveFav = window.confirm(
-          this.$t("repeater.saveUnsavedFav")
+          this.$t("repeater.saveUnsavedFav", {
+            favFileName: this.favFileName,
+          })
         );
         if (userConfirmationSaveFav) {
           this.readyStatus();
         } else {
           window.localStorage.removeItem(this.favNotUpload);
+          this.notSaveFav = true;
           this.readyStatus();
         }
       }
     },
 
     async deleteDicRec() {
-      window.sessionStorage.removeItem(this.mediaName + "dictation");
+      window.sessionStorage.removeItem(
+        this.mediaName + this.user.id + "dictation"
+      );
       this.dictationArray = [];
       this.dictationContent = "";
       this.canDownload = false;
       let path =
-        "/files/!PDJ/Repeater-backup/" +
+        "/files/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/" +
         this.mediaName.slice(0, -4) +
         "-dictation.txt";
       try {
@@ -6297,7 +6484,7 @@ export default {
       this.audioBlob = null;
       this.audioUrl = null;
       localforage
-        .removeItem(this.mediaName + "recordAudio")
+        .removeItem(this.mediaName + this.user.id + "recordAudio")
         .then(() => {
           console.log("we just removed: " + "recordAudio");
         })
@@ -6310,8 +6497,9 @@ export default {
 
     async deleteAudioRec() {
       let path =
-        "/files/" +
-        "!PDJ/Repeater-backup/Rec-" +
+        "/files/!PDJ/userID-" +
+        this.user.id +
+        "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/";
       try {
@@ -6510,8 +6698,6 @@ export default {
     startDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.handleAutoStop();
-      this.isSetting = false;
-      this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
       if (this.showNewWordList) {
@@ -6531,6 +6717,15 @@ export default {
 
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
+      if (this.isSetting) {
+        this.isSetting = false;
+        return;
+      }
+      if (this.showRevision) {
+        this.showRevision = false;
+        return;
+      }
+
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.clientX - this.startX;
       this.distanceY = event.clientY - this.startY;
@@ -6587,8 +6782,8 @@ export default {
       ) {
         this.cleanUp1();
         this.cleanUp2();
-        this.newWord = window.getSelection().toString();
         this.showAddNew = true;
+        this.newWord = window.getSelection().toString();
       } else {
         window.getSelection().removeAllRanges();
         this.fixbug1();
@@ -6610,8 +6805,8 @@ export default {
         !this.isFavOnPlay
       ) {
         this.fixbug1();
-        this.newWord = window.getSelection().toString();
         this.showAddNew = true;
+        this.newWord = window.getSelection().toString();
       } else {
         this.fixbug1();
         this.showAddNew = false;
@@ -6633,8 +6828,6 @@ export default {
     startTouchS(event) {
       if (!this.isReadyToPlay) return;
       this.handleAutoStop();
-      this.isSetting = false;
-      this.showRevision = false;
       this.showSubtitleList = false;
       this.searchList = "";
       if (this.showNewWordList) {
@@ -6701,6 +6894,14 @@ export default {
     },
     endTouchS(event) {
       if (!this.isReadyToPlay) return;
+      if (this.isSetting) {
+        this.isSetting = false;
+        return;
+      }
+      if (this.showRevision) {
+        this.showRevision = false;
+        return;
+      }
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.changedTouches[0].clientX - this.startX;
       this.distanceY = event.changedTouches[0].clientY - this.startY;
@@ -6757,8 +6958,8 @@ export default {
       ) {
         this.cleanUp1();
         this.cleanUp2();
-        this.newWord = window.getSelection().toString();
         this.showAddNew = true;
+        this.newWord = window.getSelection().toString();
       } else {
         window.getSelection().removeAllRanges();
         this.fixbug1();
@@ -6779,8 +6980,8 @@ export default {
         !this.isFavOnPlay
       ) {
         this.fixbug1();
-        this.newWord = window.getSelection().toString();
         this.showAddNew = true;
+        this.newWord = window.getSelection().toString();
       } else {
         this.fixbug1();
         this.showAddNew = false;
@@ -6811,9 +7012,8 @@ export default {
         (this.autoPlay &&
           this.autoPlayNext &&
           this.isSingle &&
-          this.nextLoopPlay &&
           this.autoStop) ||
-        (!this.isSingle && this.nextLoopPlay && this.autoStop)
+        (!this.isSingle && this.autoStop)
       ) {
         this.timeOutId2 = setTimeout(
           () => {
@@ -7269,7 +7469,7 @@ export default {
     },
     autoDetectLangInTrans() {
       if (
-        !this.isEnglishLine1 &&
+        this.isOriginalLine1 !== 1 &&
         !(
           !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ||
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ==
@@ -7278,7 +7478,7 @@ export default {
       ) {
         this.lineNumOfTrans = 1;
       } else if (
-        !this.isEnglishLine2 &&
+        this.isOriginalLine2 !== 1 &&
         !(
           !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ==
@@ -7305,7 +7505,7 @@ export default {
       this.hasPrivate = false;
       this.tempFavContent = favContent;
       this.hasConfirmed = true;
-      this.saveNow(this.tempFavContent);
+      this.saveNow();
     },
 
     getConfig() {
@@ -7397,16 +7597,11 @@ export default {
 
     save() {
       if (
-        (!this.isReadyToPlay &&
-          !(this.isFavOnPlay && this.isPlayFullFavList)) ||
-        this.notSaveFav
-      )
+        !this.isReadyToPlay &&
+        !(this.isFavOnPlay && this.isPlayFullFavList)
+      ) {
         return;
-
-      this.notSaveFav = true;
-      setTimeout(() => {
-        this.notSaveFav = false;
-      }, 400);
+      }
 
       let customConfig = this.getConfig();
 
@@ -7434,24 +7629,38 @@ export default {
         "Subtitle:" +
         JSON.stringify(this.favList);
       this.tempFavContent = favContent;
-      this.saveNow(this.tempFavContent);
+      this.saveNow();
     },
 
-    async saveNow(favContent) {
+    async saveNow() {
+      if (this.notSaveFav) {
+        setTimeout(() => {
+          this.notSaveFav = false;
+        }, 400);
+        return;
+      }
+      this.notSaveFav = true;
+      setTimeout(() => {
+        this.notSaveFav = false;
+      }, 400);
       if (
         window.localStorage.getItem("server" + this.favFileName) &&
-        window.localStorage.getItem("server" + this.favFileName) == favContent
+        window.localStorage.getItem("server" + this.favFileName) ==
+          this.tempFavContent
       )
         return;
-      window.localStorage.setItem(this.favFileName, favContent);
+      window.localStorage.setItem(this.favFileName, this.tempFavContent);
       if (this.onOffline) {
         window.localStorage.setItem(this.favNotUpload, "1");
         return;
       }
       window.localStorage.setItem(this.favNotUpload, "1");
       try {
-        await api.post("/files/!PDJ/" + this.favFileName, favContent, true);
-        window.localStorage.setItem("server" + this.favFileName, favContent);
+        await api.post("/files" + this.favFileName, this.tempFavContent, true);
+        window.localStorage.setItem(
+          "server" + this.favFileName,
+          this.tempFavContent
+        );
         window.localStorage.removeItem(this.favNotUpload);
       } catch (error) {
         return;
@@ -7461,11 +7670,7 @@ export default {
     async savePeaks(peaks) {
       let p = JSON.stringify(peaks);
       try {
-        await api.post(
-          "/files/!PDJ/Repeater-backup/peaks/" + this.mediaName + ".txt",
-          p,
-          true
-        );
+        await api.post("/files/!PDJ/peaks/" + this.mediaName + ".txt", p, true);
       } catch (error) {
         return;
       }
@@ -7788,8 +7993,17 @@ export default {
               textSubtitles[i].split("\n")[2] +
               "\n" +
               textSubtitles[i].split("\n")[4];
-          } else if (x >= 6) {
+          } else if (x == 6) {
             newContent =
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3] +
+              "\n" +
+              textSubtitles[i].split("\n")[4];
+          } else if (x == 7) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
               textSubtitles[i].split("\n")[2] +
               "\n" +
               textSubtitles[i].split("\n")[3] +
@@ -7824,8 +8038,15 @@ export default {
               textSubtitles[i].split("\n")[3] +
               "\n" +
               textSubtitles[i].split("\n")[2];
-          } else if (x >= 6) {
+          } else if (x == 6) {
             newContent =
+              textSubtitles[i].split("\n")[2] +
+              "\n" +
+              textSubtitles[i].split("\n")[3];
+          } else if (x == 7) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
               textSubtitles[i].split("\n")[2] +
               "\n" +
               textSubtitles[i].split("\n")[3];
@@ -7856,8 +8077,13 @@ export default {
               " " +
               "\n" +
               textSubtitles[i].split("\n")[2];
-          } else if (x >= 6) {
+          } else if (x == 6) {
             newContent = textSubtitles[i].split("\n")[2];
+          } else if (x == 7) {
+            newContent =
+              textSubtitles[i].split("\n")[0] +
+              "\n" +
+              textSubtitles[i].split("\n")[2];
           }
         }
 
@@ -7866,7 +8092,6 @@ export default {
       }
 
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
-      if (x == 7) formatContent = this.formatAll(formatContent);
       if (x > 1 && x < 6) {
         formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
         this.changeNew[this.historyIndex] = formatContent;
@@ -7880,6 +8105,13 @@ export default {
           this.sentenceIndex = this.sentenceIndex - 1;
         }, 10);
         window.localStorage.setItem(this.mediaName, formatContent);
+        if (x == 5) {
+          window.localStorage.removeItem(this.mediaName + "line1");
+          window.localStorage.removeItem(this.mediaName + "line2");
+          if (this.lineNumOfTrans == 1) {
+            this.lineNumOfTrans = 2;
+          } else this.lineNumOfTrans = 1;
+        }
         this.showsubTools = false;
         if (this.timeOutId3) clearTimeout(this.timeOutId3);
         this.timeOutId3 = setTimeout(() => {
@@ -7893,15 +8125,89 @@ export default {
         if (x == 1) pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
         else if (x == 6) pdjBackUp = "text-" + today + "-" + id + ".txt";
         else if (x == 7) pdjBackUp = "text-serial-" + today + "-" + id + ".txt";
+        else if (x == 8) {
+          pdjBackUp = "newWord-" + today + "-" + id + ".txt";
+          formatContent = "";
+
+          if (this.newWordList.length < 1) {
+            alert(this.$t("repeater.noNewWord"));
+            this.inSubProcess = false;
+            return;
+          }
+          for (let i = 1; i <= this.newWordList.length; i++) {
+            let newWord = this.newWordList[i - 1];
+            formatContent =
+              formatContent +
+              i +
+              ". " +
+              newWord.origin +
+              "     " +
+              newWord.trans +
+              "   [ " +
+              this.srtSubtitles[newWord.num].content.split("\r\n")[0] +
+              "  -" +
+              this.srtSubtitles[newWord.num].content.split("\r\n")[1] +
+              " ]" +
+              "\n";
+          }
+        } else if (x == 9) {
+          pdjBackUp = "fav-sentences-" + today + "-" + id + ".txt";
+          formatContent = "";
+
+          if (this.currentFileFavList.length < 1) {
+            alert(this.$t("repeater.noNewFav"));
+            this.inSubProcess = false;
+            return;
+          }
+          for (let i = 1; i <= this.currentFileFavList.length; i++) {
+            let newFav = this.currentFileFavList[i - 1].content.replaceAll(
+              "\r\n",
+              "\n"
+            );
+            formatContent = formatContent + i + "\n" + newFav + "\n\n";
+          }
+        } else if (x == 10) {
+          pdjBackUp =
+            "fav-sentences-of-userID-" +
+            this.user.id +
+            "-" +
+            today +
+            "-" +
+            id +
+            ".txt";
+          formatContent = "";
+
+          if (this.favList.length < 1) {
+            alert(this.$t("repeater.noNewFav1"));
+            this.inSubProcess = false;
+            return;
+          }
+          for (let i = 1; i <= this.favList.length; i++) {
+            let newFav = this.favList[i - 1].content.replaceAll("\r\n", "\n");
+            formatContent = formatContent + i + "\n" + newFav + "\n\n";
+          }
+        }
+
         try {
-          await api.post(
-            "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
-            formatContent,
-            true
-          );
+          let path = "";
+          if (x == 10)
+            path =
+              "/files/!PDJ/userID-" +
+              this.user.id +
+              "/Repeater-backup/" +
+              pdjBackUp;
+          else
+            path =
+              "/files/!PDJ/userID-" +
+              this.user.id +
+              "/Repeater-backup/" +
+              this.reqF.name +
+              "-" +
+              pdjBackUp;
+          await api.post(path, formatContent, true);
           this.showsubTools = false;
         } catch (error) {
-          alert("Sorry. Can't save the file to the Server.");
+          alert("Sorry. Can't save the file to the Server.", error);
           this.inSubProcess = false;
           return;
         }
@@ -8286,7 +8592,12 @@ export default {
           let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
           let pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
           await api.post(
-            "/files/!PDJ/Repeater-backup/" + this.reqF.name + "-" + pdjBackUp,
+            "/files/!PDJ/userID-" +
+              this.user.id +
+              "/Repeater-backup/" +
+              this.reqF.name +
+              "-" +
+              pdjBackUp,
             this.req.content,
             true
           );
@@ -8481,7 +8792,7 @@ export default {
         this.ctrlPressed &&
         this.isEditSubandNotes
       ) {
-        // Ctrl 和 Delete 键同时被按下
+        // Ctrl + Delete
         this.deleteSentence();
       } else if (event.key === "Shift" && this.isEditSubandNotes) {
         this.shiftPressed = true;
@@ -8509,6 +8820,10 @@ export default {
           (document.getElementById("editArea3") &&
             document
               .getElementById("editArea3")
+              .contains(document.activeElement)) ||
+          (document.getElementById("showEditNew") &&
+            document
+              .getElementById("showEditNew")
               .contains(document.activeElement))
         )
           return;
@@ -8554,6 +8869,10 @@ export default {
           (document.getElementById("editArea3") &&
             document
               .getElementById("editArea3")
+              .contains(document.activeElement)) ||
+          (document.getElementById("showEditNew") &&
+            document
+              .getElementById("showEditNew")
               .contains(document.activeElement))
         )
           return;

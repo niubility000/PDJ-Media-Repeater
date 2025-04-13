@@ -1065,7 +1065,11 @@
             {{ $t("reminder.ins24") }}
           </p>
           <p id="ins">
-            {{ $t("reminder.ins25") }}
+            {{
+              $t("reminder.ins25", {
+                xx: user.id,
+              })
+            }}
           </p>
         </div>
         <p
@@ -1872,7 +1876,11 @@
           <div>
             <p id="ins1">
               <input type="checkbox" disabled="true" v-model="isBackUp" />
-              {{ $t("reminder.isBackUp") }}
+              {{
+                $t("reminder.isBackUp", {
+                  xx: user.id,
+                })
+              }}
             </p>
           </div>
 
@@ -1971,7 +1979,11 @@
             {{ $t("reminder.ins24") }}
           </p>
           <p id="ins">
-            {{ $t("reminder.ins25") }}
+            {{
+              $t("reminder.ins25", {
+                xx: user.id,
+              })
+            }}
           </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -2112,10 +2124,9 @@ export default {
       mounting: false,
       contentChange: false,
       attachChanged: false,
-      toDoListName: "PDJ-ToDoList.txt",
-      notUpload: "PDJ-ToDoList.txtNotUpload",
-      unSavedAttach: window.localStorage.getItem("unSavedAttach") || "",
-      unDeleted: window.localStorage.getItem("unDeleted") || "",
+      unSavedAttach: "",
+      unDeleted: "",
+      unsavedTask: "",
       dailyLength: 0,
       allowBackUp: false,
       forgot1: false,
@@ -2123,8 +2134,6 @@ export default {
       forgot3: false,
       remembered1: false,
       allowSwitch: false,
-      unsavedTask:
-        window.localStorage.getItem("PDJ-ToDoList.txtNotUpload") || "",
       TTSurlFront:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
       TTSurlBack:
@@ -2139,6 +2148,10 @@ export default {
       return (
         /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 736
       );
+    },
+
+    toDoListName() {
+      return "/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt";
     },
 
     canRecording() {
@@ -2755,6 +2768,12 @@ export default {
     window.addEventListener("resize", this.handleResize);
     window.addEventListener("keydown", this.key);
     window.localStorage.setItem("cachedOther", 1);
+    this.unSavedAttach =
+      window.localStorage.getItem(this.user.id + "unSavedAttach") || "";
+    this.unDeleted =
+      window.localStorage.getItem(this.user.id + "unDeleted") || "";
+    this.unsavedTask =
+      window.localStorage.getItem(this.user.id + "notUpload") || "";
     this.readToDoList();
     this.getItemContent();
     this.getReader();
@@ -2819,7 +2838,6 @@ export default {
           this.audioUrl = URL.createObjectURL(this.audioBlob);
           this.audioChunks = [];
           this.isRecording = false;
-          // this.saveRecording();
         };
       } catch (error) {
         alert(this.$t("repeater.noRecordFound"));
@@ -2844,33 +2862,18 @@ export default {
       }
     },
 
-    // saveRecording() {
-    //   let filteredArray = this.audioRecordArray.filter(
-    //     (item) => item.id !== this.sentenceIndex
-    //   );
-    //   let newItem = {
-    //     id: this.sentenceIndex,
-    //     con: this.audioBlob,
-    //   };
-    //   filteredArray.push(newItem);
-    //   this.audioRecordArray = filteredArray;
-    //   localforage
-    //     .setItem(this.mediaName + "recordAudio", filteredArray, function () {})
-    //     .catch((error) => {
-    //       console.error(error);
-    //     });
-    // },
-
     async readToDoList() {
       var PDJcontent = "";
       var PDJserverContent = null;
       if (
         (this.allowOffline ||
-          window.localStorage.getItem("PDJ-ToDoList.txtNotUpload")) &&
-        this.user.id == window.localStorage.getItem("userID") &&
-        window.localStorage.getItem("PDJ-ToDoList.txt")
+          window.localStorage.getItem(this.user.id + "notUpload")) &&
+        this.user.id == window.localStorage.getItem(this.user.id) &&
+        window.localStorage.getItem(this.user.id + "PDJ-ToDoList.txt")
       ) {
-        PDJcontent = window.localStorage.getItem("PDJ-ToDoList.txt");
+        PDJcontent = window.localStorage.getItem(
+          this.user.id + "PDJ-ToDoList.txt"
+        );
         if (PDJcontent !== "") {
           this.browserContent = PDJcontent;
         }
@@ -2882,12 +2885,20 @@ export default {
       } else {
         try {
           if (this.allowOffline) window.localStorage.removeItem("isOffline");
-          PDJserverContent = await api.fetch("/files/!PDJ/PDJ-ToDoList.txt");
+          PDJserverContent = await api.fetch(
+            "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt"
+          );
           if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
-          window.localStorage.setItem("userID", this.user.id);
-          window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
-          window.localStorage.setItem("serverContent", PDJcontent);
+          window.localStorage.setItem(this.user.id, this.user.id);
+          window.localStorage.setItem(
+            this.user.id + "PDJ-ToDoList.txt",
+            PDJcontent
+          );
+          window.localStorage.setItem(
+            this.user.id + "serverContent",
+            PDJcontent
+          );
           if (PDJcontent !== "") {
             this.browserContent = PDJcontent;
           }
@@ -2928,13 +2939,16 @@ export default {
     async compareContent() {
       try {
         if (this.allowOffline) window.localStorage.removeItem("isOffline");
-        let PDJserverContent = await api.fetch("/files/!PDJ/PDJ-ToDoList.txt");
+        let PDJserverContent = await api.fetch(
+          "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt"
+        );
         if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
         let PDJcontent = PDJserverContent.content;
         if (
           PDJcontent !== "" &&
-          window.localStorage.getItem("serverContent") &&
-          PDJcontent !== window.localStorage.getItem("serverContent")
+          window.localStorage.getItem(this.user.id + "serverContent") &&
+          PDJcontent !==
+            window.localStorage.getItem(this.user.id + "serverContent")
         ) {
           this.showConfirmUnmatch(PDJcontent);
         } else {
@@ -2952,8 +2966,11 @@ export default {
     showConfirmUnmatch(PDJcontent) {
       var userConfirm = window.confirm(this.$t("reminder.unmatch"));
       if (userConfirm) {
-        window.localStorage.setItem("serverContent", PDJcontent);
-        window.localStorage.setItem("PDJ-ToDoList.txt", PDJcontent);
+        window.localStorage.setItem(this.user.id + "serverContent", PDJcontent);
+        window.localStorage.setItem(
+          this.user.id + "PDJ-ToDoList.txt",
+          PDJcontent
+        );
         this.browserContent = PDJcontent;
       } else {
         this.allowBackUp = true;
@@ -2986,7 +3003,9 @@ export default {
       for await (const keyName of x) {
         var tToken = window.localStorage.getItem("lastRawToken");
         var fullPath =
-          "/api/raw/!PDJ/ToDoList-attachments/" +
+          "/api/raw/!PDJ/userID-" +
+          this.user.id +
+          "/ToDoList-attachments/" +
           keyName +
           "?auth=" +
           tToken +
@@ -3008,13 +3027,18 @@ export default {
         this.readerFront = 0;
         this.readerBack = 0;
       }
-      if (window.localStorage.getItem("readerFront") == null)
+      if (window.localStorage.getItem(this.user.id + "readerFront") == null)
         this.readerFront = 1;
       else
-        this.readerFront = Number(window.localStorage.getItem("readerFront"));
-      if (window.localStorage.getItem("readerBack") == null)
+        this.readerFront = Number(
+          window.localStorage.getItem(this.user.id + "readerFront")
+        );
+      if (window.localStorage.getItem(this.user.id + "readerBack") == null)
         this.readerBack = 1;
-      else this.readerBack = Number(window.localStorage.getItem("readerBack"));
+      else
+        this.readerBack = Number(
+          window.localStorage.getItem(this.user.id + "readerBack")
+        );
     },
 
     showDropDown() {
@@ -3586,6 +3610,7 @@ export default {
         this.itemContent = [];
         this.isItemReview = false;
       }
+      if (!this.itemList.includes("[ ID=")) this.exitToList();
     },
 
     delItemAttach() {
@@ -3604,7 +3629,9 @@ export default {
       if (keyName.includes("noCacheAllowed")) {
         var tToken = window.localStorage.getItem("lastRawToken");
         var fullPath =
-          "/api/raw/!PDJ/ToDoList-attachments/" +
+          "/api/raw/!PDJ/userID-" +
+          this.user.id +
+          "/ToDoList-attachments/" +
           keyName +
           "?auth=" +
           tToken +
@@ -3628,7 +3655,9 @@ export default {
             if (x == 1) {
               var tToken = window.localStorage.getItem("lastRawToken");
               var fullPath =
-                "/api/raw/!PDJ/ToDoList-attachments/" +
+                "/api/raw/!PDJ/userID-" +
+                this.user.id +
+                "/ToDoList-attachments/" +
                 keyName +
                 "?auth=" +
                 tToken +
@@ -3645,7 +3674,9 @@ export default {
       var vm = this;
       var tToken = window.localStorage.getItem("lastRawToken");
       var fullPath =
-        "/api/raw/!PDJ/ToDoList-attachments/" +
+        "/api/raw/!PDJ/userID-" +
+        this.user.id +
+        "/ToDoList-attachments/" +
         keyName +
         "?auth=" +
         tToken +
@@ -4345,8 +4376,14 @@ export default {
           id = id + "noCacheAllowed";
           let tempName = id + "-" + files[0].name;
           let path = this.$route.path.endsWith("/")
-            ? this.$route.path + "!PDJ/ToDoList-attachments/"
-            : this.$route.path + "/!PDJ/ToDoList-attachments/";
+            ? this.$route.path +
+              "!PDJ/userID-" +
+              this.user.id +
+              "/ToDoList-attachments/"
+            : this.$route.path +
+              "/!PDJ/userID-" +
+              this.user.id +
+              "/ToDoList-attachments/";
           if (x == 1) {
             this.frontAttach = this.frontAttach + ":::" + tempName;
           } else {
@@ -4358,8 +4395,14 @@ export default {
           var keyName = id + "-" + files[0].name;
           let vmm = this;
           let path = this.$route.path.endsWith("/")
-            ? this.$route.path + "!PDJ/ToDoList-attachments/"
-            : this.$route.path + "/!PDJ/ToDoList-attachments/";
+            ? this.$route.path +
+              "!PDJ/userID-" +
+              this.user.id +
+              "/ToDoList-attachments/"
+            : this.$route.path +
+              "/!PDJ/userID-" +
+              this.user.id +
+              "/ToDoList-attachments/";
           var keyValue;
           localforage.setItem(keyName, files[0], function () {
             window.localStorage.setItem("hasCachedAttach", 1);
@@ -4386,8 +4429,14 @@ export default {
         var keyName1 = id1 + "-" + "voiceAttachment.mp3";
         let vmm = this;
         let path1 = this.$route.path.endsWith("/")
-          ? this.$route.path + "!PDJ/ToDoList-attachments/"
-          : this.$route.path + "/!PDJ/ToDoList-attachments/";
+          ? this.$route.path +
+            "!PDJ/userID-" +
+            this.user.id +
+            "/ToDoList-attachments/"
+          : this.$route.path +
+            "/!PDJ/userID-" +
+            this.user.id +
+            "/ToDoList-attachments/";
         var keyValue1;
         localforage.setItem(keyName1, this.audioBlob, function () {
           window.localStorage.setItem("hasCachedAttach", 1);
@@ -4411,12 +4460,18 @@ export default {
 
     async uploadNow(x, y, keyName) {
       this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
-      window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+      window.localStorage.setItem(
+        this.user.id + "unSavedAttach",
+        this.unSavedAttach
+      );
       this.isUploading = true;
       try {
         await api.post(x, y, true);
         this.unSavedAttach = this.unSavedAttach.replace(":::" + keyName, "");
-        window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+        window.localStorage.setItem(
+          this.user.id + "unSavedAttach",
+          this.unSavedAttach
+        );
         this.isUploading = false;
       } catch (error) {
         console.log(error);
@@ -4426,7 +4481,7 @@ export default {
 
     async uploadUnsaved() {
       this.isUploading = true;
-      if (window.localStorage.getItem("PDJ-ToDoList.txtNotUpload")) {
+      if (window.localStorage.getItem(this.user.id + "notUpload")) {
         this.allowBackUp = true;
         await this.saveNow();
       }
@@ -4436,8 +4491,14 @@ export default {
           .split(":::");
         var keyValue;
         let path = this.$route.path.endsWith("/")
-          ? this.$route.path + "!PDJ/ToDoList-attachments/"
-          : this.$route.path + "/!PDJ/ToDoList-attachments/";
+          ? this.$route.path +
+            "!PDJ/userID-" +
+            this.user.id +
+            "/ToDoList-attachments/"
+          : this.$route.path +
+            "/!PDJ/userID-" +
+            this.user.id +
+            "/ToDoList-attachments/";
         for await (const keyName of arrUnsaved) {
           keyValue = await localforage.getItem(keyName);
           try {
@@ -4446,7 +4507,10 @@ export default {
               ":::" + keyName,
               ""
             );
-            window.localStorage.setItem("unSavedAttach", this.unSavedAttach);
+            window.localStorage.setItem(
+              this.user.id + "unSavedAttach",
+              this.unSavedAttach
+            );
           } catch (error) {
             console.log(error);
           }
@@ -4458,7 +4522,10 @@ export default {
           .split(":::");
         for await (const keyName of arrUndeleted) {
           this.unDeleted = this.unDeleted.replace(":::" + keyName, "");
-          window.localStorage.setItem("unDeleted", this.unDeleted);
+          window.localStorage.setItem(
+            this.user.id + "unDeleted",
+            this.unDeleted
+          );
           await this.deleteFile(keyName);
         }
       }
@@ -4487,17 +4554,29 @@ export default {
 
     async deleteFile(x) {
       let path = this.$route.path.endsWith("/")
-        ? this.$route.path + "!PDJ/ToDoList-attachments/"
-        : this.$route.path + "/!PDJ/ToDoList-attachments/";
+        ? this.$route.path +
+          "!PDJ/userID-" +
+          this.user.id +
+          "/ToDoList-attachments/"
+        : this.$route.path +
+          "/!PDJ/userID-" +
+          this.user.id +
+          "/ToDoList-attachments/";
       var fullPath = path + x;
       try {
         this.unDeleted = this.unDeleted + ":::" + x;
-        window.localStorage.setItem("unDeleted", this.unDeleted);
+        window.localStorage.setItem(this.user.id + "unDeleted", this.unDeleted);
         await api.remove(fullPath);
         this.unDeleted = this.unDeleted.replace(":::" + x, "");
-        window.localStorage.setItem("unDeleted", this.unDeleted);
+        window.localStorage.setItem(this.user.id + "unDeleted", this.unDeleted);
       } catch (e) {
-        this.$showError(e);
+        if (e.message.includes("404")) {
+          this.unDeleted = this.unDeleted.replace(":::" + x, "");
+          window.localStorage.setItem(
+            this.user.id + "unDeleted",
+            this.unDeleted
+          );
+        }
       }
     },
 
@@ -4828,17 +4907,23 @@ export default {
       let id = Math.floor(currentTime.getTime() / 1000);
       let pdjBackUp =
         "backup/PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
-      window.localStorage.setItem("PDJ-ToDoList.txt", this.browserContent);
-      window.localStorage.setItem("PDJ-ToDoList.txtNotUpload", "1");
+      window.localStorage.setItem(
+        this.user.id + "PDJ-ToDoList.txt",
+        this.browserContent
+      );
+      window.localStorage.setItem(this.user.id + "notUpload", "1");
       this.unsavedTask = "1";
       try {
         await api.post(
-          "/files/!PDJ/PDJ-ToDoList.txt",
+          "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt",
           this.browserContent,
           true
         );
-        window.localStorage.removeItem("PDJ-ToDoList.txtNotUpload");
-        window.localStorage.setItem("serverContent", this.browserContent);
+        window.localStorage.removeItem(this.user.id + "notUpload");
+        window.localStorage.setItem(
+          this.user.id + "serverContent",
+          this.browserContent
+        );
         this.unsavedTask = "";
         if (this.allowBackUp && this.isBackUp) {
           await api.post(

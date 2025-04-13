@@ -4,9 +4,15 @@
       <p v-if="!this.isListing || selectedCount === 1">
         {{ $t("prompts.deleteMessageSingle") }}
       </p>
-      <p v-else>
-        {{ $t("prompts.deleteMessageMultiple", { count: selectedCount }) }}
-      </p>
+      <div v-else>
+        <p>
+          {{ $t("prompts.deleteMessageMultiple", { count: selectedCount }) }}
+        </p>
+        <p style="font-size: 2em">
+          Selected:
+          <span style="font-size: 4em; color: red">{{ selectedCount }}</span>
+        </p>
+      </div>
     </div>
     <div class="card-action">
       <button
