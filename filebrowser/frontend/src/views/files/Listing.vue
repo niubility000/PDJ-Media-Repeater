@@ -231,6 +231,7 @@
             v-bind:path="item.path"
           >
           </item>
+          <p style="color: white">.</p>
         </div>
 
         <input

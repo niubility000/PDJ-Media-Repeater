@@ -78,7 +78,7 @@
           style="
             position: -webkit-sticky;
             position: sticky;
-            top: -20.5em;
+            top: -17.5em;
             z-index: 999;
           "
         >
@@ -629,7 +629,7 @@ export default {
 
 @media (min-width: 737px) {
   #shareList {
-    height: calc(100vh - 9.8em);
+    height: calc(100vh - 9.6em);
     overflow-y: auto;
   }
 }

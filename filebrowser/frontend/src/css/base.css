@@ -100,11 +100,49 @@ main {
 .breadcrumbs {
   height: 3em;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: fixed; 
+  top:4em;
+  z-index:1000; 
+  width: calc(100% - 19em);
+  background:rgba(250,250,250,1);
+  overflow: overlay;
+}
+
+@media (min-width: 737px) {
+  .breadcrumbs::-webkit-scrollbar  {
+    height: 8px;
+  }
+  .breadcrumbs:hover::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+  }
+  .breadcrumbs:hover::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    -webkit-box-shadow: inset 0 0 3px RGB(243, 243, 244);
+  }
+}
+
+
+@media (max-width: 1024px) {
+  .breadcrumbs {
+    width: calc(100% - 13em);
+  }
+}
+
+@media (max-width: 736px) {
+  .breadcrumbs {
+    width: calc(100% - 2em);
+  }
+  .breadcrumbs::-webkit-scrollbar {
+    display:none
+  }
 }
 
 .breadcrumbs span,
 .breadcrumbs {
   display: flex;
+  flex-shrink:0;
   align-items: center;
   color: #6f6f6f;
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="breadcrumbs">
+  <div class="breadcrumbs" id="breadcrumbs">
     <component
       :is="element"
       :to="base || ''"
@@ -50,15 +50,6 @@ export default {
           });
         }
       }
-
-      if (breadcrumbs.length > 3) {
-        while (breadcrumbs.length !== 4) {
-          breadcrumbs.shift();
-        }
-
-        breadcrumbs[0].name = "...";
-      }
-
       return breadcrumbs;
     },
     element() {
@@ -68,6 +59,17 @@ export default {
 
       return "router-link";
     },
+  },
+  watch: {
+    items: 'scrollToRight'
+  },
+  methods: {  
+    scrollToRight: function () {
+      this.$nextTick(() => {
+        var div = document.getElementById('breadcrumbs');
+        div.scrollLeft=div.scrollWidth;
+      })
+    }
   },
 };
 </script>

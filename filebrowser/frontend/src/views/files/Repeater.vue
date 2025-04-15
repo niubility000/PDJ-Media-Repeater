@@ -1638,7 +1638,7 @@
             <p style="text-align: justify">
               {{ $t("repeater.clickandInput") }}
               <span style="color: white"
-                >{{ sentenceIndex }}/{{ srtSubtitles.length }}&dArr;</span
+                >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
               >{{ $t("repeater.instruction12") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -2636,10 +2636,11 @@
       >
         <i
           class="material-icons"
+          style="font-size: 3em"
           :style="{
             color: hoverNavLeft ? 'white' : '#4f4b4b',
           }"
-          >arrow_back_ios</i
+          >chevron_left</i
         >
       </button>
       <button
@@ -2659,10 +2660,11 @@
       >
         <i
           class="material-icons"
+          style="font-size: 3em"
           :style="{
             color: hoverNavRight ? 'white' : '#4f4b4b',
           }"
-          >arrow_forward_ios</i
+          >chevron_right</i
         >
       </button>
     </template>
@@ -5804,17 +5806,21 @@ export default {
       const encryptedMap = {
         1: [
           atob(
-            "M2M3RXJuOG9nRVdoMHdvc2pTcEJNZnFOb1lzMHd2bkZuZk1VU2dmWThnWVRJbG5tTGxITUpRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0djODZC"
+            "Q0NKY2VkazlHZmFuNmx5amhGbVRySWFoTjZpcHZpZGhLSno0bTN4aVlMR05HN2VOTG4ya0pRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0dzbTly"
           ),
           atob("ZWFzdGFzaWE="),
         ],
         2: [
-          atob("YWYyZDRhYTIzNDhiNGI3M2I2MDQ4N2M3M2UwZWI0MzE="),
+          atob(
+            "OEZ2RnBneXk2ZmppeEdWRVpobmx4ZkhvMTdFV0dXMTRiVXp1V25ZblpIZkQ4NDBweUc3UkpRUUo5OUJEQUNZZUJqRlhKM3czQUFBWUFDT0dkTkpM"
+          ),
           atob("ZWFzdHVz"),
         ],
         3: [
-          atob("OGI3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI="),
-          atob("c291dGhlYXN0YXNpYQ=="),
+          atob(
+            "NmpCSnZZaDB2WG5KVE9IeWtmRlRKYmFGSWtaM3dRU29MZVNKb21VSGJyMjF4SGJOVW55ZkpRUUo5OUJEQUM1UnFMSlhKM3czQUFBWUFDT0dqYWNV"
+          ),
+          atob("d2VzdGV1cm9wZQ=="),
         ],
       };
       return encryptedMap[x];
@@ -6717,13 +6723,15 @@ export default {
 
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      if (this.isSetting) {
-        this.isSetting = false;
-        return;
-      }
-      if (this.showRevision) {
-        this.showRevision = false;
-        return;
+      if (new Date().getTime() - this.startTime < 1000) {
+        if (this.isSetting) {
+          this.isSetting = false;
+          return;
+        }
+        if (this.showRevision) {
+          this.showRevision = false;
+          return;
+        }
       }
 
       this.timeDiff = new Date().getTime() - this.startTime;
@@ -6894,13 +6902,15 @@ export default {
     },
     endTouchS(event) {
       if (!this.isReadyToPlay) return;
-      if (this.isSetting) {
-        this.isSetting = false;
-        return;
-      }
-      if (this.showRevision) {
-        this.showRevision = false;
-        return;
+      if (new Date().getTime() - this.startTime < 1000) {
+        if (this.isSetting) {
+          this.isSetting = false;
+          return;
+        }
+        if (this.showRevision) {
+          this.showRevision = false;
+          return;
+        }
       }
       this.timeDiff = new Date().getTime() - this.startTime;
       this.distanceX = event.changedTouches[0].clientX - this.startX;

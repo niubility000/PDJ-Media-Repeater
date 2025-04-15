@@ -10,7 +10,7 @@
         </p>
         <p style="font-size: 2em">
           Selected:
-          <span style="font-size: 4em; color: red">{{ selectedCount }}</span>
+          <span style="font-size: 3.5em; color: red">{{ selectedCount }}</span>
         </p>
       </div>
     </div>
