@@ -36,7 +36,7 @@
         v-if="unsavedTask !== '' || unSavedAttach !== '' || unDeleted !== ''"
         :disabled="isUploading"
         class="action"
-        @click="showConfirmUpload"
+        @click="openAlert(2, $t('reminder.uploadUnsaved'), 'uploadUnsaved')"
         :title="$t('reminder.upload')"
       >
         <i v-if="isUploading" style="color: red" class="material-icons"
@@ -83,7 +83,7 @@
         v-if="isItemReview && !isEditItem"
         class="action"
         style="color: blue"
-        @click="showConfirmDelete"
+        @click="openAlert(2, $t('reminder.deleteConfirm'), 'deleteConfirm')"
         :title="$t('reminder.delete')"
       >
         <i class="material-icons">delete</i>
@@ -639,6 +639,49 @@
       <h2 style="margin-top: 50%" class="message delayed">
         <span>{{ $t("files.loading") }}</span>
       </h2>
+    </div>
+
+    <div v-if="alertVisible" class="custom-alert">
+      <div
+        class="custom-alert-content"
+        :style="{
+          width: isMobile ? '90%' : '50%',
+        }"
+      >
+        <div class="alert-message-wrapper">
+          <p
+            style="
+              word-wrap: break-word;
+              word-break: break-all;
+              text-align: justify;
+              margin-bottom: 10px;
+            "
+          >
+            {{ alertMessage }}
+          </p>
+        </div>
+        <div class="subTools-buttons">
+          <button
+            v-if="alertType !== 1"
+            @click="doCancel"
+            :disabled="inSubProcess"
+            :style="{
+              backgroundColor: inSubProcess ? 'white' : '',
+            }"
+          >
+            {{ $t("buttons.cancel") }}
+          </button>
+          <button
+            @click="doConfirm"
+            :disabled="inSubProcess"
+            :style="{
+              backgroundColor: inSubProcess ? 'white' : '',
+            }"
+          >
+            {{ $t("buttons.ok") }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div
@@ -1463,16 +1506,27 @@
         <div style="display: block">
           <p>
             <span style="color: black">
-              <input
-                :disabled="isAutoDetectLang"
-                type="checkbox"
-                v-model="isUtterTransLine"
-              />
+              <input type="checkbox" v-model="isUtterTransLine" />
               {{ $t("reminder.utter") }}
             </span>
             <span style="color: black">
-              (<input type="checkbox" v-model="isAutoDetectLang" />
-              {{ $t("repeater.autoDetect") }})
+              (<input
+                :disabled="!isUtterTransLine"
+                type="checkbox"
+                v-model="isAutoDetectLang"
+              />
+              {{ $t("repeater.autoDetect") }}
+              <button
+                class="action"
+                name="buttons"
+                @click="alertAutoDetect"
+                :title="$t('repeater.help')"
+              >
+                <i style="color: blue; font-size: 1.2em" class="material-icons"
+                  >help</i
+                >
+              </button>
+              )
             </span>
           </p>
           <div
@@ -1769,7 +1823,7 @@
               <button
                 :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                 class="action"
-                @click="testTTSurl"
+                @click="testTTSurl(1)"
                 :title="$t('repeater.testTTSurl')"
               >
                 <i
@@ -1803,6 +1857,40 @@
               }"
             >
               {{ $t("reminder.backWithLang") }}
+              <button
+                :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
+                class="action"
+                @click="resetTTSurl"
+                :title="$t('repeater.resetTTSurl')"
+              >
+                <i
+                  :style="{
+                    color:
+                      isSystemTTS == 'Yes' || !isUtterTransLine
+                        ? '#868686'
+                        : 'blue',
+                  }"
+                  class="material-icons"
+                  >settings_backup_restore</i
+                >
+              </button>
+              <button
+                :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
+                class="action"
+                @click="testTTSurl(2)"
+                :title="$t('repeater.testTTSurl')"
+              >
+                <i
+                  :style="{
+                    color:
+                      isSystemTTS == 'Yes' || !isUtterTransLine
+                        ? '#868686'
+                        : 'blue',
+                  }"
+                  class="material-icons"
+                  >play_circle_outline</i
+                >
+              </button>
             </p>
             <input
               style="
@@ -1823,7 +1911,12 @@
                   isSystemTTS == 'No' && isUtterTransLine ? 'black' : '#868686',
               }"
             >
-              {{ $t("repeater.notSystemTTSnote") }} &nbsp;&nbsp;&nbsp;
+              {{
+                $t("repeater.notSystemTTSnote", {
+                  key1: key1,
+                })
+              }}
+              &nbsp;&nbsp;&nbsp;
 
               <button
                 :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
@@ -2029,7 +2122,13 @@ export default {
   },
   data: function () {
     return {
+      pdjContent: "",
+      confirmType: "",
+      alertType: 1,
+      alertVisible: false,
+      alertMessage: "",
       ttsWrong: false,
+      tokenFromServer: "pdjContent",
       timeOutId4: null,
       mic: "front",
       audioRecorded: null,
@@ -2100,7 +2199,7 @@ export default {
       langInFrontSide: navigator.language || navigator.userLanguage,
       langInTransLinedefault: navigator.language || navigator.userLanguage,
       langInBackSide: navigator.language || navigator.userLanguage,
-      isAutoDetectLang: true,
+      isAutoDetectLang: false,
       isSystemTTS: "Yes",
       fromFirstDay: true,
       resized: false,
@@ -2270,6 +2369,38 @@ export default {
       let m = this.reviewMinute;
       return (
         h.toString().padStart(2, "0") + ":" + m.toString().padStart(2, "0")
+      );
+    },
+
+    sh() {
+      return "YWYyZjRhODVkNzk3NGFhOWJhNDVaNzMwZDI5YThjN2E=".replace(
+        "a",
+        this.tokenFromServer.charAt(3)
+      );
+    },
+    po() {
+      return "YWYyZDRhYTazNDhiNGI3M2I2MDQ4N2M3M2UwZWI0MzE=".replace(
+        "a",
+        this.tokenFromServer.charAt(2).toUpperCase()
+      );
+    },
+    re() {
+      return "OGa3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI=".replace(
+        "a",
+        this.tokenFromServer.charAt(2).toUpperCase()
+      );
+    },
+    ab() {
+      return "WjA2OGdjY0ZaYkNodU1hSURSY2o5cUp1bkVFTTQy".replace(
+        "a",
+        this.tokenFromServer.charAt(5)
+      );
+    },
+
+    at() {
+      return "NkRrY3aCN29KUWtoUlBHMEM0NDgzNzdPakNjMGJSRnFyZUJta1hwR2J4TE9Ia3dmWXhzMUpRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0dkaXlZ".replace(
+        "a",
+        this.tokenFromServer.charAt(3)
       );
     },
 
@@ -2582,6 +2713,10 @@ export default {
       }
     },
 
+    key1() {
+      return this.getValue2(2)[0];
+    },
+
     isTodayEarly() {
       const d1 = Date.parse(this.today);
       const d2 = Date.parse(this.selectedDate);
@@ -2779,7 +2914,7 @@ export default {
     this.getReader();
     this.initUtter();
     if (!this.checkLocalStorageSpace()) {
-      alert(this.$t("repeater.alertSpace"));
+      this.openAlert(1, this.$t("repeater.alertSpace"));
     }
   },
 
@@ -2791,6 +2926,63 @@ export default {
 
   methods: {
     logout: auth.logout,
+    openAlert(a, x, c) {
+      this.cleanUp();
+      this.alertMessage = x;
+      this.alertType = a;
+      this.confirmType = c;
+      this.alertVisible = true;
+    },
+    doConfirm() {
+      this.alertVisible = false;
+      if (this.alertType == 1) {
+        return;
+      } else if (this.confirmType == "unmatch") {
+        window.localStorage.setItem(
+          this.user.id + "serverContent",
+          this.pdjContent
+        );
+        window.localStorage.setItem(
+          this.user.id + "PDJ-ToDoList.txt",
+          this.pdjContent
+        );
+        this.browserContent = this.pdjContent;
+      } else if (this.confirmType == "noFile") {
+        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+        if (!this.hasSpeechSynthesis) {
+          this.isSystemTTS = "No";
+        }
+        this.allowBackUp = true;
+        this.save();
+      } else if (this.confirmType == "uploadUnsaved") {
+        this.uploadUnsaved();
+      } else if (this.confirmType == "deleteConfirm") {
+        this.deleteItem();
+      } else if (this.confirmType == "leaveWithoutSaveNew") {
+        this.delItemAttach();
+        this.addNew = !this.addNew;
+        this.getFrontAttach();
+        this.getBackAttach();
+        this.isEditItem = false;
+      } else if (this.confirmType == "leaveWithoutSaveEdit") {
+        this.isEditItem = false;
+      }
+
+      return;
+    },
+    doCancel() {
+      if (this.confirmType == "unmatch") {
+        this.allowBackUp = true;
+        this.saveNow();
+      }
+      this.alertVisible = false;
+      return;
+    },
+
+    alertAutoDetect() {
+      this.openAlert(1, this.$t("reminder.alertAutoDetect"));
+    },
+
     checkLocalStorageSpace() {
       try {
         localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data
@@ -2802,11 +2994,11 @@ export default {
     },
 
     showTTSSetting() {
-      alert(this.$t("repeater.TTSSetting"));
+      this.openAlert(1, this.$t("repeater.TTSSetting"));
     },
 
     showRecordingSetNote() {
-      alert(this.$t("repeater.noRecordPermission"));
+      this.openAlert(1, this.$t("repeater.noRecordPermission"));
     },
 
     recording(x) {
@@ -2840,7 +3032,7 @@ export default {
           this.isRecording = false;
         };
       } catch (error) {
-        alert(this.$t("repeater.noRecordFound"));
+        this.openAlert(1, this.$t("repeater.noRecordFound"));
       }
     },
 
@@ -2852,6 +3044,16 @@ export default {
           this.uploadInput(null, x);
         }, 10);
       }
+    },
+
+    getValue2(x) {
+      const encryptedMap = {
+        2: [
+          atob("YzNjMDU5ZWNmNDdlNDg5YzhkYjBkMDM4ODY3ZTc1YzE="),
+          atob("ZWFzdHVz"),
+        ],
+      };
+      return encryptedMap[x];
     },
 
     playRecording() {
@@ -2888,6 +3090,7 @@ export default {
           PDJserverContent = await api.fetch(
             "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt"
           );
+          this.tokenFromServer = PDJserverContent.url;
           if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
           window.localStorage.setItem(this.user.id, this.user.id);
@@ -2903,7 +3106,13 @@ export default {
             this.browserContent = PDJcontent;
           }
         } catch (e) {
-          this.showConfirm();
+          this.openAlert(
+            2,
+            this.$t("reminder.noTodoListFile", {
+              favFileName: this.toDoListName,
+            }),
+            "noFile"
+          );
         }
       }
     },
@@ -2950,7 +3159,8 @@ export default {
           PDJcontent !==
             window.localStorage.getItem(this.user.id + "serverContent")
         ) {
-          this.showConfirmUnmatch(PDJcontent);
+          this.pdjContent = PDJcontent;
+          this.openAlert(2, this.$t("reminder.unmatch"), "unmatch");
         } else {
           if (!this.contentChange) return;
           this.saveNow();
@@ -2959,21 +3169,6 @@ export default {
         console.log("disconnected");
         if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
         if (!this.contentChange) return;
-        this.saveNow();
-      }
-    },
-
-    showConfirmUnmatch(PDJcontent) {
-      var userConfirm = window.confirm(this.$t("reminder.unmatch"));
-      if (userConfirm) {
-        window.localStorage.setItem(this.user.id + "serverContent", PDJcontent);
-        window.localStorage.setItem(
-          this.user.id + "PDJ-ToDoList.txt",
-          PDJcontent
-        );
-        this.browserContent = PDJcontent;
-      } else {
-        this.allowBackUp = true;
         this.saveNow();
       }
     },
@@ -3360,31 +3555,50 @@ export default {
       else return "";
     },
 
-    testTTSurl() {
+    testTTSurl(x) {
       this.cleanUp();
       let transLineContent = "testing TTS.";
-      if (this.itemContent[this.sentenceIndex - 1])
-        transLineContent =
-          this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
+      if (x == 1) {
+        if (this.itemContent[this.sentenceIndex - 1].split("\n\t")[1])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[1];
+      } else {
+        if (this.itemContent[this.sentenceIndex - 1].split("\n\t")[2])
+          transLineContent =
+            this.itemContent[this.sentenceIndex - 1].split("\n\t")[2];
+      }
       let text =
-        transLineContent !== undefined && transLineContent !== " "
+        transLineContent !== undefined &&
+        transLineContent !== " " &&
+        transLineContent !== "testing TTS."
           ? transLineContent
           : this.$t("reminder.noContent");
-      if (this.TTSurlFront.startsWith("azure-tts:")) {
-        this.azureTTS(this.TTSurlFront, text);
-      } else {
-        let ttsFullUrl = this.TTSurlFront + text;
-
-        this.audio.src = ttsFullUrl;
-        this.audio.play().catch(() => {
-          this.ttsWrong = true;
-          if (this.timeOutId4) clearTimeout(this.timeOutId4);
-          this.timeOutId4 = setTimeout(() => {
-            this.ttsWrong = false;
-          }, 1000);
+      let ttsFullUrl = "";
+      if (x == 1) {
+        if (this.TTSurlFront.startsWith("azure-tts:")) {
+          this.azureTTS(this.TTSurlFront, text);
           return;
-        });
+        } else {
+          ttsFullUrl = this.TTSurlFront + text;
+        }
+      } else {
+        if (this.TTSurlBack.startsWith("azure-tts:")) {
+          this.azureTTS(this.TTSurlBack, text);
+          return;
+        } else {
+          ttsFullUrl = this.TTSurlBack + text;
+        }
       }
+
+      this.audio.src = ttsFullUrl;
+      this.audio.play().catch(() => {
+        this.ttsWrong = true;
+        if (this.timeOutId4) clearTimeout(this.timeOutId4);
+        this.timeOutId4 = setTimeout(() => {
+          this.ttsWrong = false;
+        }, 1000);
+        return;
+      });
     },
 
     azureTTS(TTSurl, text) {
@@ -3393,19 +3607,25 @@ export default {
       let s = "";
       let x;
       if (TTSurl.startsWith("azure-tts:defaultKey1")) {
-        x = this.getvalue(1);
+        x = this.getKeyFromServer(1);
         s = x[0];
         r = x[1];
         if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
         else v = "";
       } else if (TTSurl.startsWith("azure-tts:defaultKey2")) {
-        x = this.getvalue(2);
+        x = this.getKeyFromServer(2);
         s = x[0];
         r = x[1];
         if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
         else v = "";
       } else if (TTSurl.startsWith("azure-tts:defaultKey3")) {
-        x = this.getvalue(3);
+        x = this.getKeyFromServer(3);
+        s = x[0];
+        r = x[1];
+        if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
+        else v = "";
+      } else if (TTSurl.startsWith("Azure-tts:defaultKey")) {
+        x = this.getKeyFromServer(6);
         s = x[0];
         r = x[1];
         if (TTSurl.split(",")[2]) v = TTSurl.split(",")[2].trim();
@@ -3490,26 +3710,12 @@ export default {
       return response.text();
     },
 
-    getvalue(x) {
+    getKeyFromServer(x) {
       const encryptedMap = {
-        1: [
-          atob(
-            "Q0NKY2VkazlHZmFuNmx5amhGbVRySWFoTjZpcHZpZGhLSno0bTN4aVlMR05HN2VOTG4ya0pRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0dzbTly"
-          ),
-          atob("ZWFzdGFzaWE="),
-        ],
-        2: [
-          atob(
-            "OEZ2RnBneXk2ZmppeEdWRVpobmx4ZkhvMTdFV0dXMTRiVXp1V25ZblpIZkQ4NDBweUc3UkpRUUo5OUJEQUNZZUJqRlhKM3czQUFBWUFDT0dkTkpM"
-          ),
-          atob("ZWFzdHVz"),
-        ],
-        3: [
-          atob(
-            "NmpCSnZZaDB2WG5KVE9IeWtmRlRKYmFGSWtaM3dRU29MZVNKb21VSGJyMjF4SGJOVW55ZkpRUUo5OUJEQUM1UnFMSlhKM3czQUFBWUFDT0dqYWNV"
-          ),
-          atob("d2VzdGV1cm9wZQ=="),
-        ],
+        1: [atob(this.sh), atob("ZWFzdGFzaWE=")],
+        2: [atob(this.po), atob("ZWFzdHVz")],
+        3: [atob(this.re), atob("c291dGhlYXN0YXNpYQ==")],
+        6: [atob(this.at), atob("ZWFzdGFzaWE=")],
       };
       return encryptedMap[x];
     },
@@ -3587,7 +3793,6 @@ export default {
     },
 
     autoDetectLangInTrans() {
-      this.isUtterTransLine = true;
       if (!this.isEnglishLine1) {
         this.langInFrontSide = navigator.language || navigator.userLanguage;
       } else {
@@ -3789,36 +3994,6 @@ export default {
       if (this.isAutoDetectLang) this.autoDetectLangInTrans();
     },
 
-    showConfirm() {
-      var userConfirmation = window.confirm(
-        this.$t("reminder.noTodoListFile", {
-          favFileName: this.toDoListName,
-        })
-      );
-      if (userConfirmation) {
-        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
-        if (!this.hasSpeechSynthesis) {
-          this.isSystemTTS = "No";
-        }
-        this.allowBackUp = true;
-        this.save();
-      }
-    },
-
-    showConfirmUpload() {
-      var userConfirmation = window.confirm(this.$t("reminder.uploadUnsaved"));
-      if (userConfirmation) {
-        this.uploadUnsaved();
-      }
-    },
-
-    showConfirmDelete() {
-      var userConfirmation = window.confirm(this.$t("reminder.deleteConfirm"));
-      if (userConfirmation) {
-        this.deleteItem();
-      }
-    },
-
     handleResize() {
       this.isLandscape = this.checkLandscape();
       this.resized = true;
@@ -3913,11 +4088,21 @@ export default {
 
     exitToList() {
       if (this.addNew) {
-        this.showConfirmAdd();
+        this.openAlert(
+          2,
+          this.$t("reminder.leaveWithoutSave"),
+          "leaveWithoutSaveNew"
+        );
         return;
       } else if (this.isEditItem) {
-        if (this.attachChanged) alert(this.$t("reminder.attachChanged"));
-        else this.showConfirmEdit();
+        if (this.attachChanged)
+          this.openAlert(1, this.$t("reminder.attachChanged"));
+        else
+          this.openAlert(
+            2,
+            this.$t("reminder.leaveWithoutSave"),
+            "leaveWithoutSaveEdit"
+          );
         return;
       } else if (this.isSetting) {
         this.isSetting = false;
@@ -3926,28 +4111,6 @@ export default {
         this.cleanUp();
         this.isItemReview = false;
         return;
-      }
-    },
-
-    showConfirmAdd() {
-      var userConfirmation = window.confirm(
-        this.$t("reminder.leaveWithoutSave")
-      );
-      if (userConfirmation) {
-        this.delItemAttach();
-        this.addNew = !this.addNew;
-        this.getFrontAttach();
-        this.getBackAttach();
-        this.isEditItem = false;
-      }
-    },
-
-    showConfirmEdit() {
-      var userConfirmation = window.confirm(
-        this.$t("reminder.leaveWithoutSave")
-      );
-      if (userConfirmation) {
-        this.isEditItem = false;
       }
     },
 
@@ -4050,20 +4213,20 @@ export default {
       this.attachChanged = false;
       this.newItemLine1 = this.newItemLine1.replace(/^\s+|\s+$/g, "");
       if (this.newItemLine1 == "") {
-        alert(this.$t("reminder.alert1"));
+        this.openAlert(1, this.$t("reminder.alert1"));
         return;
       }
       if (this.weekRange == "" && this.isEvery && this.selectedType == "2") {
-        alert(this.$t("reminder.alert2"));
+        this.openAlert(1, this.$t("reminder.alert2"));
         return;
       }
       this.curveDays = this.curveDays.trim();
       if (this.isCurve && this.isType == "2" && this.curveDays == "") {
-        alert(this.$t("reminder.alert3"));
+        this.openAlert(1, this.$t("reminder.alert3"));
         return;
       }
       if (this.isCustom && this.isType == "1" && this.curveDays == "") {
-        alert(this.$t("reminder.alert4"));
+        this.openAlert(1, this.$t("reminder.alert4"));
         return;
       }
 
@@ -4072,7 +4235,7 @@ export default {
         Number(this.endDate.replaceAll("-", "")) <
           Number(this.startDate.replaceAll("-", ""))
       ) {
-        alert(this.$t("reminder.alert5"));
+        this.openAlert(1, this.$t("reminder.alert5"));
         return;
       }
       this.newItemLine3 = this.newItemLine3.replaceAll("；", ";"); //replace chinese code ；
@@ -5023,6 +5186,41 @@ span.headSubject {
 
 header {
   background: transparent;
+}
+
+.custom-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.custom-alert-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-message-wrapper {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.custom-alert-content button {
+  margin-top: 10px;
+  width: auto; /* 让按钮宽度根据内容自适应 */
+  max-width: 200px; /* 设置按钮最大宽度 */
+  align-self: center; /* 让按钮在水平方向居中 */
 }
 
 @media (max-width: 736px) {

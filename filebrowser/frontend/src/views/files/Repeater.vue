@@ -398,7 +398,14 @@
 
                 <button
                   class="action"
-                  @click="delRevision(index)"
+                  @click="
+                    openAlert(
+                      2,
+                      $t('repeater.delThisRevision2'),
+                      'delRevision',
+                      index
+                    )
+                  "
                   :title="$t('repeater.delThisRevision')"
                 >
                   <i class="material-icons">delete</i>
@@ -506,6 +513,15 @@
                   >
                 </button>
               </p>
+              <P v-if="showQuota == 1" style="font-size: 0.7rem; color: blue">
+                {{ $t("repeater.quota") }} {{ quotaUsed
+                }}{{ $t("repeater.quota2") }}
+              </P>
+              <P v-if="showQuota == 2" style="font-size: 0.7rem; color: blue">
+                {{ $t("repeater.quota") }} {{ quotaUsed }}/1000000{{
+                  $t("repeater.quota2")
+                }}
+              </P>
             </div>
             <div v-if="currentTab === 2">
               <p style="color: black">
@@ -549,6 +565,7 @@
               </p>
             </div>
           </div>
+
           <div class="subTools-buttons">
             <button
               @click="handleCancel"
@@ -566,6 +583,36 @@
                 backgroundColor: inSubProcess ? 'white' : '',
               }"
             >
+              {{ $t("buttons.ok") }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="alertVisible" class="custom-alert">
+        <div
+          class="custom-alert-content"
+          :style="{
+            width: isMobile ? '90%' : '50%',
+          }"
+        >
+          <div class="alert-message-wrapper">
+            <p
+              style="
+                word-wrap: break-word;
+                word-break: break-all;
+                text-align: justify;
+                margin-bottom: 10px;
+              "
+            >
+              {{ alertMessage }}
+            </p>
+          </div>
+          <div class="subTools-buttons">
+            <button v-if="alertType !== 1" @click="doCancel">
+              {{ $t("buttons.cancel") }}
+            </button>
+            <button @click="doConfirm">
               {{ $t("buttons.ok") }}
             </button>
           </div>
@@ -902,10 +949,6 @@
                 v-model.number.lazy="retraceTime"
               />
               {{ $t("repeater.showRetracePlay2") }}
-            </p>
-            <p style="color: white">
-              <input type="checkbox" v-model.lazy="showArrow" />
-              {{ $t("repeater.showArrow") }}
             </p>
             <p
               :style="{
@@ -1550,6 +1593,72 @@
               </p>
             </div>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <p style="color: white">
+              <input type="checkbox" v-model.lazy="showArrow" />
+              {{ $t("repeater.showArrow") }}
+            </p>
+            <p style="color: white; margin-bottom: 0.5em">
+              <input type="checkbox" v-model.lazy="allowVideoFullScreen" />
+              {{ $t("repeater.allowVideoFullScreen") }}
+            </p>
+            <p style="color: white; margin-bottom: 0">
+              <input type="checkbox" v-model.lazy="isCustomFont" />
+              {{ $t("repeater.isCustomFont") }}
+              <button
+                class="action"
+                name="buttons"
+                @click="helpCss"
+                :title="$t('repeater.help')"
+              >
+                <i style="color: blue; font-size: 1.2em" class="material-icons"
+                  >help</i
+                >
+              </button>
+            </p>
+            <p
+              style="
+                margin: 0 0 0 1em;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+              "
+              :style="{
+                color: isCustomFont ? 'white' : '#bbbaba',
+              }"
+            >
+              {{ $t("repeater.firstLine") }}
+              <input
+                style="flex-grow: 1; text-align: left"
+                :disabled="!isCustomFont"
+                class="input input--repeater"
+                type="text"
+                v-model.lazy="customCss1"
+              />
+            </p>
+            <p
+              style="
+                margin: 0 0 0 1em;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+              "
+              :style="{
+                color: isCustomFont ? 'white' : '#bbbaba',
+              }"
+            >
+              {{ $t("repeater.secLine") }}
+              <input
+                style="flex-grow: 1; text-align: left"
+                :disabled="!isCustomFont"
+                class="input input--repeater"
+                type="text"
+                v-model.lazy="customCss2"
+              />
+            </p>
+            <div v-html="subtitleStyle1"></div>
+            <div v-html="subtitleStyle2"></div>
+
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
           </div>
           <div style="color: white">
             <p style="color: blue; font-weight: bold; padding-top: 2em">
@@ -1695,25 +1804,46 @@
         style="display: flex"
         :style="{ paddingTop: isMobile && isLandscape ? '3em' : '4em' }"
       >
+        <div
+          v-if="isFullScreen"
+          @mousedown="startDrag"
+          @mouseup="endDrag"
+          @touchstart="startTouch"
+          @touchend="endTouch"
+          :style="{
+            width: 'auto',
+            height: isWaveSurfer ? '45%' : '80%',
+          }"
+        ></div>
         <video
           v-if="isMediaType == 2 && !browserHiJack"
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          style="padding-bottom: 1em; padding-top: 0.2em; object-position: top"
+          style="
+            padding-bottom: 1em;
+            padding-top: 0.2em;
+            object-position: center;
+          "
           :style="{
-            width: isMobile ? '100%' : 'auto',
-            height:
-              isMobile && isLandscape
-                ? '0'
-                : isMobile && isWaveSurfer
-                ? '30%'
-                : isMobile
-                ? '40%'
-                : isWaveSurfer
-                ? '45%'
-                : '60%',
+            width: isFullScreen || isMobile ? '100%' : 'auto',
+            height: isFullScreen
+              ? '100%'
+              : isMobile && isLandscape
+              ? '0'
+              : isMobile && isWaveSurfer
+              ? '30%'
+              : isMobile
+              ? '40%'
+              : isWaveSurfer
+              ? '45%'
+              : '60%',
+            zIndex: isFullScreen ? '0' : '',
+            position: isFullScreen ? 'fixed' : '',
+            padding: isFullScreen ? '2.2em 0' : '0.2em 0 1em 0',
+            left: isFullScreen ? '50%' : '',
+            transform: isFullScreen ? 'translate(-50%, 0px)' : '',
           }"
           id="myVideo"
           :src="raw"
@@ -1803,13 +1933,13 @@
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isCheck
           "
           style="
-            color: yellow;
             overflow-wrap: break-word;
             width: 100%;
             margin: 0;
+            z-index: 1000;
           "
           :style="{
-            fontSize: isDictation ? '1.4em' : '1.5em',
+            fontSize: isDictation ? '1.4em' : '',
             top: isMediaType == 1 ? 0 : '4em',
           }"
         >
@@ -1830,6 +1960,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
+          class="videoFullScreen"
           v-if="
             isMediaType > 0 &&
             srtSubtitles &&
@@ -1837,22 +1968,20 @@
             !isDictation
           "
           style="
-            color: white;
             width: 100%;
             overflow-wrap: break-word;
             font-size: 1em;
             margin: auto;
             left: 0;
             right: 0;
-            overflow: auto;
           "
         >
           <div
             v-show="!isEmpty"
             style="
               width: 100%;
-              background-color: black;
-              color: whitesmoke;
+              color: yellow;
+              text-shadow: 1px 1px 1px #000;
               border: none;
               resize: none;
               text-align: center;
@@ -1911,7 +2040,13 @@
               <button
                 :disabled="loading || isSetting || isRecording || !canDownload"
                 class="action"
-                @click="confirmDownloadDictation"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmDownloadDictation2'),
+                    'downloadDictation'
+                  )
+                "
                 :title="$t('repeater.downloadDicRec')"
               >
                 <i
@@ -1966,7 +2101,19 @@
                   (dictationArray.length == 0 && audioRecordArray.length == 0)
                 "
                 class="action"
-                @click="confirmUploadDictation"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmUploadDictation2', {
+                      recordingDir:
+                        '/!PDJ/userID-' +
+                        user.id +
+                        '/Repeater-backup/Rec-' +
+                        mediaName.slice(0, -4),
+                    }),
+                    'uploadDictation'
+                  )
+                "
                 :title="$t('repeater.uploadDicRec')"
               >
                 <i
@@ -1992,7 +2139,26 @@
                     !canDownload)
                 "
                 class="action"
-                @click="confirmDelDicRec"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmdeleteDicRec', {
+                      dictationFile:
+                        '!PDJ/userID-' +
+                        user.id +
+                        '/Repeater-backup/' +
+                        mediaName.slice(0, -4) +
+                        '-dictation.txt',
+                      recordDir:
+                        '!PDJ/userID-' +
+                        user.id +
+                        '/Repeater-backup/Rec-' +
+                        mediaName.slice(0, -4) +
+                        '/',
+                    }),
+                    'deleteDicRec'
+                  )
+                "
                 :title="$t('repeater.clearAllDicRec')"
               >
                 <i
@@ -2266,7 +2432,7 @@
             <button
               class="action"
               name="buttons"
-              @click="confirmDelete"
+              @click="openAlert(2, $t('repeater.confirmDelete'), 'delete')"
               :title="$t('repeater.infoDelete')"
             >
               <i
@@ -2280,7 +2446,7 @@
               :disabled="lastSentence"
               class="action"
               name="buttons"
-              @click="confirmMerge"
+              @click="openAlert(2, $t('repeater.confirmMerge'), 'merge')"
               :title="$t('repeater.infoMerge')"
             >
               <i
@@ -2296,7 +2462,7 @@
             <button
               class="action"
               name="buttons"
-              @click="confirmSplit"
+              @click="openAlert(2, $t('repeater.confirmSplit'), 'split')"
               :title="$t('repeater.infoSplit')"
             >
               <i
@@ -2324,7 +2490,7 @@
             <button
               class="action"
               name="buttons"
-              @click="confirmAdd"
+              @click="openAlert(2, $t('repeater.confirmAdd'), 'add')"
               :title="$t('repeater.infoAdd')"
             >
               <i
@@ -2373,7 +2539,7 @@
         </span>
 
         <div
-          v-if="isMediaType > 0 && srtSubtitles && !isEmpty"
+          v-if="isMediaType > 0 && srtSubtitles && !isEmpty && !isFullScreen"
           @mousedown.self="startDragS"
           @mouseup.self="endDragS"
           @touchstart.self="startTouchS"
@@ -2413,6 +2579,7 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
+          class="videoFullScreen"
           v-show="srtSubtitles"
           style="width: 100%; flex-grow: 1"
         ></div>
@@ -2682,6 +2849,7 @@ import { setTimeout } from "core-js";
 import localforage from "localforage";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
+import CryptoJS from "crypto-js";
 
 export default {
   name: "repeater",
@@ -2691,6 +2859,20 @@ export default {
   },
   data: function () {
     return {
+      quotaUsed: 0,
+      accessKeyId: "",
+      accessKeySecret: "",
+      endpointAli: "https://mt.cn-hangzhou.aliyuncs.com",
+      isOriginalLine1: 1,
+      isOriginalLine2: 0,
+      tempIndex: 0,
+      isCustomFont: false,
+      customCss1: "",
+      customCss2: "",
+      allowVideoFullScreen:
+        window.localStorage.getItem("allowVideoFullScreen") == "true" || false,
+      alertVisible: false,
+      alertMessage: "",
       clickTimer: null,
       inSubProcess: false,
       showsubTools: false,
@@ -2715,11 +2897,9 @@ export default {
       endNum: 1,
       originLine: 0,
       apiKey: "",
-      endpoint: "",
       region: "",
       ttsWrong: false,
-      translatorUrl:
-        "azure-translator:defaultKey,global,https://api.cognitive.microsofttranslator.com/",
+      translatorUrl: "ali-translator:default",
       hoverNavLeft: false,
       hoverNavRight: false,
       showModal: false,
@@ -2914,6 +3094,56 @@ export default {
       );
     },
 
+    subtitleStyle1() {
+      var content =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+      var contentAll = "";
+      if (!this.isCustomFont) {
+        contentAll =
+          "<p style='font-size:1.5em;color: yellow;text-shadow: 2px 2px 2px #000;text-align: center;margin-top: 0.3em;'>" +
+          content +
+          "</p>";
+      } else {
+        contentAll =
+          "<p style='text-align: center;margin-top: 0.3em;" +
+          this.customCss1 +
+          "'>" +
+          content +
+          "</p>";
+      }
+      return contentAll;
+    },
+    subtitleStyle2() {
+      var content =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+      var contentAll = "";
+      if (!this.isCustomFont) {
+        contentAll =
+          "<p style='font-size:1.5em;color: yellow;text-shadow: 2px 2px 2px #000;text-align: center;margin-top: 0.3em;'>" +
+          content +
+          "</p>";
+      } else {
+        contentAll =
+          "<p style='text-align: center;margin-top: 0.3em;" +
+          this.customCss2 +
+          "'>" +
+          content +
+          "</p>";
+      }
+      return contentAll;
+    },
+
+    isFullScreen() {
+      return (
+        this.allowVideoFullScreen &&
+        this.isLandscape &&
+        this.isMediaType == 2 &&
+        this.srtSubtitles &&
+        !this.isEditSubandNotes &&
+        !this.isDictation
+      );
+    },
+
     favNotUpload() {
       return this.user.id + "favNotUpload";
     },
@@ -2944,6 +3174,9 @@ export default {
       return this.mediaName + "srtNotUpload";
     },
 
+    tokenFromServer() {
+      return this.req.url;
+    },
     lastSentence() {
       return this.sentenceIndex == this.srtSubtitles.length;
     },
@@ -3121,6 +3354,74 @@ export default {
       return temp.split(";;");
     },
 
+    sh() {
+      return "YWYyZjRhODVkNzk3NGFhOWJhNDVaNzMwZDI5YThjN2E=".replace(
+        "a",
+        this.tokenFromServer.charAt(3)
+      );
+    },
+    po() {
+      return "YWYyZDRhYTazNDhiNGI3M2I2MDQ4N2M3M2UwZWI0MzE=".replace(
+        "a",
+        this.tokenFromServer.charAt(2).toUpperCase()
+      );
+    },
+    re() {
+      return "OGa3MzM1ZTRjMWNmNDcwOGE0ODQ1M2Y4NzhhNmM4MDI=".replace(
+        "a",
+        this.tokenFromServer.charAt(2).toUpperCase()
+      );
+    },
+
+    aa() {
+      return "TFRBSTV0QWFoWkQzZ0d1Ta1xb1RvcHYx".replace(
+        "a",
+        this.tokenFromServer.charAt(4).toUpperCase()
+      );
+    },
+    pm() {
+      return "M0dDZDajWXJMOUR0VUV0V2d1b2VuMGVlTlZOVGVoaHdTdTd2V3NlWEp4eXFIdFVlaFhyRkpRUUo5OUJEQUNVTHlDcFhKM3czQUFBYkFDT0d0STVO".replace(
+        "a",
+        this.tokenFromServer.charAt(1).toUpperCase()
+      );
+    },
+    ab() {
+      return "WjA2OGdjY0ZaYkNodU1hSURSY2o5cUp1bkVFTTQy".replace(
+        "a",
+        this.tokenFromServer.charAt(5)
+      );
+    },
+
+    at() {
+      return "NkRrY3aCN29KUWtoUlBHMEM0NDgzNzdPakNjMGJSRnFyZUJta1hwR2J4TE9Ia3dmWXhzMUpRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0dkaXlZ".replace(
+        "a",
+        this.tokenFromServer.charAt(3)
+      );
+    },
+
+    showQuota() {
+      if (this.translatorUrl.includes("ali-translator:") && this.showsubTools)
+        return 1;
+      else if (
+        this.translatorUrl.includes("Ali-translator:default") &&
+        this.showsubTools
+      )
+        return 2;
+      else return 3;
+    },
+
+    action() {
+      if (this.translatorUrl.includes("Ali-translator:default")) {
+        return "Translate";
+      } else return "TranslateGeneral";
+    },
+
+    apiName() {
+      if (this.translatorUrl.includes("Ali-translator:default")) {
+        return "translate_ecommerce";
+      } else return "translate_standard";
+    },
+
     newWordList() {
       var wordList = [];
       var origin = "";
@@ -3245,197 +3546,131 @@ export default {
     },
 
     subtitleContent() {
-      if (
-        this.srtSubtitles[this.sentenceIndex - 1] &&
-        this.srtSubtitles[this.sentenceIndex - 1].content
-      ) {
-        var contentLine1 =
-          !this.isEmpty &&
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] !==
-            undefined
-            ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0]
-            : " ";
-        var contentLine2 =
-          !this.isEmpty &&
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] !==
-            undefined
-            ? this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1]
-            : " ";
-        var contentAll = "    ";
-        if (this.isShowLine1 && this.isShowLine2 && this.isDictation) {
-          contentAll =
-            "<p style='margin-top: 0px; color: green'>" +
-            contentLine1 +
-            "</p><p style='color: green'>" +
-            contentLine2 +
-            "</p>";
-        } else if (this.isShowLine1 && this.isShowLine2 && !this.isDictation) {
-          contentAll =
-            "<p style='margin-top: 0px'>" +
-            contentLine1 +
-            "</p><p>" +
-            contentLine2 +
-            "</p>";
-        } else if (this.isShowLine1 && !this.isShowLine2) {
-          contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
-        } else if (!this.isShowLine1 && this.isShowLine2) {
-          contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
-        } else {
-          contentAll = " ";
-        }
-        var highLightWord = "";
+      // 检查当前索引对应的字幕内容是否存在
+      const currentSubtitle = this.srtSubtitles[this.sentenceIndex - 1];
+      if (!currentSubtitle || !currentSubtitle.content) {
+        return "";
+      }
+
+      // 获取字幕内容的两行
+      const [line1, line2] = currentSubtitle.content.split("\r\n");
+      let contentLine1 = !this.isEmpty && line1 !== undefined ? line1 : " ";
+      let contentLine2 = !this.isEmpty && line2 !== undefined ? line2 : " ";
+
+      // 设置默认样式
+      let custom1 =
+        "font-size:1.5em;color: yellow;text-shadow: 2px 2px 2px #000;text-align: center;";
+      let custom2 =
+        "font-size:1.5em;color: yellow;text-shadow: 2px 2px 2px #000;text-align: center;";
+      if (this.isCustomFont) {
+        custom1 = this.customCss1;
+        custom2 = this.customCss2;
+      }
+
+      // 处理是否显示行和听写模式的情况
+      let contentAll = " ";
+      if (this.isShowLine1 && this.isShowLine2) {
         if (this.isDictation) {
-          var contentDictation = this.dictationContent;
-          if (this.dictationContent == "") return contentAll;
-          for (var ii = 1; ii <= contentDictation.split(" ").length; ++ii) {
-            if (this.ignoreC)
-              highLightWord = contentDictation
-                .split(" ")
-                [ii - 1].replace(/[\p{P}\s]+$/u, "")
-                .toLowerCase();
-            else highLightWord = contentDictation.split(" ")[ii - 1];
-            if (highLightWord.trim() !== "") {
-              let temp1 = " " + contentLine1;
-              let temp2 = " " + contentLine2;
-              var highLightWord1 = highLightWord;
-              if (this.ignoreC) {
-                var temp11 = temp1.toLowerCase();
-                var temp21 = temp2.toLowerCase();
-                if (temp11.includes(" " + highLightWord)) {
-                  var part1 = temp11.split(" " + highLightWord)[0];
-                  var part3 = temp11.replace(part1 + " " + highLightWord, "");
-                  if (part3 == "") {
-                    highLightWord = temp1.slice(part1.length + 1);
-                  } else
-                    highLightWord = temp1.slice(
-                      part1.length + 1,
-                      -part3.length
-                    );
-                }
-                if (temp21.includes(" " + highLightWord1)) {
-                  var parta = temp21.split(" " + highLightWord1)[0];
-                  var partc = temp21.replace(parta + " " + highLightWord1, "");
-                  if (partc == "") {
-                    highLightWord1 = temp2.slice(parta.length + 1);
-                  } else
-                    highLightWord1 = temp2.slice(
-                      parta.length + 1,
-                      -partc.length
-                    );
-                }
-                contentLine1 = temp1
-                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
-                  .trim();
-                contentLine2 = temp2
-                  .replace(" " + highLightWord1, " #@" + highLightWord1 + "@#")
-                  .trim();
-              } else {
-                contentLine1 = temp1
-                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
-                  .trim();
-                contentLine2 = temp2
-                  .replace(" " + highLightWord, " #@" + highLightWord + "@#")
-                  .trim();
-              }
-            }
-          }
-
-          for (var iii = 1; iii <= 5; ++iii) {
-            contentLine1 = contentLine1
-              .replaceAll("#@#@", "#@")
-              .replaceAll("@#@#", "@#");
-            contentLine2 = contentLine2
-              .replaceAll("#@#@", "#@")
-              .replaceAll("@#@#", "@#");
-          }
-
-          contentLine1 = contentLine1
-            .replaceAll("#@", "<font color=yellow>")
-            .replaceAll("@#", "</font>");
-          contentLine2 = contentLine2
-            .replaceAll("#@", "<font color=yellow>")
-            .replaceAll("@#", "</font>");
-          contentAll =
-            "<p style='margin-top: 0px; color: green'>" +
-            contentLine1 +
-            "</p><p style='color: green'>" +
-            contentLine2 +
-            "</p>";
-        } else if (
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
-          this.srtSubtitles[this.sentenceIndex - 1].content
-            .split("\r\n")[2]
-            .includes("[")
-        ) {
-          for (
-            var i = 1;
-            i <
-            this.srtSubtitles[this.sentenceIndex - 1].content
-              .split("\r\n")[2]
-              .split("[").length;
-            ++i
-          ) {
-            if (
-              this.srtSubtitles[this.sentenceIndex - 1].content
-                .split("\r\n")[2]
-                .split("[")
-                [i].includes(":")
-            ) {
-              highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
-                .split("\r\n")[2]
-                .split("[")
-                [i].split(":")[0];
-            } else {
-              highLightWord = this.srtSubtitles[this.sentenceIndex - 1].content
-                .split("\r\n")[2]
-                .split("[")
-                [i].split("]")[0];
-            }
-
-            if (highLightWord.trim() !== "") {
-              contentLine1 = contentLine1.replaceAll(
-                highLightWord,
-                "#@" + highLightWord + "@#"
-              );
-              contentLine2 = contentLine2.replaceAll(
-                highLightWord,
-                "#@" + highLightWord + "@#"
-              );
-            }
-          }
-
-          for (var iiii = 1; iiii <= 5; ++iiii) {
-            contentLine1 = contentLine1
-              .replaceAll("#@#@", "#@")
-              .replaceAll("@#@#", "@#");
-            contentLine2 = contentLine2
-              .replaceAll("#@#@", "#@")
-              .replaceAll("@#@#", "@#");
-          }
-
-          contentLine1 = contentLine1
-            .replaceAll("#@", "<font color=red>")
-            .replaceAll("@#", "</font>");
-          contentLine2 = contentLine2
-            .replaceAll("#@", "<font color=red>")
-            .replaceAll("@#", "</font>");
-          if (this.isShowLine1 && this.isShowLine2) {
-            contentAll =
-              "<p style='margin-top: 0px'>" +
-              contentLine1 +
-              "</p><p>" +
-              contentLine2 +
-              "</p>";
-          } else if (this.isShowLine1 && !this.isShowLine2) {
-            contentAll = "<p style='margin-top: 0px'>" + contentLine1 + "</p>";
-          } else if (!this.isShowLine1 && this.isShowLine2) {
-            contentAll = "<p style='margin-top: 0px'>" + contentLine2 + "</p>";
-          } else {
-            contentAll = " ";
-          }
+          contentAll = `<p style='margin-top: 0px; color: green'>${contentLine1}</p><p style='color: green'>${contentLine2}</p>`;
+        } else {
+          contentAll = `<p style='margin-top: 0px;${custom1};!important'>${contentLine1}</p><p style='${custom2};!important'>${contentLine2}</p>`;
         }
-        return contentAll;
-      } else return "";
+      } else if (this.isShowLine1) {
+        contentAll = `<p style='margin-top: 0px;${custom1};!important'>${contentLine1}</p>`;
+      } else if (this.isShowLine2) {
+        contentAll = `<p style='margin-top: 0px;${custom2};!important'>${contentLine2}</p>`;
+      }
+
+      // 处理听写模式
+      if (this.isDictation) {
+        const contentDictation = this.dictationContent;
+        if (contentDictation === "") {
+          return contentAll;
+        }
+
+        const highlightWords = contentDictation.split(" ");
+        highlightWords.forEach((word) => {
+          const processedWord = this.ignoreC
+            ? word.replace(/[\p{P}\s]+$/u, "").toLowerCase()
+            : word;
+          if (processedWord.trim() !== "") {
+            const processLine = (line) => {
+              const temp = ` ${line}`;
+              const searchWord = this.ignoreC ? processedWord : word;
+              const tempLower = this.ignoreC ? temp.toLowerCase() : temp;
+              let highlight = searchWord;
+              if (this.ignoreC && tempLower.includes(` ${searchWord}`)) {
+                const part1 = tempLower.split(` ${searchWord}`)[0];
+                const part3 = tempLower.replace(part1 + ` ${searchWord}`, "");
+                if (part3 === "") {
+                  highlight = temp.slice(part1.length + 1);
+                } else {
+                  highlight = temp.slice(part1.length + 1, -part3.length);
+                }
+              }
+              return temp.replace(` ${highlight}`, ` #@${highlight}@#`).trim();
+            };
+            contentLine1 = processLine(contentLine1);
+            contentLine2 = processLine(contentLine2);
+          }
+        });
+
+        const cleanHighlight = (line) => {
+          for (let i = 0; i < 5; i++) {
+            line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
+          }
+          return line
+            .replaceAll("#@", "<font color=yellow>")
+            .replaceAll("@#", "</font>");
+        };
+        contentLine1 = cleanHighlight(contentLine1);
+        contentLine2 = cleanHighlight(contentLine2);
+
+        contentAll = `<p style='margin-top: 0px; color: green'>${contentLine1}</p><p style='color: green'>${contentLine2}</p>`;
+      }
+      // 处理包含方括号的情况
+      else if (
+        currentSubtitle.content.split("\r\n")[2] &&
+        currentSubtitle.content.split("\r\n")[2].includes("[")
+      ) {
+        const parts = currentSubtitle.content.split("\r\n")[2].split("[");
+        parts.slice(1).forEach((part) => {
+          const highLightWord = part.includes(":")
+            ? part.split(":")[0]
+            : part.split("]")[0];
+          if (highLightWord.trim() !== "") {
+            contentLine1 = contentLine1.replaceAll(
+              highLightWord,
+              `#@${highLightWord}@#`
+            );
+            contentLine2 = contentLine2.replaceAll(
+              highLightWord,
+              `#@${highLightWord}@#`
+            );
+          }
+        });
+
+        const cleanHighlight = (line) => {
+          for (let i = 0; i < 5; i++) {
+            line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
+          }
+          return line
+            .replaceAll("#@", "<font color=red>")
+            .replaceAll("@#", "</font>");
+        };
+        contentLine1 = cleanHighlight(contentLine1);
+        contentLine2 = cleanHighlight(contentLine2);
+
+        if (this.isShowLine1 && this.isShowLine2) {
+          contentAll = `<p style='margin-top: 0px;${custom1};!important'>${contentLine1}</p><p style='${custom2};!important'>${contentLine2}</p>`;
+        } else if (this.isShowLine1) {
+          contentAll = `<p style='margin-top: 0px;${custom1};!important'>${contentLine1}</p>`;
+        } else if (this.isShowLine2) {
+          contentAll = `<p style='margin-top: 0px;${custom2};!important'>${contentLine2}</p>`;
+        }
+      }
+
+      return contentAll;
     },
 
     isTouchDevice() {
@@ -3463,9 +3698,18 @@ export default {
       this.updatePreview();
     },
 
+    allowVideoFullScreen() {
+      window.localStorage.setItem(
+        "allowVideoFullScreen",
+        this.allowVideoFullScreen
+      );
+    },
+
     showsubTools() {
       if (!this.showsubTools) {
         this.inSubProcess = false;
+      } else {
+        this.getTranslateReport();
       }
     },
 
@@ -3482,6 +3726,18 @@ export default {
     },
 
     targetLanguage() {
+      this.save();
+    },
+
+    isCustomFont() {
+      this.save();
+    },
+
+    customCss1() {
+      this.save();
+    },
+
+    customCss2() {
       this.save();
     },
 
@@ -3524,7 +3780,9 @@ export default {
     newWord: function () {
       if (this.showAddNew || this.showEditNew) {
         this.newTranslation = "";
-        this.doTranslate();
+        if (this.translatorUrl.includes("zure-translator"))
+          this.azureTranslate();
+        else this.aliTranslate(2);
       }
     },
 
@@ -4054,8 +4312,11 @@ export default {
           window.localStorage.getItem(this.srtNotUpload) &&
           window.localStorage.getItem(this.mediaName)
         ) {
-          this.confirmType = "saveUnsavedSub";
-          this.showConfirm();
+          this.openAlert(
+            2,
+            this.$t("repeater.saveUnsavedSub"),
+            "saveUnsavedSub"
+          );
         } else if (
           this.onOffline &&
           window.localStorage.getItem(this.mediaName)
@@ -4081,23 +4342,17 @@ export default {
     this.initUtter();
     if (this.reqF.size == 0) {
       this.reqF.content =
-        "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n \r\n";
+        "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n\n";
       this.saveSubNow();
-      setTimeout(() => {
-        location.reload();
-      }, 300);
     }
-    if (this.reqF.content == undefined) {
-      alert(
-        "Can't read content of .srt. and the .srt file should be encoded using UTF-8!"
-      );
-      this.close();
+    if (this.reqF.content == undefined || this.srtSubtitlesLength == 0) {
+      this.openAlert(1, this.$t("repeater.wrongSrt"), "wrongSrt");
     }
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.onOffline) this.allowCache = true;
     this.getReader();
     if (!this.checkLocalStorageSpace()) {
-      alert(this.$t("repeater.alertSpace"));
+      this.openAlert(1, this.$t("repeater.alertSpace"));
     }
   },
 
@@ -4115,6 +4370,84 @@ export default {
   },
 
   methods: {
+    openAlert(a, x, c, index) {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.alertMessage = x;
+      this.alertType = a;
+      this.confirmType = c;
+      this.tempIndex = index;
+      this.alertVisible = true;
+    },
+    doConfirm() {
+      this.alertVisible = false;
+      if (this.alertType == 1 && this.confirmType == "wrongSrt") this.close();
+      if (this.alertType == 1) return;
+      if (this.confirmType == "downloadDictation") {
+        this.downloadDicRec();
+      } else if (this.confirmType == "fetch") {
+        this.favList = [];
+        if (this.isAutoDetectLang) this.autoDetectLangInTrans();
+        if (!this.hasSpeechSynthesis) {
+          this.isSystemTTS = "No";
+        }
+        this.saveInit();
+        setTimeout(() => {
+          this.currentMedia.pause();
+        }, 1);
+      } else if (this.confirmType == "fetchRevision") {
+        this.reviseData.splice(this.tempIndex, 1);
+      } else if (this.confirmType == "wrongSrc") {
+        setTimeout(() => {
+          if (this.isFavOnPlay && this.isPlayFullFavList) {
+            this.switchIsFav();
+          }
+          return;
+        }, 500);
+      } else if (this.confirmType == "delete") {
+        this.deleteSentence();
+      } else if (this.confirmType == "deleteDicRec") {
+        this.deleteDicRec();
+      } else if (this.confirmType == "uploadDictation") {
+        this.uploadDicRec();
+      } else if (this.confirmType == "merge") {
+        this.mergeSentence();
+      } else if (this.confirmType == "add") {
+        this.addSentence();
+      } else if (this.confirmType == "split") {
+        this.splitSentence();
+      } else if (this.confirmType == "saveUnsavedSub") {
+        this.saveUnsavedSrt();
+      } else if (this.confirmType == "saveUnsavedFav") {
+        this.hasConfirmed = true;
+        this.readyStatus();
+      } else if (this.confirmType == "delRevision") {
+        this.reviseData.splice(this.tempIndex, 1);
+      }
+      return;
+    },
+    doCancel() {
+      if (this.confirmType == "fetch") {
+        this.cleanUp1();
+        this.close();
+      } else if (this.confirmType == "wrongSrc") {
+        setTimeout(() => {
+          this.playFavList();
+          return;
+        }, 500);
+      } else if (this.confirmType == "saveUnsavedSub") {
+        window.localStorage.removeItem(this.srtNotUpload);
+        window.localStorage.setItem(this.mediaName, this.reqF.content);
+      } else if (this.confirmType == "saveUnsavedFav") {
+        this.hasConfirmed = true;
+        window.localStorage.removeItem(this.favNotUpload);
+        this.notSaveFav = true;
+        this.readyStatus();
+      }
+      this.alertVisible = false;
+      return;
+    },
+
     detectLangAuto() {
       this.isOriginalLine1 =
         Number(window.localStorage.getItem(this.mediaName + "line1")) || 0;
@@ -4129,76 +4462,9 @@ export default {
             " "
         )
       ) {
-        this.getAzureLangDetect();
+        this.aliTranslate(3);
       } else {
         this.autoSet();
-      }
-    },
-
-    async getAzureLangDetect() {
-      let inputText = this.srtSubtitles[this.sentenceIndex - 1].content
-        .split("\r\n")[0]
-        .replace(/^\s\s*/, "")
-        .replace(/\s\s*$/, "");
-      let x = this.getValue2(3);
-      const subscriptionKey = x[0];
-      const endpoint = x[1];
-      const url = `${endpoint}/text/analytics/v3.1/languages`;
-
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Ocp-Apim-Subscription-Key": subscriptionKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            documents: [
-              {
-                id: "1",
-                text: inputText,
-              },
-            ],
-          }),
-        });
-
-        if (!response.ok) {
-          console.log("query failed");
-          this.originDectLang();
-        }
-        let detectedLanguage = "";
-        const data = await response.json();
-        if (data.documents && data.documents.length > 0) {
-          const detected = data.documents[0].detectedLanguage;
-          if (detected) {
-            detectedLanguage = detected.iso6391Name;
-            if (detectedLanguage.includes(this.langInTransLine.split("-")[0])) {
-              this.isOriginalLine1 = 0;
-              this.isOriginalLine2 = 1;
-            } else {
-              this.isOriginalLine1 = 1;
-              this.isOriginalLine2 = 0;
-            }
-            window.localStorage.setItem(
-              this.mediaName + "line1",
-              this.isOriginalLine1
-            );
-            window.localStorage.setItem(
-              this.mediaName + "line2",
-              this.isOriginalLine2
-            );
-            this.autoSet();
-          } else {
-            console.log("can't detect Lang");
-            this.originDectLang();
-          }
-        } else {
-          console.log("no valid response");
-          this.originDectLang();
-        }
-      } catch (error) {
-        console.log("error:", error);
-        this.originDectLang();
       }
     },
 
@@ -4234,7 +4500,9 @@ export default {
     handleConfirm() {
       this.inSubProcess = true;
       if (this.currentTab === 1) {
-        this.doTranslate();
+        if (this.translatorUrl.includes("zure-translator"))
+          this.azureTranslate();
+        else this.aliTranslate(1);
       } else if (this.currentTab === 2) {
         this.saveMoveAll();
         this.showsubTools = false;
@@ -4250,30 +4518,336 @@ export default {
     handleCancel() {
       this.showsubTools = false;
     },
-    async doTranslate() {
-      if (
-        this.translatorUrl.includes(
-          "azure-translator:defaultKey,global,https://api."
+
+    aliTranslate(type) {
+      if (this.quotaUsed > 750000 && type == 1) {
+        this.openAlert(1, this.$t("repeater.alert001"));
+        return;
+      }
+      if (type > 1) {
+        if (this.translatorUrl.includes("ali-translator:")) {
+          if (this.translatorUrl.split("ali-translator:")[1].split(",")[0])
+            this.accessKeyId = this.translatorUrl
+              .split("ali-translator:")[1]
+              .split(",")[0];
+
+          if (this.translatorUrl.split("ali-translator:")[1].split(",")[1])
+            this.accessKeySecret = this.translatorUrl
+              .split("ali-translator:")[1]
+              .split(",")[1];
+        } else {
+          let x = this.getKeyFromServer(4);
+          this.accessKeyId = x[0];
+          this.accessKeySecret = x[1];
+        }
+      } else if (this.accessKeyId == "") {
+        this.openAlert(1, this.$t("repeater.alert002"));
+        return;
+      }
+
+      const timestamp = new Date().toISOString().replace(/\.\d{3}/, "");
+      const nonce = Math.random().toString(36).substr(2, 15);
+      let filteredArray = "";
+      if (type == 3) {
+        filteredArray = this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")[0]
+          .replace(/^\s\s*/, "")
+          .replace(/\s\s*$/, "");
+      } else if (type == 2) {
+        if (this.targetLanguage == "aa") {
+          this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
+        }
+        filteredArray = this.newWord;
+      } else {
+        for (let ii = this.startNum - 1; ii < this.endNum; ii++) {
+          filteredArray =
+            filteredArray +
+            "\n" +
+            this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
+        }
+      }
+      const params = {
+        FormatType: "text",
+        SourceLanguage: "auto",
+        TargetLanguage: this.targetLanguage,
+        SourceText: filteredArray,
+        Version: "2018-10-12",
+        Action: this.action,
+        Scene: "general",
+        AccessKeyId: this.accessKeyId,
+        SignatureMethod: "HMAC-SHA1",
+        SignatureNonce: nonce,
+        SignatureVersion: "1.0",
+        Timestamp: timestamp,
+      };
+
+      const sortedParams = {};
+      Object.keys(params)
+        .sort()
+        .forEach((key) => {
+          sortedParams[key] = params[key];
+        });
+
+      const queryString = Object.keys(sortedParams)
+        .map(
+          (key) =>
+            `${this.percentEncode(key)}=${this.percentEncode(
+              sortedParams[key]
+            )}`
         )
+        .join("&");
+
+      const stringToSign = `GET&${this.percentEncode("/")}&${this.percentEncode(
+        queryString
+      )}`;
+      const signature = CryptoJS.HmacSHA1(
+        stringToSign,
+        `${this.accessKeySecret}&`
+      ).toString(CryptoJS.enc.Base64);
+
+      const finalUrl = `${
+        this.endpointAli
+      }/?${queryString}&Signature=${this.percentEncode(signature)}`;
+
+      fetch(finalUrl)
+        .then((response) => response.text())
+        .then((data) => {
+          try {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(data, "text/xml");
+            const translatedElement = xmlDoc.querySelector("Translated");
+            const detectedLanguageElement =
+              xmlDoc.querySelector("DetectedLanguage");
+            if (translatedElement) {
+              var detectedLanguage = "en";
+              if (detectedLanguageElement) {
+                detectedLanguage = detectedLanguageElement.textContent;
+              } else if (type == 3) {
+                console.log("can't detect Lang");
+                this.originDectLang();
+                return;
+              }
+              if (type == 3) {
+                if (
+                  detectedLanguage.includes(
+                    this.langInTransLine.split("-")[0]
+                  ) ||
+                  this.langInTransLine.split("-")[0].includes(detectedLanguage)
+                ) {
+                  this.isOriginalLine1 = 0;
+                  this.isOriginalLine2 = 1;
+                } else {
+                  this.isOriginalLine1 = 1;
+                  this.isOriginalLine2 = 0;
+                }
+                window.localStorage.setItem(
+                  this.mediaName + "line1",
+                  this.isOriginalLine1
+                );
+                window.localStorage.setItem(
+                  this.mediaName + "line2",
+                  this.isOriginalLine2
+                );
+                this.autoSet();
+              } else if (type == 2) {
+                if (
+                  detectedLanguage.includes(
+                    this.targetLanguage.split("-")[0]
+                  ) ||
+                  this.targetLanguage.split("-")[0].includes(detectedLanguage)
+                ) {
+                  if (this.showAddNew || this.showEditNew) {
+                    this.getTrans();
+                  }
+                  return;
+                }
+
+                if (this.showAddNew && this.newTranslation == "") {
+                  this.newTranslation = translatedElement.textContent;
+                }
+              } else {
+                this.translatedText = translatedElement.textContent;
+                console.log(this.translatedText);
+                this.saveTranslate();
+              }
+            } else {
+              if (type == 3) {
+                console.log("can't detect Lang");
+                this.originDectLang();
+              } else if (type == 2) {
+                if (this.showAddNew || this.showEditNew) {
+                  this.getTrans();
+                }
+              } else {
+                this.openAlert(1, this.$t("repeater.alert003"));
+                this.translatedText = "";
+                this.inSubProcess = false;
+              }
+              return;
+            }
+          } catch (error) {
+            if (type == 3) {
+              console.log("can't detect Lang");
+              this.originDectLang();
+            } else if (type == 2) {
+              if (this.showAddNew || this.showEditNew) {
+                this.getTrans();
+              }
+            } else {
+              this.openAlert(1, this.$t("repeater.alert004"));
+              this.translatedText = "";
+              this.inSubProcess = false;
+            }
+            return;
+          }
+        })
+        .catch(() => {
+          if (type == 3) {
+            console.log("can't detect Lang");
+            this.originDectLang();
+          } else if (type == 2) {
+            if (this.showAddNew || this.showEditNew) {
+              this.getTrans();
+            }
+          } else {
+            this.openAlert(1, this.$t("repeater.alert005"));
+            this.translatedText = "";
+            this.inSubProcess = false;
+          }
+        });
+    },
+
+    getTranslateReport() {
+      if (
+        this.translatorUrl.includes("ali-translator:default") ||
+        this.translatorUrl.includes("Ali-translator:default")
       ) {
-        let x = this.getValue2(1);
+        let x = this.getKeyFromServer(4);
+        this.accessKeyId = x[0];
+        this.accessKeySecret = x[1];
+      } else if (this.translatorUrl.includes("ali-translator:")) {
+        if (this.translatorUrl.split("ali-translator:")[1].split(",")[0])
+          this.accessKeyId = this.translatorUrl
+            .split("ali-translator:")[1]
+            .split(",")[0];
+        if (this.translatorUrl.split("ali-translator:")[1].split(",")[1])
+          this.accessKeySecret = this.translatorUrl
+            .split("ali-translator:")[1]
+            .split(",")[1];
+      } else {
+        this.accessKeyId = "";
+        this.quotaUsed = -1;
+        return;
+      }
+
+      // 获取本月一号和昨天的日期
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const today = new Date(now.getTime());
+
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day} 00:00:00`;
+      };
+
+      const beginTime = formatDate(firstDayOfMonth);
+      const endTime = formatDate(today).replace("00:00:00", "23:59:59");
+
+      const timestamp = new Date().toISOString().replace(/\.\d{3}/, "");
+      const nonce = Math.random().toString(36).substr(2, 15);
+      const params = {
+        Action: "GetTranslateReport",
+        BeginTime: beginTime,
+        EndTime: endTime,
+        ApiName: this.apiName,
+        Group: "day",
+        Version: "2018-10-12",
+        AccessKeyId: this.accessKeyId,
+        SignatureMethod: "HMAC-SHA1",
+        SignatureNonce: nonce,
+        SignatureVersion: "1.0",
+        Timestamp: timestamp,
+      };
+
+      const sortedParams = {};
+      Object.keys(params)
+        .sort()
+        .forEach((key) => {
+          sortedParams[key] = params[key];
+        });
+
+      const queryString = Object.keys(sortedParams)
+        .map(
+          (key) =>
+            `${this.percentEncode(key)}=${this.percentEncode(
+              sortedParams[key]
+            )}`
+        )
+        .join("&");
+
+      const stringToSign = `GET&${this.percentEncode("/")}&${this.percentEncode(
+        queryString
+      )}`;
+      const signature = CryptoJS.HmacSHA1(
+        stringToSign,
+        `${this.accessKeySecret}&`
+      ).toString(CryptoJS.enc.Base64);
+
+      const finalUrl = `${
+        this.endpointAli
+      }/?${queryString}&Signature=${this.percentEncode(signature)}`;
+
+      fetch(finalUrl)
+        .then((response) => response.text())
+        .then((data) => {
+          let totalSum = 0;
+          let dailyArray = data.split("<total>");
+          for (let i = 1; i < dailyArray.length; i++) {
+            let dailyTotal = Number(dailyArray[i].split("</total>")[0]);
+            totalSum = totalSum + dailyTotal;
+          }
+          this.quotaUsed = totalSum;
+        })
+        .catch(() => {
+          this.quotaUsed = -2;
+        });
+    },
+
+    percentEncode(str) {
+      return encodeURIComponent(str)
+        .replace(/\+/g, "%20")
+        .replace(/\*/g, "%2A")
+        .replace(/%7E/g, "~")
+        .replace(/!/g, "%21")
+        .replace(/\(/g, "%28")
+        .replace(/\)/g, "%29")
+        .replace(/'/g, "%27"); // 处理单引号
+    },
+
+    async azureTranslate() {
+      if (this.translatorUrl.includes("Azure-translator:default")) {
+        let x = this.getKeyFromServer(5);
         this.apiKey = x[0];
         this.region = x[1];
-        this.endpoint = "https://api.cognitive.microsofttranslator.com/";
+        this.endpointAli = "https://api.cognitive.microsofttranslator.com/";
       } else if (this.translatorUrl.includes("azure-translator:")) {
-        this.apiKey = this.translatorUrl
-          .split("azure-translator:")[1]
-          .split(",")[0];
-        this.region = this.translatorUrl
-          .split("azure-translator:")[1]
-          .split(",")[1];
-        this.endpoint = this.translatorUrl
-          .split("azure-translator:")[1]
-          .split(",")[2];
+        if (this.translatorUrl.split("azure-translator:")[1].split(",")[0])
+          this.apiKey = this.translatorUrl
+            .split("azure-translator:")[1]
+            .split(",")[0];
+        if (this.translatorUrl.split("azure-translator:")[1].split(",")[1])
+          this.region = this.translatorUrl
+            .split("azure-translator:")[1]
+            .split(",")[1];
+        if (this.translatorUrl.split("azure-translator:")[1].split(",")[2])
+          this.endpointAli = this.translatorUrl
+            .split("azure-translator:")[1]
+            .split(",")[2];
       } else {
-        this.apiKey = "";
-        this.region = "";
-        this.endpoint = "";
+        this.openAlert(1, this.$t("repeater.alert006"));
+        return;
       }
       let filteredArray = "";
       if (this.showAddNew) {
@@ -4290,7 +4864,7 @@ export default {
         }
       }
       this.textToTranslate = filteredArray;
-      const url = `${this.endpoint}/translate?api-version=3.0&to=${this.targetLanguage}`;
+      const url = `${this.endpointAli}/translate?api-version=3.0&to=${this.targetLanguage}`;
       const headers = {
         "Content-Type": "application/json",
         "Ocp-Apim-Subscription-Key": this.apiKey,
@@ -4306,7 +4880,7 @@ export default {
         });
 
         if (!response.ok) {
-          alert(`HTTP error! status: ${response.status}`);
+          this.openAlert(1, this.$t("repeater.alert006"));
           this.inSubProcess = false;
           return;
         }
@@ -4320,7 +4894,7 @@ export default {
         if (this.showAddNew || this.showEditNew) {
           this.getTrans();
         } else {
-          alert("Error translating text", error);
+          this.openAlert(1, this.$t("repeater.alert007"));
           this.inSubProcess = false;
         }
       }
@@ -4439,19 +5013,25 @@ export default {
     },
 
     showRecordingSetNote() {
-      alert(this.$t("repeater.noRecordPermission"));
+      this.openAlert(1, this.$t("repeater.noRecordPermission"));
     },
 
     alertTranslatorUrl() {
-      alert(
+      this.openAlert(
+        1,
         this.$t("repeater.alertTranslatorUrl", { targetLine: this.targetLine })
       );
     },
     alertTranslatorUrl1() {
-      alert(this.$t("repeater.alertTranslatorUrl1"));
+      this.openAlert(1, this.$t("repeater.alertTranslatorUrl1"));
     },
+
+    helpCss() {
+      this.openAlert(1, this.$t("repeater.helpCss"));
+    },
+
     alertAutoDetect() {
-      alert(this.$t("repeater.alertAutoDetect"));
+      this.openAlert(1, this.$t("repeater.alertAutoDetect"));
     },
 
     recording() {
@@ -4484,7 +5064,7 @@ export default {
           this.saveRecording();
         };
       } catch (error) {
-        alert(this.$t("repeater.noRecordFound"));
+        this.openAlert(1, this.$t("repeater.noRecordFound"));
       }
     },
 
@@ -4714,7 +5294,7 @@ export default {
       } catch (e) {
         if (!e.message.includes("404")) {
           this.netStatus = false;
-          alert(this.$t("repeater.failDownload"));
+          this.openAlert(1, this.$t("repeater.failDownload"));
         } else {
           window.sessionStorage.removeItem(
             this.mediaName + this.user.id + "dictation"
@@ -4744,7 +5324,7 @@ export default {
     },
 
     showTTSSetting() {
-      alert(this.$t("repeater.TTSSetting"));
+      this.openAlert(1, this.$t("repeater.TTSSetting"));
     },
 
     checkLocalStorageSpace() {
@@ -4976,8 +5556,13 @@ export default {
         this.user.id == window.localStorage.getItem(this.user.id) &&
         window.localStorage.getItem(this.favFileName)
       ) {
-        this.confirmType = "saveUnsavedFav";
-        this.showConfirm();
+        this.openAlert(
+          2,
+          this.$t("repeater.saveUnsavedFav", {
+            favFileName: this.favFileName,
+          }),
+          "saveUnsavedFav"
+        );
         return;
       } else if (
         (this.onOffline ||
@@ -5002,8 +5587,13 @@ export default {
           window.localStorage.setItem(this.user.id, this.user.id);
         } catch (e) {
           this.isReadyToPlay = true;
-          this.confirmType = "fetch";
-          this.showConfirm();
+          this.openAlert(
+            2,
+            this.$t("repeater.noFavoriteFile", {
+              favFileName: this.favFileName,
+            }),
+            "fetch"
+          );
         }
       }
 
@@ -5087,6 +5677,12 @@ export default {
         this.targetLanguage = JSON.parse(PDJcontent.split("::")[39]);
       if (PDJcontent.split("::")[40])
         this.translatorUrl = JSON.parse(PDJcontent.split("::")[40]);
+      if (PDJcontent.split("::")[41])
+        this.isCustomFont = JSON.parse(PDJcontent.split("::")[41]);
+      if (PDJcontent.split("::")[42])
+        this.customCss1 = JSON.parse(PDJcontent.split("::")[42]);
+      if (PDJcontent.split("::")[43])
+        this.customCss2 = JSON.parse(PDJcontent.split("::")[43]);
       this.isUtterTransLine = JSON.parse(PDJcontent.split("::")[7]);
       if (!this.isAutoDetectLang) {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
@@ -5280,10 +5876,10 @@ export default {
       let url = this.transUrl + this.newWord;
       window.open(url, "_blank");
     },
+
     wrongSrc() {
       if (this.isFavOnPlay && this.isPlayFullFavList) {
-        this.confirmType = "wrongSrc";
-        this.showConfirm();
+        this.openAlert(2, this.$t("repeater.wrongSrc"), "wrongSrc");
       }
     },
 
@@ -5345,7 +5941,10 @@ export default {
           this.indexE == this.reviseData[ii].endIndex
         ) {
           let iii = ii + 1;
-          alert("Already existed in Review Plan, Item " + iii + ".");
+          this.openAlert(
+            1,
+            "Already existed in Review Plan, Item " + iii + "."
+          );
           return;
         }
       }
@@ -5390,8 +5989,12 @@ export default {
         this.sentenceIndex = startIndex;
         this.showRevision = false;
       } catch (e) {
-        this.confirmType = "fetchRevision";
-        this.showConfirm(index);
+        this.openAlert(
+          2,
+          this.$t("repeater.removeRevisionConfirm"),
+          "fetchRevision",
+          index
+        );
       }
     },
 
@@ -5451,6 +6054,16 @@ export default {
         localforage
           .getItem(keyName)
           .then(function (value) {
+            if (value.type.includes("text")) {
+              vm.cachedKeys = vm.cachedKeys.replace(";;" + keyName, "");
+              window.localStorage.setItem("cKeys", vm.cachedKeys);
+              vm.calcRaw();
+              vm.playFromCache = false;
+              vm.fetchCount++;
+              if (vm.fetchCount > 2) return;
+              vm.cacheMedia();
+              return;
+            }
             vm.raw = URL.createObjectURL(value);
             vm.playFromCache = true;
           })
@@ -5663,13 +6276,13 @@ export default {
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
           : "no content";
-      if (this.TTSurl.startsWith("azure-tts:")) {
+      if (this.TTSurl.includes("zure-tts:")) {
         this.azureTTS(text, 2);
       } else {
         let ttsFullUrl = this.TTSurl + text;
         this.audio.src = ttsFullUrl;
         this.audio.play().catch(() => {
-          alert("Error Uttering Trans Line with the TTS!");
+          this.openAlert(1, this.$t("repeater.alert008"));
         });
       }
     },
@@ -5680,19 +6293,25 @@ export default {
       let s = "";
       let x;
       if (this.TTSurl.startsWith("azure-tts:defaultKey1")) {
-        x = this.getValue(1);
+        x = this.getKeyFromServer(1);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
         else v = "";
       } else if (this.TTSurl.startsWith("azure-tts:defaultKey2")) {
-        x = this.getValue(2);
+        x = this.getKeyFromServer(2);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
         else v = "";
       } else if (this.TTSurl.startsWith("azure-tts:defaultKey3")) {
-        x = this.getValue(3);
+        x = this.getKeyFromServer(3);
+        s = x[0];
+        r = x[1];
+        if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
+        else v = "";
+      } else if (this.TTSurl.startsWith("Azure-tts:defaultKey")) {
+        x = this.getKeyFromServer(6);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
@@ -5744,7 +6363,10 @@ export default {
                   }, 1000);
                   return;
                 } else {
-                  alert("Wrong Azure TTS settings, or network error!");
+                  this.openAlert(
+                    1,
+                    "Wrong Azure TTS settings, or network error!"
+                  );
                   return;
                 }
               }
@@ -5768,12 +6390,16 @@ export default {
                 }, 1000);
                 return;
               } else {
-                alert("Wrong Azure TTS settings, or network error!", error);
+                this.openAlert(
+                  1,
+                  "Wrong Azure TTS settings, or network error!",
+                  error
+                );
                 return;
               }
             });
         })
-        .catch((error) => {
+        .catch(() => {
           if (type == 1) {
             this.endUtter();
             this.ttsWrong = true;
@@ -5783,7 +6409,7 @@ export default {
             }, 1000);
             return;
           } else {
-            alert("Wrong Azure TTS settings, or network error!", error);
+            this.openAlert(1, this.$t("repeater.alert010"));
             return;
           }
         });
@@ -5802,49 +6428,23 @@ export default {
       return response.text();
     },
 
-    getValue(x) {
+    getKeyFromServer(x) {
       const encryptedMap = {
-        1: [
-          atob(
-            "Q0NKY2VkazlHZmFuNmx5amhGbVRySWFoTjZpcHZpZGhLSno0bTN4aVlMR05HN2VOTG4ya0pRUUo5OUJEQUMzcEthUlhKM3czQUFBWUFDT0dzbTly"
-          ),
-          atob("ZWFzdGFzaWE="),
-        ],
-        2: [
-          atob(
-            "OEZ2RnBneXk2ZmppeEdWRVpobmx4ZkhvMTdFV0dXMTRiVXp1V25ZblpIZkQ4NDBweUc3UkpRUUo5OUJEQUNZZUJqRlhKM3czQUFBWUFDT0dkTkpM"
-          ),
-          atob("ZWFzdHVz"),
-        ],
-        3: [
-          atob(
-            "NmpCSnZZaDB2WG5KVE9IeWtmRlRKYmFGSWtaM3dRU29MZVNKb21VSGJyMjF4SGJOVW55ZkpRUUo5OUJEQUM1UnFMSlhKM3czQUFBWUFDT0dqYWNV"
-          ),
-          atob("d2VzdGV1cm9wZQ=="),
-        ],
+        1: [atob(this.sh), atob("ZWFzdGFzaWE=")],
+        2: [atob(this.po), atob("ZWFzdHVz")],
+        3: [atob(this.re), atob("c291dGhlYXN0YXNpYQ==")],
+        4: [atob(this.aa), atob(this.ab)],
+        5: [atob(this.pm), atob("Z2xvYmFs")],
+        6: [atob(this.at), atob("ZWFzdGFzaWE=")],
       };
       return encryptedMap[x];
     },
 
     getValue2(x) {
       const encryptedMap = {
-        1: [
-          atob(
-            "Q3FQU2hUb28xdXQ3MGE5QnZmVndtYXZ1WU1FQkUyeEZ1anZOM2hBMnl5TElpblRVc0RsOUpRUUo5OUJEQUNVTHlDcFhKM3czQUFBYkFDT0dISWZZ"
-          ),
-          atob("Z2xvYmFs"),
-        ],
         2: [
           atob("YzNjMDU5ZWNmNDdlNDg5YzhkYjBkMDM4ODY3ZTc1YzE="),
           atob("ZWFzdHVz"),
-        ],
-        3: [
-          atob(
-            "QXNRVHlsUjBTcVpTUko2eXYzakJDcnNsUlY5Mk9TczE1Y2ZDMXRtU2d6bTZKdEttRklnUUpRUUo5OUJEQUMzcEthUlhKM3czQUFBYUFDT0dBOWU2"
-          ),
-          atob(
-            "aHR0cHM6Ly9wZGotbGFuZ2RldGVjdC5jb2duaXRpdmVzZXJ2aWNlcy5henVyZS5jb20v"
-          ),
         ],
       };
       return encryptedMap[x];
@@ -5932,7 +6532,7 @@ export default {
         transLineContent !== ""
           ? transLineContent
           : "no content";
-      if (this.TTSurl.startsWith("azure-tts:")) {
+      if (this.TTSurl.includes("zure-tts:")) {
         this.azureTTS(text, 1);
       } else {
         let ttsFullUrl = this.TTSurl + text;
@@ -6076,8 +6676,7 @@ export default {
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
     },
     resetTranslatorurl() {
-      this.translatorUrl =
-        "azure-translator:defaultKey,global,https://api.cognitive.microsofttranslator.com/";
+      this.translatorUrl = "ali-translator:default";
     },
     cleanUp1() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
@@ -6278,192 +6877,6 @@ export default {
       this.endTimeTemp = parseFloat(temp);
     },
 
-    showConfirm(index) {
-      if (this.confirmType == "fetch") {
-        var userConfirmation = window.confirm(
-          this.$t("repeater.noFavoriteFile", {
-            favFileName: this.favFileName,
-          })
-        );
-        if (userConfirmation) {
-          this.favList = [];
-          if (this.isAutoDetectLang) this.autoDetectLangInTrans();
-          if (!this.hasSpeechSynthesis) {
-            this.isSystemTTS = "No";
-          }
-          this.saveInit();
-          setTimeout(() => {
-            this.currentMedia.pause();
-          }, 1);
-        } else {
-          this.cleanUp1();
-          this.close();
-        }
-      }
-
-      if (this.confirmType == "fetchRevision") {
-        var userConfirmationRevision = window.confirm(
-          this.$t("repeater.removeRevisionConfirm")
-        );
-        if (userConfirmationRevision) {
-          this.reviseData.splice(index, 1);
-        } else {
-          return;
-        }
-      }
-
-      if (this.confirmType == "wrongSrc") {
-        var userConfirmationWrongSrc = window.confirm(
-          this.$t("repeater.wrongSrc")
-        );
-        if (userConfirmationWrongSrc) {
-          this.cacheCleanUp();
-          setTimeout(() => {
-            if (this.isFavOnPlay && this.isPlayFullFavList) {
-              this.switchIsFav();
-            }
-            return;
-          }, 500);
-        } else {
-          this.cacheCleanUp();
-          setTimeout(() => {
-            return;
-          }, 500);
-        }
-
-        this.cacheCleanUp();
-        setTimeout(() => {
-          if (this.isFavOnPlay && this.isPlayFullFavList) {
-            this.switchIsFav();
-          }
-          return;
-        }, 500);
-      }
-
-      if (this.confirmType == "delete") {
-        var userConfirmationDelete = window.confirm(
-          this.$t("repeater.confirmDelete")
-        );
-        if (userConfirmationDelete) {
-          this.deleteSentence();
-        } else {
-          return;
-        }
-      }
-      if (this.confirmType == "deleteDicRec") {
-        let dictationFile =
-          "!PDJ/userID-" +
-          this.user.id +
-          "/Repeater-backup/" +
-          this.mediaName.slice(0, -4) +
-          "-dictation.txt";
-
-        let recordDir =
-          "!PDJ/userID-" +
-          this.user.id +
-          "/Repeater-backup/Rec-" +
-          this.mediaName.slice(0, -4) +
-          "/";
-        var userConfirmationDelete1 = window.confirm(
-          this.$t("repeater.confirmdeleteDicRec", {
-            dictationFile: dictationFile,
-            recordDir: recordDir,
-          })
-        );
-        if (userConfirmationDelete1) {
-          this.deleteDicRec();
-        } else {
-          return;
-        }
-      }
-      if (this.confirmType == "uploadDictation") {
-        let path =
-          "/!PDJ/userID-" +
-          this.user.id +
-          "/Repeater-backup/Rec-" +
-          this.mediaName.slice(0, -4);
-        var userConfirmationUp = window.confirm(
-          this.$t("repeater.confirmUploadDictation2", { recordingDir: path })
-        );
-        if (userConfirmationUp) {
-          this.uploadDicRec();
-        } else {
-          return;
-        }
-      }
-      if (this.confirmType == "downloadDictation") {
-        var userConfirmationDown = window.confirm(
-          this.$t("repeater.confirmDownloadDictation2")
-        );
-        if (userConfirmationDown) {
-          this.downloadDicRec();
-        } else {
-          return;
-        }
-      }
-
-      if (this.confirmType == "merge") {
-        var userConfirmationMerge = window.confirm(
-          this.$t("repeater.confirmMerge")
-        );
-        if (userConfirmationMerge) {
-          this.mergeSentence();
-        } else {
-          return;
-        }
-      }
-      if (this.confirmType == "add") {
-        var userConfirmationAdd = window.confirm(
-          this.$t("repeater.confirmAdd")
-        );
-        if (userConfirmationAdd) {
-          this.addSentence();
-        } else {
-          return;
-        }
-      }
-
-      if (this.confirmType == "split") {
-        var userConfirmationsplit = window.confirm(
-          this.$t("repeater.confirmSplit")
-        );
-        if (userConfirmationsplit) {
-          this.splitSentence();
-        } else {
-          return;
-        }
-      }
-
-      if (this.confirmType == "saveUnsavedSub") {
-        var userConfirmationSave = window.confirm(
-          this.$t("repeater.saveUnsavedSub")
-        );
-        if (userConfirmationSave) {
-          this.saveUnsavedSrt();
-        } else {
-          window.localStorage.removeItem(this.srtNotUpload);
-          window.localStorage.setItem(this.mediaName, this.reqF.content);
-          return;
-        }
-      }
-
-      if (this.confirmType == "saveUnsavedFav") {
-        this.hasConfirmed = true;
-        var userConfirmationSaveFav = window.confirm(
-          this.$t("repeater.saveUnsavedFav", {
-            favFileName: this.favFileName,
-          })
-        );
-        if (userConfirmationSaveFav) {
-          this.readyStatus();
-        } else {
-          window.localStorage.removeItem(this.favNotUpload);
-          this.notSaveFav = true;
-          this.readyStatus();
-        }
-      }
-    },
-
     async deleteDicRec() {
       window.sessionStorage.removeItem(
         this.mediaName + this.user.id + "dictation"
@@ -6515,7 +6928,7 @@ export default {
       } catch (e) {
         if (!e.message.includes("404")) {
           this.netStatus = false;
-          alert(this.$t("repeater.failUpload"));
+          this.openAlert(1, this.$t("repeater.failUpload"));
         }
       }
     },
@@ -7601,6 +8014,12 @@ export default {
         JSON.stringify(this.targetLanguage) +
         "::" +
         JSON.stringify(this.translatorUrl) +
+        "::" +
+        JSON.stringify(this.isCustomFont) +
+        "::" +
+        JSON.stringify(this.customCss1) +
+        "::" +
+        JSON.stringify(this.customCss2) +
         "::"
       );
     },
@@ -8140,7 +8559,7 @@ export default {
           formatContent = "";
 
           if (this.newWordList.length < 1) {
-            alert(this.$t("repeater.noNewWord"));
+            this.openAlert(1, this.$t("repeater.noNewWord"));
             this.inSubProcess = false;
             return;
           }
@@ -8165,7 +8584,7 @@ export default {
           formatContent = "";
 
           if (this.currentFileFavList.length < 1) {
-            alert(this.$t("repeater.noNewFav"));
+            this.openAlert(1, this.$t("repeater.noNewFav"));
             this.inSubProcess = false;
             return;
           }
@@ -8188,7 +8607,7 @@ export default {
           formatContent = "";
 
           if (this.favList.length < 1) {
-            alert(this.$t("repeater.noNewFav1"));
+            this.openAlert(1, this.$t("repeater.noNewFav1"));
             this.inSubProcess = false;
             return;
           }
@@ -8217,59 +8636,11 @@ export default {
           await api.post(path, formatContent, true);
           this.showsubTools = false;
         } catch (error) {
-          alert("Sorry. Can't save the file to the Server.", error);
+          this.openAlert(1, this.$t("repeater.alert009"));
           this.inSubProcess = false;
           return;
         }
       }
-    },
-
-    confirmDelete() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "delete";
-      this.showConfirm();
-    },
-    confirmDelDicRec() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "deleteDicRec";
-      this.showConfirm();
-    },
-
-    confirmUploadDictation() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "uploadDictation";
-      this.showConfirm();
-    },
-
-    confirmDownloadDictation() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "downloadDictation";
-      this.showConfirm();
-    },
-
-    confirmMerge() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "merge";
-      this.showConfirm();
-    },
-
-    confirmAdd() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "add";
-      this.showConfirm();
-    },
-
-    confirmSplit() {
-      this.cleanUp1();
-      this.cleanUp2();
-      this.confirmType = "split";
-      this.showConfirm();
     },
 
     deleteSentence() {
@@ -8383,7 +8754,10 @@ export default {
       this.cleanUp2();
       let tempI = this.sentenceIndex;
 
-      this.sentenceIndex = 1;
+      if (this.sentenceIndex == 1) {
+        this.sentenceIndex = 2;
+      } else this.sentenceIndex = 1;
+
       setTimeout(() => {
         this.sentenceIndex = tempI;
         if (hasFav) this.switchIsFav();
@@ -8758,20 +9132,6 @@ export default {
       this.save();
     },
 
-    delRevision(index) {
-      this.cleanUp1();
-      this.cleanUp2();
-
-      var userConfirmationDelete = window.confirm(
-        this.$t("repeater.delThisRevision2")
-      );
-      if (userConfirmationDelete) {
-        this.reviseData.splice(index, 1);
-      } else {
-        return;
-      }
-    },
-
     async updatePreview() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
 
@@ -9060,7 +9420,10 @@ input.input.input--repeater {
   padding: 0.2em;
   border-radius: 3px;
 }
-
+.videoFullScreen {
+  text-shadow: 2px 2px 2px #000;
+  z-index: 1000;
+}
 span.subject {
   flex-grow: 1;
   margin: 0;
@@ -9112,6 +9475,41 @@ header {
 
 input:disabled {
   background-color: #bbbaba;
+}
+
+.custom-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.custom-alert-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-message-wrapper {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.custom-alert-content button {
+  margin-top: 10px;
+  width: auto; /* 让按钮宽度根据内容自适应 */
+  max-width: 200px; /* 设置按钮最大宽度 */
+  align-self: center; /* 让按钮在水平方向居中 */
 }
 
 .subTools-overlay {

@@ -188,7 +188,7 @@ user created with the credentials from options "username" and "password".`,
 		}
 
 		if strings.Contains(adr, "0.0.0.0") {
-			log.Println("Now you can access the FileBrowser at " + localIP + ":" + server.Port + ", or PublicIP:" + server.Port)
+			log.Println("Now you can access the FileBrowser at " + localIP + ":" + server.Port + ", or 127.0.0.1:" + server.Port + " (local browser), or PublicIP:" + server.Port)
 		} else {
 			log.Println("Listening on", listener.Addr().String())
 		}
