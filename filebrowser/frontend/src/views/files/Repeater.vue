@@ -416,14 +416,14 @@
         </div>
       </div>
 
-      <div v-if="showModal" class="modal-mask">
-        <div class="modal-wrapper">
-          <div class="modal-container">
-            <div class="modal-header">
+      <div v-if="showModal" class="popUp-mask">
+        <div class="popUp-backLayer">
+          <div class="popUp-container">
+            <div class="popUp-header">
               <h3>{{ $t("repeater.subNote1") }}</h3>
             </div>
 
-            <div class="modal-body">
+            <div class="popUp-body">
               <div
                 v-for="(option, index) in options"
                 :key="index"
@@ -434,8 +434,8 @@
               </div>
             </div>
 
-            <div class="modal-footer">
-              <button class="modal-default-button" @click="showModal = false">
+            <div class="popUp-footer">
+              <button class="popUp-default-button" @click="showModal = false">
                 {{ $t("buttons.close") }}
               </button>
             </div>
@@ -474,6 +474,7 @@
                   min="1"
                   :max="srtSubtitles.length"
                   step="1"
+                  style="width: 3em"
                   :placeholder="1"
                   v-model.number.lazy="startNum"
                 />
@@ -483,6 +484,7 @@
                   min="1"
                   :max="srtSubtitles.length"
                   step="1"
+                  style="width: 3em"
                   :placeholder="srtSubtitles.length"
                   v-model.number.lazy="endNum"
                 />
@@ -492,13 +494,13 @@
                   min="1"
                   :max="2"
                   step="1"
-                  style="width: 2.5em"
+                  style="width: 2em"
                   v-model.lazy="originLine"
                 />
                 {{ $t("repeater.translator2") }}
                 <input
                   type="text"
-                  style="width: 4em"
+                  style="width: 3em"
                   v-model.lazy="targetLanguage"
                 />
                 {{ $t("repeater.translator3", { targetLine: targetLine }) }}
@@ -596,7 +598,7 @@
             width: isMobile ? '90%' : '50%',
           }"
         >
-          <div class="alert-message-wrapper">
+          <div class="alert-message-backLayer">
             <p
               style="
                 word-wrap: break-word;
@@ -1249,7 +1251,7 @@
                   :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
                   class="action"
                   @click="testTTSurl"
-                  :title="$t('repeater.testTTSurl')"
+                  :title="$t('repeater.testUrl')"
                 >
                   <i
                     style="font-size: 1.2em"
@@ -1445,9 +1447,21 @@
                   text-align: justify;
                   text-align-last: left;
                   margin-bottom: 0;
+                  align-items: center;
                 "
               >
                 {{ $t("repeater.transUrl") }}
+                <button
+                  class="action"
+                  @click="testTransUrl"
+                  :title="$t('repeater.testUrl')"
+                >
+                  <i
+                    style="font-size: 1.2em; color: blue"
+                    class="material-icons"
+                    >play_circle_outline</i
+                  >
+                </button>
               </p>
               <p style="margin: 0">
                 <input
@@ -1496,6 +1510,17 @@
                     style="color: blue; font-size: 1.2em"
                     class="material-icons"
                     >settings_backup_restore</i
+                  >
+                </button>
+                <button
+                  class="action"
+                  @click="testTranslatorUrl"
+                  :title="$t('repeater.testUrl')"
+                >
+                  <i
+                    style="font-size: 1.2em; color: blue"
+                    class="material-icons"
+                    >play_circle_outline</i
                   >
                 </button>
                 <button
@@ -1806,10 +1831,7 @@
       >
         <div
           v-if="isFullScreen"
-          @mousedown="startDrag"
-          @mouseup="endDrag"
-          @touchstart="startTouch"
-          @touchend="endTouch"
+          style="flex-grow: 1"
           :style="{
             width: 'auto',
             height: isWaveSurfer ? '45%' : '80%',
@@ -2579,38 +2601,39 @@
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          class="videoFullScreen"
-          v-show="srtSubtitles"
+          v-if="srtSubtitles && !isFullScreen"
           style="width: 100%; flex-grow: 1"
         ></div>
-
-        <p
-          v-show="isWaveSurfer && isEditSubandNotes"
-          style="margin-bottom: 2px"
-        >
-          <label style="color: white">
-            <input type="checkbox" v-model="autoCenter" /> AutoCenter
-          </label>
-          <label style="color: white; margin-left: 0.5em">
-            <input
-              type="range"
-              min="10"
-              max="100"
-              style="width: 35%"
-              v-model="minPxPerSec"
-            />
-          </label>
-          <label style="color: white; margin-left: 0.5em">
-            <input type="checkbox" v-model="regionPlay" /> RegionPlay
-          </label>
-        </p>
-
         <div
-          id="waveform"
-          v-show="isWaveSurfer && isEditSubandNotes"
-          @contextmenu.prevent
-          style="background-color: #ffffffdb"
+          v-if="srtSubtitles && isFullScreen"
+          style="width: 100%; height: 3em"
         ></div>
+
+        <div v-show="isWaveSurfer && isEditSubandNotes">
+          <p style="margin-bottom: 2px">
+            <label style="color: white">
+              <input type="checkbox" v-model="autoCenter" /> AutoCenter
+            </label>
+            <label style="color: white; margin-left: 0.5em">
+              <input
+                type="range"
+                min="10"
+                max="100"
+                style="width: 35%"
+                v-model="minPxPerSec"
+              />
+            </label>
+            <label style="color: white; margin-left: 0.5em">
+              <input type="checkbox" v-model="regionPlay" /> RegionPlay
+            </label>
+          </p>
+
+          <div
+            id="waveform"
+            @contextmenu.prevent
+            style="background-color: #ffffffdb"
+          ></div>
+        </div>
       </div>
 
       <div v-if="markRevised" class="showMsg" style="bottom: 2.5em">
@@ -2658,6 +2681,7 @@
           left: 0;
           right: 0;
           margin: auto;
+          z-index: 1005;
         "
         v-if="isMediaType == 1 && !browserHiJack && raw !== ' '"
         id="myAudio"
@@ -2859,12 +2883,12 @@ export default {
   },
   data: function () {
     return {
-      quotaUsed: 0,
+      quotaUsed: -2,
       accessKeyId: "",
       accessKeySecret: "",
       endpointAli: "https://mt.cn-hangzhou.aliyuncs.com",
+      endpointAzure: "",
       isOriginalLine1: 1,
-      isOriginalLine2: 0,
       tempIndex: 0,
       isCustomFont: false,
       customCss1: "",
@@ -3074,7 +3098,7 @@ export default {
       isPrivate: "Yes",
       hasPrivate: true,
       defaultWaveSurfer: true,
-      transUrl: "https://fanyi.baidu.com/#zh/en/",
+      transUrl: "https://fanyi.baidu.com/#auto/auto/",
       ctrlPressed: false,
       shiftPressed: false,
       dubbingMode: false,
@@ -3400,13 +3424,17 @@ export default {
     },
 
     showQuota() {
-      if (this.translatorUrl.includes("ali-translator:") && this.showsubTools)
-        return 1;
-      else if (
-        this.translatorUrl.includes("Ali-translator:default") &&
+      if (
+        (this.translatorUrl.includes("Ali-translator:default") ||
+          this.translatorUrl.includes("ali-translator:default")) &&
         this.showsubTools
       )
         return 2;
+      else if (
+        this.translatorUrl.includes("ali-translator:") &&
+        this.showsubTools
+      )
+        return 1;
       else return 3;
     },
 
@@ -3709,7 +3737,8 @@ export default {
       if (!this.showsubTools) {
         this.inSubProcess = false;
       } else {
-        this.getTranslateReport();
+        if (this.translatorUrl.includes("li-translator:"))
+          this.getTranslateReport();
       }
     },
 
@@ -3722,6 +3751,8 @@ export default {
 
     translatorUrl() {
       this.translatorUrl = this.translatorUrl.replaceAll(" ", "");
+      if (this.translatorUrl.trim() == "")
+        this.translatorUrl = "ali-translator:default";
       this.save();
     },
 
@@ -3935,7 +3966,8 @@ export default {
         )
           window.localStorage.setItem(this.mediaName, this.reqF.content);
         this.getCacheMedia();
-        this.detectLangAuto();
+        if (this.translatorUrl.includes("li-translator:"))
+          this.getTranslateReport();
       }
     },
 
@@ -4217,14 +4249,14 @@ export default {
     },
 
     langInTransLine: function () {
-      this.save();
+      if (!this.isAutoDetectLang) this.save();
     },
 
     lineNumOfTrans: function () {
       this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
       if (this.lineNumOfTrans > 3) this.lineNumOfTrans = 3;
-      this.save();
+      if (!this.isAutoDetectLang) this.save();
     },
 
     isAutoDetectLang: function () {
@@ -4370,6 +4402,22 @@ export default {
   },
 
   methods: {
+    testTransUrl() {
+      this.newWord = "Hello";
+      this.showTransPage();
+    },
+    testTranslatorUrl() {
+      this.newWord = "success!";
+      if (this.translatorUrl.includes("zure-translator:"))
+        this.azureTranslate(1);
+      else if (this.translatorUrl.includes("li-translator:")) {
+        this.quotaUsed = 0;
+        this.aliTranslate(2, 1);
+      } else {
+        this.openAlert(1, this.$t("repeater.alert007"));
+      }
+    },
+
     openAlert(a, x, c, index) {
       this.cleanUp1();
       this.cleanUp2();
@@ -4449,22 +4497,13 @@ export default {
     },
 
     detectLangAuto() {
-      this.isOriginalLine1 =
-        Number(window.localStorage.getItem(this.mediaName + "line1")) || 0;
-      this.isOriginalLine2 =
-        Number(window.localStorage.getItem(this.mediaName + "line2")) || 0;
-      if (
-        this.isOriginalLine1 == 0 &&
-        this.isOriginalLine2 == 0 &&
-        !(
-          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ||
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ==
-            " "
-        )
-      ) {
-        this.aliTranslate(3);
-      } else {
+      if (window.localStorage.getItem(this.mediaName + "line1")) {
+        this.isOriginalLine1 = Number(
+          window.localStorage.getItem(this.mediaName + "line1")
+        );
         this.autoSet();
+      } else {
+        this.aliTranslate(3);
       }
     },
 
@@ -4475,18 +4514,12 @@ export default {
         .replace(/\s\s*$/, "");
       if (/^[a-zA-Z]/.test(str1)) {
         this.isOriginalLine1 = 1;
-        this.isOriginalLine2 = 0;
       } else {
         this.isOriginalLine1 = 0;
-        this.isOriginalLine2 = 1;
       }
       window.localStorage.setItem(
         this.mediaName + "line1",
         this.isOriginalLine1
-      );
-      window.localStorage.setItem(
-        this.mediaName + "line2",
-        this.isOriginalLine2
       );
       this.autoSet();
     },
@@ -4500,9 +4533,13 @@ export default {
     handleConfirm() {
       this.inSubProcess = true;
       if (this.currentTab === 1) {
-        if (this.translatorUrl.includes("zure-translator"))
+        if (this.translatorUrl.includes("zure-translator:"))
           this.azureTranslate();
-        else this.aliTranslate(1);
+        else if (this.translatorUrl.includes("li-translator:"))
+          this.aliTranslate(1);
+        else {
+          this.openAlert(1, this.$t("repeater.alert007"));
+        }
       } else if (this.currentTab === 2) {
         this.saveMoveAll();
         this.showsubTools = false;
@@ -4519,26 +4556,45 @@ export default {
       this.showsubTools = false;
     },
 
-    aliTranslate(type) {
-      if (this.quotaUsed > 750000 && type == 1) {
-        this.openAlert(1, this.$t("repeater.alert001"));
+    aliTranslate(type, onTest) {
+      if (this.quotaUsed < 0 || this.quotaUsed > 75000) {
+        if (type == 1) {
+          if (this.quotaUsed < 0)
+            this.openAlert(1, this.$t("repeater.alert007"));
+          else this.openAlert(1, this.$t("repeater.alert001"));
+          this.inSubProcess = false;
+        } else if (type == 3) {
+          this.originDectLang();
+        } else if (type == 2) {
+          if (this.showAddNew || this.showEditNew) {
+            this.getTrans();
+          }
+        }
         return;
       }
       if (type > 1) {
-        if (this.translatorUrl.includes("ali-translator:")) {
+        if (this.translatorUrl.includes(",")) {
           if (this.translatorUrl.split("ali-translator:")[1].split(",")[0])
             this.accessKeyId = this.translatorUrl
               .split("ali-translator:")[1]
               .split(",")[0];
+          else this.accessKeyId = "";
 
           if (this.translatorUrl.split("ali-translator:")[1].split(",")[1])
             this.accessKeySecret = this.translatorUrl
               .split("ali-translator:")[1]
               .split(",")[1];
-        } else {
+          else this.accessKeySecret = "";
+        } else if (
+          this.translatorUrl == "ali-translator:default" ||
+          this.translatorUrl == "Ali-translator:default"
+        ) {
           let x = this.getKeyFromServer(4);
           this.accessKeyId = x[0];
           this.accessKeySecret = x[1];
+        } else {
+          this.accessKeyId = "";
+          this.accessKeySecret = "";
         }
       } else if (this.accessKeyId == "") {
         this.openAlert(1, this.$t("repeater.alert002"));
@@ -4623,7 +4679,6 @@ export default {
               if (detectedLanguageElement) {
                 detectedLanguage = detectedLanguageElement.textContent;
               } else if (type == 3) {
-                console.log("can't detect Lang");
                 this.originDectLang();
                 return;
               }
@@ -4635,21 +4690,19 @@ export default {
                   this.langInTransLine.split("-")[0].includes(detectedLanguage)
                 ) {
                   this.isOriginalLine1 = 0;
-                  this.isOriginalLine2 = 1;
                 } else {
                   this.isOriginalLine1 = 1;
-                  this.isOriginalLine2 = 0;
                 }
                 window.localStorage.setItem(
                   this.mediaName + "line1",
                   this.isOriginalLine1
                 );
-                window.localStorage.setItem(
-                  this.mediaName + "line2",
-                  this.isOriginalLine2
-                );
                 this.autoSet();
               } else if (type == 2) {
+                if (onTest == 1) {
+                  this.openAlert(1, translatedElement.textContent);
+                  return;
+                }
                 if (
                   detectedLanguage.includes(
                     this.targetLanguage.split("-")[0]
@@ -4667,14 +4720,16 @@ export default {
                 }
               } else {
                 this.translatedText = translatedElement.textContent;
-                console.log(this.translatedText);
                 this.saveTranslate();
               }
             } else {
               if (type == 3) {
-                console.log("can't detect Lang");
                 this.originDectLang();
               } else if (type == 2) {
+                if (onTest == 1) {
+                  this.openAlert(1, this.$t("repeater.alert007"));
+                  return;
+                }
                 if (this.showAddNew || this.showEditNew) {
                   this.getTrans();
                 }
@@ -4687,9 +4742,12 @@ export default {
             }
           } catch (error) {
             if (type == 3) {
-              console.log("can't detect Lang");
               this.originDectLang();
             } else if (type == 2) {
+              if (onTest == 1) {
+                this.openAlert(1, this.$t("repeater.alert004"));
+                return;
+              }
               if (this.showAddNew || this.showEditNew) {
                 this.getTrans();
               }
@@ -4703,9 +4761,12 @@ export default {
         })
         .catch(() => {
           if (type == 3) {
-            console.log("can't detect Lang");
             this.originDectLang();
           } else if (type == 2) {
+            if (onTest == 1) {
+              this.openAlert(1, this.$t("repeater.alert005"));
+              return;
+            }
             if (this.showAddNew || this.showEditNew) {
               this.getTrans();
             }
@@ -4730,10 +4791,12 @@ export default {
           this.accessKeyId = this.translatorUrl
             .split("ali-translator:")[1]
             .split(",")[0];
+        else this.accessKeyId = "";
         if (this.translatorUrl.split("ali-translator:")[1].split(",")[1])
           this.accessKeySecret = this.translatorUrl
             .split("ali-translator:")[1]
             .split(",")[1];
+        else this.accessKeySecret = "";
       } else {
         this.accessKeyId = "";
         this.quotaUsed = -1;
@@ -4800,7 +4863,12 @@ export default {
       }/?${queryString}&Signature=${this.percentEncode(signature)}`;
 
       fetch(finalUrl)
-        .then((response) => response.text())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
         .then((data) => {
           let totalSum = 0;
           let dailyArray = data.split("<total>");
@@ -4808,10 +4876,16 @@ export default {
             let dailyTotal = Number(dailyArray[i].split("</total>")[0]);
             totalSum = totalSum + dailyTotal;
           }
-          this.quotaUsed = totalSum;
+          if (this.quotaUsed == -2) {
+            this.quotaUsed = totalSum;
+            if (this.isAutoDetectLang) this.detectLangAuto();
+          } else this.quotaUsed = totalSum;
         })
         .catch(() => {
-          this.quotaUsed = -2;
+          if (this.quotaUsed == -2) {
+            this.quotaUsed = -1;
+            if (this.isAutoDetectLang) this.detectLangAuto();
+          } else this.quotaUsed = -1;
         });
     },
 
@@ -4826,31 +4900,34 @@ export default {
         .replace(/'/g, "%27"); // 处理单引号
     },
 
-    async azureTranslate() {
+    async azureTranslate(onTest) {
       if (this.translatorUrl.includes("Azure-translator:default")) {
         let x = this.getKeyFromServer(5);
         this.apiKey = x[0];
         this.region = x[1];
-        this.endpointAli = "https://api.cognitive.microsofttranslator.com/";
+        this.endpointAzure = "https://api.cognitive.microsofttranslator.com/";
       } else if (this.translatorUrl.includes("azure-translator:")) {
         if (this.translatorUrl.split("azure-translator:")[1].split(",")[0])
           this.apiKey = this.translatorUrl
             .split("azure-translator:")[1]
             .split(",")[0];
+        else this.apiKey = "";
         if (this.translatorUrl.split("azure-translator:")[1].split(",")[1])
           this.region = this.translatorUrl
             .split("azure-translator:")[1]
             .split(",")[1];
+        else this.region = "";
         if (this.translatorUrl.split("azure-translator:")[1].split(",")[2])
-          this.endpointAli = this.translatorUrl
+          this.endpointAzure = this.translatorUrl
             .split("azure-translator:")[1]
             .split(",")[2];
+        else this.endpointAzure = "";
       } else {
         this.openAlert(1, this.$t("repeater.alert006"));
         return;
       }
       let filteredArray = "";
-      if (this.showAddNew) {
+      if (this.showAddNew || this.showEditNew) {
         if (this.targetLanguage == "aa") {
           this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
         }
@@ -4863,8 +4940,11 @@ export default {
             this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
         }
       }
+      if (onTest == 1) {
+        filteredArray = this.newWord;
+      }
       this.textToTranslate = filteredArray;
-      const url = `${this.endpointAli}/translate?api-version=3.0&to=${this.targetLanguage}`;
+      const url = `${this.endpointAzure}/translate?api-version=3.0&to=${this.targetLanguage}`;
       const headers = {
         "Content-Type": "application/json",
         "Ocp-Apim-Subscription-Key": this.apiKey,
@@ -4886,6 +4966,10 @@ export default {
         }
         const translations = await response.json();
         this.translatedText = translations[0].translations[0].text;
+        if (onTest == 1) {
+          this.openAlert(1, this.translatedText);
+          return;
+        }
         if (this.showAddNew && this.newTranslation == "") {
           this.newTranslation = this.translatedText;
         } else this.saveTranslate();
@@ -5433,26 +5517,32 @@ export default {
 
       this.regions.on("region-clicked", (region, e) => {
         if (this.regionPlay) e.stopPropagation();
-        this.sentenceIndex = region.id;
-        activeRegion = region;
-        if (this.ctrlPressed || this.shiftPressed) {
-          const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
-          const { width } = bbox;
-          const offsetX = e.clientX - bbox.left;
-          const relX = Math.min(1, Math.max(0, offsetX / width));
-          let timeStamp = (relX * this.wavesurfer.getDuration()).toFixed(3);
-          this.editHotkeys(timeStamp, e);
-        } else if (this.regionPlay) this.click();
+        this.toBlur();
+        setTimeout(() => {
+          this.sentenceIndex = region.id;
+          activeRegion = region;
+          if (this.ctrlPressed || this.shiftPressed) {
+            const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
+            const { width } = bbox;
+            const offsetX = e.clientX - bbox.left;
+            const relX = Math.min(1, Math.max(0, offsetX / width));
+            let timeStamp = (relX * this.wavesurfer.getDuration()).toFixed(3);
+            this.editHotkeys(timeStamp, e);
+          } else if (this.regionPlay) this.click();
+        }, 10);
       });
 
       this.regions.on("region-double-clicked", (region, e) => {
         e.stopPropagation();
-        this.sentenceIndex = region.id;
-        activeRegion = region;
-        this.cleanUp2();
-        this.cleanUp1();
-        this.wavesurfer.pause();
-        this.cont = true;
+        this.toBlur();
+        setTimeout(() => {
+          this.sentenceIndex = region.id;
+          activeRegion = region;
+          this.cleanUp2();
+          this.cleanUp1();
+          this.wavesurfer.pause();
+          this.cont = true;
+        }, 10);
       });
 
       this.wavesurfer.on("interaction", () => {
@@ -6258,6 +6348,9 @@ export default {
         this.showNewWordList = false;
         this.withTrans = false;
       }
+      if (!this.isSingle && !this.showNewWordList && !this.showSubtitleList) {
+        this.currentMedia.addEventListener("timeupdate", this.syncSub);
+      }
       if (this.showSubtitleList) {
         setTimeout(() => {
           document
@@ -6714,14 +6807,7 @@ export default {
     playFavList() {
       this.cleanUp2();
       this.cleanUp1();
-      this.showSubtitleList = false;
-      this.searchList = "";
-      if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
-          this.newWordList[this.indexOfNewWordList].showTrans = false;
-        this.showNewWordList = false;
-      }
-      this.withTrans = false;
+      this.closeSubList();
       if (!this.isFavOnPlay) {
         window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
       }
@@ -7006,6 +7092,11 @@ export default {
       this.isSetting = !this.isSetting;
       this.cleanUp2();
       this.cleanUp1();
+      if (!this.isSingle && !this.isSetting) {
+        setTimeout(() => {
+          this.currentMedia.addEventListener("timeupdate", this.syncSub);
+        }, 10);
+      }
     },
 
     click() {
@@ -7117,14 +7208,7 @@ export default {
     startDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.handleAutoStop();
-      this.showSubtitleList = false;
-      this.searchList = "";
-      if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
-          this.newWordList[this.indexOfNewWordList].showTrans = false;
-        this.showNewWordList = false;
-      }
-      this.withTrans = false;
+      this.closeSubList();
       this.startTime = new Date().getTime();
       this.startX = event.clientX;
       this.startY = event.clientY;
@@ -7136,7 +7220,8 @@ export default {
 
     endDragS(event) {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
-      if (new Date().getTime() - this.startTime < 1000) {
+      let timeNow = new Date().getTime();
+      if (timeNow - this.startTime < 1000) {
         if (this.isSetting) {
           this.isSetting = false;
           return;
@@ -7206,7 +7291,8 @@ export default {
         this.showAddNew = true;
         this.newWord = window.getSelection().toString();
       } else {
-        window.getSelection().removeAllRanges();
+        if (timeNow - this.startTime < 1000)
+          window.getSelection().removeAllRanges();
         this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
@@ -7249,14 +7335,7 @@ export default {
     startTouchS(event) {
       if (!this.isReadyToPlay) return;
       this.handleAutoStop();
-      this.showSubtitleList = false;
-      this.searchList = "";
-      if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
-          this.newWordList[this.indexOfNewWordList].showTrans = false;
-        this.showNewWordList = false;
-      }
-      this.withTrans = false;
+      this.closeSubList();
       this.startTime = new Date().getTime();
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
@@ -7315,13 +7394,20 @@ export default {
     },
     endTouchS(event) {
       if (!this.isReadyToPlay) return;
-      if (new Date().getTime() - this.startTime < 1000) {
+      let timeNow = new Date().getTime();
+      if (timeNow - this.startTime < 1000) {
         if (this.isSetting) {
           this.isSetting = false;
+          if (!this.isSingle) {
+            this.currentMedia.addEventListener("timeupdate", this.syncSub);
+          }
           return;
         }
         if (this.showRevision) {
           this.showRevision = false;
+          if (!this.isSingle) {
+            this.currentMedia.addEventListener("timeupdate", this.syncSub);
+          }
           return;
         }
       }
@@ -7384,7 +7470,8 @@ export default {
         this.showAddNew = true;
         this.newWord = window.getSelection().toString();
       } else {
-        window.getSelection().removeAllRanges();
+        if (timeNow - this.startTime < 1000)
+          window.getSelection().removeAllRanges();
         this.fixbug1();
         this.showAddNew = false;
         this.showEditNew = false;
@@ -7626,43 +7713,63 @@ export default {
 
     syncSub() {
       const media = this.currentMedia;
+      const currentTime = media.currentTime;
       const endFinal = Math.min(this.loopEnd, this.srtSubtitles.length);
+
       if (
         this.nextLoopPlay &&
-        (media.currentTime >=
+        (currentTime >=
           Math.min(
             this.srtSubtitles[endFinal - 1].endTime,
             media.duration - 0.05
           ) ||
-          media.currentTime < this.srtSubtitles[this.loopStart - 1].startTime)
-      )
+          currentTime < this.srtSubtitles[this.loopStart - 1].startTime)
+      ) {
         media.currentTime = this.srtSubtitles[this.loopStart - 1].startTime;
-      for (var i = 0; i < this.srtSubtitles.length; ++i) {
+        return;
+      }
+
+      let left = 0;
+      let right = this.srtSubtitles.length - 1;
+      let index = -1;
+
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const subtitle = this.srtSubtitles[mid];
         if (
-          media.currentTime >= this.srtSubtitles[i].startTime &&
-          media.currentTime <= this.srtSubtitles[i].endTime
+          currentTime >= subtitle.startTime &&
+          currentTime <= subtitle.endTime
         ) {
-          this.sentenceIndex = i + 1;
-          this.isEmpty = false;
-          return;
-        } else if (
-          i > 0 &&
-          i < this.srtSubtitles.length - 1 &&
-          media.currentTime < this.srtSubtitles[i + 1].startTime &&
-          media.currentTime > this.srtSubtitles[i].endTime
-        ) {
-          this.sentenceIndex = i + 1;
-        } else if (media.currentTime < this.srtSubtitles[0].startTime) {
+          index = mid;
+          break;
+        } else if (currentTime < subtitle.startTime) {
+          right = mid - 1;
+        } else {
+          left = mid + 1;
+        }
+      }
+
+      if (index !== -1) {
+        this.sentenceIndex = index + 1;
+        this.isEmpty = false;
+      } else {
+        this.isEmpty = true;
+        if (currentTime < this.srtSubtitles[0].startTime) {
           this.sentenceIndex = 1;
         } else if (
-          i == this.srtSubtitles.length - 1 &&
-          media.currentTime > this.srtSubtitles[i].endTime
+          currentTime > this.srtSubtitles[this.srtSubtitles.length - 1].endTime
         ) {
-          this.sentenceIndex = i + 1;
-        }
-
-        if (i == this.srtSubtitles.length - 1) {
-          this.isEmpty = true;
+          this.sentenceIndex = this.srtSubtitles.length;
+        } else {
+          for (let i = 0; i < this.srtSubtitles.length - 1; i++) {
+            if (
+              currentTime < this.srtSubtitles[i + 1].startTime &&
+              currentTime > this.srtSubtitles[i].endTime
+            ) {
+              this.sentenceIndex = i + 1;
+              break;
+            }
+          }
         }
       }
     },
@@ -7891,24 +7998,10 @@ export default {
       this.playSection();
     },
     autoDetectLangInTrans() {
-      if (
-        this.isOriginalLine1 !== 1 &&
-        !(
-          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ||
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0] ==
-            " "
-        )
-      ) {
-        this.lineNumOfTrans = 1;
-      } else if (
-        this.isOriginalLine2 !== 1 &&
-        !(
-          !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ||
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1] ==
-            " "
-        )
-      ) {
+      if (this.isOriginalLine1 == 1) {
         this.lineNumOfTrans = 2;
+      } else {
+        this.lineNumOfTrans = 1;
       }
     },
 
@@ -8112,8 +8205,10 @@ export default {
       if (!this.onEdit) return;
       this.onEdit = false;
       this.tempOldContent = this.reqF.content;
-      var tempContent = this.reqF.content;
-      var newContent = this.srtSubtitles[this.sentenceIndex - 1].timeStamp;
+      var oldContent = this.reqF.content.split("\n\n")[this.sentenceIndex - 1];
+
+      var newContent =
+        oldContent.split("\n")[0] + "\n" + oldContent.split("\n")[1];
       if (this.subFirstLine !== undefined) {
         this.subFirstLine = this.subFirstLine.replaceAll("\n", "");
         if (
@@ -8148,20 +8243,7 @@ export default {
         if (this.note !== "") newContent = newContent + "\n" + this.note;
       }
 
-      var oldContent =
-        this.srtSubtitles[this.sentenceIndex - 1].sn +
-        "\n" +
-        this.srtSubtitles[this.sentenceIndex - 1].timeStamp +
-        tempContent
-          .split(
-            this.srtSubtitles[this.sentenceIndex - 1].sn +
-              "\n" +
-              this.srtSubtitles[this.sentenceIndex - 1].timeStamp
-          )[1]
-          .split("\n\n")[0];
-      newContent =
-        this.srtSubtitles[this.sentenceIndex - 1].sn + "\n" + newContent;
-      this.reqF.content = tempContent.replace(oldContent, newContent);
+      this.reqF.content = this.reqF.content.replace(oldContent, newContent);
       this.saveSubNow();
     },
 
@@ -8362,7 +8444,11 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.splitSentence(timeStamp);
-      } else if (this.shiftPressed && event.button == 0) {
+      } else if (
+        this.shiftPressed &&
+        event.button == 0 &&
+        this.sentenceIndex < this.srtSubtitles.length
+      ) {
         event.preventDefault();
         this.cleanUp1();
         this.cleanUp2();
@@ -8814,7 +8900,7 @@ export default {
 
       line2 = newStartTime + " --> " + newEndTime;
 
-      var line3 = "First Line";
+      var line3 = " ";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
       let newContent = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
@@ -8894,7 +8980,7 @@ export default {
         " --> " +
         textSubtitles[this.sentenceIndex - 1].split("\n")[1].split(" --> ")[1];
 
-      var line3 = "First Line";
+      var line3 = " ";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
       let newContent = newContent1 + "\n\n" + newLine;
@@ -9105,6 +9191,10 @@ export default {
         }
         this.reviseData = tempData;
         this.save();
+      } else if (!this.isSingle) {
+        setTimeout(() => {
+          this.currentMedia.addEventListener("timeupdate", this.syncSub);
+        }, 10);
       }
     },
     switchDateReviseStatus(index, i) {
@@ -9310,6 +9400,20 @@ export default {
       this.mobileScreen = this.checkMobileScreen();
       this.resized = true;
     },
+    closeSubList() {
+      this.showSubtitleList = false;
+      this.searchList = "";
+      if (this.showNewWordList) {
+        if (this.newWordList.length > 0)
+          this.newWordList[this.indexOfNewWordList].showTrans = false;
+        this.showNewWordList = false;
+      }
+      this.withTrans = false;
+      if (!this.isSingle && !this.showNewWordList && !this.showSubtitleList) {
+        this.currentMedia.addEventListener("timeupdate", this.syncSub);
+      }
+    },
+
     close() {
       if (this.isSetting) {
         this.onSetting();
@@ -9320,14 +9424,7 @@ export default {
         return;
       }
       if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
-        this.showSubtitleList = false;
-        this.searchList = "";
-        if (this.showNewWordList) {
-          if (this.newWordList.length > 0)
-            this.newWordList[this.indexOfNewWordList].showTrans = false;
-          this.showNewWordList = false;
-        }
-        this.withTrans = false;
+        this.closeSubList();
         return;
       }
       if (this.isEditSubandNotes) {
@@ -9500,7 +9597,7 @@ input:disabled {
   flex-direction: column;
 }
 
-.alert-message-wrapper {
+.alert-message-backLayer {
   overflow-y: auto;
   flex: 1;
 }
@@ -9575,7 +9672,7 @@ input:disabled {
   margin-left: 10px;
 }
 
-.modal-mask {
+.popUp-mask {
   position: fixed;
   z-index: 2008;
   top: 0;
@@ -9591,13 +9688,13 @@ input:disabled {
   animation: fadeIn 0.5s ease-in-out;
 }
 
-.modal-wrapper {
+.popUp-backLayer {
   perspective: 1000px;
   /* 添加3D透视效果 */
   touch-action: auto;
 }
 
-.modal-container {
+.popUp-container {
   width: 400px;
   padding: 10px 15px;
   background: #ffffff;
@@ -9610,14 +9707,14 @@ input:disabled {
   position: relative;
 }
 
-.modal-header h3 {
+.popUp-header h3 {
   margin: 0;
   font-size: 20px;
   color: #333;
   font-weight: bold;
 }
 
-.modal-body {
+.popUp-body {
   max-height: 300px;
   overflow-y: auto;
   padding: 0;
@@ -9642,12 +9739,12 @@ input:disabled {
   background: #e8e8e8;
 }
 
-.modal-footer {
+.popUp-footer {
   text-align: right;
   margin-top: 10px;
 }
 
-.modal-default-button {
+.popUp-default-button {
   padding: 4px 8px;
   background: linear-gradient(135deg, #6a11cb, #2575fc);
   color: white;
@@ -9659,7 +9756,7 @@ input:disabled {
   transition: all 0.3s ease;
 }
 
-.modal-default-button:hover {
+.popUp-default-button:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
 }
 
@@ -9699,11 +9796,11 @@ input:disabled {
     width: 13em;
   }
 
-  .modal-body {
+  .popUp-body {
     max-height: 285px;
   }
 
-  .modal-container {
+  .popUp-container {
     width: 300px;
   }
 
