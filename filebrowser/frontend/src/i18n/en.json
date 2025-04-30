@@ -38,7 +38,7 @@
     "autoSwitchtoNextSentence": "Auto Switch to Next Sentence (Disabled while editing)",    
     "utterSubtitle": "Utter Subtitle's Translation Line with TTS",
     "autoDetect": "auto-detect",
-    "alertAutoDetect": "'Language Used In translation Line' will be set as the Current browser 's language; The Line Number Of Translation In Subtitle' will be determined based on whether the language of the current sentence's first line of the subtitle (detected by ali api service) is the same as the language used by the browser.",
+    "alertAutoDetect": "'Language Used In translation Line' will be set as the Current browser 's language; The Line Number Of Translation In Subtitle' will be determined based on whether the language of the current sentence's first line of the subtitle (detected by alibaba api service) is the same as the language used by the browser.",
     "systemTTS": "Use System Built-In TTS",
     "SystemTTSnote": "Simple, Fast and Steady",
     "notSystemTTS": "Use Online TTS Service",

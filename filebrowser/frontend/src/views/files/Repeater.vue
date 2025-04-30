@@ -2606,7 +2606,7 @@
         ></div>
         <div
           v-if="srtSubtitles && isFullScreen"
-          style="width: 100%; height: 3em"
+          style="width: 100%; height: 4.5em"
         ></div>
 
         <div v-show="isWaveSurfer && isEditSubandNotes">
@@ -2698,7 +2698,11 @@
         :disabled="loading || isSetting || !isSingle"
         style="z-index: 1008; position: fixed; right: 1em"
         :style="{
-          bottom: isWaveSurfer ? '6.5em' : '2.5em',
+          bottom: isWaveSurfer
+            ? '6.5em'
+            : isFullScreen && !isSingle
+            ? '5.5em'
+            : '2.5em',
         }"
       >
         <button
@@ -2758,7 +2762,11 @@
         :disabled="loading || isSetting"
         style="z-index: 1007; position: fixed; left: 1em"
         :style="{
-          bottom: isWaveSurfer ? '6.5em' : '2.5em',
+          bottom: isWaveSurfer
+            ? '6.5em'
+            : isFullScreen && !isSingle
+            ? '5.5em'
+            : '2.5em',
         }"
       >
         <button
@@ -6320,7 +6328,7 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.showSubtitleList = false;
-        this.searchList = "";
+        // this.searchList = "";
         this.showNewWordList = true;
       } else if (
         this.showSubtitleList &&
@@ -6329,7 +6337,7 @@ export default {
         this.isFavOnPlay
       ) {
         this.showSubtitleList = false;
-        this.searchList = "";
+        // this.searchList = "";
       } else if (
         !this.showSubtitleList &&
         this.showNewWordList &&
@@ -9402,7 +9410,7 @@ export default {
     },
     closeSubList() {
       this.showSubtitleList = false;
-      this.searchList = "";
+      // this.searchList = "";
       if (this.showNewWordList) {
         if (this.newWordList.length > 0)
           this.newWordList[this.indexOfNewWordList].showTrans = false;
