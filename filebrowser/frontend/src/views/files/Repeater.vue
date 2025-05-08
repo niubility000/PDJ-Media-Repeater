@@ -283,13 +283,13 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 4.2em;
           bottom: 0.2em;
           border-radius: 10px;
           overflow-y: auto;
         "
         :style="{
           width: mobileScreen ? '100%' : '65%',
+          top: isMobile && isLandscape ? '3.2em' : '4.2em',
         }"
       >
         <p style="padding: 0 1em; color: blue">
@@ -555,7 +555,10 @@
                   selectedOption &&
                   (selectedOption.includes(1) ||
                     selectedOption.includes(6) ||
-                    selectedOption.includes(7))
+                    selectedOption.includes(7) ||
+                    selectedOption.includes(8) ||
+                    selectedOption.includes(9) ||
+                    selectedOption.includes(10))
                 "
                 style="font-size: 0.8em"
               >
@@ -631,20 +634,140 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 4.2em;
           bottom: 0.2em;
           background-color: black;
         "
         :style="{
           width: mobileScreen ? '100%' : '65%',
+          top: isMobile && isLandscape ? '3.2em' : '4.2em',
         }"
       >
-        <input
-          style="height: 2em"
-          type="text"
-          placeholder=" Search in Subtitles and Notes "
-          v-model="searchList"
-        />
+        <p
+          style="
+            padding: 0 0.5em 0 0;
+            margin: 0;
+            background-color: white;
+            color: black;
+            display: flex;
+            align-items: center;
+          "
+        >
+          <button
+            v-if="!isSearchReplace"
+            class="action"
+            name="buttons"
+            @click="switchSearchReplace"
+            :title="$t('repeater.search')"
+          >
+            <i style="color: red; font-size: 1em" class="material-icons"
+              >search</i
+            >
+          </button>
+          <button
+            v-if="isSearchReplace"
+            class="action"
+            name="buttons"
+            @click="switchSearchReplace"
+            :title="$t('repeater.findReplace')"
+          >
+            <i style="color: red; font-size: 1em" class="material-icons"
+              >find_replace</i
+            >
+          </button>
+          <button
+            class="action"
+            name="buttons"
+            @click="switchCaseSensitive"
+            :title="$t('repeater.switchCaseSensitive')"
+          >
+            <i
+              style="font-size: 1em"
+              class="material-icons"
+              :style="{
+                color: isCaseSensitive ? 'red' : 'black',
+                backgroundColor: isCaseSensitive ? 'springgreen' : 'white',
+              }"
+            >
+              abc
+            </i>
+          </button>
+          <input
+            style="height: 2em; border-width: 1px; min-width: 3em; flex-grow: 1"
+            type="text"
+            :placeholder="showCasePlaceHolder"
+            v-model="rOldWord"
+          />
+          <span style="width: 4em; text-align: center">in Line </span>
+          <select v-model="selectedReplaceLine" style="width: 4.5em">
+            <option
+              v-for="option in optionsReplace"
+              :key="option"
+              :value="option"
+            >
+              {{ option }}
+            </option>
+          </select>
+        </p>
+        <p
+          v-if="isSearchReplace"
+          style="
+            margin: 0;
+            background-color: white;
+            color: black;
+            display: flex;
+            padding: 0 0.5em;
+            align-items: center;
+          "
+        >
+          <span style="padding-right: 0.1em"
+            >{{ $t("repeater.replaceWith") }}
+          </span>
+          <input
+            style="height: 2em; border-width: 1px; flex-grow: 1"
+            :style="{
+              width: mobileScreen ? '30%' : '',
+            }"
+            type="text"
+            v-model="rNewWord"
+          />
+          &nbsp;&nbsp;
+          <button
+            class="action"
+            name="buttons"
+            @click="replaceSentence(1)"
+            :title="$t('repeater.singleReplace')"
+          >
+            <i style="color: red; font-size: 1em" class="material-icons"
+              >looks_one</i
+            >
+          </button>
+          <button
+            class="action"
+            name="buttons"
+            @click="replaceSentence(2)"
+            :title="$t('repeater.allReplace')"
+          >
+            <i style="color: red; font-size: 1em" class="material-icons"
+              >article</i
+            >
+          </button>
+          <button
+            :disabled="loading || historyIndex < 1"
+            class="action"
+            name="buttons"
+            @click="changeUndo"
+            :title="$t('repeater.undo')"
+          >
+            <i
+              :style="{
+                color: loading || historyIndex < 1 ? 'grey' : 'red',
+              }"
+              style="font-size: 1em"
+              class="material-icons"
+              >undo</i
+            >
+          </button>
+        </p>
         <ul
           style="
             position: relative;
@@ -662,7 +785,7 @@
             v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
             :id="subtitle.sn"
-            @click="chooseSentence(Number(subtitle.sn) - 1)"
+            @click="chooseSentence(Number(subtitle.sn) - 1, index)"
           >
             <p
               style="cursor: pointer"
@@ -670,9 +793,18 @@
                 color: sentenceIndex == Number(subtitle.sn) ? 'blue' : 'white',
               }"
             >
-              {{ index + 1 }}.
-              {{ subtitle.content.split("\r\n")[0] }}&nbsp;&nbsp; -
-              {{ subtitle.content.split("\r\n")[1] }}
+              {{ subtitle.sn }}.
+              <span
+                v-html="
+                  highlightWord(subtitle.content.split('\r\n')[0] || '', 1)
+                "
+              ></span
+              >&nbsp;&nbsp; -
+              <span
+                v-html="
+                  highlightWord(subtitle.content.split('\r\n')[1] || '', 2)
+                "
+              ></span>
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
           </li>
@@ -690,13 +822,13 @@
           position: fixed;
           left: 50%;
           transform: translate(-50%, 0);
-          top: 4.2em;
           bottom: 0.2em;
           border-radius: 10px;
           overflow-y: auto;
         "
         :style="{
           width: mobileScreen ? '100%' : '65%',
+          top: isMobile && isLandscape ? '3.2em' : '4.2em',
         }"
       >
         <p v-if="!this.withTrans" style="padding: 0 1em; color: yellow">
@@ -740,7 +872,9 @@
               }}&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;{{
                 srtSubtitles[newWord.num].content.split("\r\n")[0]
               }}&nbsp;&nbsp; -
-              {{ srtSubtitles[newWord.num].content.split("\r\n")[1] }}&nbsp;]
+              {{
+                srtSubtitles[newWord.num].content.split("\r\n")[1]
+              }}&nbsp;&nbsp;
               <button
                 v-if="isFav"
                 class="action"
@@ -765,6 +899,26 @@
                   style="color: springgreen; padding: 0; font-size: 1.2em"
                   class="material-icons"
                   >star_outline</i
+                >
+              </button>
+              ]&nbsp;&nbsp;&nbsp;&nbsp;
+              <button
+                class="action"
+                name="buttons"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmDeleteWord'),
+                    'deleteWord',
+                    newWord.origin
+                  )
+                "
+                :title="$t('repeater.infoDeleteWord')"
+              >
+                <i
+                  style="color: springgreen; padding: 0; font-size: 1.2em"
+                  class="material-icons"
+                  >delete</i
                 >
               </button>
             </p>
@@ -800,7 +954,13 @@
         </div>
       </div>
 
-      <div id="settingBoxContainer" v-if="srtSubtitles && isSetting">
+      <div
+        id="settingBoxContainer"
+        v-if="srtSubtitles && isSetting"
+        :style="{
+          top: isMobile && isLandscape ? '3.2em' : '4.2em',
+        }"
+      >
         <div id="settingBox">
           <p style="text-align: justify; text-align-last: left; color: white">
             {{ $t("repeater.note1") }}
@@ -1774,6 +1934,18 @@
               <span style="color: white"
                 >{{ sentenceIndex }}/{{ srtSubtitles.length }}</span
               >{{ $t("repeater.instruction12") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickandInput1") }}
+              <i style="color: white" class="material-icons">search</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">find_replace</i>
+              {{ $t("repeater.instruction121") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.clickandInput1") }}
+              <i style="color: white" class="material-icons">abc</i>
+              {{ $t("repeater.instruction122") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.learnLangUsingPDJ") }}
@@ -2825,12 +2997,14 @@
           z-index: 1007;
           position: fixed;
           left: 1em;
-          top: 50%;
-          background-color: black;
+          background-color: transparent;
           border: 0;
         "
-        @mouseover="hoverNavLeft = true"
-        @mouseleave="hoverNavLeft = false"
+        :style="{
+          top: !isFullScreen && !isSingle ? 'calc( 50% - 4em)' : '50%',
+        }"
+        @mouseover="hover(1)"
+        @mouseleave="hover(2)"
         :title="$t('repeater.previous')"
       >
         <i
@@ -2849,12 +3023,14 @@
           z-index: 1007;
           position: fixed;
           right: 1em;
-          top: 50%;
-          background-color: black;
+          background-color: transparent;
           border: 0;
         "
-        @mouseover="hoverNavRight = true"
-        @mouseleave="hoverNavRight = false"
+        :style="{
+          top: !isFullScreen && !isSingle ? 'calc( 50% - 4em)' : '50%',
+        }"
+        @mouseover="hover(3)"
+        @mouseleave="hover(4)"
         :title="$t('repeater.next')"
       >
         <i
@@ -2891,6 +3067,14 @@ export default {
   },
   data: function () {
     return {
+      deleteNewWord: "",
+      selectedReplaceLine: "1,2,3",
+      optionsReplace: ["1,2,3", "1", "2"],
+      searchIndex: 0,
+      rNewWord: "",
+      rOldWord: "",
+      isSearchReplace: false,
+      isCaseSensitive: false,
       quotaUsed: -2,
       accessKeyId: "",
       accessKeySecret: "",
@@ -3101,7 +3285,6 @@ export default {
       RUdoAlert: false,
       fetchCount: 0,
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
-      searchList: "",
       isSwitching: false,
       isPrivate: "Yes",
       hasPrivate: true,
@@ -3121,9 +3304,12 @@ export default {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
 
     isMobile() {
-      return (
-        /iPhone|Android/i.test(navigator.userAgent) && window.innerWidth < 1000
-      );
+      return window.innerWidth < 738;
+    },
+
+    showCasePlaceHolder() {
+      if (this.isCaseSensitive) return this.$t("repeater.caseSensitive");
+      else return this.$t("repeater.caseInSensitive");
     },
 
     subtitleStyle1() {
@@ -3367,16 +3553,47 @@ export default {
     },
 
     srtSubtitlesSearch() {
-      var searchKey = this.searchList.replaceAll("；", ";");
-      searchKey = searchKey.replaceAll(";;", ";");
-      searchKey = searchKey.replace(/^;|;$/g, "");
-      searchKey = searchKey.trim();
-      if (searchKey == ";") searchKey = "";
-      if (searchKey == "") return this.srtSubtitles;
-      else {
-        var final = this.srtSubtitles.filter((item) =>
-          item.content.toLowerCase().includes(searchKey.toLowerCase())
-        );
+      if (this.rOldWord == "") return this.srtSubtitles;
+      var final;
+      if (!this.isCaseSensitive) {
+        if (this.selectedReplaceLine.includes("1,2,3"))
+          final = this.srtSubtitles.filter((item) =>
+            item.content.toLowerCase().includes(this.rOldWord.toLowerCase())
+          );
+        else if (this.selectedReplaceLine.includes("1")) {
+          final = this.srtSubtitles.filter((item) =>
+            item.content
+              .split("\r\n")[0]
+              .toLowerCase()
+              .includes(this.rOldWord.toLowerCase())
+          );
+        } else {
+          final = this.srtSubtitles.filter(
+            (item) =>
+              item.content.split("\r\n")[1] &&
+              item.content
+                .split("\r\n")[1]
+                .toLowerCase()
+                .includes(this.rOldWord.toLowerCase())
+          );
+        }
+        return final;
+      } else {
+        if (this.selectedReplaceLine.includes("1,2,3"))
+          final = this.srtSubtitles.filter((item) =>
+            item.content.includes(this.rOldWord)
+          );
+        else if (this.selectedReplaceLine.includes("1")) {
+          final = this.srtSubtitles.filter((item) =>
+            item.content.split("\r\n")[0].includes(this.rOldWord)
+          );
+        } else {
+          final = this.srtSubtitles.filter(
+            (item) =>
+              item.content.split("\r\n")[1] &&
+              item.content.split("\r\n")[1].includes(this.rOldWord)
+          );
+        }
         return final;
       }
     },
@@ -3582,18 +3799,13 @@ export default {
     },
 
     subtitleContent() {
-      // 检查当前索引对应的字幕内容是否存在
       const currentSubtitle = this.srtSubtitles[this.sentenceIndex - 1];
       if (!currentSubtitle || !currentSubtitle.content) {
         return "";
       }
-
-      // 获取字幕内容的两行
       const [line1, line2] = currentSubtitle.content.split("\r\n");
       let contentLine1 = !this.isEmpty && line1 !== undefined ? line1 : " ";
       let contentLine2 = !this.isEmpty && line2 !== undefined ? line2 : " ";
-
-      // 设置默认样式
       let custom1 =
         "font-size:1.5em;color: yellow;text-shadow: 2px 2px 2px #000;text-align: center;";
       let custom2 =
@@ -3602,8 +3814,6 @@ export default {
         custom1 = this.customCss1;
         custom2 = this.customCss2;
       }
-
-      // 处理是否显示行和听写模式的情况
       let contentAll = " ";
       if (this.isShowLine1 && this.isShowLine2) {
         if (this.isDictation) {
@@ -3616,8 +3826,6 @@ export default {
       } else if (this.isShowLine2) {
         contentAll = `<p style='margin-top: 0px;${custom2};!important'>${contentLine2}</p>`;
       }
-
-      // 处理听写模式
       if (this.isDictation) {
         const contentDictation = this.dictationContent;
         if (contentDictation === "") {
@@ -3663,9 +3871,7 @@ export default {
         contentLine2 = cleanHighlight(contentLine2);
 
         contentAll = `<p style='margin-top: 0px; color: green'>${contentLine1}</p><p style='color: green'>${contentLine2}</p>`;
-      }
-      // 处理包含方括号的情况
-      else if (
+      } else if (
         currentSubtitle.content.split("\r\n")[2] &&
         currentSubtitle.content.split("\r\n")[2].includes("[")
       ) {
@@ -4009,6 +4215,10 @@ export default {
 
     startTimeTemp: function () {
       if (this.isSwitching) return;
+      if (String(this.startTimeTemp).split(".")[1].length !== 3) {
+        this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
+        return;
+      }
       this.notFromStarttimeTempChg = false;
       this.onEdit = true;
       this.saveSub1();
@@ -4034,6 +4244,10 @@ export default {
 
     endTimeTemp: function () {
       if (this.isSwitching) return;
+      if (String(this.endTimeTemp).split(".")[1].length !== 3) {
+        this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
+        return;
+      }
       this.onEdit = true;
       this.saveSub2();
       if (
@@ -4108,7 +4322,10 @@ export default {
         }
       }
 
-      if (this.showSubtitleList) {
+      if (
+        this.showSubtitleList &&
+        this.srtSubtitlesLength == this.srtSubtitlesSearch.length
+      ) {
         document
           .getElementById(this.sentenceIndex)
           .scrollIntoView({ block: "center", behavior: "smooth" });
@@ -4410,10 +4627,58 @@ export default {
   },
 
   methods: {
+    highlightWord(text, type) {
+      if (!text) {
+        return "";
+      }
+      if (type == 1 && !this.selectedReplaceLine.includes("1")) return text;
+      if (type == 2 && !this.selectedReplaceLine.includes("2")) return text;
+
+      if (!this.isCaseSensitive) {
+        const regex = new RegExp(this.rOldWord, "gi");
+        return text.replace(
+          regex,
+          (match) => `<span style="color: springgreen;">${match}</span>`
+        );
+      } else {
+        const regex = new RegExp(this.rOldWord, "g");
+        return text.replace(
+          regex,
+          `<span style="color: springgreen;">${this.rOldWord}</span>`
+        );
+      }
+    },
+
+    switchCaseSensitive() {
+      this.isCaseSensitive = !this.isCaseSensitive;
+    },
+
+    switchSearchReplace() {
+      this.isSearchReplace = !this.isSearchReplace;
+    },
+
+    hover(x) {
+      if (this.isEditSubandNotes || this.isDictation) {
+        this.toBlur();
+        setTimeout(() => {
+          if (x == 1) this.hoverNavLeft = true;
+          else if (x == 2) this.hoverNavLeft = false;
+          else if (x == 3) this.hoverNavRight = true;
+          else if (x == 4) this.hoverNavRight = false;
+        }, 10);
+      } else {
+        if (x == 1) this.hoverNavLeft = true;
+        else if (x == 2) this.hoverNavLeft = false;
+        else if (x == 3) this.hoverNavRight = true;
+        else if (x == 4) this.hoverNavRight = false;
+      }
+    },
+
     testTransUrl() {
       this.newWord = "Hello";
       this.showTransPage();
     },
+
     testTranslatorUrl() {
       this.newWord = "success!";
       if (this.translatorUrl.includes("zure-translator:"))
@@ -4426,15 +4691,17 @@ export default {
       }
     },
 
-    openAlert(a, x, c, index) {
+    openAlert(a, x, c, d) {
       this.cleanUp1();
       this.cleanUp2();
       this.alertMessage = x;
       this.alertType = a;
       this.confirmType = c;
-      this.tempIndex = index;
+      if (c == "deleteWord") this.deleteNewWord = d;
+      else this.tempIndex = d;
       this.alertVisible = true;
     },
+
     doConfirm() {
       this.alertVisible = false;
       if (this.alertType == 1 && this.confirmType == "wrongSrt") this.close();
@@ -4462,6 +4729,8 @@ export default {
         }, 500);
       } else if (this.confirmType == "delete") {
         this.deleteSentence();
+      } else if (this.confirmType == "deleteWord") {
+        this.deleteWord();
       } else if (this.confirmType == "deleteDicRec") {
         this.deleteDicRec();
       } else if (this.confirmType == "uploadDictation") {
@@ -4810,8 +5079,6 @@ export default {
         this.quotaUsed = -1;
         return;
       }
-
-      // 获取本月一号和昨天的日期
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const today = new Date(now.getTime());
@@ -4905,7 +5172,7 @@ export default {
         .replace(/!/g, "%21")
         .replace(/\(/g, "%28")
         .replace(/\)/g, "%29")
-        .replace(/'/g, "%27"); // 处理单引号
+        .replace(/'/g, "%27");
     },
 
     async azureTranslate(onTest) {
@@ -5496,13 +5763,22 @@ export default {
           this.cleanUp2();
         }, 10);
       });
+      if (!this.isMobile) {
+        this.regions.enableDragSelection({
+          color: "rgba(255, 0, 0, 0.1)",
+        });
+      }
       this.regions.on("region-updated", (region) => {
-        if (this.sentenceIndex !== region.id) {
-          this.sentenceIndex = region.id;
-        }
-        this.startTimeTemp = region.start;
-        this.endTimeTemp = region.end + 0.03;
-        this.click();
+        if (String(region.id).includes("region-")) return;
+        this.toBlur();
+        setTimeout(() => {
+          if (this.sentenceIndex !== region.id) {
+            this.sentenceIndex = region.id;
+          }
+          this.startTimeTemp = region.start;
+          this.endTimeTemp = region.end + 0.03;
+          this.click();
+        }, 10);
       });
 
       let activeRegion = null;
@@ -5524,6 +5800,13 @@ export default {
       });
 
       this.regions.on("region-clicked", (region, e) => {
+        if (String(region.id).includes("region-")) {
+          this.addSentence(region.start, region.end);
+          setTimeout(() => {
+            this.click();
+          }, 100);
+          return;
+        }
         if (this.regionPlay) e.stopPropagation();
         this.toBlur();
         setTimeout(() => {
@@ -5563,6 +5846,7 @@ export default {
         if (!this.regionPlay) this.cont = true;
         else this.cont = false;
         this.fromClick = false;
+        this.toBlur();
         this.wavesurfer.play();
       });
 
@@ -5983,8 +6267,8 @@ export default {
 
     getDateAfterDays(n) {
       const date = new Date();
-      const daysInMilliseconds = 1000 * 60 * 60 * 24; // 计算1天毫秒数。
-      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds); // n天后的日期。
+      const daysInMilliseconds = 1000 * 60 * 60 * 24;
+      const nDaysAfter = new Date(date.getTime() + n * daysInMilliseconds);
       return nDaysAfter.toLocaleDateString("af").replaceAll("/", "-");
     },
 
@@ -6328,7 +6612,6 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.showSubtitleList = false;
-        // this.searchList = "";
         this.showNewWordList = true;
       } else if (
         this.showSubtitleList &&
@@ -6337,7 +6620,6 @@ export default {
         this.isFavOnPlay
       ) {
         this.showSubtitleList = false;
-        // this.searchList = "";
       } else if (
         !this.showSubtitleList &&
         this.showNewWordList &&
@@ -6359,7 +6641,10 @@ export default {
       if (!this.isSingle && !this.showNewWordList && !this.showSubtitleList) {
         this.currentMedia.addEventListener("timeupdate", this.syncSub);
       }
-      if (this.showSubtitleList) {
+      if (
+        this.showSubtitleList &&
+        this.srtSubtitlesLength == this.srtSubtitlesSearch.length
+      ) {
         setTimeout(() => {
           document
             .getElementById(this.sentenceIndex)
@@ -6676,7 +6961,10 @@ export default {
         this.utterInProcess = false;
         return;
       } else if (
-        (!this.autoPlayNext || this.showNewWordList) &&
+        (!this.autoPlayNext ||
+          this.showNewWordList ||
+          (this.showSubtitleList &&
+            this.srtSubtitles !== this.srtSubtitlesSearch)) &&
         this.isUtterTransLine &&
         !this.isUtterTransLineFirstly
       ) {
@@ -6694,12 +6982,20 @@ export default {
                 this.autoPlayNext &&
                 !this.isEditSubandNotes &&
                 !this.showNewWordList &&
+                !(
+                  this.showSubtitleList &&
+                  this.srtSubtitles !== this.srtSubtitlesSearch
+                ) &&
                 this.sentenceIndex == this.srtSubtitles.length))
           ) {
             if (
               this.autoPlayNext &&
               !this.isEditSubandNotes &&
-              !this.showNewWordList
+              !this.showNewWordList &&
+              !(
+                this.showSubtitleList &&
+                this.srtSubtitles !== this.srtSubtitlesSearch
+              )
             ) {
               if (this.random) this.sentenceIndex = this.getRandomInt();
               else if (
@@ -6884,7 +7180,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
-          //remove a fav
+          //remove a fav from list
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
@@ -7544,6 +7840,8 @@ export default {
     },
 
     toBlur() {
+      if (this.regions && this.regions.regions.length > this.srtSubtitlesLength)
+        this.updateRgns();
       if (
         document.getElementById("editArea0") &&
         document.getElementById("editArea0").contains(document.activeElement)
@@ -7592,7 +7890,7 @@ export default {
     },
 
     shuffle(arr) {
-      let res = [...arr]; // 创建一个数组副本，以避免修改原数组。
+      let res = [...arr];
       for (let i = res.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [res[i], res[j]] = [res[j], res[i]];
@@ -7604,11 +7902,37 @@ export default {
       if (x > 0 && mode == "SWITCHIMG" && this.sentenceIndex >= 1) {
         if (this.isEditSubandNotes || this.isDictation) {
           this.toBlur();
-        }
-        this.cleanUp2();
-        this.cleanUp1();
-        if (this.sentenceIndex == 1) return;
-        setTimeout(() => {
+          this.cleanUp2();
+          this.cleanUp1();
+          if (this.sentenceIndex == 1) return;
+          setTimeout(() => {
+            this.isSwitching = true;
+            if (this.random) this.sentenceIndex = this.getRandomInt();
+            else this.sentenceIndex = this.sentenceIndex - 1;
+            setTimeout(() => {
+              this.isSwitching = false;
+            }, 200);
+            if (
+              (this.isSingle && !this.autoPlay) ||
+              (this.isFavOnPlay && this.isPlayFullFavList)
+            )
+              return;
+            if (this.isSingle) {
+              if (this.isFirstClick) return;
+              this.click();
+            } else {
+              setTimeout(() => {
+                this.regularPlay();
+                this.currentMedia.currentTime =
+                  this.srtSubtitles[this.sentenceIndex - 1].startTime;
+              }, 1);
+            }
+          }, 10);
+          return;
+        } else {
+          this.cleanUp2();
+          this.cleanUp1();
+          if (this.sentenceIndex == 1) return;
           this.isSwitching = true;
           if (this.random) this.sentenceIndex = this.getRandomInt();
           else this.sentenceIndex = this.sentenceIndex - 1;
@@ -7630,8 +7954,8 @@ export default {
                 this.srtSubtitles[this.sentenceIndex - 1].startTime;
             }, 1);
           }
-        }, 10);
-        return;
+          return;
+        }
       } else if (
         x < 0 &&
         mode == "SWITCHIMG" &&
@@ -7639,11 +7963,37 @@ export default {
       ) {
         if (this.isEditSubandNotes || this.isDictation) {
           this.toBlur();
-        }
-        this.cleanUp2();
-        this.cleanUp1();
-        if (this.sentenceIndex == this.srtSubtitles.length) return;
-        setTimeout(() => {
+          this.cleanUp2();
+          this.cleanUp1();
+          if (this.sentenceIndex == this.srtSubtitles.length) return;
+          setTimeout(() => {
+            this.isSwitching = true;
+            if (this.random) this.sentenceIndex = this.getRandomInt();
+            else this.sentenceIndex = this.sentenceIndex + 1;
+            setTimeout(() => {
+              this.isSwitching = false;
+            }, 200);
+            if (
+              (this.isSingle && !this.autoPlay) ||
+              (this.isFavOnPlay && this.isPlayFullFavList)
+            )
+              return;
+            if (this.isSingle) {
+              if (this.isFirstClick) return;
+              this.click();
+            } else {
+              setTimeout(() => {
+                this.regularPlay();
+                this.currentMedia.currentTime =
+                  this.srtSubtitles[this.sentenceIndex - 1].startTime;
+              }, 1);
+            }
+          }, 10);
+          return;
+        } else {
+          this.cleanUp2();
+          this.cleanUp1();
+          if (this.sentenceIndex == this.srtSubtitles.length) return;
           this.isSwitching = true;
           if (this.random) this.sentenceIndex = this.getRandomInt();
           else this.sentenceIndex = this.sentenceIndex + 1;
@@ -7665,8 +8015,9 @@ export default {
                 this.srtSubtitles[this.sentenceIndex - 1].startTime;
             }, 1);
           }
-        }, 10);
-        return;
+
+          return;
+        }
       } else if (
         this.isReadyToPlay &&
         x < 0 &&
@@ -7901,6 +8252,10 @@ export default {
                 !this.isEditSubandNotes &&
                 !this.isDictation &&
                 !this.showNewWordList &&
+                !(
+                  this.showSubtitleList &&
+                  this.srtSubtitles !== this.srtSubtitlesSearch
+                ) &&
                 (this.sentenceIndex < this.srtSubtitles.length ||
                   (this.nextLoopPlay &&
                     this.sentenceIndex == this.srtSubtitles.length))
@@ -7976,6 +8331,10 @@ export default {
             !this.isEditSubandNotes &&
             !this.isDictation &&
             !this.showNewWordList &&
+            !(
+              this.showSubtitleList &&
+              this.srtSubtitles !== this.srtSubtitlesSearch
+            ) &&
             (this.sentenceIndex < this.srtSubtitles.length ||
               (this.nextLoopPlay &&
                 this.sentenceIndex == this.srtSubtitles.length))
@@ -8768,6 +9127,46 @@ export default {
       this.saveSubFinal();
     },
 
+    deleteWord() {
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      this.changeOld[this.historyIndex] = formatContent;
+      var textSubtitles = formatContent.split("\n\n");
+      var delWord = textSubtitles[this.sentenceIndex - 1].split(
+        "[" + this.deleteNewWord
+      );
+      const index = delWord[1].indexOf("]");
+      const part2 = delWord[1].slice(index + 1);
+
+      var newContent = delWord[0] + part2;
+      formatContent = formatContent.replace(
+        textSubtitles[this.sentenceIndex - 1],
+        newContent
+      );
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      formatContent = formatContent.replaceAll(";;", ";");
+      this.changeNew[this.historyIndex] = formatContent;
+      this.historyIndex = this.historyIndex + 1;
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex + 1;
+      }, 10);
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+      }, 20);
+      window.localStorage.setItem(this.mediaName, formatContent);
+      this.saveSubFinal();
+    },
+
     mergeSentence() {
       this.onRUdo = true;
       setTimeout(() => {
@@ -8861,7 +9260,7 @@ export default {
       this.saveSubFinal();
     },
 
-    addSentence() {
+    addSentence(start, end) {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
@@ -8871,51 +9270,85 @@ export default {
       this.changeOld[this.historyIndex] = formatContent;
 
       var textSubtitles = formatContent.split("\n\n");
-      var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
       var line2 = " ";
-
-      var newStartTime = textSubtitles[this.sentenceIndex - 1]
-        .split("\n")[1]
-        .split(" --> ")[1];
-
+      var newStartTime;
       var newEndTime;
-      if (
-        this.sentenceIndex < this.srtSubtitles.length &&
-        this.srtSubtitles[this.sentenceIndex].startTime -
-          this.srtSubtitles[this.sentenceIndex - 1].endTime <=
-          3
-      ) {
-        newEndTime = textSubtitles[this.sentenceIndex]
-          .split("\n")[1]
-          .split(" --> ")[0];
-      } else {
-        var time = this.convertToHMS(
-          this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
-            this.timeStampChangeEnd +
-            1 +
-            3000
-        );
-
-        newEndTime =
-          time.hours +
+      if (start) {
+        var sTime = this.convertToHMS(start * 1000 - this.timeStampChangeStart);
+        newStartTime =
+          sTime.hours +
           ":" +
-          time.minutes +
+          sTime.minutes +
           ":" +
-          time.seconds +
+          sTime.seconds +
           "," +
-          time.milliseconds;
-      }
+          sTime.milliseconds;
+        var eTime = this.convertToHMS(end * 1000 - this.timeStampChangeEnd + 1);
+        newEndTime =
+          eTime.hours +
+          ":" +
+          eTime.minutes +
+          ":" +
+          eTime.seconds +
+          "," +
+          eTime.milliseconds;
 
+        for (var i = 1; i <= this.srtSubtitlesLength; ++i) {
+          if (start < this.srtSubtitles[0].startTime) {
+            this.sentenceIndex = 1;
+            break;
+          } else if (start > this.srtSubtitles[i - 1].endTime) {
+            this.sentenceIndex = i;
+          } else if (start < this.srtSubtitles[i - 1].endTime) {
+            break;
+          }
+        }
+      } else {
+        newStartTime = textSubtitles[this.sentenceIndex - 1]
+          .split("\n")[1]
+          .split(" --> ")[1];
+        if (
+          this.sentenceIndex < this.srtSubtitles.length &&
+          this.srtSubtitles[this.sentenceIndex].startTime -
+            this.srtSubtitles[this.sentenceIndex - 1].endTime <=
+            3
+        ) {
+          newEndTime = textSubtitles[this.sentenceIndex]
+            .split("\n")[1]
+            .split(" --> ")[0];
+        } else {
+          var time = this.convertToHMS(
+            this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
+              this.timeStampChangeEnd +
+              1 +
+              3000
+          );
+
+          newEndTime =
+            time.hours +
+            ":" +
+            time.minutes +
+            ":" +
+            time.seconds +
+            "," +
+            time.milliseconds;
+        }
+      }
+      var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
+      if (start < this.srtSubtitles[0].startTime) line1 = "1";
       line2 = newStartTime + " --> " + newEndTime;
 
       var line3 = " ";
       var line4 = " ";
       let newLine = line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
       let newContent = textSubtitles[this.sentenceIndex - 1] + "\n\n" + newLine;
-      formatContent = formatContent.replace(
-        textSubtitles[this.sentenceIndex - 1],
-        newContent
-      );
+      if (start < this.srtSubtitles[0].startTime)
+        formatContent = newLine + "\n\n" + formatContent;
+      else
+        formatContent = formatContent.replace(
+          textSubtitles[this.sentenceIndex - 1],
+          newContent
+        );
 
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
@@ -8925,9 +9358,225 @@ export default {
       this.reqF.content = formatContent;
       this.cleanUp1();
       this.cleanUp2();
+      this.sentenceIndex = this.sentenceIndex + 1;
+      window.localStorage.setItem(this.mediaName, formatContent);
+      this.saveSubFinal();
+    },
+
+    replaceSentence(type) {
+      if (this.rOldWord == "" || !this.srtSubtitlesSearch[0]) return;
+      this.onRUdo = true;
+      setTimeout(() => {
+        this.onRUdo = false;
+      }, 1000);
+      var formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      var formatContent2 = formatContent;
+      this.changeOld[this.historyIndex] = formatContent;
+      var textSubtitles = formatContent.split("\n\n");
+      var newContent;
+      var chgContent;
+      var firstPart;
+      var secondPart;
+      for (var i = 0; i < this.srtSubtitlesSearch.length; ++i) {
+        var ni = this.srtSubtitlesSearch[i].sn;
+        if (this.selectedReplaceLine.includes("1,2,3")) {
+          firstPart =
+            textSubtitles[ni - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[ni - 1].split("\n")[1] +
+            "\n";
+          secondPart = textSubtitles[ni - 1].replace(firstPart, "");
+
+          if (this.isCaseSensitive) {
+            secondPart = secondPart.replaceAll(this.rOldWord, this.rNewWord);
+          } else {
+            let regex = new RegExp(this.rOldWord, "gi");
+            secondPart = secondPart.replace(regex, this.rNewWord);
+          }
+
+          newContent = firstPart + secondPart;
+        } else if (this.selectedReplaceLine.includes("1")) {
+          firstPart =
+            textSubtitles[ni - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[ni - 1].split("\n")[1] +
+            "\n";
+
+          if (this.isCaseSensitive) {
+            chgContent = textSubtitles[ni - 1]
+              .split("\n")[2]
+              .replaceAll(this.rOldWord, this.rNewWord);
+          } else {
+            let regex = new RegExp(this.rOldWord, "gi");
+            chgContent = textSubtitles[ni - 1]
+              .split("\n")[2]
+              .replace(regex, this.rNewWord);
+          }
+
+          newContent = textSubtitles[ni - 1].replace(
+            firstPart + textSubtitles[ni - 1].split("\n")[2],
+            firstPart + chgContent
+          );
+        } else if (this.selectedReplaceLine.includes("2")) {
+          firstPart =
+            textSubtitles[ni - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[ni - 1].split("\n")[1] +
+            "\n" +
+            textSubtitles[ni - 1].split("\n")[2] +
+            "\n";
+          if (textSubtitles[ni - 1].split("\n")[3]) {
+            if (this.isCaseSensitive) {
+              chgContent = textSubtitles[ni - 1]
+                .split("\n")[3]
+                .replaceAll(this.rOldWord, this.rNewWord);
+            } else {
+              let regex = new RegExp(this.rOldWord, "gi");
+              chgContent = textSubtitles[ni - 1]
+                .split("\n")[3]
+                .replace(regex, this.rNewWord);
+            }
+
+            newContent = textSubtitles[ni - 1].replace(
+              firstPart + textSubtitles[ni - 1].split("\n")[3],
+              firstPart + chgContent
+            );
+          } else newContent = textSubtitles[ni - 1];
+        }
+
+        formatContent = formatContent.replace(
+          textSubtitles[ni - 1],
+          newContent
+        );
+        if (this.sentenceIndex == ni) this.searchIndex = i;
+      }
+      if (type == 1) {
+        var hasMore = false;
+        if (this.selectedReplaceLine.includes("1,2,3")) {
+          firstPart =
+            textSubtitles[this.sentenceIndex - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[this.sentenceIndex - 1].split("\n")[1] +
+            "\n";
+          secondPart = textSubtitles[this.sentenceIndex - 1].replace(
+            firstPart,
+            ""
+          );
+          if (!secondPart.includes(this.rOldWord)) {
+            this.openAlert(1, this.$t("repeater.alert011"));
+            return;
+          }
+          if (this.isCaseSensitive) {
+            secondPart = secondPart.replace(this.rOldWord, this.rNewWord);
+            if (secondPart.includes(this.rOldWord)) hasMore = true;
+          } else {
+            let regex = new RegExp(this.rOldWord, "i");
+            secondPart = secondPart.replace(regex, this.rNewWord);
+            if (secondPart.toLowerCase().includes(this.rOldWord.toLowerCase()))
+              hasMore = true;
+          }
+          newContent = firstPart + secondPart;
+        } else if (this.selectedReplaceLine.includes("1")) {
+          firstPart =
+            textSubtitles[this.sentenceIndex - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[this.sentenceIndex - 1].split("\n")[1] +
+            "\n";
+          if (
+            !textSubtitles[this.sentenceIndex - 1]
+              .split("\n")[2]
+              .includes(this.rOldWord)
+          ) {
+            this.openAlert(1, this.$t("repeater.alert011"));
+            return;
+          }
+
+          if (this.isCaseSensitive) {
+            chgContent = textSubtitles[this.sentenceIndex - 1]
+              .split("\n")[2]
+              .replace(this.rOldWord, this.rNewWord);
+            if (chgContent.includes(this.rOldWord)) hasMore = true;
+          } else {
+            let regex = new RegExp(this.rOldWord, "i");
+            chgContent = textSubtitles[this.sentenceIndex - 1]
+              .split("\n")[2]
+              .replace(regex, this.rNewWord);
+            if (chgContent.toLowerCase().includes(this.rOldWord.toLowerCase()))
+              hasMore = true;
+          }
+
+          newContent = textSubtitles[this.sentenceIndex - 1].replace(
+            firstPart + textSubtitles[this.sentenceIndex - 1].split("\n")[2],
+            firstPart + chgContent
+          );
+        } else if (this.selectedReplaceLine.includes("2")) {
+          firstPart =
+            textSubtitles[this.sentenceIndex - 1].split("\n")[0] +
+            "\n" +
+            textSubtitles[this.sentenceIndex - 1].split("\n")[1] +
+            "\n" +
+            textSubtitles[this.sentenceIndex - 1].split("\n")[2] +
+            "\n";
+          if (textSubtitles[this.sentenceIndex - 1].split("\n")[3]) {
+            if (
+              !textSubtitles[this.sentenceIndex - 1]
+                .split("\n")[3]
+                .includes(this.rOldWord)
+            ) {
+              this.openAlert(1, this.$t("repeater.alert011"));
+              return;
+            }
+
+            if (this.isCaseSensitive) {
+              chgContent = textSubtitles[this.sentenceIndex - 1]
+                .split("\n")[3]
+                .replace(this.rOldWord, this.rNewWord);
+              if (chgContent.includes(this.rOldWord)) hasMore = true;
+            } else {
+              let regex = new RegExp(this.rOldWord, "i");
+              chgContent = textSubtitles[this.sentenceIndex - 1]
+                .split("\n")[3]
+                .replace(regex, this.rNewWord);
+              if (
+                chgContent.toLowerCase().includes(this.rOldWord.toLowerCase())
+              )
+                hasMore = true;
+            }
+
+            newContent = textSubtitles[this.sentenceIndex - 1].replace(
+              firstPart + textSubtitles[this.sentenceIndex - 1].split("\n")[3],
+              firstPart + chgContent
+            );
+          } else newContent = textSubtitles[this.sentenceIndex - 1];
+        }
+        formatContent = formatContent2.replace(
+          textSubtitles[this.sentenceIndex - 1],
+          newContent
+        );
+        if (!hasMore) {
+          if (this.srtSubtitlesSearch[this.searchIndex + 1])
+            this.sentenceIndex =
+              this.srtSubtitlesSearch[this.searchIndex + 1].sn;
+          else this.sentenceIndex = this.srtSubtitlesSearch[0].sn;
+        }
+      }
+
+      formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
+      formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
+      this.changeNew[this.historyIndex] = formatContent;
+
+      this.historyIndex = this.historyIndex + 1;
+      formatContent = this.formatAll(formatContent);
+      this.reqF.content = formatContent;
+      this.cleanUp1();
+      this.cleanUp2();
       setTimeout(() => {
         this.sentenceIndex = this.sentenceIndex + 1;
       }, 10);
+      setTimeout(() => {
+        this.sentenceIndex = this.sentenceIndex - 1;
+      }, 20);
       window.localStorage.setItem(this.mediaName, formatContent);
       this.saveSubFinal();
     },
@@ -9252,8 +9901,11 @@ export default {
 
       if (
         (event.key === "Control" || event.keyCode === 17) &&
-        this.isEditSubandNotes
+        this.isEditSubandNotes &&
+        !this.ctrlPressed
       ) {
+        this.cleanUp1();
+        this.cleanUp2();
         this.ctrlPressed = true;
       } else if (
         (event.key === "Delete" || event.keyCode === 46) &&
@@ -9262,7 +9914,13 @@ export default {
       ) {
         // Ctrl + Delete
         this.deleteSentence();
-      } else if (event.key === "Shift" && this.isEditSubandNotes) {
+      } else if (
+        event.key === "Shift" &&
+        this.isEditSubandNotes &&
+        !this.shiftPressed
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
         this.shiftPressed = true;
       }
 
@@ -9410,7 +10068,6 @@ export default {
     },
     closeSubList() {
       this.showSubtitleList = false;
-      // this.searchList = "";
       if (this.showNewWordList) {
         if (this.newWordList.length > 0)
           this.newWordList[this.indexOfNewWordList].showTrans = false;
@@ -9552,7 +10209,6 @@ header {
   width: 65%;
   left: 50%;
   transform: translate(-50%, 0);
-  top: 4.2em;
   bottom: 0.2em;
   justify-content: center;
   align-items: center;
@@ -9790,7 +10446,7 @@ input:disabled {
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 738px) {
   #repeater .repeater {
     margin: 0;
   }
