@@ -1110,7 +1110,7 @@
           <p id="ins">
             {{
               $t("reminder.ins25", {
-                xx: user.id,
+                xx: user.username,
               })
             }}
           </p>
@@ -1971,7 +1971,7 @@
               <input type="checkbox" disabled="true" v-model="isBackUp" />
               {{
                 $t("reminder.isBackUp", {
-                  xx: user.id,
+                  xx: user.username,
                 })
               }}
             </p>
@@ -2074,7 +2074,7 @@
           <p id="ins">
             {{
               $t("reminder.ins25", {
-                xx: user.id,
+                xx: user.username,
               })
             }}
           </p>
@@ -2250,7 +2250,7 @@ export default {
     },
 
     toDoListName() {
-      return "/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt";
+      return "/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt";
     },
 
     canRecording() {
@@ -2904,11 +2904,11 @@ export default {
     window.addEventListener("keydown", this.key);
     window.localStorage.setItem("cachedOther", 1);
     this.unSavedAttach =
-      window.localStorage.getItem(this.user.id + "unSavedAttach") || "";
+      window.localStorage.getItem(this.user.username + "unSavedAttach") || "";
     this.unDeleted =
-      window.localStorage.getItem(this.user.id + "unDeleted") || "";
+      window.localStorage.getItem(this.user.username + "unDeleted") || "";
     this.unsavedTask =
-      window.localStorage.getItem(this.user.id + "notUpload") || "";
+      window.localStorage.getItem(this.user.username + "notUpload") || "";
     this.readToDoList();
     this.getItemContent();
     this.getReader();
@@ -2939,11 +2939,11 @@ export default {
         return;
       } else if (this.confirmType == "unmatch") {
         window.localStorage.setItem(
-          this.user.id + "serverContent",
+          this.user.username + "serverContent",
           this.pdjContent
         );
         window.localStorage.setItem(
-          this.user.id + "PDJ-ToDoList.txt",
+          this.user.username + "PDJ-ToDoList.txt",
           this.pdjContent
         );
         this.browserContent = this.pdjContent;
@@ -3069,12 +3069,12 @@ export default {
       var PDJserverContent = null;
       if (
         (this.allowOffline ||
-          window.localStorage.getItem(this.user.id + "notUpload")) &&
-        this.user.id == window.localStorage.getItem(this.user.id) &&
-        window.localStorage.getItem(this.user.id + "PDJ-ToDoList.txt")
+          window.localStorage.getItem(this.user.username + "notUpload")) &&
+        this.user.username == window.localStorage.getItem(this.user.username) &&
+        window.localStorage.getItem(this.user.username + "PDJ-ToDoList.txt")
       ) {
         PDJcontent = window.localStorage.getItem(
-          this.user.id + "PDJ-ToDoList.txt"
+          this.user.username + "PDJ-ToDoList.txt"
         );
         if (PDJcontent !== "") {
           this.browserContent = PDJcontent;
@@ -3088,18 +3088,18 @@ export default {
         try {
           if (this.allowOffline) window.localStorage.removeItem("isOffline");
           PDJserverContent = await api.fetch(
-            "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt"
+            "/files/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt"
           );
           this.tokenFromServer = PDJserverContent.url;
           if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
-          window.localStorage.setItem(this.user.id, this.user.id);
+          window.localStorage.setItem(this.user.username, this.user.username);
           window.localStorage.setItem(
-            this.user.id + "PDJ-ToDoList.txt",
+            this.user.username + "PDJ-ToDoList.txt",
             PDJcontent
           );
           window.localStorage.setItem(
-            this.user.id + "serverContent",
+            this.user.username + "serverContent",
             PDJcontent
           );
           if (PDJcontent !== "") {
@@ -3149,15 +3149,15 @@ export default {
       try {
         if (this.allowOffline) window.localStorage.removeItem("isOffline");
         let PDJserverContent = await api.fetch(
-          "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt"
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt"
         );
         if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
         let PDJcontent = PDJserverContent.content;
         if (
           PDJcontent !== "" &&
-          window.localStorage.getItem(this.user.id + "serverContent") &&
+          window.localStorage.getItem(this.user.username + "serverContent") &&
           PDJcontent !==
-            window.localStorage.getItem(this.user.id + "serverContent")
+            window.localStorage.getItem(this.user.username + "serverContent")
         ) {
           this.pdjContent = PDJcontent;
           this.openAlert(2, this.$t("reminder.unmatch"), "unmatch");
@@ -3198,8 +3198,8 @@ export default {
       for await (const keyName of x) {
         var tToken = window.localStorage.getItem("lastRawToken");
         var fullPath =
-          "/api/raw/!PDJ/userID-" +
-          this.user.id +
+          "/api/raw/!PDJ/user-" +
+          this.user.username +
           "/ToDoList-attachments/" +
           keyName +
           "?auth=" +
@@ -3222,17 +3222,21 @@ export default {
         this.readerFront = 0;
         this.readerBack = 0;
       }
-      if (window.localStorage.getItem(this.user.id + "readerFront") == null)
+      if (
+        window.localStorage.getItem(this.user.username + "readerFront") == null
+      )
         this.readerFront = 1;
       else
         this.readerFront = Number(
-          window.localStorage.getItem(this.user.id + "readerFront")
+          window.localStorage.getItem(this.user.username + "readerFront")
         );
-      if (window.localStorage.getItem(this.user.id + "readerBack") == null)
+      if (
+        window.localStorage.getItem(this.user.username + "readerBack") == null
+      )
         this.readerBack = 1;
       else
         this.readerBack = Number(
-          window.localStorage.getItem(this.user.id + "readerBack")
+          window.localStorage.getItem(this.user.username + "readerBack")
         );
     },
 
@@ -3838,8 +3842,8 @@ export default {
       if (keyName.includes("noCacheAllowed")) {
         var tToken = window.localStorage.getItem("lastRawToken");
         var fullPath =
-          "/api/raw/!PDJ/userID-" +
-          this.user.id +
+          "/api/raw/!PDJ/user-" +
+          this.user.username +
           "/ToDoList-attachments/" +
           keyName +
           "?auth=" +
@@ -3864,8 +3868,8 @@ export default {
             if (x == 1) {
               var tToken = window.localStorage.getItem("lastRawToken");
               var fullPath =
-                "/api/raw/!PDJ/userID-" +
-                this.user.id +
+                "/api/raw/!PDJ/user-" +
+                this.user.username +
                 "/ToDoList-attachments/" +
                 keyName +
                 "?auth=" +
@@ -3883,8 +3887,8 @@ export default {
       var vm = this;
       var tToken = window.localStorage.getItem("lastRawToken");
       var fullPath =
-        "/api/raw/!PDJ/userID-" +
-        this.user.id +
+        "/api/raw/!PDJ/user-" +
+        this.user.username +
         "/ToDoList-attachments/" +
         keyName +
         "?auth=" +
@@ -4246,7 +4250,7 @@ export default {
       else this.tags = this.tags + ";" + this.newItemLine3; //merge
       let arr = this.tags.split(";");
       arr = this.trimArrayElements(arr);
-      arr = this.unique(arr); // remove duplicate tags
+      arr = this.unique(arr); // remove duplicate
       this.tags = arr.join(";").replaceAll('""', "");
       this.tags = this.tags.replace(/^;|;$/g, "");
       this.itemList = this.itemList.replace(/^\s+|\s+$/g, "");
@@ -4435,7 +4439,7 @@ export default {
       }
       setTimeout(() => {
         if (this.touches == 2) {
-          //double click
+          //dbl click
           this.showEditItem();
           this.touches = 0;
           return;
@@ -4544,12 +4548,12 @@ export default {
           let tempName = id + "-" + files[0].name;
           let path = this.$route.path.endsWith("/")
             ? this.$route.path +
-              "!PDJ/userID-" +
-              this.user.id +
+              "!PDJ/user-" +
+              this.user.username +
               "/ToDoList-attachments/"
             : this.$route.path +
-              "/!PDJ/userID-" +
-              this.user.id +
+              "/!PDJ/user-" +
+              this.user.username +
               "/ToDoList-attachments/";
           if (x == 1) {
             this.frontAttach = this.frontAttach + ":::" + tempName;
@@ -4563,12 +4567,12 @@ export default {
           let vmm = this;
           let path = this.$route.path.endsWith("/")
             ? this.$route.path +
-              "!PDJ/userID-" +
-              this.user.id +
+              "!PDJ/user-" +
+              this.user.username +
               "/ToDoList-attachments/"
             : this.$route.path +
-              "/!PDJ/userID-" +
-              this.user.id +
+              "/!PDJ/user-" +
+              this.user.username +
               "/ToDoList-attachments/";
           var keyValue;
           localforage.setItem(keyName, files[0], function () {
@@ -4597,12 +4601,12 @@ export default {
         let vmm = this;
         let path1 = this.$route.path.endsWith("/")
           ? this.$route.path +
-            "!PDJ/userID-" +
-            this.user.id +
+            "!PDJ/user-" +
+            this.user.username +
             "/ToDoList-attachments/"
           : this.$route.path +
-            "/!PDJ/userID-" +
-            this.user.id +
+            "/!PDJ/user-" +
+            this.user.username +
             "/ToDoList-attachments/";
         var keyValue1;
         localforage.setItem(keyName1, this.audioBlob, function () {
@@ -4628,7 +4632,7 @@ export default {
     async uploadNow(x, y, keyName) {
       this.unSavedAttach = this.unSavedAttach + ":::" + keyName;
       window.localStorage.setItem(
-        this.user.id + "unSavedAttach",
+        this.user.username + "unSavedAttach",
         this.unSavedAttach
       );
       this.isUploading = true;
@@ -4636,7 +4640,7 @@ export default {
         await api.post(x, y, true);
         this.unSavedAttach = this.unSavedAttach.replace(":::" + keyName, "");
         window.localStorage.setItem(
-          this.user.id + "unSavedAttach",
+          this.user.username + "unSavedAttach",
           this.unSavedAttach
         );
         this.isUploading = false;
@@ -4648,7 +4652,7 @@ export default {
 
     async uploadUnsaved() {
       this.isUploading = true;
-      if (window.localStorage.getItem(this.user.id + "notUpload")) {
+      if (window.localStorage.getItem(this.user.username + "notUpload")) {
         this.allowBackUp = true;
         await this.saveNow();
       }
@@ -4659,12 +4663,12 @@ export default {
         var keyValue;
         let path = this.$route.path.endsWith("/")
           ? this.$route.path +
-            "!PDJ/userID-" +
-            this.user.id +
+            "!PDJ/user-" +
+            this.user.username +
             "/ToDoList-attachments/"
           : this.$route.path +
-            "/!PDJ/userID-" +
-            this.user.id +
+            "/!PDJ/user-" +
+            this.user.username +
             "/ToDoList-attachments/";
         for await (const keyName of arrUnsaved) {
           keyValue = await localforage.getItem(keyName);
@@ -4675,7 +4679,7 @@ export default {
               ""
             );
             window.localStorage.setItem(
-              this.user.id + "unSavedAttach",
+              this.user.username + "unSavedAttach",
               this.unSavedAttach
             );
           } catch (error) {
@@ -4690,7 +4694,7 @@ export default {
         for await (const keyName of arrUndeleted) {
           this.unDeleted = this.unDeleted.replace(":::" + keyName, "");
           window.localStorage.setItem(
-            this.user.id + "unDeleted",
+            this.user.username + "unDeleted",
             this.unDeleted
           );
           await this.deleteFile(keyName);
@@ -4722,25 +4726,31 @@ export default {
     async deleteFile(x) {
       let path = this.$route.path.endsWith("/")
         ? this.$route.path +
-          "!PDJ/userID-" +
-          this.user.id +
+          "!PDJ/user-" +
+          this.user.username +
           "/ToDoList-attachments/"
         : this.$route.path +
-          "/!PDJ/userID-" +
-          this.user.id +
+          "/!PDJ/user-" +
+          this.user.username +
           "/ToDoList-attachments/";
       var fullPath = path + x;
       try {
         this.unDeleted = this.unDeleted + ":::" + x;
-        window.localStorage.setItem(this.user.id + "unDeleted", this.unDeleted);
+        window.localStorage.setItem(
+          this.user.username + "unDeleted",
+          this.unDeleted
+        );
         await api.remove(fullPath);
         this.unDeleted = this.unDeleted.replace(":::" + x, "");
-        window.localStorage.setItem(this.user.id + "unDeleted", this.unDeleted);
+        window.localStorage.setItem(
+          this.user.username + "unDeleted",
+          this.unDeleted
+        );
       } catch (e) {
         if (e.message.includes("404")) {
           this.unDeleted = this.unDeleted.replace(":::" + x, "");
           window.localStorage.setItem(
-            this.user.id + "unDeleted",
+            this.user.username + "unDeleted",
             this.unDeleted
           );
         }
@@ -4993,7 +5003,7 @@ export default {
         return;
       } else if (x > 0 && mode == "VERTICAL") {
         if (this.contentIndex == 1) {
-          // this.isItemReview = false;
+          // isItemReview = false;
           this.cleanUp();
           return;
         }
@@ -5075,26 +5085,29 @@ export default {
       let pdjBackUp =
         "backup/PDJ-ToDoList-BackUp-" + this.today + "-" + id + ".txt";
       window.localStorage.setItem(
-        this.user.id + "PDJ-ToDoList.txt",
+        this.user.username + "PDJ-ToDoList.txt",
         this.browserContent
       );
-      window.localStorage.setItem(this.user.id + "notUpload", "1");
+      window.localStorage.setItem(this.user.username + "notUpload", "1");
       this.unsavedTask = "1";
       try {
         await api.post(
-          "/files/!PDJ/userID-" + this.user.id + "/PDJ-ToDoList.txt",
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt",
           this.browserContent,
           true
         );
-        window.localStorage.removeItem(this.user.id + "notUpload");
+        window.localStorage.removeItem(this.user.username + "notUpload");
         window.localStorage.setItem(
-          this.user.id + "serverContent",
+          this.user.username + "serverContent",
           this.browserContent
         );
         this.unsavedTask = "";
         if (this.allowBackUp && this.isBackUp) {
           await api.post(
-            "/files/!PDJ/ToDoList-attachments/" + pdjBackUp,
+            "/files/!PDJ/user-" +
+              this.user.username +
+              "/ToDoList-attachments/" +
+              pdjBackUp,
             this.browserContent,
             true
           );

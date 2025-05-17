@@ -54,6 +54,8 @@
         >
           <i class="material-icons">exit_to_app</i>
           <span>{{ $t("sidebar.logout") }}</span>
+          &nbsp;-&nbsp;
+          <span>{{ user.username }}</span>
         </button>
       </div>
     </template>

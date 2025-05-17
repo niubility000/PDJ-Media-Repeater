@@ -475,7 +475,7 @@
                   :max="srtSubtitles.length"
                   step="1"
                   style="width: 3em"
-                  :placeholder="1"
+                  placeholder="1"
                   v-model.number.lazy="startNum"
                 />
                 {{ $t("repeater.translator10") }}
@@ -532,9 +532,11 @@
                   class="input input--repeater"
                   name="buttons"
                   type="number"
+                  style="width: 5em"
                   v-model.number="moveAll"
                   step="50"
                 />
+                {{ $t("repeater.moveAllStamp1") }}
               </p>
             </div>
             <div v-if="currentTab === 3">
@@ -564,7 +566,7 @@
               >
                 {{
                   $t("repeater.toolsNote", {
-                    xx: user.id,
+                    xx: user.username,
                   })
                 }}
               </p>
@@ -697,7 +699,12 @@
             :placeholder="showCasePlaceHolder"
             v-model="rOldWord"
           />
-          <span style="width: 4em; text-align: center">in Line </span>
+          <span v-if="isMobile" style="width: 4em; text-align: center"
+            >in Line
+          </span>
+          <span v-if="!isMobile" style="text-align: center"
+            >&nbsp;in Subtitle's Line&nbsp;
+          </span>
           <select v-model="selectedReplaceLine" style="width: 4.5em">
             <option
               v-for="option in optionsReplace"
@@ -1915,6 +1922,13 @@
               >{{ $t("repeater.instruction131") }}
             </p>
             <p style="text-align: justify">
+              {{ $t("repeater.clickButton1") }}
+              <i style="color: white" class="material-icons">undo</i>
+              {{ $t("repeater.or") }}
+              <i style="color: white" class="material-icons">redo</i>
+              {{ $t("repeater.instruction13101") }}
+            </p>
+            <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">settings</i
               >{{ $t("repeater.instruction9") }}
@@ -2099,7 +2113,7 @@
             @touchend="endTouchS"
             rows="2"
             v-model="dictationContent"
-            :placeholder="$t('repeater.dictationDefault')"
+            :placeholder="defaultDictation"
             style="
               width: 100%;
               font-size: 1.5em;
@@ -2206,7 +2220,7 @@
               style="padding: 0.25em 0; margin: 0"
             >
               <button
-                v-if="canRecording"
+                v-if="canRecording && !isFavOnPlay"
                 class="action"
                 :disabled="loading || isSetting"
                 @click="recording"
@@ -2222,7 +2236,7 @@
                 >
               </button>
               <button
-                v-if="!canRecording"
+                v-if="!canRecording && !isFavOnPlay"
                 class="action"
                 @click="showRecordingSetNote"
                 :title="$t('repeater.cannotRecording')"
@@ -2232,6 +2246,7 @@
                 >
               </button>
               <button
+                v-if="!isFavOnPlay"
                 :disabled="loading || isSetting || isRecording || !canDownload"
                 class="action"
                 @click="
@@ -2268,6 +2283,7 @@
                 >
               </button>
               <button
+                v-if="!isFavOnPlay"
                 :disabled="loading || isSetting || isRecording || !audioUrl"
                 class="action"
                 @click="playRecording"
@@ -2288,6 +2304,7 @@
                 >
               </button>
               <button
+                v-if="!isFavOnPlay"
                 :disabled="
                   loading ||
                   isSetting ||
@@ -2300,8 +2317,8 @@
                     2,
                     $t('repeater.confirmUploadDictation2', {
                       recordingDir:
-                        '/!PDJ/userID-' +
-                        user.id +
+                        '/!PDJ/user-' +
+                        user.username +
                         '/Repeater-backup/Rec-' +
                         mediaName.slice(0, -4),
                     }),
@@ -2324,6 +2341,7 @@
                 >
               </button>
               <button
+                v-if="!isFavOnPlay"
                 :disabled="
                   loading ||
                   isSetting ||
@@ -2338,14 +2356,14 @@
                     2,
                     $t('repeater.confirmdeleteDicRec', {
                       dictationFile:
-                        '!PDJ/userID-' +
-                        user.id +
+                        '!PDJ/user-' +
+                        user.username +
                         '/Repeater-backup/' +
                         mediaName.slice(0, -4) +
                         '-dictation.txt',
                       recordDir:
-                        '!PDJ/userID-' +
-                        user.id +
+                        '!PDJ/user-' +
+                        user.username +
                         '/Repeater-backup/Rec-' +
                         mediaName.slice(0, -4) +
                         '/',
@@ -2694,7 +2712,7 @@
               >
             </button>
             <button
-              :disabled="loading || historyIndex < 1"
+              :disabled="loading || historyIndex < 1 || undoAlert"
               class="action"
               name="buttons"
               @click="changeUndo"
@@ -2702,7 +2720,12 @@
             >
               <i
                 :style="{
-                  color: loading || historyIndex < 1 ? 'grey' : 'springgreen',
+                  color:
+                    loading || historyIndex < 1
+                      ? 'grey'
+                      : undoAlert
+                      ? 'yellow'
+                      : 'springgreen',
                 }"
                 style="font-size: 1.3em"
                 class="material-icons"
@@ -2711,7 +2734,9 @@
             </button>
 
             <button
-              :disabled="loading || historyIndex >= changeNew.length"
+              :disabled="
+                loading || historyIndex >= changeNew.length || redoAlert
+              "
               class="action"
               name="buttons"
               @click="changeRedo"
@@ -2722,6 +2747,8 @@
                   color:
                     loading || historyIndex >= changeNew.length
                       ? 'grey'
+                      : redoAlert
+                      ? 'yellow'
                       : 'springgreen',
                 }"
                 style="font-size: 1.3em"
@@ -2837,12 +2864,6 @@
         <p style="color: blue; font-size: 0.9em; margin: 0em">
           {{ $t("repeater.showWaveformInfo2") }}
         </p>
-      </div>
-
-      <div v-if="RUdoAlert" class="showMsg" style="bottom: 1em">
-        <span style="color: blue; background-color: grey">
-          {{ $t("repeater.RUdoAlert") }}
-        </span>
       </div>
 
       <audio
@@ -3067,6 +3088,7 @@ export default {
   },
   data: function () {
     return {
+      disableDrag: null,
       deleteNewWord: "",
       selectedReplaceLine: "1,2,3",
       optionsReplace: ["1,2,3", "1", "2"],
@@ -3219,7 +3241,7 @@ export default {
       touches: 0,
       isPauseAfterFirstDone: false,
       pauseAfterFirstDone: false,
-      browserHiJack: window.sessionStorage.getItem("isBrowserHiJack"),
+      browserHiJack: window.localStorage.getItem("isBrowserHiJack"),
       resized: false,
       isFirstClick: true,
       hasSpeechSynthesis:
@@ -3282,7 +3304,8 @@ export default {
       notSaveFav: false,
       notFromStarttimeTempChg: true,
       fromMerge: false,
-      RUdoAlert: false,
+      redoAlert: false,
+      undoAlert: false,
       fetchCount: 0,
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       isSwitching: false,
@@ -3291,7 +3314,7 @@ export default {
       defaultWaveSurfer: true,
       transUrl: "https://fanyi.baidu.com/#auto/auto/",
       ctrlPressed: false,
-      shiftPressed: false,
+      altPressed: false,
       dubbingMode: false,
       showWaveformInfo: false,
       localPeaks: [],
@@ -3305,6 +3328,10 @@ export default {
 
     isMobile() {
       return window.innerWidth < 738;
+    },
+    defaultDictation() {
+      if (this.isFavOnPlay) return this.$t("repeater.dictationDefault1");
+      else return this.$t("repeater.dictationDefault");
     },
 
     showCasePlaceHolder() {
@@ -3363,11 +3390,11 @@ export default {
     },
 
     favNotUpload() {
-      return this.user.id + "favNotUpload";
+      return this.user.username + "favNotUpload";
     },
 
     favFileName() {
-      return "/!PDJ/userID-" + this.user.id + "/PDJ-Repeater.txt";
+      return "/!PDJ/user-" + this.user.username + "/PDJ-Repeater.txt";
     },
 
     key1() {
@@ -3466,10 +3493,11 @@ export default {
         this.showSubtitleList ||
         this.showNewWordList ||
         (this.isEditSubandNotes && !this.playFromCache) ||
-        this.showRevision ||
-        this.isEditSubandNote
+        this.showRevision
       ) {
         return { color: "grey" };
+      } else if (this.isEditSubandNotes && this.playFromCache) {
+        return { color: "pink" };
       } else if (this.playFromCache) {
         return { color: "red" };
       } else {
@@ -3940,6 +3968,14 @@ export default {
       this.updatePreview();
     },
 
+    altPressed() {
+      if (this.regions && this.altPressed && !this.isMobile) {
+        this.disableDrag = this.regions.enableDragSelection({
+          color: "rgba(255, 0, 0, 0.1)",
+        });
+      }
+    },
+
     allowVideoFullScreen() {
       window.localStorage.setItem(
         "allowVideoFullScreen",
@@ -4061,56 +4097,11 @@ export default {
       }
     },
     isDictation: function () {
-      if (this.isDictation) {
-        if (this.dictationArray.length == 0) {
-          this.dictationArray =
-            JSON.parse(
-              window.sessionStorage.getItem(
-                this.mediaName + this.user.id + "dictation"
-              )
-            ) || [];
-        }
-        this.dictationContent = "";
-
-        const tempCon = this.dictationArray.find(
-          (item) => item.id === this.sentenceIndex
-        );
-        if (tempCon) this.dictationContent = tempCon.con;
-
-        this.isShowLine1 = true;
-        this.isShowLine2 = true;
-        this.isShowLine3 = false;
-
-        this.audioBlob = null;
-        this.audioUrl = null;
-        let vmm = this;
-        localforage
-          .getItem(this.mediaName + this.user.id + "recordAudio")
-          .then(function (value) {
-            vmm.audioRecordArray = value;
-            if (!vmm.audioRecordArray) {
-              vmm.audioRecordArray = [];
-              return;
-            }
-
-            const tempRec = vmm.audioRecordArray.find(
-              (item) => item.id === vmm.sentenceIndex
-            );
-            if (tempRec) {
-              vmm.audioBlob = tempRec.con;
-              vmm.audioUrl = URL.createObjectURL(vmm.audioBlob);
-            }
-          })
-          .catch(function () {
-            return;
-          });
-      } else {
-        if (this.isRecording) this.stopRecording();
-
-        this.switchSubtitleMini();
-      }
+      if (this.isFavOnPlay) this.dictationContent = "";
+      else this.handleIsDictation();
     },
     dictationContent: function () {
+      if (this.isFavOnPlay) return;
       if (this.dictationContent.trim() !== "") {
         let filteredArray = this.dictationArray.filter(
           (item) => item.id !== this.sentenceIndex
@@ -4120,8 +4111,8 @@ export default {
           con: this.dictationContent,
         };
         filteredArray.push(newItem);
-        window.sessionStorage.setItem(
-          this.mediaName + this.user.id + "dictation",
+        window.localStorage.setItem(
+          this.mediaName + this.user.username + "dictation",
           JSON.stringify(filteredArray)
         );
         this.dictationArray = filteredArray;
@@ -4129,8 +4120,8 @@ export default {
         let filteredArray = this.dictationArray.filter(
           (item) => item.id !== this.sentenceIndex
         );
-        window.sessionStorage.setItem(
-          this.mediaName + this.user.id + "dictation",
+        window.localStorage.setItem(
+          this.mediaName + this.user.username + "dictation",
           JSON.stringify(filteredArray)
         );
         this.dictationArray = filteredArray;
@@ -4231,7 +4222,7 @@ export default {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           start: this.startTimeTemp,
         });
-        if (this.sentenceIndex > 1 && !this.shiftPressed)
+        if (this.sentenceIndex > 1 && !this.altPressed)
           this.regions.getRegions()[this.sentenceIndex - 2].setOptions({
             end: this.srtSubtitles[this.sentenceIndex - 2].endTime - 0.03,
           });
@@ -4258,7 +4249,7 @@ export default {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           end: this.endTimeTemp - 0.03,
         });
-        if (this.sentenceIndex < this.srtSubtitles.length && !this.shiftPressed)
+        if (this.sentenceIndex < this.srtSubtitles.length && !this.altPressed)
           this.regions.getRegions()[this.sentenceIndex].setOptions({
             start: this.srtSubtitles[this.sentenceIndex].startTime,
           });
@@ -4551,7 +4542,12 @@ export default {
     },
 
     srtSubtitlesLength: function () {
-      if (!this.RUdoAlert && this.wavesurfer && this.regions) {
+      if (
+        !this.redoAlert &&
+        !this.undoAlert &&
+        this.wavesurfer &&
+        this.regions
+      ) {
         this.updateRgns();
       }
     },
@@ -4561,7 +4557,16 @@ export default {
       this.playCount = 0;
       this.firstMount = false;
       this.isFirstClick = true;
-      if (this.isFavOnPlay && this.isAutoDetectLang) this.detectLangAuto();
+      if (this.isAutoDetectLang) this.detectLangAuto();
+      this.dictationArray = [];
+      if (this.isFavOnPlay) this.dictationContent = "";
+      else this.handleIsDictation();
+      if (this.onRevision || this.showRevision) {
+        this.changeOld = [];
+        this.changeNew = [];
+        this.historyIndex = 0;
+        this.tempOldContent = "";
+      }
 
       if (!this.isFavOnPlay && !this.onRevision && !this.showRevision) {
         if (
@@ -4627,6 +4632,57 @@ export default {
   },
 
   methods: {
+    handleIsDictation() {
+      if (this.isDictation) {
+        if (this.dictationArray.length == 0) {
+          this.dictationArray =
+            JSON.parse(
+              window.localStorage.getItem(
+                this.mediaName + this.user.username + "dictation"
+              )
+            ) || [];
+        }
+        this.dictationContent = "";
+
+        const tempCon = this.dictationArray.find(
+          (item) => item.id === this.sentenceIndex
+        );
+        if (tempCon) this.dictationContent = tempCon.con;
+
+        this.isShowLine1 = true;
+        this.isShowLine2 = true;
+        this.isShowLine3 = false;
+
+        this.audioBlob = null;
+        this.audioUrl = null;
+        let vmm = this;
+        localforage
+          .getItem(this.mediaName + this.user.username + "recordAudio")
+          .then(function (value) {
+            vmm.audioRecordArray = value;
+            if (!vmm.audioRecordArray) {
+              vmm.audioRecordArray = [];
+              return;
+            }
+
+            const tempRec = vmm.audioRecordArray.find(
+              (item) => item.id === vmm.sentenceIndex
+            );
+            if (tempRec) {
+              vmm.audioBlob = tempRec.con;
+              vmm.audioUrl = URL.createObjectURL(vmm.audioBlob);
+            }
+          })
+          .catch(function () {
+            return;
+          });
+      } else {
+        if (this.isRecording) this.stopRecording();
+
+        this.switchSubtitleMini();
+      }
+    },
+
     highlightWord(text, type) {
       if (!text) {
         return "";
@@ -5176,7 +5232,7 @@ export default {
     },
 
     async azureTranslate(onTest) {
-      if (this.translatorUrl.includes("Azure-translator:default")) {
+      if (this.translatorUrl.includes("Azure-translator")) {
         let x = this.getKeyFromServer(5);
         this.apiKey = x[0];
         this.region = x[1];
@@ -5337,8 +5393,8 @@ export default {
     async checkDownload() {
       try {
         var content = await api.fetch(
-          "/files/!PDJ/userID-" +
-            this.user.id +
+          "/files/!PDJ/user-" +
+            this.user.username +
             "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt"
@@ -5349,8 +5405,8 @@ export default {
           return;
         }
         let path =
-          "/files/!PDJ/userID-" +
-          this.user.id +
+          "/files/!PDJ/user-" +
+          this.user.username +
           "/Repeater-backup/Rec-" +
           this.mediaName.slice(0, -4) +
           "/";
@@ -5465,7 +5521,7 @@ export default {
       this.audioRecordArray = filteredArray;
       localforage
         .setItem(
-          this.mediaName + this.user.id + "recordAudio",
+          this.mediaName + this.user.username + "recordAudio",
           filteredArray,
           function () {}
         )
@@ -5482,8 +5538,8 @@ export default {
       }
       this.canDownload = true;
       let path =
-        "/files/!PDJ/userID-" +
-        this.user.id +
+        "/files/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/" +
         this.mediaName.slice(0, -4) +
         "-dictation.txt";
@@ -5506,8 +5562,8 @@ export default {
 
     async saveServerRecord(itemIndex, itemBlob) {
       let saveUrl =
-        "/files/!PDJ/userID-" +
-        this.user.id +
+        "/files/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/" +
@@ -5526,13 +5582,13 @@ export default {
       try {
         this.dictationArray =
           JSON.parse(
-            window.sessionStorage.getItem(
-              this.mediaName + this.user.id + "dictation"
+            window.localStorage.getItem(
+              this.mediaName + this.user.username + "dictation"
             )
           ) || [];
         await api.post(
-          "/files/!PDJ/userID-" +
-            this.user.id +
+          "/files/!PDJ/user-" +
+            this.user.username +
             "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt",
@@ -5555,7 +5611,7 @@ export default {
       this.audioBlob = null;
       this.audioUrl = null;
       await localforage
-        .removeItem(this.mediaName + this.user.id + "recordAudio")
+        .removeItem(this.mediaName + this.user.username + "recordAudio")
         .then(() => {
           console.log("we just removed: " + "recordAudio");
         })
@@ -5563,8 +5619,8 @@ export default {
           console.error("Error removing data:", error);
         });
       let path =
-        "/files/!PDJ/userID-" +
-        this.user.id +
+        "/files/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/";
@@ -5591,8 +5647,8 @@ export default {
       let srtUrl = api.getDownloadURL(this.req, true);
       let playUrl =
         srtUrl.split("/api/raw/")[0] +
-        "/api/raw/!PDJ/userID-" +
-        this.user.id +
+        "/api/raw/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/Rec-" +
         itemUrl +
         srtUrl.split(".srt")[1];
@@ -5615,7 +5671,7 @@ export default {
         filteredArray.push(newItem);
         this.audioRecordArray = filteredArray;
         localforage.setItem(
-          this.mediaName + this.user.id + "recordAudio",
+          this.mediaName + this.user.username + "recordAudio",
           filteredArray,
           function () {}
         );
@@ -5627,16 +5683,16 @@ export default {
     async readServerDictation() {
       try {
         var content = await api.fetch(
-          "/files/!PDJ/userID-" +
-            this.user.id +
+          "/files/!PDJ/user-" +
+            this.user.username +
             "/Repeater-backup/" +
             this.mediaName.slice(0, -4) +
             "-dictation.txt"
         );
         this.dictationArray = JSON.parse(content.content);
         if (this.dictationArray.length > 0) {
-          window.sessionStorage.setItem(
-            this.mediaName + this.user.id + "dictation",
+          window.localStorage.setItem(
+            this.mediaName + this.user.username + "dictation",
             JSON.stringify(this.dictationArray)
           );
           const tempCon = this.dictationArray.find(
@@ -5644,8 +5700,8 @@ export default {
           );
           if (tempCon) this.dictationContent = tempCon.con;
         } else {
-          window.sessionStorage.removeItem(
-            this.mediaName + this.user.id + "dictation"
+          window.localStorage.removeItem(
+            this.mediaName + this.user.username + "dictation"
           );
           this.dictationArray = [];
           this.dictationContent = "";
@@ -5655,8 +5711,8 @@ export default {
           this.netStatus = false;
           this.openAlert(1, this.$t("repeater.failDownload"));
         } else {
-          window.sessionStorage.removeItem(
-            this.mediaName + this.user.id + "dictation"
+          window.localStorage.removeItem(
+            this.mediaName + this.user.username + "dictation"
           );
           this.dictationArray = [];
           this.dictationContent = "";
@@ -5688,7 +5744,7 @@ export default {
 
     checkLocalStorageSpace() {
       try {
-        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data, to test remain space.
         localStorage.removeItem("__checkSpace");
         return true;
       } catch (e) {
@@ -5756,18 +5812,14 @@ export default {
     updateRegions() {
       this.wavesurfer.on("decode", () => {
         this.updateRgns();
-        // to locate to current sentence.
+        // to locate to current sentence. good job.
         this.click();
         setTimeout(() => {
           this.cleanUp1();
           this.cleanUp2();
         }, 10);
       });
-      if (!this.isMobile) {
-        this.regions.enableDragSelection({
-          color: "rgba(255, 0, 0, 0.1)",
-        });
-      }
+
       this.regions.on("region-updated", (region) => {
         if (String(region.id).includes("region-")) return;
         this.toBlur();
@@ -5801,6 +5853,9 @@ export default {
 
       this.regions.on("region-clicked", (region, e) => {
         if (String(region.id).includes("region-")) {
+          if (!this.isMobile && this.disableDrag) {
+            this.disableDrag();
+          }
           this.addSentence(region.start, region.end);
           setTimeout(() => {
             this.click();
@@ -5812,7 +5867,7 @@ export default {
         setTimeout(() => {
           this.sentenceIndex = region.id;
           activeRegion = region;
-          if (this.ctrlPressed || this.shiftPressed) {
+          if (this.altPressed) {
             const bbox = this.wavesurfer.getWrapper().getBoundingClientRect();
             const { width } = bbox;
             const offsetX = e.clientX - bbox.left;
@@ -5935,7 +5990,7 @@ export default {
         !this.hasConfirmed &&
         !this.onOffline &&
         window.localStorage.getItem(this.favNotUpload) &&
-        this.user.id == window.localStorage.getItem(this.user.id) &&
+        this.user.username == window.localStorage.getItem(this.user.username) &&
         window.localStorage.getItem(this.favFileName)
       ) {
         this.openAlert(
@@ -5952,7 +6007,7 @@ export default {
             window.localStorage.getItem(this.favNotUpload)) ||
           (this.isFavOnPlay && this.isPlayFullFavList) ||
           this.showRevision) &&
-        this.user.id == window.localStorage.getItem(this.user.id) &&
+        this.user.username == window.localStorage.getItem(this.user.username) &&
         window.localStorage.getItem(this.favFileName)
       ) {
         PDJcontent = window.localStorage.getItem(this.favFileName);
@@ -5966,7 +6021,7 @@ export default {
           this.notSaveFav = true;
           window.localStorage.setItem("server" + this.favFileName, PDJcontent);
           window.localStorage.setItem(this.favFileName, PDJcontent);
-          window.localStorage.setItem(this.user.id, this.user.id);
+          window.localStorage.setItem(this.user.username, this.user.username);
         } catch (e) {
           this.isReadyToPlay = true;
           this.openAlert(
@@ -6187,7 +6242,7 @@ export default {
               vmm.cachedKeys = vmcachedKeys;
               setTimeout(() => {
                 if (keyName !== vmm.mediaName) {
-                  return; // may multiple running at the same time. but limited up to 2. this to avoid saved wrong name.
+                  return; // may multiple run at the same time, limit up to 2.
                 }
                 if (!vmm.isSingle && !vmm.currentMedia.paused) {
                   window.localStorage.setItem(
@@ -6549,7 +6604,7 @@ export default {
               this.currentMedia.currentTime >
                 this.srtSubtitles[this.sentenceIndex - 1].startTime + 0.2)
           ) {
-            window.sessionStorage.setItem("isBrowserHiJack", true);
+            window.localStorage.setItem("isBrowserHiJack", true);
             location.reload();
           }
         }, 1);
@@ -6756,6 +6811,7 @@ export default {
                   return;
                 }
               }
+              if (!this.utterInProcess && type == 1) return;
               this.audio.src = URL.createObjectURL(blob);
               this.audio.play();
               if (type == 1) {
@@ -6926,6 +6982,7 @@ export default {
         this.audio.src = ttsFullUrl;
         this.audio.play().catch(() => {
           this.endUtter();
+          if (!this.utterInProcess) return;
           this.ttsWrong = true;
           if (this.timeOutId4) clearTimeout(this.timeOutId4);
           this.timeOutId4 = setTimeout(() => {
@@ -7076,6 +7133,7 @@ export default {
       this.translatorUrl = "ali-translator:default";
     },
     cleanUp1() {
+      this.utterInProcess = false;
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
       if (this.audio) this.audio.pause();
@@ -7112,24 +7170,25 @@ export default {
       this.cleanUp2();
       this.cleanUp1();
       this.closeSubList();
-      if (!this.isFavOnPlay) {
-        window.sessionStorage.setItem("lastSentenceIndex", this.sentenceIndex);
-      }
       this.isFavOnPlay = !this.isFavOnPlay;
       if (this.isFavOnPlay) {
+        this.dictationArray = [];
+        this.dictationContent = "";
+        window.localStorage.setItem("lastSentenceIndex", this.sentenceIndex);
         if (this.isEditSubandNotes) this.switchEditSubandNote();
         this.isFav = true;
         this.sentenceIndex = 1;
         if (!this.isPlayFullFavList) {
+          if (this.isFirstClick) this.firstClick();
           this.singleModePlay();
         }
       } else {
+        this.handleIsDictation();
+        this.sentenceIndex = Number(
+          window.localStorage.getItem("lastSentenceIndex")
+        );
         this.calcFav();
-        if (this.isPlayFullFavList) {
-          this.sentenceIndex = Number(
-            window.sessionStorage.getItem("lastSentenceIndex")
-          );
-        } else {
+        if (!this.isPlayFullFavList) {
           if (this.isFirstClick) this.firstClick();
           this.singleModePlay();
         }
@@ -7168,7 +7227,7 @@ export default {
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
-          //add a fav
+          //add a fav to the fav list
           var fav = {
             rawPath: this.reqF.name,
             mediaName: this.mediaName,
@@ -7180,7 +7239,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
-          //remove a fav from list
+          //remove a fav from the fav list
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
@@ -7268,15 +7327,15 @@ export default {
     },
 
     async deleteDicRec() {
-      window.sessionStorage.removeItem(
-        this.mediaName + this.user.id + "dictation"
+      window.localStorage.removeItem(
+        this.mediaName + this.user.username + "dictation"
       );
       this.dictationArray = [];
       this.dictationContent = "";
       this.canDownload = false;
       let path =
-        "/files/!PDJ/userID-" +
-        this.user.id +
+        "/files/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/" +
         this.mediaName.slice(0, -4) +
         "-dictation.txt";
@@ -7293,7 +7352,7 @@ export default {
       this.audioBlob = null;
       this.audioUrl = null;
       localforage
-        .removeItem(this.mediaName + this.user.id + "recordAudio")
+        .removeItem(this.mediaName + this.user.username + "recordAudio")
         .then(() => {
           console.log("we just removed: " + "recordAudio");
         })
@@ -7306,8 +7365,8 @@ export default {
 
     async deleteAudioRec() {
       let path =
-        "/files/!PDJ/userID-" +
-        this.user.id +
+        "/files/!PDJ/user-" +
+        this.user.username +
         "/Repeater-backup/Rec-" +
         this.mediaName.slice(0, -4) +
         "/";
@@ -7840,8 +7899,15 @@ export default {
     },
 
     toBlur() {
-      if (this.regions && this.regions.regions.length > this.srtSubtitlesLength)
+      if (
+        this.regions &&
+        this.regions.regions.length > this.srtSubtitlesLength
+      ) {
+        if (!this.altPressed && !this.isMobile && this.disableDrag) {
+          this.disableDrag();
+        }
         this.updateRgns();
+      }
       if (
         document.getElementById("editArea0") &&
         document.getElementById("editArea0").contains(document.activeElement)
@@ -8806,13 +8872,9 @@ export default {
     },
 
     editHotkeys(timeStamp, event) {
-      if (this.ctrlPressed && event.button == 0) {
-        event.preventDefault();
-        this.cleanUp1();
-        this.cleanUp2();
-        this.splitSentence(timeStamp);
-      } else if (
-        this.shiftPressed &&
+      if (
+        this.altPressed &&
+        this.ctrlPressed &&
         event.button == 0 &&
         this.sentenceIndex < this.srtSubtitles.length
       ) {
@@ -8820,6 +8882,11 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.mergeSentence();
+      } else if (this.altPressed && event.button == 0) {
+        event.preventDefault();
+        this.cleanUp1();
+        this.cleanUp2();
+        this.splitSentence(timeStamp);
       }
     },
 
@@ -9050,8 +9117,8 @@ export default {
           }
         } else if (x == 10) {
           pdjBackUp =
-            "fav-sentences-of-userID-" +
-            this.user.id +
+            "fav-sentences-of-user-" +
+            this.user.username +
             "-" +
             today +
             "-" +
@@ -9074,14 +9141,14 @@ export default {
           let path = "";
           if (x == 10)
             path =
-              "/files/!PDJ/userID-" +
-              this.user.id +
+              "/files/!PDJ/user-" +
+              this.user.username +
               "/Repeater-backup/" +
               pdjBackUp;
           else
             path =
-              "/files/!PDJ/userID-" +
-              this.user.id +
+              "/files/!PDJ/user-" +
+              this.user.username +
               "/Repeater-backup/" +
               this.reqF.name +
               "-" +
@@ -9283,15 +9350,6 @@ export default {
           sTime.seconds +
           "," +
           sTime.milliseconds;
-        var eTime = this.convertToHMS(end * 1000 - this.timeStampChangeEnd + 1);
-        newEndTime =
-          eTime.hours +
-          ":" +
-          eTime.minutes +
-          ":" +
-          eTime.seconds +
-          "," +
-          eTime.milliseconds;
 
         for (var i = 1; i <= this.srtSubtitlesLength; ++i) {
           if (start < this.srtSubtitles[0].startTime) {
@@ -9303,6 +9361,25 @@ export default {
             break;
           }
         }
+        if (
+          start < this.srtSubtitles[0].startTime &&
+          end >= this.srtSubtitles[0].startTime
+        )
+          end = this.srtSubtitles[0].startTime - 0.001;
+        else if (
+          this.srtSubtitles[this.sentenceIndex] &&
+          end >= this.srtSubtitles[this.sentenceIndex].startTime
+        )
+          end = this.srtSubtitles[this.sentenceIndex].startTime - 0.001;
+        var eTime = this.convertToHMS(end * 1000 - this.timeStampChangeEnd + 1);
+        newEndTime =
+          eTime.hours +
+          ":" +
+          eTime.minutes +
+          ":" +
+          eTime.seconds +
+          "," +
+          eTime.milliseconds;
       } else {
         newStartTime = textSubtitles[this.sentenceIndex - 1]
           .split("\n")[1]
@@ -9358,7 +9435,7 @@ export default {
       this.reqF.content = formatContent;
       this.cleanUp1();
       this.cleanUp2();
-      this.sentenceIndex = this.sentenceIndex + 1;
+      if (line1 !== "1") this.sentenceIndex = this.sentenceIndex + 1;
       window.localStorage.setItem(this.mediaName, formatContent);
       this.saveSubFinal();
     },
@@ -9463,7 +9540,11 @@ export default {
             firstPart,
             ""
           );
-          if (!secondPart.includes(this.rOldWord)) {
+          if (
+            (this.isCaseSensitive && !secondPart.includes(this.rOldWord)) ||
+            (!this.isCaseSensitive &&
+              !secondPart.toLowerCase().includes(this.rOldWord.toLowerCase()))
+          ) {
             this.openAlert(1, this.$t("repeater.alert011"));
             return;
           }
@@ -9484,9 +9565,15 @@ export default {
             textSubtitles[this.sentenceIndex - 1].split("\n")[1] +
             "\n";
           if (
-            !textSubtitles[this.sentenceIndex - 1]
-              .split("\n")[2]
-              .includes(this.rOldWord)
+            (this.isCaseSensitive &&
+              !textSubtitles[this.sentenceIndex - 1]
+                .split("\n")[2]
+                .includes(this.rOldWord)) ||
+            (!this.isCaseSensitive &&
+              !textSubtitles[this.sentenceIndex - 1]
+                .split("\n")[2]
+                .toLowerCase()
+                .includes(this.rOldWord.toLowerCase()))
           ) {
             this.openAlert(1, this.$t("repeater.alert011"));
             return;
@@ -9520,9 +9607,15 @@ export default {
             "\n";
           if (textSubtitles[this.sentenceIndex - 1].split("\n")[3]) {
             if (
-              !textSubtitles[this.sentenceIndex - 1]
-                .split("\n")[3]
-                .includes(this.rOldWord)
+              (this.isCaseSensitive &&
+                !textSubtitles[this.sentenceIndex - 1]
+                  .split("\n")[3]
+                  .includes(this.rOldWord)) ||
+              (!this.isCaseSensitive &&
+                !textSubtitles[this.sentenceIndex - 1]
+                  .split("\n")[3]
+                  .toLowerCase()
+                  .includes(this.rOldWord.toLowerCase()))
             ) {
               this.openAlert(1, this.$t("repeater.alert011"));
               return;
@@ -9719,8 +9812,8 @@ export default {
           let today = currentTime.toLocaleDateString("af").replaceAll("/", "-");
           let pdjBackUp = "BackUp-" + today + "-" + id + ".srt";
           await api.post(
-            "/files/!PDJ/userID-" +
-              this.user.id +
+            "/files/!PDJ/user-" +
+              this.user.username +
               "/Repeater-backup/" +
               this.reqF.name +
               "-" +
@@ -9752,11 +9845,11 @@ export default {
       }
 
       this.refresh();
-      if (!this.RUdoAlert) {
-        this.RUdoAlert = true;
+      if (!this.undoAlert) {
+        this.undoAlert = true;
         setTimeout(() => {
-          this.RUdoAlert = false;
-        }, 2000);
+          this.undoAlert = false;
+        }, 300);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
       if (this.wavesurfer && this.regions) {
@@ -9784,11 +9877,11 @@ export default {
         }, 10);
       }
       this.refresh();
-      if (!this.RUdoAlert) {
-        this.RUdoAlert = true;
+      if (!this.redoAlert) {
+        this.redoAlert = true;
         setTimeout(() => {
-          this.RUdoAlert = false;
-        }, 2000);
+          this.redoAlert = false;
+        }, 300);
       }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
       if (this.wavesurfer && this.regions) {
@@ -9904,24 +9997,22 @@ export default {
         this.isEditSubandNotes &&
         !this.ctrlPressed
       ) {
-        this.cleanUp1();
-        this.cleanUp2();
         this.ctrlPressed = true;
       } else if (
-        (event.key === "Delete" || event.keyCode === 46) &&
-        this.ctrlPressed &&
-        this.isEditSubandNotes
-      ) {
-        // Ctrl + Delete
-        this.deleteSentence();
-      } else if (
-        event.key === "Shift" &&
+        event.key === "Alt" &&
         this.isEditSubandNotes &&
-        !this.shiftPressed
+        !this.altPressed
       ) {
         this.cleanUp1();
         this.cleanUp2();
-        this.shiftPressed = true;
+        this.altPressed = true;
+      } else if (
+        (event.key === "Delete" || event.keyCode === 46) &&
+        this.altPressed &&
+        this.isEditSubandNotes
+      ) {
+        // Alt + Delete
+        this.deleteSentence();
       }
 
       if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
@@ -10024,7 +10115,7 @@ export default {
         return;
       } else if (event.which === 38) {
         // up arrow
-        this.cleanUp1(); //stop play
+        this.cleanUp1(); //stop playing
       } else if (event.which === 40) {
         // down arrow
         this.cleanUp1();
@@ -10056,8 +10147,8 @@ export default {
       if (event.key === "Control" || event.keyCode === 17) {
         this.ctrlPressed = false;
       }
-      if (event.key === "Shift") {
-        this.shiftPressed = false;
+      if (event.key === "Alt") {
+        this.altPressed = false;
       }
     },
 

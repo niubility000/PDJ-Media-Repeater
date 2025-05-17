@@ -52,23 +52,23 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-updated: 05-08-2025
+updated: 05-18-2025
 
-5.8 add "search and replace" in subtitle list, support 'drag in wavesurfer' to add a new sentence.
+5.18 use username instead of userID
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/20095151/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/20266649/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/20095153/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/20266650/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/20095154/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/20266653/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/20095158/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/20266654/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/20095159/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/20266655/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
 
-[filebrowser.zip](https://github.com/user-attachments/files/20095161/filebrowser.zip)
+[filebrowser.zip](https://github.com/user-attachments/files/20266656/filebrowser.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
