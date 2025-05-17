@@ -54,7 +54,7 @@ Both of these can be used online or offline.
 
 updated: 05-18-2025
 
-5.18 use username instead of userID
+5.8 use username instead of userID
 
 [filebrowser-windows.zip](https://github.com/user-attachments/files/20266649/filebrowser-windows.zip)
 
