@@ -43,7 +43,24 @@
           <i class="material-icons">settings_applications</i>
           <span>{{ $t("sidebar.settings") }}</span>
         </button>
-
+        <button
+          class="action"
+          @click="subTransfer"
+          :aria-label="$t('sidebar.subTransfer1')"
+          :title="$t('sidebar.subTransfer1')"
+        >
+          <i class="material-icons">conveyor_belt</i>
+          <span>{{ $t("sidebar.subTransfer") }}</span>
+        </button>
+        <button
+          class="action"
+          @click="transcribe"
+          :aria-label="$t('sidebar.transcribe1')"
+          :title="$t('sidebar.transcribe1')"
+        >
+          <i class="material-icons">subtitles</i>
+          <span>{{ $t("sidebar.transcribe") }}</span>
+        </button>
         <button
           v-if="canLogout"
           @click="logout"
@@ -134,10 +151,13 @@ export default {
     ProgressBar,
   },
   computed: {
-    ...mapState(["user"]),
+    ...mapState(["user", "showSubConvertor"]),
     ...mapGetters(["isLogged", "currentPrompt"]),
     active() {
       return this.currentPrompt?.prompt === "sidebar";
+    },
+    isMobile() {
+      return window.innerWidth < 738;
     },
     signup: () => signup,
     version: () => version,
@@ -182,6 +202,20 @@ export default {
       this.$router.push({ path: "/settings" }, () => {});
       this.$store.commit("closeHovers");
     },
+    transcribe() {
+      const transcriptionZh = `https://note.youdao.com/s/1JeUmHDf`;
+      const transcriptionEn = `https://note.youdao.com/s/TJ0H1djE`;
+      if (this.user.locale == "zh-cn") window.open(transcriptionZh, "_blank");
+      else window.open(transcriptionEn, "_blank");
+    },
+    subTransfer() {
+      this.toRoot();
+      setTimeout(() => {
+        this.$store.commit("updateShowSubConvertor", true);
+        this.$store.commit("closeHovers");
+      }, 100);
+    },
+
     help() {
       this.$store.commit("showHover", "help");
     },

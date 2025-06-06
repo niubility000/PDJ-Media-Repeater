@@ -443,8 +443,187 @@
         </div>
       </div>
 
-      <div v-if="showsubTools" class="subTools-overlay">
-        <div class="subTools">
+      <div v-if="showsubTools || showsubTools1" class="subTools-overlay">
+        <div v-if="showsubTools1" class="subTools" style="height: 70%">
+          <div
+            class="subTools-tabs"
+            style="padding: 0 0 8px 0; font-size: 1.2em; font-weight: 500"
+          >
+            {{ $t("repeater.tsc01") }}
+          </div>
+          <div>
+            <p style="display: flex; flex-direction: row; align-items: center">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                style="width: 2em"
+                v-model="isFromLocal"
+              />&nbsp;&nbsp;
+              {{ fromLocal }}
+            </p>
+            <p v-if="isFromLocal == 0" style="color: red; font-size: 0.9em">
+              {{ $t("repeater.tsc02") }}
+              <button
+                class="action"
+                @click="showOnLineTscNote"
+                :title="$t('repeater.help')"
+              >
+                <i
+                  style="padding: 0; font-size: 1.2em; color: red"
+                  class="material-icons"
+                  >help</i
+                >
+              </button>
+            </p>
+            <p
+              v-if="isFromLocal == 1"
+              style="display: flex; flex-direction: row; align-items: center"
+            >
+              {{ $t("repeater.tsc04") }}
+              <input
+                style="flex-grow: 1; padding: 0; margin: 0"
+                class="input input--repeater"
+                type="text"
+                placeholder="for example: defaultkey1,eastasia"
+                v-model.lazy="transcribeUrl"
+              />
+
+              &nbsp;&nbsp;
+
+              <button
+                class="action"
+                @click="showTscSetting"
+                :title="$t('repeater.help')"
+              >
+                <i
+                  style="padding: 0; font-size: 1.2em; color: blue"
+                  class="material-icons"
+                  >help</i
+                >
+              </button>
+            </p>
+            <p>
+              {{ $t("repeater.tsc06") }}
+              <input
+                type="number"
+                min="0.5"
+                :max="1.5"
+                step="0.05"
+                style="width: 4em; padding: 0px 4px; margin: 0px"
+                placeholder="1"
+                v-model.number.lazy="speedTranscribe"
+              />&nbsp;
+              <button
+                class="action"
+                @click="showSpeedNote"
+                :title="$t('repeater.help')"
+              >
+                <i
+                  style="padding: 0; font-size: 1.2em; color: blue"
+                  class="material-icons"
+                  >help</i
+                >
+              </button>
+              &nbsp;&nbsp;&nbsp;&nbsp;{{ $t("repeater.tsc08") }}
+              <input
+                type="number"
+                min="1"
+                :max="2"
+                step="1"
+                style="width: 3em; padding: 0px 4px; margin: 0px"
+                v-model.lazy="originLine"
+              />&nbsp;&nbsp;&nbsp;&nbsp;<br v-if="isMobile" />{{
+                $t("repeater.tsc09")
+              }}
+              <input
+                type="text"
+                style="width: 6em; padding: 0px 4px; margin: 0px"
+                v-model.lazy="langTranscribe"
+              />
+            </p>
+          </div>
+          <div style="flex-grow: 1; overflow-y: auto">
+            <p>
+              <span style="font-family: Courier, monospace">{{
+                $t("repeater.tsc10")
+              }}</span
+              >{{ originLine == 1 ? subFirstLine : subSecLine }}
+            </p>
+            <p style="color: green">
+              <span style="font-family: Courier, monospace">{{
+                $t("repeater.tsc11")
+              }}</span
+              >{{ transcriptionResult }}
+            </p>
+          </div>
+
+          <div class="subTools-buttons">
+            <button
+              v-if="!isMobile && isFromLocal == 0"
+              @click="lastSen"
+              :disabled="isProcessing2 || sentenceIndex < 2"
+              :style="{
+                backgroundColor: !isProcessing2 ? 'white' : '',
+              }"
+            >
+              &lt;
+            </button>
+            <button
+              @click="transcribe"
+              :disabled="isProcessing1 || isProcessing2"
+              :style="{
+                backgroundColor:
+                  !isProcessing1 && !isProcessing2 ? 'white' : '',
+              }"
+            >
+              {{ $t("repeater.tsc12") }}
+            </button>
+            <button
+              @click="playTranscribe"
+              :disabled="isProcessing1 || isProcessing2"
+              :style="{
+                backgroundColor:
+                  !isProcessing1 && !isProcessing2 ? 'white' : '',
+              }"
+            >
+              {{ $t("repeater.tsc13") }}
+            </button>
+            <button
+              @click="handleConfirm1"
+              :disabled="
+                transcriptionResult == '' || isProcessing1 || isProcessing2
+              "
+              :style="{
+                backgroundColor:
+                  !isProcessing1 && !isProcessing2 ? 'white' : '',
+              }"
+            >
+              {{ $t("repeater.tsc14") }}
+            </button>
+            <button
+              @click="handleCancel1"
+              :disabled="isProcessing1"
+              :style="{
+                backgroundColor: !isProcessing1 ? 'white' : '',
+              }"
+            >
+              {{ $t("buttons.cancel") }}
+            </button>
+
+            <button
+              v-if="!isMobile && isFromLocal == 0"
+              @click="nextSen"
+              :disabled="isProcessing2 || sentenceIndex >= srtSubtitles.length"
+              :style="{
+                backgroundColor: !isProcessing2 ? 'white' : '',
+              }"
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+        <div v-if="showsubTools" class="subTools">
           <div class="subTools-tabs">
             <button
               :class="{ active: currentTab === 1 }"
@@ -526,17 +705,67 @@
               </P>
             </div>
             <div v-if="currentTab === 2">
-              <p style="color: black">
-                {{ $t("repeater.moveAllStamp") }}
+              <p style="color: black; margin-bottom: 0em">
+                {{ $t("repeater.moveAllStamp01") }}
                 <input
                   class="input input--repeater"
                   name="buttons"
                   type="number"
-                  style="width: 5em"
-                  v-model.number="moveAll"
+                  style="width: 4em"
+                  v-model.number="moveAll1"
                   step="50"
                 />
                 {{ $t("repeater.moveAllStamp1") }}
+              </p>
+              <p style="color: black; margin: 0em">
+                {{ $t("repeater.moveAllStamp02") }}
+                <input
+                  class="input input--repeater"
+                  name="buttons"
+                  type="number"
+                  style="width: 4em"
+                  v-model.number="moveAll2"
+                  step="50"
+                />
+                {{ $t("repeater.moveAllStamp1") }}
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertMoveAll"
+                  :title="$t('repeater.help')"
+                >
+                  <i style="color: red; font-size: 1em" class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+              <p style="color: black; margin: 0em">
+                {{ $t("repeater.moveAllStamp3") }}
+                <input
+                  class="input input--repeater"
+                  name="buttons"
+                  type="number"
+                  max="2"
+                  min="0.1"
+                  :style="{
+                    width: isMobile ? '2.5em' : '4em',
+                  }"
+                  v-model.number="shrinkAll"
+                  step="0.05"
+                />
+                {{ $t("repeater.moveAllStamp4") }}
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertShrinkAll"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="color: red; font-size: 1em; padding: 0; margin: 0"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
               </p>
             </div>
             <div v-if="currentTab === 3">
@@ -575,15 +804,6 @@
 
           <div class="subTools-buttons">
             <button
-              @click="handleCancel"
-              :disabled="inSubProcess"
-              :style="{
-                backgroundColor: inSubProcess ? 'white' : '',
-              }"
-            >
-              {{ $t("buttons.cancel") }}
-            </button>
-            <button
               @click="handleConfirm"
               :disabled="inSubProcess"
               :style="{
@@ -591,6 +811,15 @@
               }"
             >
               {{ $t("buttons.ok") }}
+            </button>
+            <button
+              @click="handleCancel"
+              :disabled="inSubProcess"
+              :style="{
+                backgroundColor: inSubProcess ? 'white' : '',
+              }"
+            >
+              {{ $t("buttons.cancel") }}
             </button>
           </div>
         </div>
@@ -661,7 +890,9 @@
             @click="switchSearchReplace"
             :title="$t('repeater.search')"
           >
-            <i style="color: red; font-size: 1em" class="material-icons"
+            <i
+              style="color: red; font-size: 1em; background-color: #e8e8e8"
+              class="material-icons"
               >search</i
             >
           </button>
@@ -672,7 +903,9 @@
             @click="switchSearchReplace"
             :title="$t('repeater.findReplace')"
           >
-            <i style="color: red; font-size: 1em" class="material-icons"
+            <i
+              style="color: red; font-size: 1em; background-color: springgreen"
+              class="material-icons"
               >find_replace</i
             >
           </button>
@@ -687,7 +920,7 @@
               class="material-icons"
               :style="{
                 color: isCaseSensitive ? 'red' : 'black',
-                backgroundColor: isCaseSensitive ? 'springgreen' : 'white',
+                backgroundColor: isCaseSensitive ? 'springgreen' : '#e8e8e8',
               }"
             >
               abc
@@ -1354,39 +1587,6 @@
                 </button>
               </div>
 
-              <div
-                style="display: flex; flex-direction: row; align-items: center"
-                :style="{ width: isMobile ? '100%' : '70%' }"
-              >
-                <span
-                  :style="{
-                    color:
-                      !isUtterTransLine ||
-                      isSystemTTS == 'No' ||
-                      !hasSpeechSynthesis
-                        ? '#bbbaba'
-                        : 'white',
-                  }"
-                  style="margin-left: 2em"
-                  class="subject"
-                >
-                  {{ $t("repeater.speedOfUttering") }}
-                </span>
-                <input
-                  :disabled="
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    !hasSpeechSynthesis
-                  "
-                  :style="{
-                    width: isMobile ? '7em' : '8em',
-                  }"
-                  class="input input--repeater"
-                  type="text"
-                  v-model.number.lazy="speedOfUtter"
-                />
-              </div>
-
               <p style="margin-bottom: 0">
                 <input
                   :disabled="!isUtterTransLine"
@@ -1508,6 +1708,25 @@
                 min="1"
                 max="3"
                 v-model.number.lazy="lineNumOfTrans"
+              />
+            </div>
+
+            <div
+              style="display: flex; flex-direction: row; align-items: center"
+              :style="{ width: isMobile ? '100%' : '70%' }"
+            >
+              <span
+                :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
+                style="margin-left: 1em"
+                class="subject"
+              >
+                {{ $t("repeater.speedOfUttering") }}
+              </span>
+              <input
+                :disabled="!isUtterTransLine"
+                class="input input--repeater"
+                type="text"
+                v-model.number.lazy="speedOfUtter"
               />
             </div>
 
@@ -1960,6 +2179,11 @@
               {{ $t("repeater.clickandInput1") }}
               <i style="color: white" class="material-icons">abc</i>
               {{ $t("repeater.instruction122") }}
+            </p>
+            <p style="text-align: justify">
+              {{ $t("repeater.instruction18") }}
+              <i style="color: white" class="material-icons">conveyor_belt</i
+              >{{ $t("repeater.instruction118") }}
             </p>
             <p style="color: blue; font-weight: bold; padding-top: 2em">
               {{ $t("repeater.learnLangUsingPDJ") }}
@@ -2683,6 +2907,37 @@
                 >call_split</i
               >
             </button>
+
+            <button
+              class="action"
+              name="buttons"
+              @click="openAlert(2, $t('repeater.confirmAdd'), 'add')"
+              :title="$t('repeater.infoAdd')"
+            >
+              <i
+                style="color: springgreen; font-size: 1.3em"
+                class="material-icons"
+                >alt_route</i
+              >
+            </button>
+
+            <button
+              v-if="isEditSubandNotes"
+              class="action"
+              name="buttons"
+              @click="onSubtools1"
+              :title="$t('repeater.tsc15')"
+            >
+              <i
+                style="font-size: 1.3em"
+                :style="{
+                  color: this.showsubTools1 ? 'red' : 'springgreen',
+                }"
+                class="material-icons"
+                >transcribe</i
+              >
+            </button>
+
             <button
               v-if="isEditSubandNotes"
               class="action"
@@ -2699,63 +2954,6 @@
                 >autofps_select</i
               >
             </button>
-            <button
-              class="action"
-              name="buttons"
-              @click="openAlert(2, $t('repeater.confirmAdd'), 'add')"
-              :title="$t('repeater.infoAdd')"
-            >
-              <i
-                style="color: springgreen; font-size: 1.3em"
-                class="material-icons"
-                >alt_route</i
-              >
-            </button>
-            <button
-              :disabled="loading || historyIndex < 1 || undoAlert"
-              class="action"
-              name="buttons"
-              @click="changeUndo"
-              :title="$t('repeater.undo')"
-            >
-              <i
-                :style="{
-                  color:
-                    loading || historyIndex < 1
-                      ? 'grey'
-                      : undoAlert
-                      ? 'yellow'
-                      : 'springgreen',
-                }"
-                style="font-size: 1.3em"
-                class="material-icons"
-                >undo</i
-              >
-            </button>
-
-            <button
-              :disabled="
-                loading || historyIndex >= changeNew.length || redoAlert
-              "
-              class="action"
-              name="buttons"
-              @click="changeRedo"
-              :title="$t('repeater.redo')"
-            >
-              <i
-                :style="{
-                  color:
-                    loading || historyIndex >= changeNew.length
-                      ? 'grey'
-                      : redoAlert
-                      ? 'yellow'
-                      : 'springgreen',
-                }"
-                style="font-size: 1.3em"
-                class="material-icons"
-                >redo</i
-              >
-            </button>
           </p>
         </span>
 
@@ -2768,6 +2966,29 @@
           @touchend.self="endTouchS"
         >
           <button
+            v-if="isEditSubandNotes"
+            :disabled="loading || historyIndex < 1 || undoAlert"
+            class="action"
+            name="buttons"
+            @click="changeUndo"
+            :title="$t('repeater.undo')"
+          >
+            <i
+              :style="{
+                color:
+                  loading || historyIndex < 1
+                    ? 'grey'
+                    : undoAlert
+                    ? 'yellow'
+                    : 'springgreen',
+              }"
+              style="font-size: 1.3em; padding: 0 0 0.5em 0"
+              class="material-icons"
+              >undo</i
+            >
+          </button>
+
+          <button
             v-if="isFav"
             class="action"
             name="buttons"
@@ -2775,7 +2996,11 @@
             :title="$t('repeater.fav')"
           >
             <i
-              style="color: yellow; padding: 0 0 0.5em 0; font-size: 1.2em"
+              style="
+                color: yellow;
+                padding: 0 0.5em 0.5em 0.5em;
+                font-size: 1.2em;
+              "
               class="material-icons"
               >star</i
             >
@@ -2788,9 +3013,36 @@
             :title="$t('repeater.fav')"
           >
             <i
-              style="color: #464633; padding: 0 0 0.5em 0; font-size: 1.2em"
+              style="
+                color: #464633;
+                padding: 0 0.5em 0.5em 0.5em;
+                font-size: 1.2em;
+              "
               class="material-icons"
               >star_outline</i
+            >
+          </button>
+
+          <button
+            v-if="isEditSubandNotes"
+            :disabled="loading || historyIndex >= changeNew.length || redoAlert"
+            class="action"
+            name="buttons"
+            @click="changeRedo"
+            :title="$t('repeater.redo')"
+          >
+            <i
+              :style="{
+                color:
+                  loading || historyIndex >= changeNew.length
+                    ? 'grey'
+                    : redoAlert
+                    ? 'yellow'
+                    : 'springgreen',
+              }"
+              style="font-size: 1.3em; padding: 0 0 0.5em 0"
+              class="material-icons"
+              >redo</i
             >
           </button>
         </div>
@@ -3079,6 +3331,7 @@ import localforage from "localforage";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import CryptoJS from "crypto-js";
+import wavEncoder from "wav-encoder";
 
 export default {
   name: "repeater",
@@ -3088,6 +3341,18 @@ export default {
   },
   data: function () {
     return {
+      langTranscribe: "en-US",
+      recognition1: null,
+      isRecordingTrans: false,
+      speechRecognitionSupported: false,
+      isFromLocal: 1,
+      speedTranscribe: 1,
+      isProcessing1: false,
+      isProcessing2: false,
+      transcriptionResult: "",
+      sK: "",
+      sR: "",
+      isDragging: false,
       disableDrag: null,
       deleteNewWord: "",
       selectedReplaceLine: "1,2,3",
@@ -3114,6 +3379,7 @@ export default {
       clickTimer: null,
       inSubProcess: false,
       showsubTools: false,
+      showsubTools1: false,
       currentTab: 1,
       selectedOption: null,
       optionsEdit: [
@@ -3174,7 +3440,9 @@ export default {
       dictationArray: [],
       fromClick: true,
       hasConfirmed: false,
-      moveAll: 0,
+      moveAll1: 0,
+      moveAll2: 0,
+      shrinkAll: 1,
       hasMoveAll: false,
       wavesurfer: null,
       audioContext: null,
@@ -3205,6 +3473,7 @@ export default {
       timeOutId2: null,
       timeOutId3: null,
       timeOutId4: null,
+      timeOutId5: null,
       autoPlayNext: true,
       nextLoopPlay: false,
       random: false,
@@ -3215,8 +3484,10 @@ export default {
       loopStart: 1,
       loopEnd: 1000,
       autoPlay: true,
-      timeStampChangeStart: 0,
-      timeStampChangeEnd: 0,
+      timeStampChangeStart:
+        Number(window.localStorage.getItem("timeStampChangeStart")) || 0,
+      timeStampChangeEnd:
+        Number(window.localStorage.getItem("timeStampChangeEnd")) || 0,
       currentSpeed: "0.8 0.5",
       listing: null,
       isSetting: false,
@@ -3318,6 +3589,7 @@ export default {
       dubbingMode: false,
       showWaveformInfo: false,
       localPeaks: [],
+      transcribeUrl: "defaultkey1,eastasia",
       TTSurl:
         "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
     };
@@ -3325,7 +3597,10 @@ export default {
 
   computed: {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
-
+    fromLocal() {
+      if (this.isFromLocal == 0) return this.$t("repeater.subTranscribe00");
+      else return this.$t("repeater.subTranscribe01");
+    },
     isMobile() {
       return window.innerWidth < 738;
     },
@@ -3632,7 +3907,7 @@ export default {
     },
 
     sh() {
-      return "YWYyZjRhODVkNzk3NGFhOWJhNDVaNzMwZDI5YThjN2E=".replace(
+      return "ZDMyYzUyMzczMzMxNDMyNzhaMzdiYWI2ZTc5MTZkZmY=".replace(
         "a",
         this.tokenFromServer.charAt(3)
       );
@@ -3968,11 +4243,17 @@ export default {
       this.updatePreview();
     },
 
+    showsubTools1() {
+      if (this.showsubTools1) this.initSpeechRecognition();
+      else {
+        if (this.recognition1 && this.isRecordingTrans) {
+          this.recognition1.stop();
+        }
+      }
+    },
     altPressed() {
       if (this.regions && this.altPressed && !this.isMobile) {
-        this.disableDrag = this.regions.enableDragSelection({
-          color: "rgba(255, 0, 0, 0.1)",
-        });
+        this.disableDrag = this.regions.enableDragSelection({});
       }
     },
 
@@ -3996,7 +4277,6 @@ export default {
       this.originLine = Math.floor(this.originLine);
       if (this.originLine < 1) this.originLine = 1;
       else if (this.originLine > 2) this.originLine = 2;
-      this.save();
     },
 
     translatorUrl() {
@@ -4070,14 +4350,15 @@ export default {
     isEditSubandNotes: function () {
       if (!this.isEditSubandNotes) {
         this.isWaveSurfer = false;
-        this.moveAll = 0;
+        this.moveAll1 = 0;
+        this.moveAll2 = 0;
+        this.shrinkAll = 1;
       } else {
         if (this.startNum == this.endNum) {
           this.startNum = this.sentenceIndex;
           this.endNum = this.sentenceIndex;
         }
-        if (this.originLine == 0)
-          this.originLine = this.lineNumOfTrans == 1 ? 2 : 1;
+        this.originLine = this.lineNumOfTrans == 1 ? 2 : 1;
         if (this.targetLanguage == "aa") {
           this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
         }
@@ -4208,7 +4489,6 @@ export default {
       if (this.isSwitching) return;
       if (String(this.startTimeTemp).split(".")[1].length !== 3) {
         this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
-        return;
       }
       this.notFromStarttimeTempChg = false;
       this.onEdit = true;
@@ -4221,6 +4501,7 @@ export default {
       ) {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           start: this.startTimeTemp,
+          end: this.endTimeTemp - 0.03,
         });
         if (this.sentenceIndex > 1 && !this.altPressed)
           this.regions.getRegions()[this.sentenceIndex - 2].setOptions({
@@ -4237,7 +4518,6 @@ export default {
       if (this.isSwitching) return;
       if (String(this.endTimeTemp).split(".")[1].length !== 3) {
         this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
-        return;
       }
       this.onEdit = true;
       this.saveSub2();
@@ -4247,6 +4527,7 @@ export default {
         this.regions.getRegions()[this.sentenceIndex - 1]
       ) {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
+          start: this.startTimeTemp,
           end: this.endTimeTemp - 0.03,
         });
         if (this.sentenceIndex < this.srtSubtitles.length && !this.altPressed)
@@ -4424,12 +4705,18 @@ export default {
 
     timeStampChangeStart: function () {
       this.timeStampChangeStart = Math.floor(this.timeStampChangeStart);
-      this.save();
+      window.localStorage.setItem(
+        "timeStampChangeStart",
+        this.timeStampChangeStart
+      );
     },
 
     timeStampChangeEnd: function () {
       this.timeStampChangeEnd = Math.floor(this.timeStampChangeEnd);
-      this.save();
+      window.localStorage.setItem(
+        "timeStampChangeEnd",
+        this.timeStampChangeEnd
+      );
     },
 
     subtitleLang: function () {
@@ -4446,6 +4733,11 @@ export default {
 
     TTSurl: function () {
       this.TTSurl = this.TTSurl.replaceAll(" ", "");
+      this.save();
+    },
+
+    transcribeUrl: function () {
+      if (this.transcribeUrl == "") this.transcribeUrl = "defaultkey1,eastasia";
       this.save();
     },
 
@@ -4632,6 +4924,340 @@ export default {
   },
 
   methods: {
+    nextSen() {
+      if (this.sentenceIndex < this.srtSubtitles.length) {
+        this.sentenceIndex = this.sentenceIndex + 1;
+        this.transcriptionResult = "";
+      }
+    },
+    lastSen() {
+      if (this.sentenceIndex > 1) {
+        this.sentenceIndex = this.sentenceIndex - 1;
+        this.transcriptionResult = "";
+      }
+    },
+
+    transcribe() {
+      if (this.isFromLocal == 0) this.startRecognition();
+      else this.transcribeSegment();
+    },
+
+    playTranscribe() {
+      if (this.isFromLocal == 1) this.isProcessing1 = true;
+      else this.isProcessing2 = true;
+      this.cleanUp1();
+      this.cleanUp2();
+      const startSecond1 = this.startTimeTemp;
+      const endSecond1 = this.endTimeTemp;
+      if (this.isProcessing1 && endSecond1 - startSecond1 >= 15) {
+        this.openAlert(1, this.$t("repeater.tsc20"));
+        this.transcriptionResult = "";
+        this.isProcessing1 = false;
+        return;
+      }
+
+      if (this.isIphone) {
+        setTimeout(() => {
+          this.currentMedia.play();
+        }, 20);
+      } else this.currentMedia.play();
+
+      this.currentMedia.currentTime = startSecond1;
+      this.currentMedia.playbackRate = this.speedTranscribe;
+
+      this.intervalId = setInterval(() => {
+        if (
+          this.currentMedia.currentTime >=
+          this.srtSubtitles[this.sentenceIndex - 1].endTime
+        ) {
+          if (this.intervalId) {
+            clearInterval(this.intervalId);
+          }
+          this.currentMedia.pause();
+          this.isProcessing1 = false;
+          this.isProcessing2 = false;
+        }
+      }, 100);
+    },
+
+    startRecognition() {
+      if (!this.speechRecognitionSupported || this.isMobile) {
+        this.openAlert(1, this.$t("repeater.tsc16"));
+        return;
+      }
+      this.isProcessing2 = true;
+      const startSecond = this.startTimeTemp;
+      this.currentMedia.play();
+      this.currentMedia.currentTime = startSecond;
+      this.currentMedia.playbackRate = this.speedTranscribe;
+      this.isRecordingTrans = true;
+      this.transcriptionResult = "";
+      this.recognition1.start();
+
+      this.intervalId = setInterval(() => {
+        if (
+          this.currentMedia.currentTime >=
+          this.srtSubtitles[this.sentenceIndex - 1].endTime
+        ) {
+          if (this.intervalId) {
+            clearInterval(this.intervalId);
+          }
+          this.stopRecognition();
+        }
+      }, 100);
+    },
+
+    stopRecognition() {
+      this.currentMedia.pause();
+      this.isRecordingTrans = false;
+      this.recognition1.stop();
+      this.isProcessing2 = false;
+    },
+
+    initSpeechRecognition() {
+      if (
+        "SpeechRecognition" in window ||
+        "webkitSpeechRecognition" in window
+      ) {
+        this.speechRecognitionSupported = true;
+      } else return;
+      // generate voice recognition instance
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition1 = new SpeechRecognition();
+
+      // config recognition parameter.
+      this.recognition1.continuous = true;
+      this.recognition1.interimResults = true;
+      this.recognition1.lang = this.langTranscribe;
+
+      this.recognition1.onresult = (event) => {
+        const transcript = [];
+        for (let i = 0; i < event.results.length; i++) {
+          transcript.push(event.results[i][0].transcript);
+        }
+        this.transcriptionResult = transcript.join("");
+      };
+
+      this.recognition1.onerror = (event) => {
+        if (event.error == "not-allowed")
+          this.transcriptionResult =
+            "error: not-allowed! " + this.$t("repeater.tsc02");
+        else this.transcriptionResult = "error-" + event.error;
+        this.isProcessing2 = false;
+      };
+
+      // callback for recognition result
+      this.recognition1.onend = () => {
+        if (this.isRecordingTrans) {
+          this.recognition1.start();
+        }
+      };
+    },
+
+    async transcribeSegment() {
+      this.isProcessing1 = true;
+      if (!this.transcribeUrl) this.transcribeUrl = "defaultkey1,eastasia";
+      this.transcribeUrl = this.transcribeUrl.toString();
+      if (this.transcribeUrl.includes("defaultkey"))
+        this.openAlert(1, this.$t("repeater.tsc18"));
+      this.transcriptionResult = this.$t("repeater.tsc19");
+      try {
+        const startSecond = this.startTimeTemp;
+        const endSecond = this.endTimeTemp;
+        if (endSecond - startSecond >= 15) {
+          this.openAlert(1, this.$t("repeater.tsc20"));
+          this.transcriptionResult = "";
+          this.isProcessing1 = false;
+          return;
+        }
+        // virtual video
+        const virtualVideo = document.createElement("video");
+        // hide it
+        virtualVideo.style.display = "none";
+        virtualVideo.width = 0;
+        virtualVideo.height = 0;
+        virtualVideo.src = this.raw;
+        document.body.appendChild(virtualVideo);
+
+        const audioBlob = await this.extractAudioSegment(
+          virtualVideo,
+          startSecond
+        );
+        virtualVideo.remove();
+        const result = await this.callAzureSpeechService(audioBlob);
+        this.transcriptionResult = result;
+      } catch (error) {
+        console.error("error:", error);
+        this.transcriptionResult = error;
+      } finally {
+        this.isProcessing1 = false;
+      }
+    },
+
+    async extractAudioSegment(video, startSecond) {
+      return new Promise((resolve, reject) => {
+        try {
+          const mediaRecorderChunks = [];
+          const audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          const source = audioContext.createMediaElementSource(video);
+          const destination = audioContext.createMediaStreamDestination();
+          source.connect(destination);
+
+          let supportedMimeType = "";
+          const mimeTypes = [
+            "audio/mp4; codecs=mp4a.40.5",
+            "audio/webm;codecs=opus",
+            "audio/webm",
+            "audio/ogg;codecs=opus",
+          ];
+          for (const mimeType of mimeTypes) {
+            if (MediaRecorder.isTypeSupported(mimeType)) {
+              supportedMimeType = mimeType;
+              break;
+            }
+          }
+          if (!supportedMimeType) {
+            throw new Error("no support mimeType");
+          }
+
+          const mediaRecorder = new MediaRecorder(destination.stream, {
+            mimeType: supportedMimeType,
+          });
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              mediaRecorderChunks.push(event.data);
+            }
+          };
+          mediaRecorder.onstop = async () => {
+            try {
+              const blob = new Blob(mediaRecorderChunks, {
+                type: supportedMimeType,
+              });
+              const audioBuffer = await this.blobToAudioBuffer(
+                blob,
+                audioContext
+              );
+              const resampledBuffer = await this.resampleAudio(
+                audioBuffer.getChannelData(0),
+                audioBuffer.sampleRate,
+                16000
+              );
+              const wavBlob = await wavEncoder.encode({
+                sampleRate: 16000,
+                channelData: [resampledBuffer],
+                bitDepth: 16,
+              });
+              resolve(new Blob([wavBlob], { type: "audio/wav" }));
+            } catch (e) {
+              reject(e);
+            }
+          };
+
+          video
+            .play()
+            .then(() => {
+              video.currentTime = startSecond;
+              video.playbackRate = this.speedTranscribe;
+              mediaRecorder.start();
+
+              this.intervalId = setInterval(() => {
+                if (
+                  video.currentTime >=
+                  this.srtSubtitles[this.sentenceIndex - 1].endTime
+                ) {
+                  if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                  }
+                  video.pause();
+                  mediaRecorder.stop();
+                }
+              }, 100);
+            })
+            .catch(reject);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    },
+
+    async blobToAudioBuffer(blob, audioContext) {
+      try {
+        const arrayBuffer = await blob.arrayBuffer();
+        return await audioContext.decodeAudioData(arrayBuffer);
+      } catch (error) {
+        console.error(error);
+        alert("Error: unsupported audio format!");
+      }
+    },
+
+    mergeBuffers(buffers) {
+      const totalLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
+      const result = new Float32Array(totalLength);
+      let offset = 0;
+
+      buffers.forEach((buf) => {
+        result.set(buf, offset);
+        offset += buf.length;
+      });
+
+      return result;
+    },
+
+    async resampleAudio(inputBuffer, inputSampleRate, outputSampleRate) {
+      const ratio = outputSampleRate / inputSampleRate;
+      const outputLength = Math.floor(inputBuffer.length * ratio);
+      const outputBuffer = new Float32Array(outputLength);
+
+      for (let i = 0; i < outputLength; i++) {
+        const index = i / ratio;
+        const intIndex = Math.floor(index);
+        const frac = index - intIndex;
+
+        if (intIndex + 1 < inputBuffer.length) {
+          outputBuffer[i] =
+            inputBuffer[intIndex] * (1 - frac) +
+            inputBuffer[intIndex + 1] * frac;
+        } else {
+          outputBuffer[i] = inputBuffer[intIndex];
+        }
+      }
+
+      return outputBuffer;
+    },
+
+    async callAzureSpeechService(audioBlob) {
+      this.getTranscribeKey();
+      // send Blob
+      const response = await fetch(
+        `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
+        {
+          method: "POST",
+          headers: {
+            "Ocp-Apim-Subscription-Key": this.sK,
+            "Content-Type": "audio/wav; codec=audio/pcm; samplerate=16000",
+            Accept: "application/json",
+          },
+          body: audioBlob,
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Azure API error: ${response.status} - ${errorText}`);
+      }
+      const result = await response.json();
+
+      if (!result.RecognitionStatus) {
+        this.openAlert(1, this.$t("repeater.tsc21"));
+        return "";
+      } else
+        return result.RecognitionStatus === "Success"
+          ? result.DisplayText
+          : `${result.RecognitionStatus}`;
+    },
+
     handleIsDictation() {
       if (this.isDictation) {
         if (this.dictationArray.length == 0) {
@@ -4863,6 +5489,15 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
     },
+
+    onSubtools1() {
+      this.showsubTools1 = true;
+      this.transcriptionResult = "";
+      this.showAddNew = false;
+      this.cleanUp1();
+      this.cleanUp2();
+    },
+
     handleConfirm() {
       this.inSubProcess = true;
       if (this.currentTab === 1) {
@@ -4885,8 +5520,28 @@ export default {
         this.saveSpecialSub(selected);
       }
     },
+    handleConfirm1() {
+      if (this.transcriptionResult !== "") {
+        if (this.originLine == 1) this.subFirstLine = this.transcriptionResult;
+        else this.subSecLine = this.transcriptionResult;
+        this.showsubTools1 = false;
+      }
+    },
+
     handleCancel() {
       this.showsubTools = false;
+    },
+    handleCancel1() {
+      this.cleanUp1();
+      this.cleanUp2();
+      if (this.intervalId && this.isProcessing2) {
+        clearInterval(this.intervalId);
+        this.currentMedia.pause();
+        this.stopRecognition();
+      }
+      this.isProcessing1 = false;
+      this.isProcessing2 = false;
+      this.showsubTools1 = false;
     },
 
     aliTranslate(type, onTest) {
@@ -5431,6 +6086,10 @@ export default {
       this.openAlert(1, this.$t("repeater.noRecordPermission"));
     },
 
+    showOnLineTscNote() {
+      this.openAlert(1, this.$t("repeater.tsc03"));
+    },
+
     alertTranslatorUrl() {
       this.openAlert(
         1,
@@ -5439,6 +6098,12 @@ export default {
     },
     alertTranslatorUrl1() {
       this.openAlert(1, this.$t("repeater.alertTranslatorUrl1"));
+    },
+    alertMoveAll() {
+      this.openAlert(1, this.$t("repeater.alertMoveAll"));
+    },
+    alertShrinkAll() {
+      this.openAlert(1, this.$t("repeater.alertShrinkAll"));
     },
 
     helpCss() {
@@ -5742,9 +6407,17 @@ export default {
       this.openAlert(1, this.$t("repeater.TTSSetting"));
     },
 
+    showTscSetting() {
+      this.openAlert(1, this.$t("repeater.tsc05"));
+    },
+
+    showSpeedNote() {
+      this.openAlert(1, this.$t("repeater.tsc07"));
+    },
+
     checkLocalStorageSpace() {
       try {
-        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // about 200KB's data, to test remain space.
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, try to test remain space.
         localStorage.removeItem("__checkSpace");
         return true;
       } catch (e) {
@@ -5812,7 +6485,6 @@ export default {
     updateRegions() {
       this.wavesurfer.on("decode", () => {
         this.updateRgns();
-        // to locate to current sentence. good job.
         this.click();
         setTimeout(() => {
           this.cleanUp1();
@@ -5966,7 +6638,7 @@ export default {
           id: i,
           content: i.toString(),
           color: "rgba(0, 255, 0, 0.25)",
-          drag: false,
+          drag: !this.isMobile,
           resize: true,
         });
       }
@@ -6066,8 +6738,6 @@ export default {
       this.repeatTimes = Number(JSON.parse(PDJcontent.split("::")[1]));
       this.interval = Number(JSON.parse(PDJcontent.split("::")[2]));
       this.autoPlayNext = JSON.parse(PDJcontent.split("::")[3]);
-      this.timeStampChangeStart = Number(JSON.parse(PDJcontent.split("::")[4]));
-      this.timeStampChangeEnd = Number(JSON.parse(PDJcontent.split("::")[20]));
       this.currentSpeed = JSON.parse(PDJcontent.split("::")[5]);
       this.subtitleLang = JSON.parse(PDJcontent.split("::")[6]);
       this.switchSubtitleMini();
@@ -6109,7 +6779,7 @@ export default {
       if (PDJcontent.split("::")[37])
         this.showArrow = JSON.parse(PDJcontent.split("::")[37]);
       if (PDJcontent.split("::")[38])
-        this.originLine = Number(JSON.parse(PDJcontent.split("::")[38]));
+        this.transcribeUrl = JSON.parse(PDJcontent.split("::")[38]);
       if (PDJcontent.split("::")[39])
         this.targetLanguage = JSON.parse(PDJcontent.split("::")[39]);
       if (PDJcontent.split("::")[40])
@@ -6153,11 +6823,65 @@ export default {
       var textSubtitles = formatContent.split("\n\n");
 
       for (var i = 0; i < textSubtitles.length; i++) {
-        var time1 = this.convertToHMS(
+        var time01 =
           this.srtSubtitles[i].startTime * 1000 -
-            this.timeStampChangeStart +
-            this.moveAll
-        );
+          this.timeStampChangeStart +
+          this.moveAll1;
+        var time02 =
+          this.srtSubtitles[i].endTime * 1000 -
+          this.timeStampChangeEnd +
+          1 +
+          this.moveAll2;
+
+        if (time01 >= time02) {
+          time01 =
+            time01 -
+            ((time01 - time02) * Math.abs(this.moveAll1)) /
+              (Math.abs(this.moveAll1) + Math.abs(this.moveAll2));
+          time02 = time01 + 1;
+        }
+        if (i == 0) time01 = Math.max(time01, 0);
+        if (
+          i > 0 &&
+          time01 <=
+            this.srtSubtitles[i - 1].endTime * 1000 -
+              this.timeStampChangeEnd +
+              1 +
+              this.moveAll2
+        ) {
+          time01 =
+            time01 +
+            ((this.srtSubtitles[i - 1].endTime * 1000 -
+              this.timeStampChangeEnd +
+              1 +
+              this.moveAll2 -
+              time01) *
+              Math.abs(this.moveAll1)) /
+              (Math.abs(this.moveAll1) + Math.abs(this.moveAll2));
+        }
+
+        if (
+          i < textSubtitles.length - 1 &&
+          time02 >=
+            this.srtSubtitles[i + 1].startTime * 1000 -
+              this.timeStampChangeStart +
+              this.moveAll1
+        ) {
+          time02 =
+            time02 -
+            1 -
+            ((time02 -
+              (this.srtSubtitles[i + 1].startTime * 1000 -
+                this.timeStampChangeStart +
+                this.moveAll1)) *
+              Math.abs(this.moveAll2)) /
+              (Math.abs(this.moveAll1) + Math.abs(this.moveAll2));
+        }
+
+        time01 = time01 * this.shrinkAll;
+        time02 = time02 * this.shrinkAll;
+        var time1 = this.convertToHMS(time01);
+        var time2 = this.convertToHMS(time02);
 
         var startTimeFormat =
           time1.hours +
@@ -6167,12 +6891,7 @@ export default {
           time1.seconds +
           "," +
           time1.milliseconds;
-        var time2 = this.convertToHMS(
-          this.srtSubtitles[i].endTime * 1000 -
-            this.timeStampChangeEnd +
-            1 +
-            this.moveAll
-        );
+
         var endTimeFormat =
           time2.hours +
           ":" +
@@ -6722,10 +7441,40 @@ export default {
       } else {
         let ttsFullUrl = this.TTSurl + text;
         this.audio.src = ttsFullUrl;
+        this.audio.playbackRate = this.speedOfUtter;
         this.audio.play().catch(() => {
           this.openAlert(1, this.$t("repeater.alert008"));
         });
       }
+    },
+
+    getTranscribeKey() {
+      let r = "";
+      let s = "";
+      let x;
+      if (this.transcribeUrl.startsWith("defaultkey1")) {
+        x = this.getKeyFromServer(1);
+        s = x[0];
+        r = x[1];
+      } else if (this.transcribeUrl.startsWith("defaultkey2")) {
+        x = this.getKeyFromServer(2);
+        s = x[0];
+        r = x[1];
+      } else if (this.transcribeUrl.startsWith("defaultkey3")) {
+        x = this.getKeyFromServer(3);
+        s = x[0];
+        r = x[1];
+      } else if (this.transcribeUrl.startsWith("Default")) {
+        x = this.getKeyFromServer(6);
+        s = x[0];
+        r = x[1];
+      } else if (this.transcribeUrl.includes(",")) {
+        s = this.transcribeUrl.split(",")[0].trim();
+        if (this.transcribeUrl.split(",")[1])
+          r = this.TTSurl.split(",")[1].trim();
+      }
+      this.sK = s;
+      this.sR = r;
     },
 
     azureTTS(text, type) {
@@ -6733,25 +7482,25 @@ export default {
       let v = "";
       let s = "";
       let x;
-      if (this.TTSurl.startsWith("azure-tts:defaultKey1")) {
+      if (this.TTSurl.startsWith("azure-tts:defaultkey1")) {
         x = this.getKeyFromServer(1);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
         else v = "";
-      } else if (this.TTSurl.startsWith("azure-tts:defaultKey2")) {
+      } else if (this.TTSurl.startsWith("azure-tts:defaultkey2")) {
         x = this.getKeyFromServer(2);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
         else v = "";
-      } else if (this.TTSurl.startsWith("azure-tts:defaultKey3")) {
+      } else if (this.TTSurl.startsWith("azure-tts:defaultkey3")) {
         x = this.getKeyFromServer(3);
         s = x[0];
         r = x[1];
         if (this.TTSurl.split(",")[2]) v = this.TTSurl.split(",")[2].trim();
         else v = "";
-      } else if (this.TTSurl.startsWith("Azure-tts:defaultKey")) {
+      } else if (this.TTSurl.startsWith("Azure-tts:defaultkey")) {
         x = this.getKeyFromServer(6);
         s = x[0];
         r = x[1];
@@ -6813,6 +7562,7 @@ export default {
               }
               if (!this.utterInProcess && type == 1) return;
               this.audio.src = URL.createObjectURL(blob);
+              this.audio.playbackRate = this.speedOfUtter;
               this.audio.play();
               if (type == 1) {
                 if (!this.isSingle && this.dubbingMode) {
@@ -6872,7 +7622,7 @@ export default {
 
     getKeyFromServer(x) {
       const encryptedMap = {
-        1: [atob(this.sh), atob("ZWFzdGFzaWE=")],
+        1: [atob(this.sh), atob("amFwYW5lYXN0")],
         2: [atob(this.po), atob("ZWFzdHVz")],
         3: [atob(this.re), atob("c291dGhlYXN0YXNpYQ==")],
         4: [atob(this.aa), atob(this.ab)],
@@ -6978,8 +7728,8 @@ export default {
         this.azureTTS(text, 1);
       } else {
         let ttsFullUrl = this.TTSurl + text;
-
         this.audio.src = ttsFullUrl;
+        this.audio.playbackRate = this.speedOfUtter;
         this.audio.play().catch(() => {
           this.endUtter();
           if (!this.utterInProcess) return;
@@ -7012,7 +7762,8 @@ export default {
       if (
         this.isUtterTransLine &&
         this.isUtterTransLineFirstly &&
-        this.isPauseAfterFirstDone
+        this.isPauseAfterFirstDone &&
+        !this.isEditSubandNotes
       ) {
         this.pauseAfterFirstDone = true;
         this.utterInProcess = false;
@@ -7227,7 +7978,7 @@ export default {
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
-          //add a fav to the fav list
+          //add a fav
           var fav = {
             rawPath: this.reqF.name,
             mediaName: this.mediaName,
@@ -7239,7 +7990,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
-          //remove a fav from the fav list
+          //remove a fav
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
@@ -8296,7 +9047,8 @@ export default {
           if (
             this.isUtterTransLine &&
             !this.isUtterTransLineFirstly &&
-            this.isPauseAfterFirstDone
+            this.isPauseAfterFirstDone &&
+            !this.isEditSubandNotes
           ) {
             this.playCount = 0;
             this.playInProcess = false;
@@ -8535,7 +9287,7 @@ export default {
         "::" +
         JSON.stringify(this.showArrow) +
         "::" +
-        JSON.stringify(this.originLine) +
+        JSON.stringify(this.transcribeUrl) +
         "::" +
         JSON.stringify(this.targetLanguage) +
         "::" +
@@ -8686,7 +9438,8 @@ export default {
       }
       if (!this.onEdit) return;
       this.onEdit = false;
-      this.tempOldContent = this.reqF.content;
+      if (!this.isDragging) this.tempOldContent = this.reqF.content;
+      this.isDragging = true;
       if (
         this.sentenceIndex > 1 &&
         this.startTimeTemp <= this.srtSubtitles[this.sentenceIndex - 2].endTime
@@ -8707,6 +9460,7 @@ export default {
       if (this.sentenceIndex == 1 && this.startTimeTemp < 0)
         this.startTimeTemp = 0;
       if (
+        !this.isDragging &&
         this.startTimeTemp >= this.srtSubtitles[this.sentenceIndex - 1].endTime
       )
         this.startTimeTemp =
@@ -8717,9 +9471,7 @@ export default {
       var oldContent =
         this.srtSubtitles[this.sentenceIndex - 1].timeStamp.split(" --> ")[0] +
         " --> ";
-      var time = this.convertToHMS(
-        this.startTimeTemp * 1000 - this.timeStampChangeStart
-      );
+      var time = this.convertToHMS(this.startTimeTemp * 1000);
       var newContent =
         time.hours +
         ":" +
@@ -8744,9 +9496,7 @@ export default {
           " --> " +
           this.srtSubtitles[this.sentenceIndex - 2].timeStamp.split(" --> ")[1];
         var time1 = this.convertToHMS(
-          this.srtSubtitles[this.sentenceIndex - 2].endTime * 1000 -
-            this.timeStampChangeEnd +
-            1
+          this.srtSubtitles[this.sentenceIndex - 2].endTime * 1000 + 1
         );
         var newContent1 =
           " --> " +
@@ -8775,7 +9525,11 @@ export default {
         tempContent = tempContent.replace(oldContent1, newContent1);
       }
       this.reqF.content = tempContent;
-      this.saveSubNow();
+      if (this.tempOldContent == this.reqF.content) return;
+      if (this.timeOutId5) clearTimeout(this.timeOutId5);
+      this.timeOutId5 = setTimeout(() => {
+        this.saveSubNow();
+      }, 100);
     },
 
     saveSub2() {
@@ -8784,7 +9538,9 @@ export default {
       }
       if (!this.onEdit) return;
       this.onEdit = false;
-      this.tempOldContent = this.reqF.content;
+      if (!this.isDragging) {
+        this.tempOldContent = this.reqF.content;
+      }
 
       if (
         this.sentenceIndex <= this.srtSubtitles.length - 1 &&
@@ -8868,7 +9624,14 @@ export default {
         tempContent = tempContent.replace(oldContent1, newContent1);
       }
       this.reqF.content = tempContent;
-      this.saveSubNow();
+      if (this.tempOldContent == this.reqF.content) return;
+      if (this.timeOutId5) clearTimeout(this.timeOutId5);
+      if (this.isDragging)
+        this.timeOutId5 = setTimeout(() => {
+          this.onRUdo = false;
+          this.saveSubNow();
+        }, 100);
+      else this.saveSubNow();
     },
 
     editHotkeys(timeStamp, event) {
@@ -9760,10 +10523,10 @@ export default {
 
     saveSubNow() {
       if (this.tempOldContent == this.reqF.content) return;
+      this.isDragging = false;
       if (!this.onRUdo) {
         this.changeOld[this.historyIndex] = this.tempOldContent;
         this.changeNew[this.historyIndex] = this.reqF.content;
-
         this.historyIndex = this.historyIndex + 1;
       } else this.onRUdo = false;
       for (var i = 0; i < this.reqF.content.split("\n\n").length; ++i) {
@@ -9990,7 +10753,13 @@ export default {
     },
 
     key(event) {
-      if (!this.isReadyToPlay || this.showsubTools || this.isSetting) return;
+      if (
+        !this.isReadyToPlay ||
+        this.showsubTools ||
+        this.isSetting ||
+        this.showsubTools1
+      )
+        return;
 
       if (
         (event.key === "Control" || event.keyCode === 17) &&
@@ -10385,7 +11154,7 @@ input:disabled {
   border-radius: 5px;
   width: 51%;
   margin-top: 1em;
-  height: 15em;
+  height: 18.8em;
   font-size: 0.9em;
 }
 .subTools-content {
@@ -10424,7 +11193,7 @@ input:disabled {
 }
 
 .subTools-buttons button {
-  margin-left: 10px;
+  margin-left: 3px;
 }
 
 .popUp-mask {

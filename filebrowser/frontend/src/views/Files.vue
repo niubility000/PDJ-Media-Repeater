@@ -24,12 +24,12 @@
 <script>
 import { files as api } from "@/api";
 import { mapState, mapMutations } from "vuex";
-
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
 import Errors from "@/views/Errors.vue";
 import Preview from "@/views/files/Preview.vue";
 import Repeater from "@/views/files/Repeater.vue";
+import Subconvertor from "@/views/files/Subconvertor.vue";
 import Listing from "@/views/files/Listing.vue";
 
 function clean(path) {
@@ -44,6 +44,7 @@ export default {
     Errors,
     Preview,
     Repeater,
+    Subconvertor,
     Listing,
     Editor: () => import("@/views/files/Editor.vue"),
   },
@@ -55,9 +56,11 @@ export default {
     };
   },
   computed: {
-    ...mapState(["req", "reload", "loading"]),
+    ...mapState(["req", "reload", "loading", "showSubConvertor"]),
     currentView() {
-      if (this.req.type == undefined || this.req.isDir) {
+      if (this.showSubConvertor == true) {
+        return "subconvertor";
+      } else if (this.req.type == undefined || this.req.isDir) {
         return null;
       } else if (this.req.name.endsWith("srt")) {
         return "repeater";

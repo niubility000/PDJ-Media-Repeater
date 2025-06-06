@@ -78,6 +78,9 @@ const mutations = {
       state.user[field] = value[field];
     }
   },
+  updateShowSubConvertor: (state, value) => {
+    state.showSubConvertor = value;
+  },
   updateRequest: (state, value) => {
     const selectedItems = state.selected.map((i) => state.req.items[i]);
     state.oldReq = state.req;
