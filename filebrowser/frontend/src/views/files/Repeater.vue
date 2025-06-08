@@ -462,7 +462,7 @@
               />&nbsp;&nbsp;
               {{ fromLocal }}
             </p>
-            <p v-if="isFromLocal == 0" style="color: red; font-size: 0.9em">
+            <p v-if="isFromLocal == 0" style="color: black">
               {{ $t("repeater.tsc02") }}
               <button
                 class="action"
@@ -543,19 +543,31 @@
               />
             </p>
           </div>
-          <div style="flex-grow: 1; overflow-y: auto">
-            <p>
-              <span style="font-family: Courier, monospace">{{
-                $t("repeater.tsc10")
-              }}</span
-              >{{ originLine == 1 ? subFirstLine : subSecLine }}
+          <div id="allText" style="flex-grow: 1; overflow-y: auto">
+            <p style="margin: 0 0 4px 0; font-weight: 600; font-size: 0.8em">
+              {{ $t("repeater.tsc10") }}
             </p>
-            <p style="color: green">
-              <span style="font-family: Courier, monospace">{{
-                $t("repeater.tsc11")
-              }}</span
-              >{{ transcriptionResult }}
+            <p
+              style="margin-top: 0; color: red; text-align: justify"
+              v-html="oldTextHighLight"
+            ></p>
+            <p style="margin-bottom: 4px; font-weight: 600; font-size: 0.8em">
+              {{ $t("repeater.tsc11") }}
             </p>
+            <textarea
+              id="newText"
+              style="
+                color: blue;
+                padding: 0;
+                margin: 0;
+                border: none;
+                resize: none;
+                width: 100%;
+                overflow: hidden;
+                text-align: justify;
+              "
+              v-model="transcriptionResult"
+            ></textarea>
           </div>
 
           <div class="subTools-buttons">
@@ -570,16 +582,6 @@
               &lt;
             </button>
             <button
-              @click="transcribe"
-              :disabled="isProcessing1 || isProcessing2"
-              :style="{
-                backgroundColor:
-                  !isProcessing1 && !isProcessing2 ? 'white' : '',
-              }"
-            >
-              {{ $t("repeater.tsc12") }}
-            </button>
-            <button
               @click="playTranscribe"
               :disabled="isProcessing1 || isProcessing2"
               :style="{
@@ -590,9 +592,22 @@
               {{ $t("repeater.tsc13") }}
             </button>
             <button
+              @click="transcribe"
+              :disabled="isProcessing1 || isProcessing2"
+              :style="{
+                backgroundColor:
+                  !isProcessing1 && !isProcessing2 ? 'white' : '',
+              }"
+            >
+              {{ $t("repeater.tsc12") }}
+            </button>
+            <button
               @click="handleConfirm1"
               :disabled="
-                transcriptionResult == '' || isProcessing1 || isProcessing2
+                transcriptionResult == '' ||
+                transcriptionResult.includes('error:') ||
+                isProcessing1 ||
+                isProcessing2
               "
               :style="{
                 backgroundColor:
@@ -602,16 +617,6 @@
               {{ $t("repeater.tsc14") }}
             </button>
             <button
-              @click="handleCancel1"
-              :disabled="isProcessing1"
-              :style="{
-                backgroundColor: !isProcessing1 ? 'white' : '',
-              }"
-            >
-              {{ $t("buttons.cancel") }}
-            </button>
-
-            <button
               v-if="!isMobile && isFromLocal == 0"
               @click="nextSen"
               :disabled="isProcessing2 || sentenceIndex >= srtSubtitles.length"
@@ -620,6 +625,17 @@
               }"
             >
               &gt;
+            </button>
+            &nbsp;&nbsp;
+            <button @click="handleCancel10" v-if="isProcessing2">
+              {{ $t("buttons.stop") }}
+            </button>
+            <button
+              @click="handleCancel1"
+              v-if="!isProcessing2"
+              :disabled="isProcessing1"
+            >
+              {{ $t("buttons.close") }}
             </button>
           </div>
         </div>
@@ -653,7 +669,7 @@
                   min="1"
                   :max="srtSubtitles.length"
                   step="1"
-                  style="width: 3em"
+                  style="width: 4em"
                   placeholder="1"
                   v-model.number.lazy="startNum"
                 />
@@ -663,7 +679,7 @@
                   min="1"
                   :max="srtSubtitles.length"
                   step="1"
-                  style="width: 3em"
+                  style="width: 4em"
                   :placeholder="srtSubtitles.length"
                   v-model.number.lazy="endNum"
                 />
@@ -689,7 +705,9 @@
                   @click="alertTranslatorUrl"
                   :title="$t('repeater.help')"
                 >
-                  <i style="color: red; font-size: 1em" class="material-icons"
+                  <i
+                    style="color: red; font-size: 1em; padding: 0"
+                    class="material-icons"
                     >help</i
                   >
                 </button>
@@ -2369,6 +2387,7 @@
             width: 100%;
             margin: 0;
             z-index: 1000;
+            overflow-y: auto;
           "
           :style="{
             fontSize: isDictation ? '1.4em' : '',
@@ -2653,8 +2672,8 @@
                   color: white;
                 "
               >
-                <font color="yellow" size="3">&#10134;</font>
-                <font color="black">-</font>
+                <span style="color: yellow; font-size: 0.8em">&#10134;</span>
+                <span style="color: black; font-size: 0.8em">-</span>
               </span>
             </span>
             &#32;
@@ -2691,8 +2710,8 @@
                   color: white;
                 "
               >
-                <font color="black">-</font>
-                <font color="yellow" size="3">&#10133;</font>
+                <span style="color: black; font-size: 0.8em">-</span>
+                <span style="color: yellow; font-size: 0.8em">&#10133;</span>
               </span>
             </span>
             --
@@ -2726,8 +2745,8 @@
                   color: white;
                 "
               >
-                <font color="yellow" size="3">&#10134;</font>
-                <font color="black">-</font>
+                <span style="color: yellow; font-size: 0.8em">&#10134;</span>
+                <span style="color: black; font-size: 0.8em">-</span>
               </span>
             </span>
             &#32;
@@ -2764,8 +2783,8 @@
                   color: white;
                 "
               >
-                <font color="black">-</font>
-                <font color="yellow" size="3">&#10133;</font>
+                <span style="color: black; font-size: 0.8em">-</span>
+                <span style="color: yellow; font-size: 0.8em">&#10133;</span>
               </span>
             </span>
           </p>
@@ -3601,9 +3620,46 @@ export default {
       if (this.isFromLocal == 0) return this.$t("repeater.subTranscribe00");
       else return this.$t("repeater.subTranscribe01");
     },
+
+    oldTextHighLight() {
+      let contentAll =
+        this.originLine == 1 ? this.subFirstLine : this.subSecLine;
+      if (!contentAll) return;
+      const contentDictation = this.transcriptionResult;
+      if (contentDictation == "" || contentDictation.includes("error:")) {
+        return contentAll;
+      }
+
+      const highlightWords = contentDictation.split(" ");
+      highlightWords.forEach((word) => {
+        const processedWord = word;
+        if (processedWord.trim() !== "") {
+          const processLine = (line) => {
+            const temp = ` ${line}`;
+            const searchWord = word;
+            let highlight = searchWord;
+            return temp.replace(` ${highlight}`, ` #@${highlight}@#`).trim();
+          };
+          contentAll = processLine(contentAll);
+        }
+      });
+
+      const cleanHighlight = (line) => {
+        for (let i = 0; i < 5; i++) {
+          line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
+        }
+        return line
+          .replaceAll("#@", "<span style='color: blue'>")
+          .replaceAll("@#", "</span>");
+      };
+      contentAll = cleanHighlight(contentAll);
+      return contentAll;
+    },
+
     isMobile() {
       return window.innerWidth < 738;
     },
+
     defaultDictation() {
       if (this.isFavOnPlay) return this.$t("repeater.dictationDefault1");
       else return this.$t("repeater.dictationDefault");
@@ -4167,8 +4223,8 @@ export default {
             line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
           }
           return line
-            .replaceAll("#@", "<font color=yellow>")
-            .replaceAll("@#", "</font>");
+            .replaceAll("#@", "<span style='color: yellow'>")
+            .replaceAll("@#", "</span>");
         };
         contentLine1 = cleanHighlight(contentLine1);
         contentLine2 = cleanHighlight(contentLine2);
@@ -4200,8 +4256,8 @@ export default {
             line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
           }
           return line
-            .replaceAll("#@", "<font color=red>")
-            .replaceAll("@#", "</font>");
+            .replaceAll("#@", "<span style='color: red'>")
+            .replaceAll("@#", "</span>");
         };
         contentLine1 = cleanHighlight(contentLine1);
         contentLine2 = cleanHighlight(contentLine2);
@@ -4241,6 +4297,17 @@ export default {
   watch: {
     $route: function () {
       this.updatePreview();
+    },
+
+    isFromLocal() {
+      this.transcriptionResult = "";
+    },
+
+    transcriptionResult() {
+      if (!this.isProcessing1 && !this.isProcessing2) {
+        let newText = document.getElementById("newText");
+        newText.style.height = newText.scrollHeight + "px";
+      }
     },
 
     showsubTools1() {
@@ -4924,6 +4991,31 @@ export default {
   },
 
   methods: {
+    formatTranscriptionResult() {
+      this.transcriptionResult = this.transcriptionResult
+        .replaceAll(". ", ".")
+        .replaceAll(".", ". ");
+      this.transcriptionResult = this.transcriptionResult
+        .replaceAll(", ", ",")
+        .replaceAll(",", ", ");
+      this.transcriptionResult = this.transcriptionResult
+        .replaceAll("? ", "?")
+        .replaceAll("?", "? ");
+      this.transcriptionResult = this.transcriptionResult
+        .replaceAll("! ", "!")
+        .replaceAll("!", "! ");
+      this.transcriptionResult = this.transcriptionResult
+        .replaceAll("; ", ";")
+        .replaceAll(";", "; ");
+      let newText = document.getElementById("newText");
+      newText.style.height = "auto"; // reset height to get the accurate scrollHeight.
+      setTimeout(() => {
+        newText.style.height = newText.scrollHeight + "px";
+        let allText = document.getElementById("allText");
+        allText.scrollTop = allText.scrollHeight;
+      }, 1);
+    },
+
     nextSen() {
       if (this.sentenceIndex < this.srtSubtitles.length) {
         this.sentenceIndex = this.sentenceIndex + 1;
@@ -5026,7 +5118,6 @@ export default {
         window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition1 = new SpeechRecognition();
 
-      // config recognition parameter.
       this.recognition1.continuous = true;
       this.recognition1.interimResults = true;
       this.recognition1.lang = this.langTranscribe;
@@ -5037,17 +5128,21 @@ export default {
           transcript.push(event.results[i][0].transcript);
         }
         this.transcriptionResult = transcript.join("");
+        this.formatTranscriptionResult();
       };
 
       this.recognition1.onerror = (event) => {
         if (event.error == "not-allowed")
           this.transcriptionResult =
             "error: not-allowed! " + this.$t("repeater.tsc02");
-        else this.transcriptionResult = "error-" + event.error;
-        this.isProcessing2 = false;
+        else this.transcriptionResult = "error:" + event.error;
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+        }
+        this.stopRecognition();
+        return;
       };
 
-      // callback for recognition result
       this.recognition1.onend = () => {
         if (this.isRecordingTrans) {
           this.recognition1.start();
@@ -5071,25 +5166,26 @@ export default {
           this.isProcessing1 = false;
           return;
         }
-        // virtual video
+        // create a virtual video element.
         const virtualVideo = document.createElement("video");
-        // hide it
         virtualVideo.style.display = "none";
         virtualVideo.width = 0;
         virtualVideo.height = 0;
         virtualVideo.src = this.raw;
         document.body.appendChild(virtualVideo);
-
+        //extract and transform audio
         const audioBlob = await this.extractAudioSegment(
           virtualVideo,
           startSecond
         );
+        // simply destroy the virtual video, this will disconnect the audioContext completely.
         virtualVideo.remove();
         const result = await this.callAzureSpeechService(audioBlob);
         this.transcriptionResult = result;
+        this.formatTranscriptionResult();
       } catch (error) {
         console.error("error:", error);
-        this.transcriptionResult = error;
+        this.transcriptionResult = "error:" + error;
       } finally {
         this.isProcessing1 = false;
       }
@@ -5191,7 +5287,7 @@ export default {
         alert("Error: unsupported audio format!");
       }
     },
-
+    // merge the cache of audio
     mergeBuffers(buffers) {
       const totalLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
       const result = new Float32Array(totalLength);
@@ -5205,6 +5301,7 @@ export default {
       return result;
     },
 
+    // resample the audio
     async resampleAudio(inputBuffer, inputSampleRate, outputSampleRate) {
       const ratio = outputSampleRate / inputSampleRate;
       const outputLength = Math.floor(inputBuffer.length * ratio);
@@ -5229,7 +5326,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob
+      // send Blob data directly to azure server.
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
@@ -5237,7 +5334,7 @@ export default {
           headers: {
             "Ocp-Apim-Subscription-Key": this.sK,
             "Content-Type": "audio/wav; codec=audio/pcm; samplerate=16000",
-            Accept: "application/json",
+            Accept: "application/json", // add Accept header
           },
           body: audioBlob,
         }
@@ -5522,9 +5619,12 @@ export default {
     },
     handleConfirm1() {
       if (this.transcriptionResult !== "") {
+        this.isProcessing1 = true;
         if (this.originLine == 1) this.subFirstLine = this.transcriptionResult;
         else this.subSecLine = this.transcriptionResult;
-        this.showsubTools1 = false;
+        setTimeout(() => {
+          this.isProcessing1 = false;
+        }, 300);
       }
     },
 
@@ -5532,6 +5632,10 @@ export default {
       this.showsubTools = false;
     },
     handleCancel1() {
+      this.showsubTools1 = false;
+    },
+
+    handleCancel10() {
       this.cleanUp1();
       this.cleanUp2();
       if (this.intervalId && this.isProcessing2) {
@@ -5541,7 +5645,6 @@ export default {
       }
       this.isProcessing1 = false;
       this.isProcessing2 = false;
-      this.showsubTools1 = false;
     },
 
     aliTranslate(type, onTest) {
@@ -6417,7 +6520,7 @@ export default {
 
     checkLocalStorageSpace() {
       try {
-        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, try to test remain space.
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, test remain space.
         localStorage.removeItem("__checkSpace");
         return true;
       } catch (e) {
@@ -6485,6 +6588,7 @@ export default {
     updateRegions() {
       this.wavesurfer.on("decode", () => {
         this.updateRgns();
+        // current sentence
         this.click();
         setTimeout(() => {
           this.cleanUp1();
@@ -6528,9 +6632,16 @@ export default {
           if (!this.isMobile && this.disableDrag) {
             this.disableDrag();
           }
+          const oldIndex = this.sentenceIndex;
           this.addSentence(region.start, region.end);
           setTimeout(() => {
-            this.click();
+            if (oldIndex == this.sentenceIndex) {
+              this.sentenceIndex = this.sentenceIndex + 1;
+              setTimeout(() => {
+                this.sentenceIndex = this.sentenceIndex - 1;
+                this.click();
+              }, 10);
+            } else this.click();
           }, 100);
           return;
         }
@@ -7471,7 +7582,7 @@ export default {
       } else if (this.transcribeUrl.includes(",")) {
         s = this.transcribeUrl.split(",")[0].trim();
         if (this.transcribeUrl.split(",")[1])
-          r = this.TTSurl.split(",")[1].trim();
+          r = this.transcribeUrl.split(",")[1].trim();
       }
       this.sK = s;
       this.sR = r;
@@ -7978,7 +8089,7 @@ export default {
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
-          //add a fav
+          //add a fav to favList
           var fav = {
             rawPath: this.reqF.name,
             mediaName: this.mediaName,
@@ -7990,7 +8101,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
-          //remove a fav
+          //remove a fav from favList
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
