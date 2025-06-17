@@ -54,7 +54,6 @@ Both of these can be used online or offline.
 
 updated: 06-18-2025
 
-
 5.8 add google word translator
 
 [filebrowser-windows.zip](https://github.com/user-attachments/files/20784359/filebrowser-windows.zip)
