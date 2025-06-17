@@ -52,23 +52,25 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-updated: 06-08-2025
+updated: 06-18-2025
 
-5.8 add media transcribe, sentence Check with AI, subtitle format batch converter
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/20645022/filebrowser-windows.zip)
+5.8 add google word translator
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/20645027/filebrowser-linux-amd64.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/20784359/filebrowser-windows.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/20645028/filebrowser-linux-arm64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/20784362/filebrowser-linux-amd64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/20645029/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/20784365/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/20645030/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/20784363/filebrowser-darwin-amd64.for.mac.zip)
+
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/20784367/filebrowser-darwin-arm64.for.mac.zip)
+
 
 Source code:
 
-[filebrowser_source_code.zip](https://github.com/user-attachments/files/20645034/filebrowser_source_code.zip)
+[filebrowser_source_code.zip](https://github.com/user-attachments/files/20784372/filebrowser_source_code.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

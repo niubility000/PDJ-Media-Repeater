@@ -32,17 +32,7 @@
           <span>{{ $t("sidebar.newFile") }}</span>
         </button>
       </div>
-
       <div>
-        <button
-          class="action"
-          @click="toSettings"
-          :aria-label="$t('sidebar.settings')"
-          :title="$t('sidebar.settings')"
-        >
-          <i class="material-icons">settings_applications</i>
-          <span>{{ $t("sidebar.settings") }}</span>
-        </button>
         <button
           class="action"
           @click="subTransfer"
@@ -60,6 +50,17 @@
         >
           <i class="material-icons">subtitles</i>
           <span>{{ $t("sidebar.transcribe") }}</span>
+        </button>
+      </div>
+      <div>
+        <button
+          class="action"
+          @click="toSettings"
+          :aria-label="$t('sidebar.settings')"
+          :title="$t('sidebar.settings')"
+        >
+          <i class="material-icons">settings_applications</i>
+          <span>{{ $t("sidebar.settings") }}</span>
         </button>
         <button
           v-if="canLogout"
@@ -123,6 +124,9 @@
         >
         <span> {{ version }}</span>
       </span>
+      <span style="color: blue; font-weight: 500; padding: 4px 0">{{
+        $t("help.f0")
+      }}</span>
       <span>
         <a @click="help">{{ $t("sidebar.help") }}</a>
       </span>

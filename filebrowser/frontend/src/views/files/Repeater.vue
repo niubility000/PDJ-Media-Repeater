@@ -3415,6 +3415,7 @@ export default {
       ],
       textToTranslate: "",
       targetLanguage: "aa",
+      originTargetLanguage: "bb",
       translatedText: "",
       startNum: 1,
       endNum: 1,
@@ -4320,7 +4321,9 @@ export default {
     },
     altPressed() {
       if (this.regions && this.altPressed && !this.isMobile) {
-        this.disableDrag = this.regions.enableDragSelection({});
+        this.disableDrag = this.regions.enableDragSelection({
+          color: "rgba(0, 0, 0, 0.1)",
+        });
       }
     },
 
@@ -4407,6 +4410,7 @@ export default {
 
     newWord: function () {
       if (this.showAddNew || this.showEditNew) {
+        this.getOriginLang();
         this.newTranslation = "";
         if (this.translatorUrl.includes("zure-translator"))
           this.azureTranslate();
@@ -4962,8 +4966,7 @@ export default {
     this.updatePreview();
     this.initUtter();
     if (this.reqF.size == 0) {
-      this.reqF.content =
-        "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n\n";
+      this.reqF.content = "1\n00:00:01,000 --> 00:00:03,000";
       this.saveSubNow();
     }
     if (this.reqF.content == undefined || this.srtSubtitlesLength == 0) {
@@ -5008,7 +5011,7 @@ export default {
         .replaceAll("; ", ";")
         .replaceAll(";", "; ");
       let newText = document.getElementById("newText");
-      newText.style.height = "auto"; // reset height to get the accurate scrollHeight.
+      newText.style.height = "auto"; // reset textarea height to get the accurate scrollHeight, to auto adjust the height of the textarea.
       setTimeout(() => {
         newText.style.height = newText.scrollHeight + "px";
         let allText = document.getElementById("allText");
@@ -5166,7 +5169,7 @@ export default {
           this.isProcessing1 = false;
           return;
         }
-        // create a virtual video element.
+        // create a virtual video element, bug: can't make it disppear in iphone safari.
         const virtualVideo = document.createElement("video");
         virtualVideo.style.display = "none";
         virtualVideo.width = 0;
@@ -5287,7 +5290,7 @@ export default {
         alert("Error: unsupported audio format!");
       }
     },
-    // merge the cache of audio
+    // merge the cached audio
     mergeBuffers(buffers) {
       const totalLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
       const result = new Float32Array(totalLength);
@@ -5326,7 +5329,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob data directly to azure server.
+      // send Blob data directly to the azure server.
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
@@ -5604,6 +5607,7 @@ export default {
           this.aliTranslate(1);
         else {
           this.openAlert(1, this.$t("repeater.alert007"));
+          this.inSubProcess = false;
         }
       } else if (this.currentTab === 2) {
         this.saveMoveAll();
@@ -5713,10 +5717,15 @@ export default {
             this.srtSubtitles[ii].content.split("\r\n")[this.originLine - 1];
         }
       }
+      let targetLang =
+        this.originTargetLanguage !== "bb"
+          ? this.originTargetLanguage
+          : this.targetLanguage;
+      this.originTargetLanguage = "bb";
       const params = {
         FormatType: "text",
         SourceLanguage: "auto",
-        TargetLanguage: this.targetLanguage,
+        TargetLanguage: targetLang,
         SourceText: filteredArray,
         Version: "2018-10-12",
         Action: this.action,
@@ -5794,19 +5803,8 @@ export default {
                   this.openAlert(1, translatedElement.textContent);
                   return;
                 }
-                if (
-                  detectedLanguage.includes(
-                    this.targetLanguage.split("-")[0]
-                  ) ||
-                  this.targetLanguage.split("-")[0].includes(detectedLanguage)
-                ) {
-                  if (this.showAddNew || this.showEditNew) {
-                    this.getTrans();
-                  }
-                  return;
-                }
 
-                if (this.showAddNew && this.newTranslation == "") {
+                if (this.showAddNew) {
                   this.newTranslation = translatedElement.textContent;
                 }
               } else {
@@ -6012,7 +6010,7 @@ export default {
             .split(",")[2];
         else this.endpointAzure = "";
       } else {
-        this.openAlert(1, this.$t("repeater.alert006"));
+        this.openAlert(1, this.$t("repeater.alert002"));
         return;
       }
       let filteredArray = "";
@@ -6033,7 +6031,12 @@ export default {
         filteredArray = this.newWord;
       }
       this.textToTranslate = filteredArray;
-      const url = `${this.endpointAzure}/translate?api-version=3.0&to=${this.targetLanguage}`;
+      let targetLang =
+        this.originTargetLanguage !== "bb"
+          ? this.originTargetLanguage
+          : this.targetLanguage;
+      this.originTargetLanguage = "bb";
+      const url = `${this.endpointAzure}/translate?api-version=3.0&to=${targetLang}`;
       const headers = {
         "Content-Type": "application/json",
         "Ocp-Apim-Subscription-Key": this.apiKey,
@@ -6049,7 +6052,7 @@ export default {
         });
 
         if (!response.ok) {
-          this.openAlert(1, this.$t("repeater.alert006"));
+          this.openAlert(1, this.$t("repeater.alert002"));
           this.inSubProcess = false;
           return;
         }
@@ -6059,7 +6062,7 @@ export default {
           this.openAlert(1, this.translatedText);
           return;
         }
-        if (this.showAddNew && this.newTranslation == "") {
+        if (this.showAddNew) {
           this.newTranslation = this.translatedText;
         } else this.saveTranslate();
       } catch (error) {
@@ -6520,7 +6523,7 @@ export default {
 
     checkLocalStorageSpace() {
       try {
-        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, test remain space.
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, to test remaining space.
         localStorage.removeItem("__checkSpace");
         return true;
       } catch (e) {
@@ -6588,7 +6591,6 @@ export default {
     updateRegions() {
       this.wavesurfer.on("decode", () => {
         this.updateRgns();
-        // current sentence
         this.click();
         setTimeout(() => {
           this.cleanUp1();
@@ -7353,17 +7355,48 @@ export default {
       else this.numOfKeys = 0;
     },
 
+    getOriginLang() {
+      if (
+        this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")[0]
+          .includes(this.newWord)
+      ) {
+        if (this.lineNumOfTrans == 1) {
+          this.originTargetLanguage = this.langTranscribe.split("-")[0];
+        }
+      } else if (this.lineNumOfTrans !== 1) {
+        this.originTargetLanguage = this.langTranscribe.split("-")[0];
+      }
+    },
+
     async getTrans() {
-      if (this.newTranslation == "") {
-        await fetch("https://api.oick.cn/api/fanyi?text=" + this.newWord)
-          .then((response) => response.json())
-          .then((data) => {
-            if (this.newTranslation == "")
-              this.newTranslation = data.data.result;
-          })
-          .catch((error) => {
-            console.error("Error fetching translation:", error);
-          });
+      this.getOriginLang();
+      try {
+        let targetLang =
+          this.originTargetLanguage !== "bb"
+            ? this.originTargetLanguage
+            : this.targetLanguage;
+        this.originTargetLanguage = "bb";
+        const response = await fetch(
+          "https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=" +
+            targetLang +
+            "&q=" +
+            this.newWord
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+
+        const text = await response.text();
+        const jsonStart = text.indexOf("[");
+        const jsonEnd = text.lastIndexOf("]") + 1;
+        const jsonContent = text.substring(jsonStart, jsonEnd);
+        const result = JSON.parse(jsonContent);
+
+        this.newTranslation = result[0][0][0];
+      } catch (error) {
+        console.error("translation request error:", error);
       }
     },
 
@@ -8012,8 +8045,6 @@ export default {
       if (this.audio && this.audio.removeEventListener) {
         this.audio.removeEventListener("ended", this.endUtter, false);
       }
-
-      this.newTranslation = "";
     },
     cleanUp2() {
       if (this.pauseAfterFirstDone) this.pauseAfterFirstDone = false;
@@ -8089,7 +8120,7 @@ export default {
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
-          //add a fav to favList
+          //add a fav
           var fav = {
             rawPath: this.reqF.name,
             mediaName: this.mediaName,
@@ -8101,7 +8132,7 @@ export default {
           this.favList.push(fav);
           this.save();
         } else {
-          //remove a fav from favList
+          //remove a fav
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
@@ -8449,10 +8480,12 @@ export default {
       if (timeNow - this.startTime < 1000) {
         if (this.isSetting) {
           this.isSetting = false;
+          this.click();
           return;
         }
         if (this.showRevision) {
           this.showRevision = false;
+          this.click();
           return;
         }
       }
@@ -8537,6 +8570,8 @@ export default {
         !this.isFavOnPlay
       ) {
         this.fixbug1();
+        this.cleanUp1();
+        this.cleanUp2();
         this.showAddNew = true;
         this.newWord = window.getSelection().toString();
       } else {
@@ -8715,6 +8750,8 @@ export default {
         !this.isFavOnPlay
       ) {
         this.fixbug1();
+        this.cleanUp1();
+        this.cleanUp2();
         this.showAddNew = true;
         this.newWord = window.getSelection().toString();
       } else {
@@ -10081,7 +10118,8 @@ export default {
         "[" + this.deleteNewWord
       );
       const index = delWord[1].indexOf("]");
-      const part2 = delWord[1].slice(index + 1);
+      let part2 = delWord[1].slice(index + 1);
+      part2 = part2.replace(/^;/, "");
 
       var newContent = delWord[0] + part2;
       formatContent = formatContent.replace(
