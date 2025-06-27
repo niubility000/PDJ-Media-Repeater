@@ -67,7 +67,7 @@
     "wavesurfer2": " to switch. Note: When turning on this visual waveform chart in a mobile browser mannually, if the media file is too large, the browser may crash. You can clear up the browser's caches on the login page and try again, or visit it in a computer browser first. After successfully loading the visualization waveform for the first time, the system will automatically save the peak data of this media file to current user's /!PDJ/peaks folder on the server, this media file will no longer cause browser crashes in the future. (If the waveform cannot be displayed for a long time, it may be due to the media file being too large or insufficient browser cache space.)",    
     "transUrl": "New Word Explanation Url:",
     "transUrlNote": "eg. https://fanyi.baidu.com/#auto/auto/, https://www.baidu.com/s?wd=, https://translate.sogou.com/text?keyword=, https://cn.bing.com/translator?ref=TThis&from=&to=cn&text=, https://www.deepl.com/en/translator#en/zh-hans/, https://m.iciba.com/word?w=",
-    "allowCache": "Cache Media - Enable to Save Visited Media Files in Browser's Cache. This will hugely save traffic usage in the next visit, but will take up storage space on this device (This setting's default value is true, and will only be saved in current browser cache after being changed). In 'Offline APP Mode', 'Cache Media' will be automatically selected.",
+    "allowCache": "Cache Media - Enable to Save Visited Media Files in Browser's Cache. This will hugely save traffic usage in the next visit, but will take up storage space on this device (This setting's default value is true, and will only be saved in current browser cache after being changed). In 'Offline APP Mode', 'Cache Media' will be automatically selected. Note: When using media files in the cache, the repeat playback operation will be very smooth. If there is any stuttering, it is likely due to the excessively high bitrate of the MP4 file. Please refer to the 'Media Transcription'-'MP4 File Conversion' in the sidebar of the list page to re-compress the mp4 file.",
     "cached1": "Max number of latest files to cache:",
     "savedfiles": "Number of media files saved in this Browser's Cache: {numOfKeys}",
     "cleanUpCache": "Clean UP",
@@ -270,7 +270,8 @@
     "noNewFav1": "No favorite sentences found for current user.",    
     "cached": "Media Cached! Switching...",
     "showWaveformInfo": "Generating waveform... ",
-    "showWaveformInfo2": "If it cause a mobile browser crash, please use a PC browser to generate it first.",
+    "showWaveformInfo2": "If it crashes mobile browsers or media is too large, generate via PC browser first.",
+    "showWaveformInfo3": "If it cannot be generated for a long time, it may be due to the excessive size of the media file. Please refer to the 'Media Transcription' Guide.",  
     "cleanCache": "Clean up specified browser cache.",
     "cleanCacheDone": "Selected caches have been cleaned up!",
     "alertSpace": "The remaining cache space for storing subtitles, configuration files, etc. in this browser is less than 200KB. Please clear the third cache item on the login page as soon as possible to avoid confusion in content reading. If necessary, you can first synchronize the unsaved subtitle files to the server in non Offline APP mode",
@@ -302,6 +303,9 @@
     "caseSensitive": "Search (Match Case)",
     "caseInSensitive": "Search (Ignore Case)",
     "switchCaseSensitive": "Switch 'Match Case' or 'Ignore Case'",
+    "word1": "Read aloud with TTS",
+    "word2": "Query in the New Word Explanation website",
+    "word3": "Save as a New Word",
     "replaceWith": "Replace with"
   },
   "reminder": {

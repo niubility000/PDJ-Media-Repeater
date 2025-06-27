@@ -1082,7 +1082,6 @@
           transform: translate(-50%, 0);
           bottom: 0.2em;
           border-radius: 10px;
-          overflow-y: auto;
         "
         :style="{
           width: mobileScreen ? '100%' : '65%',
@@ -1201,10 +1200,9 @@
             position: relative;
             width: 100%;
             height: 100%;
-            padding: 1em;
+            padding: 0 1em;
             border-radius: 10px;
             background: grey;
-            top: 1em;
           "
         >
           <p>{{ $t("repeater.noNewWord") }}</p>
@@ -3132,8 +3130,11 @@
         <p style="color: blue">
           {{ $t("repeater.showWaveformInfo") }}
         </p>
-        <p style="color: blue; font-size: 0.9em; margin: 0em">
+        <p v-if="isMobile" style="color: blue; font-size: 0.9em; margin: 0em">
           {{ $t("repeater.showWaveformInfo2") }}
+        </p>
+        <p v-if="!isMobile" style="color: blue; font-size: 0.9em; margin: 0em">
+          {{ $t("repeater.showWaveformInfo3") }}
         </p>
       </div>
 
@@ -3160,7 +3161,13 @@
       <div
         v-if="showAddNew"
         :disabled="loading || isSetting || !isSingle"
-        style="z-index: 1008; position: fixed; right: 1em"
+        style="
+          z-index: 1008;
+          position: fixed;
+          right: 1em;
+          width: 18em;
+          text-align: right;
+        "
         :style="{
           bottom: isWaveSurfer
             ? '6.5em'
@@ -3185,32 +3192,51 @@
           id="showEditNew"
           style="border-radius: 10px; background: grey; padding: 0.3em"
         >
-          <p style="text-align: justify; text-align-last: left; color: white">
-            <span style="width: 5em"> New word: </span>
+          <p style="display: flex; align-items: center; color: white">
+            New word:&nbsp;
             <input
-              style="padding: 0.2em; width: 10.5em; margin-right: 0.2em"
+              style="padding: 0.2em; flex-grow: 1; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
               v-model.lazy="newWord"
               placeholder="New Word"
             />
-            <button class="action" @click="showTransPage">
+            <button
+              class="action"
+              @click="readNewWord"
+              :title="$t('repeater.word1')"
+            >
               <i
                 style="color: blue; width: 1em; padding: 0"
                 class="material-icons"
-                >auto_stories</i
+                >play_circle_outline</i
               >
             </button>
           </p>
-          <p style="text-align: justify; color: white">
+          <p style="display: flex; align-items: center; color: white">
             <input
-              style="width: 15.5em; padding: 0.2em; margin-right: 0.2em"
+              style="flex-grow: 1; padding: 0.2em; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
               placeholder="Translation"
               v-model="newTranslation"
             />
-            <button class="action" @click="saveWordToSRT">
+            <button
+              @click="showTransPage"
+              style="background: gray; border: 0; padding: 0"
+              :title="$t('repeater.word2')"
+            >
+              <i
+                style="color: blue; width: 1em; padding: 0; margin-right: 0.2em"
+                class="material-icons"
+                >auto_stories</i
+              >
+            </button>
+            <button
+              @click="saveWordToSRT"
+              style="background: gray; border: 0; padding: 0"
+              :title="$t('repeater.word3')"
+            >
               <i
                 style="color: blue; width: 1em; padding: 0"
                 class="material-icons"
@@ -4842,6 +4868,7 @@ export default {
       if (this.isAutoDetectLang) {
         window.localStorage.removeItem(this.mediaName + "line1");
         window.localStorage.removeItem(this.mediaName + "line2");
+        this.langInTransLine = navigator.language || navigator.userLanguage;
         this.detectLangAuto();
       }
       this.save();
@@ -4994,6 +5021,13 @@ export default {
   },
 
   methods: {
+    readNewWord() {
+      if (this.newWord !== " " && this.showEditNew) {
+        if (this.isSystemTTS == "Yes") this.testTTSVoice(1);
+        else this.testTTSurl(1);
+      }
+    },
+
     formatTranscriptionResult() {
       this.transcriptionResult = this.transcriptionResult
         .replaceAll(". ", ".")
@@ -5011,7 +5045,7 @@ export default {
         .replaceAll("; ", ";")
         .replaceAll(";", "; ");
       let newText = document.getElementById("newText");
-      newText.style.height = "auto"; // reset textarea height to get the accurate scrollHeight, to auto adjust the height of the textarea.
+      newText.style.height = "auto"; // reset height
       setTimeout(() => {
         newText.style.height = newText.scrollHeight + "px";
         let allText = document.getElementById("allText");
@@ -5120,11 +5154,11 @@ export default {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition1 = new SpeechRecognition();
-
+      // configure parameters
       this.recognition1.continuous = true;
       this.recognition1.interimResults = true;
       this.recognition1.lang = this.langTranscribe;
-
+      //callback
       this.recognition1.onresult = (event) => {
         const transcript = [];
         for (let i = 0; i < event.results.length; i++) {
@@ -5181,7 +5215,7 @@ export default {
           virtualVideo,
           startSecond
         );
-        // simply destroy the virtual video, this will disconnect the audioContext completely.
+        // simply destroy the virtual video, to disconnect the audioContext.
         virtualVideo.remove();
         const result = await this.callAzureSpeechService(audioBlob);
         this.transcriptionResult = result;
@@ -7551,7 +7585,10 @@ export default {
         this.showNewWordList &&
         this.withTrans
       ) {
-        if (this.newWordList.length > 0)
+        if (
+          this.newWordList.length > 0 &&
+          this.newWordList[this.indexOfNewWordList]
+        )
           this.newWordList[this.indexOfNewWordList].showTrans = false;
         this.showNewWordList = false;
         this.withTrans = false;
@@ -7571,7 +7608,7 @@ export default {
       }
     },
 
-    testTTSurl() {
+    testTTSurl(x) {
       let transLineContent =
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
           this.lineNumOfTrans - 1
@@ -7580,6 +7617,7 @@ export default {
         transLineContent !== undefined && transLineContent !== " "
           ? transLineContent
           : "no content";
+      if (x == 1) text = this.newWord;
       if (this.TTSurl.includes("zure-tts:")) {
         this.azureTTS(text, 2);
       } else {
@@ -7786,8 +7824,8 @@ export default {
       return encryptedMap[x];
     },
 
-    testTTSVoice() {
-      if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
+    testTTSVoice(x) {
+      if ((this.isUtterTransLine || x == 1) && this.isSystemTTS == "Yes") {
         this.cleanUp1();
         this.cleanUp2();
         let transLineContent =
@@ -7800,6 +7838,7 @@ export default {
           transLineContent !== ""
             ? transLineContent
             : "no content";
+        if (x == 1) this.utterThis.text = this.newWord;
         if (this.langInTransLine == "") {
           this.langInTransLine = navigator.language || navigator.userLanguage;
         }
@@ -11078,7 +11117,10 @@ export default {
     closeSubList() {
       this.showSubtitleList = false;
       if (this.showNewWordList) {
-        if (this.newWordList.length > 0)
+        if (
+          this.newWordList.length > 0 &&
+          this.newWordList[this.indexOfNewWordList]
+        )
           this.newWordList[this.indexOfNewWordList].showTrans = false;
         this.showNewWordList = false;
       }
