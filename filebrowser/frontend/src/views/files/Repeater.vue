@@ -948,7 +948,7 @@
             style="height: 2em; border-width: 1px; min-width: 3em; flex-grow: 1"
             type="text"
             :placeholder="showCasePlaceHolder"
-            v-model="rOldWord"
+            v-model.lazy="rOldWord"
           />
           <span v-if="isMobile" style="width: 4em; text-align: center"
             >in Line
@@ -5363,7 +5363,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob data directly to the azure server.
+      // send Blob data to the azure server.
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
