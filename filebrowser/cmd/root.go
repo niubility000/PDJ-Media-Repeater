@@ -112,7 +112,9 @@ Also, if the database path doesn't exist, File Browser will enter into
 the quick setup mode and a new database will be bootstraped and a new
 user created with the credentials from options "username" and "password".`,
 	Run: python(func(cmd *cobra.Command, args []string, d pythonData) {
-		log.Println(cfgFile)
+		if cfgFile != "No config file used" {
+			log.Println(cfgFile)
+		}
 
 		if !d.hadDB {
 			quickSetup(cmd.Flags(), d)
@@ -188,7 +190,7 @@ user created with the credentials from options "username" and "password".`,
 		}
 
 		if strings.Contains(adr, "0.0.0.0") {
-			log.Println("Ready! Please visit " + localIP + ":" + server.Port + ", or 127.0.0.1:" + server.Port + " (local browser), or PublicIP:" + server.Port)
+			log.Println("Ready! Please visit " + localIP + ":" + server.Port + ", or 127.0.0.1:" + server.Port + " (local browser), or PublicIP:" + server.Port + " in a browser. (Note: If '" + localIP + "' doesn't work, please use DOS command 'ipconfig' to get the correct local IP!)")
 		} else {
 			log.Println("Listening on", listener.Addr().String())
 		}
@@ -458,9 +460,9 @@ func getLocalIP() (string, error) {
 
 func isPrivateIP(ip string) bool {
 	privateRanges := []string{
-		"10.0.0.0/8",
-		"172.16.0.0/12",
 		"192.168.0.0/16",
+		"172.16.0.0/12",
+		"10.0.0.0/8",
 	}
 
 	ipAddr := net.ParseIP(ip)

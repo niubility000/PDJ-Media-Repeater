@@ -162,6 +162,12 @@
         </div>
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700">
+            <input type="checkbox" v-model="autoDeleteFormat" />
+            {{ $t("repeater.subconvertor188") }}
+          </label>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">
             <input type="checkbox" v-model="autoFormatEnglishSubtitles" />
             {{ $t("repeater.subconvertor18") }}
           </label>
@@ -572,6 +578,7 @@ export default {
       outputEncoding: "utf-8",
       // 新增自动整理英文字幕状态
       autoFormatEnglishSubtitles: false,
+      autoDeleteFormat: true,
       showInputDirPickerModal: false,
       showOutputDirPickerModal: false,
     };
@@ -836,13 +843,14 @@ export default {
       );
 
       dialogueLines.forEach((line) => {
-        const parts = line.split(",", 10);
+        const parts = line.split(",");
         const startTime = parts[1];
         const endTime = parts[2];
         let text = parts
           .slice(9)
           .join(",")
           .replace(/\{.*?\}/g, "");
+        text = text.replace(/\\N/g, "\n");
 
         if (splitChar && text.includes(splitChar)) {
           const escapedSplitChar = splitChar.replace(
@@ -1036,6 +1044,9 @@ export default {
           } else {
             throw new Error("不支持的文件类型");
           }
+
+          // 去掉 <> 和其中的内容
+          if (this.autoDeleteFormat) content = content.replace(/<[^>]*>/g, "");
 
           // 查找和替换操作
           if (this.searchString) {

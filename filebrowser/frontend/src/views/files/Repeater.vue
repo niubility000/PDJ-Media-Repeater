@@ -2394,10 +2394,7 @@
         >
         </span>
         <p v-if="isMediaType == 0" style="color: red">
-          Can't find media file: {{ reqF.name.replace(".srt", ".mp4/.mp3") }}.
-          (Note: .mp3/mp4 is case sensitive, .srt and .mp3/mp4 files should be
-          in the same folder). Or the .srt file's format is incorrect, it should
-          be encoded using UTF-8.
+          {{ $t("repeater.wrongMedia") }}
         </p>
         <p v-if="srtSubtitles == null" style="color: red">
           This .srt file's format is incorrect. It should be encoded using
@@ -5203,7 +5200,7 @@ export default {
           this.isProcessing1 = false;
           return;
         }
-        // create a virtual video element, bug: can't make it disppear in iphone safari.
+        // create a virtual video element.
         const virtualVideo = document.createElement("video");
         virtualVideo.style.display = "none";
         virtualVideo.width = 0;
@@ -9208,7 +9205,12 @@ export default {
 
     sessionEnd() {
       this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
-      if (this.timeDiff > this.sessionLength) {
+      // include the situation to handle the subtitle timestamp exceed the media length.
+      if (
+        this.timeDiff > this.sessionLength &&
+        this.srtSubtitles[this.sentenceIndex - 1].endTime <=
+          this.currentMedia.duration
+      ) {
         if (this.intervalId) {
           clearInterval(this.intervalId);
         }
@@ -9222,7 +9224,9 @@ export default {
       }
       if (
         this.currentMedia.currentTime >=
-        this.srtSubtitles[this.sentenceIndex - 1].endTime
+          this.srtSubtitles[this.sentenceIndex - 1].endTime ||
+        this.srtSubtitles[this.sentenceIndex - 1].endTime >=
+          this.currentMedia.duration
       ) {
         if (this.intervalId) {
           clearInterval(this.intervalId);
@@ -10948,7 +10952,16 @@ export default {
         this.showsubTools1
       )
         return;
-
+      if (event.key === "U" || event.key === "u") {
+        if (!this.isEditSubandNotes) {
+          this.switchTempSpeed();
+        }
+      }
+      if (event.key === "Q" || event.key === "q") {
+        if (!this.isEditSubandNotes) {
+          this.switchIsFav();
+        }
+      }
       if (
         (event.key === "Control" || event.keyCode === 17) &&
         this.isEditSubandNotes &&
@@ -11072,7 +11085,7 @@ export default {
         return;
       } else if (event.which === 38) {
         // up arrow
-        this.cleanUp1(); //stop playing
+        this.cleanUp1(); //stop
       } else if (event.which === 40) {
         // down arrow
         this.cleanUp1();
