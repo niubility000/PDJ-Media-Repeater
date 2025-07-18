@@ -53,6 +53,7 @@ Both of these can be used online or offline.
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
 Updated: 07-18-2025
+
 5.8 several small fixes
 
 [filebrowser-windows.zip](https://github.com/user-attachments/files/21317690/filebrowser-windows.zip)
