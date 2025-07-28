@@ -52,23 +52,23 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-Updated: 07-18-2025
+Updated: 07-28-2025
 
-5.8 several small fixes
+5.8 a small fix
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/21317690/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/21472849/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/21317693/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/21472853/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/21317695/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/21472857/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/21317698/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/21472863/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/21317704/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/21472865/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
 
-[filebrowser_source_code.zip](https://github.com/user-attachments/files/21317707/filebrowser_source_code.zip)
+[filebrowser_source_code.zip](https://github.com/user-attachments/files/21472871/filebrowser_source_code.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

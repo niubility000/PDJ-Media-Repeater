@@ -5212,7 +5212,7 @@ export default {
           virtualVideo,
           startSecond
         );
-        // simply destroy the virtual video, to disconnect the audioContext.
+        // destroy the virtual video to disconnect the audioContext.
         virtualVideo.remove();
         const result = await this.callAzureSpeechService(audioBlob);
         this.transcriptionResult = result;
@@ -9205,7 +9205,7 @@ export default {
 
     sessionEnd() {
       this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
-      // include the situation to handle the subtitle timestamp exceed the media length.
+      // include the situation the subtitle timestamp exceed the media length.
       if (
         this.timeDiff > this.sessionLength &&
         this.srtSubtitles[this.sentenceIndex - 1].endTime <=
@@ -10952,16 +10952,7 @@ export default {
         this.showsubTools1
       )
         return;
-      if (event.key === "U" || event.key === "u") {
-        if (!this.isEditSubandNotes) {
-          this.switchTempSpeed();
-        }
-      }
-      if (event.key === "Q" || event.key === "q") {
-        if (!this.isEditSubandNotes) {
-          this.switchIsFav();
-        }
-      }
+
       if (
         (event.key === "Control" || event.keyCode === 17) &&
         this.isEditSubandNotes &&
@@ -11085,7 +11076,7 @@ export default {
         return;
       } else if (event.which === 38) {
         // up arrow
-        this.cleanUp1(); //stop
+        this.cleanUp1();
       } else if (event.which === 40) {
         // down arrow
         this.cleanUp1();
