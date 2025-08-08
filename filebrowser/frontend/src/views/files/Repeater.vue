@@ -4349,14 +4349,9 @@ export default {
           color: "rgba(0, 0, 0, 0.1)",
         });
       }
-      //should not disableDrag here if !this.altPressed, or it may stop the drag.
+      //should not disableDrag here if !this.altPressed, it may stop the drag.
     },
 
-    toDisableDrag() {
-      if (!this.isMobile && this.disableDrag) {
-        this.disableDrag();
-      }
-    },
     allowVideoFullScreen() {
       window.localStorage.setItem(
         "allowVideoFullScreen",
@@ -5029,6 +5024,12 @@ export default {
       if (this.newWord !== " " && this.showEditNew) {
         if (this.isSystemTTS == "Yes") this.testTTSVoice(1);
         else this.testTTSurl(1);
+      }
+    },
+
+    toDisableDrag() {
+      if (!this.isMobile && this.disableDrag) {
+        this.disableDrag();
       }
     },
 
