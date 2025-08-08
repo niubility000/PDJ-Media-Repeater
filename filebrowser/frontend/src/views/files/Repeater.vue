@@ -4344,12 +4344,19 @@ export default {
     },
     altPressed() {
       if (this.regions && this.altPressed && !this.isMobile) {
+        this.toDisableDrag();
         this.disableDrag = this.regions.enableDragSelection({
           color: "rgba(0, 0, 0, 0.1)",
         });
       }
+      //should not disableDrag here if !this.altPressed, or it may stop the drag.
     },
 
+    toDisableDrag() {
+      if (!this.isMobile && this.disableDrag) {
+        this.disableDrag();
+      }
+    },
     allowVideoFullScreen() {
       window.localStorage.setItem(
         "allowVideoFullScreen",
@@ -9836,11 +9843,13 @@ export default {
         this.cleanUp1();
         this.cleanUp2();
         this.mergeSentence();
+        this.toDisableDrag();
       } else if (this.altPressed && event.button == 0) {
         event.preventDefault();
         this.cleanUp1();
         this.cleanUp2();
         this.splitSentence(timeStamp);
+        this.toDisableDrag();
       }
     },
 
@@ -10974,6 +10983,7 @@ export default {
       ) {
         // Alt + Delete
         this.deleteSentence();
+        this.toDisableDrag();
       }
 
       if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
