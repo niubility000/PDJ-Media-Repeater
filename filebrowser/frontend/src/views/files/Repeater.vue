@@ -2320,6 +2320,16 @@
         >
           <p style="font-size: 1.2em">
             {{ $t("repeater.warning2") }}
+            <button
+              class="action"
+              name="buttons"
+              @click="helpLoadingMedia"
+              :title="$t('help.help')"
+            >
+              <i style="color: red; font-size: 0.8em" class="material-icons"
+                >help</i
+              >
+            </button>
           </p>
         </div>
         <span
@@ -2385,11 +2395,12 @@
             width: 100%;
             margin: 0;
             z-index: 1000;
-            overflow-y: auto;
           "
           :style="{
             fontSize: isDictation ? '1.4em' : '',
             top: isMediaType == 1 ? 0 : '4em',
+            overflowY:
+              !isMobile && isFullScreen && !isDictation ? 'unset' : 'auto',
           }"
         >
         </span>
@@ -4349,7 +4360,7 @@ export default {
           color: "rgba(0, 0, 0, 0.1)",
         });
       }
-      //should not disableDrag here if !this.altPressed, it may stop the drag.
+      //should not disableDrag here if !altPressed
     },
 
     allowVideoFullScreen() {
@@ -6253,6 +6264,10 @@ export default {
 
     helpCss() {
       this.openAlert(1, this.$t("repeater.helpCss"));
+    },
+
+    helpLoadingMedia() {
+      this.openAlert(1, this.$t("repeater.helpLoadingMedia"));
     },
 
     alertAutoDetect() {
@@ -8644,16 +8659,15 @@ export default {
       this.startX = event.touches[0].clientX;
       this.startY = event.touches[0].clientY;
     },
+
     touchMoveS(event) {
-      if (
-        !(
-          window.getSelection().toString() &&
-          window.getSelection().toString() !== "" &&
-          document.getElementById("subArea") &&
-          document.getElementById("subArea").contains(event.target)
-        )
-      )
+      let scrollBox = document.getElementById("subArea");
+      const currentY = event.touches[0].clientY;
+      const scrollTop = scrollBox.scrollTop;
+
+      if (scrollTop <= 0 && currentY > this.startY) {
         event.preventDefault();
+      }
     },
 
     touchMoveM(event) {

@@ -32,6 +32,7 @@
     "firstLine": "Line 1: ",
     "secLine": "Line 2: ",
     "helpCss": "Please input CSS style, which can be designed with AI assistance. You can customize subtitles' position(margin-bottom), font, font size, color, line width, line spacing, shadow effects, and more. For example: font-family: Arial Narrow; font-size:1.5em; color: white; width: 80%; margin: 0.4em auto; margin-bottom: 0.5em; text-shadow: 2px 2px 2px #000; text-align: center;",
+    "helpLoadingMedia": "If it fails to finish loading after a long time, please clear all caches on the login page and try again.",
     "previous": "Previous Sentence",
     "next": "Next Sentence",
     "wrongMedia": "No mp3 or mp4 media file with the same name was found in the current folder. (Note: The filename must be case-consistent; the extensions mp3 and mp4 must be in lowercase); or the .srt file has an incorrect encoding, it must be encoded in UTF-8.",

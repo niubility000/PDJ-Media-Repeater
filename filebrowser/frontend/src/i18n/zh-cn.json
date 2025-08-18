@@ -32,6 +32,7 @@
     "firstLine": "第一行：",
     "secLine": "第二行：",
     "helpCss": "请输入css样式，可使用AI帮助设计。可以自定义字幕的位置（margin-bottom）、字体、字号、颜色、行宽、行间距和阴影特效等。例如：font-family: Arial Narrow; font-size:1.5em; color: white; width: 80%; margin: 0.4em auto; margin-bottom: 0.5em; text-shadow: 2px 2px 2px #000; text-align: center;",
+    "helpLoadingMedia": "若长时间无法加载完成，请在登录页面清空所有缓存后再试。",
     "previous": "上一句",
     "next": "下一句",
     "wrongMedia": "无法在当前文件夹找到同名的mp3或mp4媒体文件。（注：文件名大小写须一致；后缀名mp3, mp4须为小写）；或.srt文件编码不正确，须以UTF-8编码。",
