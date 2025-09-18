@@ -1497,7 +1497,11 @@
       </div>
     </div>
 
-    <div id="settingBoxContainer" v-if="isSetting">
+    <div
+      id="settingBoxContainer"
+      v-if="isSetting"
+      style="max-height: 90%; top: 4.5em; overflow-y: auto"
+    >
       <div id="settingBox" style="background-color: #cdcdcd">
         <p style="color: blue; font-weight: bold; padding-top: 0em">
           {{ $t("repeater.settings") }}
