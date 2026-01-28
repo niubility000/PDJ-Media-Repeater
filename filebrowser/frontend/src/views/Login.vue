@@ -2,12 +2,20 @@
   <div id="login" :class="{ recaptcha: recaptcha }">
     <form @submit="submit">
       <img :src="logoURL" alt="File Browser" />
-      <h1 v-if="!isReminder">{{ $t("repeater.repeater") }}</h1>
+      <h1 v-if="!isReminder && !isWordReciter && !isMistakeBook">
+        {{ $t("repeater.repeater") }}
+      </h1>
       <h1 v-if="isReminder">{{ $t("reminder.reminder") }}</h1>
+      <h1 v-if="isWordReciter">{{ $t("reminder.wordreciter") }}</h1>
+      <h1 v-if="isMistakeBook">{{ $t("reminder.mistakebook") }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
-
       <div
-        style="display: flex; justify-content: space-between; margin: 0 0 8px 0"
+        style="
+          display: flex;
+          justify-content: space-between;
+          margin: 0 0 8px 0;
+          gap: 5px;
+        "
       >
         <span
           style="
@@ -18,7 +26,10 @@
             text-align: center;
           "
           :style="{
-            border: isReminder ? '1px solid #efefef' : '1px solid #2196f3',
+            border:
+              isReminder || isMistakeBook || isWordReciter
+                ? '1px solid #efefef'
+                : '1px solid #2196f3',
           }"
           @click="clickRepeater"
         >
@@ -40,10 +51,47 @@
           {{ $t("reminder.nameReminder") }}
         </span>
       </div>
-
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          margin: 0 0 8px 0;
+          gap: 5px;
+        "
+      >
+        <span
+          style="
+            padding: 10px 20px;
+            background-color: white;
+            cursor: pointer;
+            width: 50%;
+            text-align: center;
+          "
+          :style="{
+            border: !isWordReciter ? '1px solid #efefef' : '1px solid #2196f3',
+          }"
+          @click="clickWordReciter"
+        >
+          {{ $t("reminder.nameWordReciter") }}
+        </span>
+        <span
+          style="
+            padding: 10px 20px;
+            background-color: white;
+            cursor: pointer;
+            width: 50%;
+            text-align: center;
+          "
+          :style="{
+            border: !isMistakeBook ? '1px solid #efefef' : '1px solid #2196f3',
+          }"
+          @click="clickMistakeBook"
+        >
+          {{ $t("reminder.nameMistakeBook") }}
+        </span>
+      </div>
       <input
         :disabled="allowOffline && !firstLogin"
-        autofocus
         class="input input--block"
         type="text"
         autocapitalize="off"
@@ -195,17 +243,17 @@ export default {
     return {
       createMode: false,
       error: "",
-      username: "",
-      password: "",
+      username: window.localStorage.getItem("line1") || "",
+      password: window.localStorage.getItem("line2") || "",
       recaptcha: recaptcha,
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       isReminder: Number(window.localStorage.getItem("isReminder")) == 1,
+      isWordReciter: Number(window.localStorage.getItem("isWordReciter")) == 1,
+      isMistakeBook: Number(window.localStorage.getItem("isMistakeBook")) == 1,
       firstLogin: window.localStorage.getItem("lastRawToken") == null,
-      noCachedMedia:
-        window.localStorage.getItem("cKeys") == null &&
-        window.localStorage.getItem("hasCachedAttach") == null,
-      noCachedOther: window.localStorage.getItem("cachedOther") == null,
+      noCachedMedia: false,
+      noCachedOther: false,
       isCleanedUp: false,
       cleanAccount: false,
       cleanMedia: false,
@@ -218,6 +266,24 @@ export default {
     allowOffline: function () {
       if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
       else window.localStorage.setItem("isOffline", 0);
+    },
+    username() {
+      window.localStorage.setItem("line1", this.username);
+    },
+    password() {
+      window.localStorage.setItem("line2", this.password);
+    },
+    isReminder() {
+      if (this.isReminder) window.localStorage.setItem("isReminder", 1);
+      else window.localStorage.setItem("isReminder", 0);
+    },
+    isMistakeBook() {
+      if (this.isMistakeBook) window.localStorage.setItem("isMistakeBook", 1);
+      else window.localStorage.setItem("isMistakeBook", 0);
+    },
+    isWordReciter() {
+      if (this.isWordReciter) window.localStorage.setItem("isWordReciter", 1);
+      else window.localStorage.setItem("isWordReciter", 0);
     },
   },
 
@@ -241,12 +307,16 @@ export default {
       if (this.cleanSrtandSettings) {
         var temp01 = window.localStorage.getItem("isOffline");
         var temp02 = window.localStorage.getItem("lastRawToken");
+        var temp05 = window.localStorage.getItem("line1");
+        var temp06 = window.localStorage.getItem("line2");
         var temp03 = window.localStorage.getItem("cKeys");
         var temp04 = window.localStorage.getItem("hasCachedAttach");
         window.localStorage.clear();
         if (!this.firstLogin) {
           window.localStorage.setItem("isOffline", temp01);
           window.localStorage.setItem("lastRawToken", temp02);
+          window.localStorage.setItem("line1", temp05);
+          window.localStorage.setItem("line2", temp06);
         }
         if (!this.cleanMedia) {
           window.localStorage.setItem("cKeys", temp03);
@@ -263,10 +333,14 @@ export default {
         window.localStorage.removeItem("isOffline");
         this.allowOffline = false;
         window.localStorage.removeItem("lastRawToken");
+        this.username = "";
+        this.password = "";
         this.firstLogin = true;
         this.cleanAccount = false;
       }
       if (this.isReminder) this.clickReminder();
+      else if (this.isMistakeBook) this.clickMistakeBook();
+      else if (this.isWordReciter) this.clickWordReciter();
       else this.clickRepeater();
       this.showResult();
       this.showCleanUp = false;
@@ -292,13 +366,26 @@ export default {
     },
 
     clickRepeater() {
-      if (this.isReminder) this.isReminder = false;
-      window.localStorage.setItem("isReminder", 0);
+      this.isReminder = false;
+      this.isMistakeBook = false;
+      this.isWordReciter = false;
     },
 
     clickReminder() {
-      if (!this.isReminder) this.isReminder = true;
-      window.localStorage.setItem("isReminder", 1);
+      this.isReminder = true;
+      this.isMistakeBook = false;
+      this.isWordReciter = false;
+    },
+
+    clickMistakeBook() {
+      this.isReminder = false;
+      this.isMistakeBook = true;
+      this.isWordReciter = false;
+    },
+    clickWordReciter() {
+      this.isReminder = false;
+      this.isMistakeBook = false;
+      this.isWordReciter = true;
     },
 
     showResult() {

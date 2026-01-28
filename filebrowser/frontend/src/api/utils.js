@@ -13,10 +13,14 @@ export async function fetchURL(url, opts, auth = true) {
     if (
       window.localStorage.getItem("isOffline") &&
       window.localStorage.getItem("isOffline") == "1" &&
-      ((Number(window.localStorage.getItem("isReminder")) == 1 &&
+      (((Number(window.localStorage.getItem("isReminder")) == 1 ||
+        Number(window.localStorage.getItem("isWordReciter")) == 1 ||
+        Number(window.localStorage.getItem("isMistakeBook")) == 1) &&
         window.localStorage.getItem("lastOnLineReminderToken") ==
           window.localStorage.getItem("lastRawToken")) ||
         (!Number(window.localStorage.getItem("isReminder")) == 1 &&
+          !Number(window.localStorage.getItem("isWordReciter")) == 1 &&
+          !Number(window.localStorage.getItem("isMistakeBook")) == 1 &&
           window.localStorage.getItem("lastOnLineRepeaterToken") ==
             window.localStorage.getItem("lastRawToken")))
     )

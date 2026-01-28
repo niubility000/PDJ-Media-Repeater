@@ -300,19 +300,19 @@ export default {
     };
   },
   computed: {
-    ...mapState(["req", "selected", "user", "multiple", "selected", "loading"]),
+    ...mapState(["req", "user", "multiple", "selected", "loading"]),
     ...mapGetters(["selectedCount", "currentPrompt"]),
     nameSorted() {
-      return this.req.sorting.by === "name";
+      return this.req?.sorting?.by === "name";
     },
     sizeSorted() {
-      return this.req.sorting.by === "size";
+      return this.req?.sorting?.by === "size";
     },
     modifiedSorted() {
-      return this.req.sorting.by === "modified";
+      return this.req?.sorting?.by === "modified";
     },
     ascOrdered() {
-      return this.req.sorting.asc;
+      return this.req?.sorting?.asc;
     },
     items() {
       const dirs = [];
@@ -415,6 +415,9 @@ export default {
         window.sessionStorage.setItem("listFrozen", "false");
         window.sessionStorage.setItem("modified", "false");
       }
+      setTimeout(() => {
+        this.$store.commit("resetSelected");
+      }, 100);
     },
   },
   mounted: function () {

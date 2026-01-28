@@ -13,7 +13,7 @@
         @click="logout"
         :title="$t('reminder.logout')"
       >
-        <i style="color: blue" class="material-icons">logout</i>
+        <i style="color: blue" class="material-icons">close</i>
       </button>
 
       <button
@@ -2214,8 +2214,8 @@ export default {
       autoPlay: true,
       isBackUp: true,
       reader: 0,
-      readerFront: 0,
-      readerBack: 0,
+      readerFront: Number(window.localStorage.getItem("readerFront")) || 1,
+      readerBack: Number(window.localStorage.getItem("readerBack")) || 1,
       searchList: "",
       isDropDown: false,
       isType: "1",
@@ -2798,7 +2798,6 @@ export default {
     },
     readerFront() {
       if (this.hasSpeechSynthesis) {
-        if (this.readerFront < 1) this.readerFront = 1;
         this.readerFront = Math.floor(this.readerFront);
         window.localStorage.setItem("readerFront", this.readerFront);
       } else this.readerFront = 0;
@@ -2808,7 +2807,6 @@ export default {
     },
     readerBack() {
       if (this.hasSpeechSynthesis) {
-        if (this.readerBack < 1) this.readerBack = 1;
         this.readerBack = Math.floor(this.readerBack);
         window.localStorage.setItem("readerBack", this.readerBack);
       } else this.readerBack = 0;
@@ -2915,7 +2913,6 @@ export default {
       window.localStorage.getItem(this.user.username + "notUpload") || "";
     this.readToDoList();
     this.getItemContent();
-    this.getReader();
     this.initUtter();
     if (!this.checkLocalStorageSpace()) {
       this.openAlert(1, this.$t("repeater.alertSpace"));
@@ -3219,29 +3216,6 @@ export default {
             console.error("Error fetching or converting URL:", error);
           });
       }
-    },
-
-    getReader() {
-      if (!this.hasSpeechSynthesis) {
-        this.readerFront = 0;
-        this.readerBack = 0;
-      }
-      if (
-        window.localStorage.getItem(this.user.username + "readerFront") == null
-      )
-        this.readerFront = 1;
-      else
-        this.readerFront = Number(
-          window.localStorage.getItem(this.user.username + "readerFront")
-        );
-      if (
-        window.localStorage.getItem(this.user.username + "readerBack") == null
-      )
-        this.readerBack = 1;
-      else
-        this.readerBack = Number(
-          window.localStorage.getItem(this.user.username + "readerBack")
-        );
     },
 
     showDropDown() {
@@ -5022,7 +4996,6 @@ export default {
     },
 
     onSetting() {
-      this.getReader();
       this.cleanUp();
       this.isSetting = !this.isSetting;
     },
@@ -5182,11 +5155,89 @@ export default {
 };
 </script>
 
-<style>
-span.headSubject {
+<style scoped>
+input.input.input--repeater {
+  margin: 0.3em 0;
   display: inline;
-  color: black;
+  width: 8em;
+  padding: 0.2em;
+  border-radius: 3px;
 }
+
+span.subject {
+  flex-grow: 1;
+  margin: 0;
+  display: inline-block;
+  width: 15em;
+  color: white;
+}
+
+#settingBoxContainer {
+  display: flex;
+  position: fixed;
+  width: 65%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: 0.2em;
+  justify-content: center;
+  align-items: center;
+  z-index: 1010;
+}
+
+#settingBox {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 1em;
+  border-radius: 10px;
+  overflow-y: auto;
+  background: grey;
+}
+
+.showMsg {
+  z-index: 1025;
+  position: fixed;
+  text-align: center;
+  width: 100%;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+input:disabled {
+  background-color: #bbbaba;
+}
+
+.subTools-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.subTools-buttons button {
+  margin-left: 3px;
+}
+
+@media (max-width: 738px) {
+  header {
+    display: flex;
+    justify-content: space-around !important;
+  }
+
+  span.subject {
+    width: 13em;
+  }
+
+  #settingBoxContainer {
+    width: 100%;
+  }
+
+  input.input.input--repeater {
+    width: 7em;
+    margin: 0.3em 0;
+    border-radius: 3px;
+  }
+}
+
+/* 以上是Repeater.vue里过来的！！*/
 
 #ins {
   text-align: justify;

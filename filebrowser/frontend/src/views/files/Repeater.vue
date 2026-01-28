@@ -11,7 +11,7 @@
     <template v-else>
       <header-bar
         v-if="srtSubtitles"
-        style="padding: 0.5em"
+        style="padding: 0.5em; background-color: white"
         :style="{
           height: isMobile && isLandscape ? '3em' : '4em',
           padding: isMobile && isLandscape ? '0 0.5em' : '0.5em 0em',
@@ -37,17 +37,8 @@
           :label="$t('buttons.close')"
           @action="close()"
         />
-        <title
-          style="flex-grow: 1; white-space: nowrap"
-          v-if="!isMobile && isFavOnPlay"
-        >
-          {{ srtSubtitles[this.sentenceIndex - 1].mediaName }}
-        </title>
-        <title
-          style="flex-grow: 1; white-space: nowrap"
-          v-if="!isMobile && !isFavOnPlay"
-        >
-          {{ mediaName }}
+        <title style="flex-grow: 1; white-space: nowrap" v-if="!isMobile">
+          {{ mediaName.slice(0, -4) }}
         </title>
         <span
           :style="{
@@ -369,7 +360,7 @@
                     )
                   "
                 >
-                  {{ index + 1 }}. {{ item.name }}&nbsp;(
+                  {{ index + 1 }}. {{ item.name.slice(0, -4) }}&nbsp;(
                   {{ item.startIndex }} -- {{ item.endIndex }})&nbsp;:
                 </span>
                 &nbsp;&nbsp;
@@ -443,7 +434,436 @@
         </div>
       </div>
 
-      <div v-if="showsubTools || showsubTools1" class="subTools-overlay">
+      <div v-if="prOutput" class="popUp-mask">
+        <div class="popUp-backLayer" style="width: 100%; height: 100%">
+          <div
+            class="popUp-container"
+            style="width: 100%; height: 100%; border-radius: 0; padding: 0"
+          >
+            <div id="sentencePrintGenerator">
+              <div class="prContainer">
+                <header class="prHeader">
+                  <button
+                    class="action"
+                    @click="close"
+                    :title="$t('buttons.close')"
+                  >
+                    <i
+                      :style="{
+                        color: isSetting ? 'red' : 'blue',
+                      }"
+                      class="material-icons"
+                      >close</i
+                    >
+                  </button>
+                  <h1>句子打印</h1>
+                </header>
+
+                <div class="prContent">
+                  <div class="prSection">
+                    <h2 class="prSectionTitle"><i>📚📚📚📚</i> 句子列表</h2>
+
+                    <div class="prSelectAll">
+                      <input
+                        type="checkbox"
+                        id="prSelectAll"
+                        v-model="prAllSelected"
+                        @change="prToggleSelectAll"
+                      />
+                      <label for="prSelectAll"
+                        >选择全部句子 ({{ prSelectedSentences.length }}/{{
+                          prSentences.length
+                        }})</label
+                      >
+                    </div>
+
+                    <div class="prWordList">
+                      <div
+                        class="prWordItem"
+                        v-for="(sentence, index) in prSentences"
+                        :key="index"
+                      >
+                        <input
+                          type="checkbox"
+                          :id="'prSentence-' + index"
+                          v-model="prSelectedIndexes[index]"
+                        />
+                        <label
+                          :for="'prSentence-' + index"
+                          class="prWordText"
+                          >{{
+                            sentence.content.split("\r\n")[lineNumOfOrigin - 1]
+                          }}</label
+                        >
+                        <span class="prPartOfSpeech">{{
+                          sentence.content.split("\r\n")[lineNumOfTrans - 1]
+                        }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="prSection">
+                    <h2 class="prSectionTitle"><i>📊📊📊📊</i> 表格设置</h2>
+
+                    <div class="prExcelOptions">
+                      <div class="prOptionGroup">
+                        <label for="prFileName">文件名:</label>
+                        <input
+                          type="text"
+                          id="prFileName"
+                          v-model="prFileName"
+                          placeholder="PDJ句子英汉互译"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="prPreview">
+                      <h3 class="prPreviewTitle">
+                        句子卡片布局预览
+                        <button
+                          class="action"
+                          @click="openAlert(1, $t('repeater.alertPrOutPut'))"
+                          :title="$t('buttons.help')"
+                        >
+                          <i style="color: blue" class="material-icons">help</i>
+                        </button>
+                      </h3>
+                      <div class="prPreviewContent">
+                        <table class="prPreviewTable">
+                          <tr v-for="i in 3" :key="i">
+                            <td v-for="j in 4" :key="j" class="prPreviewCell">
+                              <div v-if="j === 1">序号</div>
+                              <div v-else-if="j === 2">句子英文</div>
+                              <div v-else-if="j === 3">句子翻译</div>
+                              <div v-else-if="j === 4" class="prCheckboxCell">
+                                <div
+                                  class="prCheckbox"
+                                  v-for="k in 1"
+                                  :key="k"
+                                ></div>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="prStats">
+                      <span
+                        >已选择句子: {{ prSelectedSentences.length }} 个</span
+                      >
+                      <span
+                        >预计页数:
+                        {{ Math.ceil(prSelectedSentences.length / 30) }}
+                        页</span
+                      >
+                    </div>
+
+                    <div class="prExportButtons">
+                      <button
+                        class="prExportBtn prHtmlBtn"
+                        @click="prGenerateHTML"
+                        :disabled="prSelectedSentences.length === 0"
+                      >
+                        {{
+                          prSelectedSentences.length === 0
+                            ? "请选择句子"
+                            : "生成HTML表格"
+                        }}
+                      </button>
+                      <button
+                        class="prExportBtn prPrintBtn"
+                        @click="prPrintDirectly"
+                        :disabled="prSelectedSentences.length === 0"
+                      >
+                        {{
+                          prSelectedSentences.length === 0
+                            ? "请选择句子"
+                            : "直接打印"
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="showsubTools || showsubTools1 || showDicSetting"
+        class="subTools-overlay"
+      >
+        <div
+          v-if="showDicSetting"
+          class="subTools"
+          style="height: 70%; display: flex"
+        >
+          <div
+            class="subTools-tabs"
+            style="padding: 0 0 8px 0; font-size: 1.2em; font-weight: 500"
+          >
+            {{ $t("repeater.tsc001") }}
+          </div>
+          <div style="flex-grow: 1; overflow-y: auto">
+            <div>
+              <p>
+                {{ $t("repeater.tsc002") }}
+              </p>
+              <p>
+                {{ $t("repeater.showShortcutNote") }}
+              </p>
+              <hr
+                style="border: none; border-top: 1px solid black; height: 0"
+              />
+              <p>
+                {{ $t("repeater.tsc003") }}
+              </p>
+              <p>
+                {{ $t("repeater.tsc004") }}
+              </p>
+
+              <p
+                style="display: flex; flex-direction: row; align-items: center"
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  style="width: 2em"
+                  v-model="isFromLocal"
+                />&nbsp;&nbsp;
+                {{ fromLocal }}
+              </p>
+              <p v-if="isFromLocal == 0" style="color: black">
+                {{ $t("repeater.tsc02") }}
+                <button
+                  class="action"
+                  @click="showOnLineTscNote"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="padding: 0; font-size: 1.2em; color: red"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+              <p
+                v-if="isFromLocal == 1"
+                style="display: flex; flex-direction: row; align-items: center"
+              >
+                {{ $t("repeater.tsc04") }}
+                <input
+                  style="flex-grow: 1; padding: 0; margin: 0"
+                  class="input input--repeater"
+                  type="text"
+                  placeholder="for example: defaultkey1,eastasia"
+                  v-model.lazy="transcribeUrl"
+                />
+
+                &nbsp;&nbsp;
+
+                <button
+                  class="action"
+                  @click="showTscSetting"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="padding: 0; font-size: 1.2em; color: blue"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+            </div>
+            <div>
+              <p>
+                {{ $t("repeater.tsc08") }}
+                <input
+                  type="number"
+                  min="1"
+                  :max="2"
+                  step="1"
+                  style="width: 3em; padding: 0px 4px; margin: 0px"
+                  v-model.lazy="originLine"
+                />&nbsp;&nbsp;&nbsp;&nbsp;<br v-if="isMobile" />
+                {{ $t("repeater.tsc09") }}
+                <input
+                  type="text"
+                  style="width: 6em; padding: 0px 4px; margin: 0px"
+                  v-model.lazy="langTranscribe"
+                />
+              </p>
+            </div>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+
+            <div class="percentage-control">
+              <label for="percentageSlider" class="form-label">
+                单词填空：挖空比例 {{ percentage }}%
+              </label>
+              <input
+                id="percentageSlider"
+                type="range"
+                v-model="percentage"
+                min="10"
+                max="70"
+                step="10"
+                class="slider"
+              />
+            </div>
+            <hr style="border: none; border-top: 1px solid black; height: 0" />
+            <div>
+              <p>
+                <input type="checkbox" v-model="splitSentenceByLetter" />
+                {{ $t("repeater.splitSentenceByLetter") }}
+              </p>
+              <p>
+                <span>字母排序时干扰项比例：(0为无干扰项)</span>
+                <input
+                  @click.stop
+                  class="input input--repeater"
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  v-model.lazy.number="moreLetters"
+                />
+              </p>
+              <hr
+                style="border: none; border-top: 1px solid black; height: 0"
+              />
+            </div>
+          </div>
+
+          <div class="subTools-buttons">
+            <p>
+              <button
+                class="action"
+                name="buttons"
+                @click="switchDRead"
+                :title="$t('repeater.tsc007')"
+              >
+                {{ readLang }}
+              </button>
+
+              <button
+                v-if="!isFavOnPlay"
+                :disabled="loading || isSetting || isRecording || !canDownload"
+                class="action"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmDownloadDictation2'),
+                    'downloadDictation'
+                  )
+                "
+                :title="$t('repeater.downloadDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color: !isRecording && canDownload ? 'springgreen' : 'grey',
+                  }"
+                  class="material-icons"
+                  >cloud_download</i
+                >
+              </button>
+
+              <button
+                v-if="!isFavOnPlay"
+                :disabled="
+                  loading ||
+                  isSetting ||
+                  isRecording ||
+                  (dictationArray.length == 0 && audioRecordArray.length == 0)
+                "
+                class="action"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmUploadDictation2', {
+                      recordingDir:
+                        '/!PDJ/user-' +
+                        user.username +
+                        '/Repeater-backup/Rec-' +
+                        mediaName.slice(0, -4),
+                    }),
+                    'uploadDictation'
+                  )
+                "
+                :title="$t('repeater.uploadDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color:
+                      !isRecording &&
+                      (dictationArray.length > 0 || audioRecordArray.length > 0)
+                        ? 'springgreen'
+                        : 'grey',
+                  }"
+                  class="material-icons"
+                  >cloud_upload</i
+                >
+              </button>
+              <button
+                v-if="!isFavOnPlay"
+                :disabled="
+                  loading ||
+                  isSetting ||
+                  isRecording ||
+                  (dictationArray.length == 0 &&
+                    audioRecordArray.length == 0 &&
+                    !canDownload)
+                "
+                class="action"
+                @click="
+                  openAlert(
+                    2,
+                    $t('repeater.confirmdeleteDicRec', {
+                      dictationFile:
+                        '!PDJ/user-' +
+                        user.username +
+                        '/Repeater-backup/' +
+                        mediaName.slice(0, -4) +
+                        '-dictation.txt',
+                      recordDir:
+                        '!PDJ/user-' +
+                        user.username +
+                        '/Repeater-backup/Rec-' +
+                        mediaName.slice(0, -4) +
+                        '/',
+                    }),
+                    'deleteDicRec'
+                  )
+                "
+                :title="$t('repeater.clearAllDicRec')"
+              >
+                <i
+                  style="font-size: 1.7em"
+                  :style="{
+                    color:
+                      !isRecording &&
+                      (dictationArray.length > 0 ||
+                        audioRecordArray.length > 0 ||
+                        canDownload)
+                        ? 'springgreen'
+                        : 'grey',
+                  }"
+                  class="material-icons"
+                  >delete</i
+                >
+              </button>
+              &nbsp;&nbsp;
+              <button @click="handleCancel1">
+                {{ $t("buttons.close") }}
+              </button>
+            </p>
+          </div>
+        </div>
+
         <div v-if="showsubTools1" class="subTools" style="height: 70%">
           <div
             class="subTools-tabs"
@@ -689,7 +1109,7 @@
                   min="1"
                   :max="2"
                   step="1"
-                  style="width: 2em"
+                  style="width: 3em; padding: 0"
                   v-model.lazy="originLine"
                 />
                 {{ $t("repeater.translator2") }}
@@ -902,6 +1322,19 @@
           "
         >
           <button
+            class="action"
+            name="buttons"
+            @click="toOutput"
+            :title="$t('repeater.prOutput')"
+          >
+            <i
+              style="color: red; font-size: 1em; background-color: #e8e8e8"
+              class="material-icons"
+              >save</i
+            >
+          </button>
+
+          <button
             v-if="!isSearchReplace"
             class="action"
             name="buttons"
@@ -1042,16 +1475,16 @@
           <li
             v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
-            :id="subtitle.sn"
-            @click="chooseSentence(Number(subtitle.sn) - 1, index)"
+            :id="index + 1"
+            @click="chooseSentence(index, index)"
           >
             <p
               style="cursor: pointer"
               :style="{
-                color: sentenceIndex == Number(subtitle.sn) ? 'blue' : 'white',
+                color: sentenceIndex == index + 1 ? 'blue' : 'white',
               }"
             >
-              {{ subtitle.sn }}.
+              {{ index + 1 }}.
               <span
                 v-html="
                   highlightWord(subtitle.content.split('\r\n')[0] || '', 1)
@@ -1088,11 +1521,63 @@
           top: isMobile && isLandscape ? '3.2em' : '4.2em',
         }"
       >
-        <p v-if="!this.withTrans" style="padding: 0 1em; color: yellow">
-          {{ $t("repeater.newWordTest") }}
+        <p
+          v-if="!this.withTrans"
+          style="
+            padding: 0 1em;
+            color: yellow;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+          "
+        >
+          <span>{{ $t("repeater.newWordTest") }}&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <button
+            @click="
+              openAlert(
+                2,
+                $t('repeater.saveWordList', { xx: user.username }),
+                'saveWordList'
+              )
+            "
+            style="background: gray; border: 0; padding: 0"
+            :title="$t('repeater.word4')"
+          >
+            <i
+              style="color: blue; width: 1em; padding: 0"
+              class="material-icons"
+              >save</i
+            >
+          </button>
         </p>
-        <p v-if="this.withTrans" style="padding: 0 1em; color: yellow">
-          {{ $t("repeater.newWordList") }}
+        <p
+          v-if="this.withTrans"
+          style="
+            padding: 0 1em;
+            color: yellow;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+          "
+        >
+          <span>{{ $t("repeater.newWordList") }}&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <button
+            @click="
+              openAlert(
+                2,
+                $t('repeater.saveWordList', { xx: user.username }),
+                'saveWordList'
+              )
+            "
+            style="background: gray; border: 0; padding: 0"
+            :title="$t('repeater.word4')"
+          >
+            <i
+              style="color: blue; width: 1em; padding: 0"
+              class="material-icons"
+              >save</i
+            >
+          </button>
         </p>
         <ul
           v-if="newWordList.length > 0"
@@ -1257,6 +1742,393 @@
           </div>
 
           <hr style="border: none; border-top: 1px solid black; height: 0" />
+          <div :style="{ width: isMobile ? '100%' : '70%' }">
+            <p>
+              <span style="color: white">{{ $t("repeater.ttsConfig") }} </span>
+              <span style="color: white">
+                (<input type="checkbox" v-model="isAutoDetectLang" />
+                {{ $t("repeater.autoDetect") }}
+
+                <button
+                  class="action"
+                  name="buttons"
+                  @click="alertAutoDetect"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="color: blue; font-size: 1.2em"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+                )
+              </span>
+            </p>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+              "
+            >
+              <span style="margin-left: 1em; color: white" class="subject">
+                {{ $t("repeater.lineNumOfOrigin") }}
+              </span>
+              <input
+                :disabled="isAutoDetectLang"
+                class="input input--repeater"
+                type="number"
+                min="1"
+                max="3"
+                v-model.number.lazy="lineNumOfOrigin"
+              />
+            </div>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+              "
+            >
+              <span style="margin-left: 1em; color: white" class="subject">
+                {{ $t("repeater.langInOriginLine") }}
+              </span>
+              <input
+                :disabled="isAutoDetectLang"
+                :style="{
+                  width: isMobile ? '7em' : '8em',
+                }"
+                class="input input--repeater"
+                type="text"
+                :placeholder="langInOriginLinedefault"
+                v-model="langInOriginLine"
+              />
+            </div>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+              "
+            >
+              <span style="margin-left: 1em; color: white" class="subject">
+                {{ $t("repeater.lineNumOfTrans") }}
+              </span>
+              <input
+                :disabled="isAutoDetectLang"
+                class="input input--repeater"
+                type="number"
+                min="1"
+                max="3"
+                v-model.number.lazy="lineNumOfTrans"
+              />
+            </div>
+
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                width: 100%;
+              "
+            >
+              <span style="margin-left: 1em; color: white" class="subject">
+                {{ $t("repeater.langInTransLine") }}
+              </span>
+              <input
+                :disabled="isAutoDetectLang"
+                :style="{
+                  width: isMobile ? '7em' : '8em',
+                }"
+                class="input input--repeater"
+                type="text"
+                :placeholder="langInTransLinedefault"
+                v-model="langInTransLine"
+              />
+            </div>
+
+            <div style="color: white">
+              <p style="margin-bottom: 0">
+                <input
+                  :disabled="!hasSpeechSynthesis"
+                  style="margin-left: 1em"
+                  type="radio"
+                  value="Yes"
+                  v-model="isSystemTTS"
+                />
+                <span
+                  :style="{
+                    color: hasSpeechSynthesis ? 'white' : '#bbbaba',
+                  }"
+                  >{{ $t("repeater.systemTTS") }}</span
+                >
+              </p>
+
+              <p
+                v-if="!hasSpeechSynthesis"
+                style="color: red; margin-left: 2rem; font-size: 0.8em"
+              >
+                {{ $t("repeater.speechsynthesisAlert") }}
+              </p>
+
+              <p
+                style="margin: 0.5em 0 1em 2rem; font-size: 0.8em"
+                :style="{
+                  color: isSystemTTS == 'Yes' ? 'white' : '#bbbaba',
+                }"
+              >
+                {{ $t("repeater.SystemTTSnote") }}
+              </p>
+
+              <div
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                  width: 100%;
+                "
+              >
+                <span
+                  :style="{
+                    color:
+                      isSystemTTS == 'No' || !hasSpeechSynthesis
+                        ? '#bbbaba'
+                        : 'white',
+                  }"
+                  style="margin-left: 2em"
+                  class="subject"
+                >
+                  {{
+                    $t("repeater.voiceO", {
+                      totalvoicesO: totalReadersO,
+                    })
+                  }}
+                </span>
+                <input
+                  :disabled="isSystemTTS == 'No' || !hasSpeechSynthesis"
+                  class="input input--repeater"
+                  type="number"
+                  v-model.number.lazy="readerO"
+                  :style="{
+                    width: isMobile ? '5.5em' : '6.5em',
+                  }"
+                />
+                <button
+                  :disabled="isSystemTTS == 'No' || !hasSpeechSynthesis"
+                  class="action"
+                  style="height: 1.5em"
+                  @click="testTTSVoiceO"
+                  :title="$t('repeater.testTTSVoice')"
+                >
+                  <i
+                    :style="{
+                      color: isSystemTTS == 'No' ? '#bbbaba' : 'blue',
+                    }"
+                    style="width: 1em; padding: 0; margin: 0"
+                    class="material-icons"
+                    >play_circle_outline</i
+                  >
+                </button>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                  width: 100%;
+                "
+              >
+                <span
+                  :style="{
+                    color:
+                      isSystemTTS == 'No' || !hasSpeechSynthesis
+                        ? '#bbbaba'
+                        : 'white',
+                  }"
+                  style="margin-left: 2em"
+                  class="subject"
+                >
+                  {{
+                    $t("repeater.voice", {
+                      totalvoices: totalReaders,
+                    })
+                  }}
+                </span>
+                <input
+                  :disabled="isSystemTTS == 'No' || !hasSpeechSynthesis"
+                  class="input input--repeater"
+                  type="number"
+                  v-model.number.lazy="reader"
+                  :style="{
+                    width: isMobile ? '5.5em' : '6.5em',
+                  }"
+                />
+                <button
+                  :disabled="isSystemTTS == 'No' || !hasSpeechSynthesis"
+                  class="action"
+                  style="height: 1.5em"
+                  @click="testTTSVoice"
+                  :title="$t('repeater.testTTSVoice')"
+                >
+                  <i
+                    :style="{
+                      color: isSystemTTS == 'No' ? '#bbbaba' : 'blue',
+                    }"
+                    style="width: 1em; padding: 0; margin: 0"
+                    class="material-icons"
+                    >play_circle_outline</i
+                  >
+                </button>
+              </div>
+
+              <p style="margin-bottom: 0">
+                <input
+                  style="margin-left: 1em"
+                  type="radio"
+                  value="No"
+                  v-model="isSystemTTS"
+                />
+                <span>{{ $t("repeater.notSystemTTS") }}</span>
+                <button
+                  :disabled="isSystemTTS == 'Yes'"
+                  class="action"
+                  @click="resetTTSurl"
+                  :title="$t('repeater.resetTTSurl')"
+                >
+                  <i
+                    style="font-size: 1.2em"
+                    :style="{
+                      color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                    }"
+                    class="material-icons"
+                    >settings_backup_restore</i
+                  >
+                </button>
+              </p>
+              <div
+                :style="{
+                  color: isSystemTTS == 'No' ? 'white' : '#bbbaba',
+                }"
+              >
+                <span style="margin: 0px 0px 0.5em 2em">{{
+                  $t("repeater.origin")
+                }}</span>
+                <p style="margin: 0 0 4px 0">
+                  <input
+                    style="
+                      margin: 0 0 0.5em 2em;
+                      width: calc(100% - 5em);
+                      text-align: left;
+                    "
+                    :disabled="isSystemTTS == 'Yes'"
+                    class="input input--repeater"
+                    type="text"
+                    v-model.lazy="TTSurlO"
+                  />
+                  <button
+                    :disabled="isSystemTTS == 'Yes'"
+                    class="action"
+                    @click="testTTSurlO"
+                    :title="$t('repeater.testUrl')"
+                  >
+                    <i
+                      style="font-size: 1.2em"
+                      :style="{
+                        color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                      }"
+                      class="material-icons"
+                      >play_circle_outline</i
+                    >
+                  </button>
+                </p>
+
+                <span style="margin: 0px 0px 0.5em 2em">{{
+                  $t("repeater.trans")
+                }}</span>
+                <p style="margin: 0 0 4px 0">
+                  <input
+                    style="
+                      margin: 0 0 0.5em 2em;
+                      width: calc(100% - 5em);
+                      text-align: left;
+                    "
+                    :disabled="isSystemTTS == 'Yes'"
+                    class="input input--repeater"
+                    type="text"
+                    v-model.lazy="TTSurl"
+                  />
+                  <button
+                    :disabled="isSystemTTS == 'Yes'"
+                    class="action"
+                    @click="testTTSurl"
+                    :title="$t('repeater.testUrl')"
+                  >
+                    <i
+                      style="font-size: 1.2em"
+                      :style="{
+                        color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                      }"
+                      class="material-icons"
+                      >play_circle_outline</i
+                    >
+                  </button>
+                </p>
+              </div>
+              <p
+                style="
+                  margin: 0 0 1em 2rem;
+                  text-align: justify;
+                  text-align-last: left;
+                  word-wrap: break-word;
+                  overflow-wrap: break-word;
+                  word-break: break-all;
+                  font-size: 0.8em;
+                "
+                :style="{
+                  color: isSystemTTS == 'No' ? 'white' : '#bbbaba',
+                }"
+              >
+                {{
+                  $t("repeater.notSystemTTSnote", {
+                    key1: key1,
+                  })
+                }}
+                &nbsp;&nbsp;&nbsp;
+
+                <button
+                  :disabled="isSystemTTS == 'Yes'"
+                  class="action"
+                  @click="showTTSSetting"
+                  :title="$t('repeater.help')"
+                >
+                  <i
+                    style="padding: 0; font-size: 1.2em"
+                    :style="{
+                      color: isSystemTTS == 'Yes' ? '#bbbaba' : 'blue',
+                    }"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
+              </p>
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
+
+          <div
+            style="margin: 8px 0"
+            :style="{ width: isMobile ? '100%' : '70%' }"
+          >
+            <span class="subject">{{ $t("repeater.playOrigin") }} </span>
+          </div>
           <div
             style="display: flex; flex-direction: row; align-items: center"
             :style="{ width: isMobile ? '100%' : '70%' }"
@@ -1350,12 +2222,36 @@
             </span>
           </div>
 
-          <div style="display: block">
-            <p style="color: white">
+          <div style="display: block; color: white">
+            <p>
+              <input
+                v-if="!fakeAudio"
+                type="checkbox"
+                v-model.lazy="readOriginByTTS"
+              />
+              <input
+                v-if="fakeAudio"
+                :disabled="fakeAudio"
+                type="checkbox"
+                v-model.lazy="fakeAudio"
+              />
+              {{ $t("repeater.playOriginO") }}
+              <button
+                class="action"
+                name="buttons"
+                @click="alertOriginTTS"
+                :title="$t('repeater.help')"
+              >
+                <i style="color: blue; font-size: 1.2em" class="material-icons"
+                  >help</i
+                >
+              </button>
+            </p>
+            <p>
               <input type="checkbox" v-model.lazy="showTempSpeed" />
               {{ $t("repeater.tempSpeed") }}
             </p>
-            <p style="color: white">
+            <p>
               <input type="checkbox" v-model.lazy="showRetracePlay" />
               {{ $t("repeater.showRetracePlay1") }}
               <input
@@ -1368,21 +2264,8 @@
               />
               {{ $t("repeater.showRetracePlay2") }}
             </p>
-            <p
-              :style="{
-                color: isFavOnPlay && isPlayFullFavList ? '#bbbaba' : 'white',
-              }"
-            >
-              <input
-                v-if="isFavOnPlay && isPlayFullFavList"
-                disabled
-                type="checkbox"
-              />
-              <input
-                v-if="!(isFavOnPlay && isPlayFullFavList)"
-                type="checkbox"
-                v-model="autoPlay"
-              />
+            <p style="color: white">
+              <input type="checkbox" v-model="autoPlay" />
               {{ $t("repeater.autoPlayCurrentSentence") }}
             </p>
             <p
@@ -1399,7 +2282,7 @@
               {{ $t("repeater.autoSwitchtoNextSentence") }}
             </p>
 
-            <p style="color: white; margin-bottom: 0">
+            <p style="margin-bottom: 0">
               <input type="checkbox" v-model="nextLoopPlay" />
               {{ $t("repeater.nextLoopPlay") }}
               <input
@@ -1418,7 +2301,7 @@
                 v-model.lazy="loopEnd"
               />
             </p>
-            <p style="padding-left: 0; margin-top: 0; color: white">
+            <p style="padding-left: 0; margin-top: 0">
               <input type="checkbox" v-model="autoStop" />
               {{ $t("repeater.autoStop") }}
               <input
@@ -1428,304 +2311,24 @@
                 step="1"
                 v-model.lazy="autoStopMins"
               />
-              Mins
+              {{ $t("repeater.mins") }}
             </p>
 
-            <p style="color: white">
+            <p>
               <input type="checkbox" v-model="random" />
               {{ $t("repeater.random") }}
             </p>
 
-            <p style="color: white">
+            <p>
               <input type="checkbox" v-model="replayFromStart" />
               {{ $t("repeater.replayFromStart") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
-            <p>
-              <span style="color: white">
-                <input type="checkbox" v-model="isUtterTransLine" />
-                {{ $t("repeater.utterSubtitle") }}
-              </span>
-              <span style="color: white">
-                (<input
-                  :disabled="!isUtterTransLine"
-                  type="checkbox"
-                  v-model="isAutoDetectLang"
-                />
-                {{ $t("repeater.autoDetect") }}
 
-                <button
-                  class="action"
-                  name="buttons"
-                  @click="alertAutoDetect"
-                  :title="$t('repeater.help')"
-                >
-                  <i
-                    style="color: blue; font-size: 1.2em"
-                    class="material-icons"
-                    >help</i
-                  >
-                </button>
-
-                )
-              </span>
-            </p>
-            <div :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }">
-              <p style="margin-bottom: 0">
-                <input
-                  :disabled="!isUtterTransLine || !hasSpeechSynthesis"
-                  style="margin-left: 1em"
-                  type="radio"
-                  value="Yes"
-                  v-model="isSystemTTS"
-                />
-                <span
-                  :style="{
-                    color:
-                      hasSpeechSynthesis && isUtterTransLine
-                        ? 'white'
-                        : '#bbbaba',
-                  }"
-                  >{{ $t("repeater.systemTTS") }}</span
-                >
-              </p>
-
-              <p
-                v-if="!hasSpeechSynthesis"
-                style="color: red; margin-left: 2rem; font-size: 0.8em"
-              >
-                {{ $t("repeater.speechsynthesisAlert") }}
-              </p>
-
-              <p
-                style="margin: 0.5em 0 1em 2rem; font-size: 0.8em"
-                :style="{
-                  color:
-                    isSystemTTS == 'Yes' && isUtterTransLine
-                      ? 'white'
-                      : '#bbbaba',
-                }"
-              >
-                {{ $t("repeater.SystemTTSnote") }}
-              </p>
-
-              <div
-                style="display: flex; flex-direction: row; align-items: center"
-                :style="{ width: isMobile ? '100%' : '70%' }"
-              >
-                <span
-                  :style="{
-                    color:
-                      !isUtterTransLine ||
-                      isSystemTTS == 'No' ||
-                      !hasSpeechSynthesis
-                        ? '#bbbaba'
-                        : 'white',
-                  }"
-                  style="margin-left: 2em"
-                  class="subject"
-                >
-                  {{ $t("repeater.langInTransLine") }}
-                </span>
-                <input
-                  :disabled="
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    isAutoDetectLang ||
-                    !hasSpeechSynthesis
-                  "
-                  :style="{
-                    width: isMobile ? '7em' : '8em',
-                  }"
-                  class="input input--repeater"
-                  type="text"
-                  :placeholder="langInTransLinedefault"
-                  v-model="langInTransLine"
-                />
-              </div>
-              <div
-                style="display: flex; flex-direction: row; align-items: center"
-                :style="{ width: isMobile ? '100%' : '70%' }"
-              >
-                <span
-                  :style="{
-                    color:
-                      !isUtterTransLine ||
-                      isSystemTTS == 'No' ||
-                      !hasSpeechSynthesis
-                        ? '#bbbaba'
-                        : 'white',
-                  }"
-                  style="margin-left: 2em"
-                  class="subject"
-                >
-                  {{
-                    $t("repeater.voice", {
-                      totalvoices: totalReaders,
-                    })
-                  }}
-                </span>
-                <input
-                  :disabled="
-                    !isUtterTransLine ||
-                    isSystemTTS == 'No' ||
-                    !hasSpeechSynthesis
-                  "
-                  class="input input--repeater"
-                  type="number"
-                  v-model.number.lazy="reader"
-                  :style="{
-                    width: isMobile ? '5.5em' : '6.5em',
-                  }"
-                />
-                <button
-                  :disabled="
-                    isSystemTTS == 'No' ||
-                    !isUtterTransLine ||
-                    !hasSpeechSynthesis
-                  "
-                  class="action"
-                  style="height: 1.5em"
-                  @click="testTTSVoice"
-                  :title="$t('repeater.testTTSVoice')"
-                >
-                  <i
-                    :style="{
-                      color:
-                        isSystemTTS == 'No' || !isUtterTransLine
-                          ? '#bbbaba'
-                          : 'blue',
-                    }"
-                    style="width: 1em; padding: 0; margin: 0"
-                    class="material-icons"
-                    >play_circle_outline</i
-                  >
-                </button>
-              </div>
-
-              <p style="margin-bottom: 0">
-                <input
-                  :disabled="!isUtterTransLine"
-                  style="margin-left: 1em"
-                  type="radio"
-                  value="No"
-                  v-model="isSystemTTS"
-                />
-                <span>{{ $t("repeater.notSystemTTS") }}</span>
-                <button
-                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
-                  class="action"
-                  @click="resetTTSurl"
-                  :title="$t('repeater.resetTTSurl')"
-                >
-                  <i
-                    style="font-size: 1.2em"
-                    :style="{
-                      color:
-                        isSystemTTS == 'Yes' || !isUtterTransLine
-                          ? '#bbbaba'
-                          : 'blue',
-                    }"
-                    class="material-icons"
-                    >settings_backup_restore</i
-                  >
-                </button>
-                <button
-                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
-                  class="action"
-                  @click="testTTSurl"
-                  :title="$t('repeater.testUrl')"
-                >
-                  <i
-                    style="font-size: 1.2em"
-                    :style="{
-                      color:
-                        isSystemTTS == 'Yes' || !isUtterTransLine
-                          ? '#bbbaba'
-                          : 'blue',
-                    }"
-                    class="material-icons"
-                    >play_circle_outline</i
-                  >
-                </button>
-              </p>
-              <input
-                style="
-                  margin: 0 0 0.5em 2em;
-                  width: calc(100% - 2em);
-                  text-align: left;
-                "
-                :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
-                class="input input--repeater"
-                type="text"
-                v-model.lazy="TTSurl"
-              />
-              <p
-                style="
-                  margin: 0 0 1em 2rem;
-                  text-align: justify;
-                  text-align-last: left;
-                  word-wrap: break-word;
-                  overflow-wrap: break-word;
-                  word-break: break-all;
-                  font-size: 0.8em;
-                "
-                :style="{
-                  color:
-                    isSystemTTS == 'No' && isUtterTransLine
-                      ? 'white'
-                      : '#bbbaba',
-                }"
-              >
-                {{
-                  $t("repeater.notSystemTTSnote", {
-                    key1: key1,
-                  })
-                }}
-                &nbsp;&nbsp;&nbsp;
-
-                <button
-                  :disabled="isSystemTTS == 'Yes' || !isUtterTransLine"
-                  class="action"
-                  @click="showTTSSetting"
-                  :title="$t('repeater.help')"
-                >
-                  <i
-                    style="padding: 0; font-size: 1.2em"
-                    :style="{
-                      color:
-                        isSystemTTS == 'Yes' || !isUtterTransLine
-                          ? '#bbbaba'
-                          : 'blue',
-                    }"
-                    class="material-icons"
-                    >help</i
-                  >
-                </button>
-              </p>
-            </div>
-            <div
-              style="display: flex; flex-direction: row; align-items: center"
-              :style="{ width: isMobile ? '100%' : '70%' }"
-            >
-              <span
-                :style="{
-                  color: isUtterTransLine ? 'white' : '#bbbaba',
-                }"
-                style="margin-left: 1em"
-                class="subject"
-              >
-                {{ $t("repeater.lineNumOfTrans") }}
-              </span>
-              <input
-                :disabled="!(isUtterTransLine && !isAutoDetectLang)"
-                class="input input--repeater"
-                type="number"
-                min="1"
-                max="3"
-                v-model.number.lazy="lineNumOfTrans"
-              />
-            </div>
+            <span style="color: white">
+              <input type="checkbox" v-model="isUtterTransLine" />
+              {{ $t("repeater.utterSubtitle") }}
+            </span>
 
             <div
               style="display: flex; flex-direction: row; align-items: center"
@@ -1830,8 +2433,20 @@
               {{ $t("repeater.autoCloseCheck") }}
             </p>
             <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="autoRealCheck" />
+              {{ $t("repeater.autoRealCheck") }}
+            </p>
+            <p style="text-align: justify; text-align-last: left; color: white">
               <input type="checkbox" v-model="ignoreC" />
               {{ $t("repeater.ignoreC") }}
+            </p>
+            <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="allowLoadDiction" />
+              {{ $t("repeater.allowLoadDiction") }}
+            </p>
+            <p style="text-align: justify; text-align-last: left; color: white">
+              <input type="checkbox" v-model="typingSound" />
+              {{ $t("repeater.typingSound") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="text-align: justify; text-align-last: left; color: white">
@@ -2117,7 +2732,9 @@
             <p style="text-align: justify">
               {{ $t("repeater.instruction5") }}
             </p>
-            <p style="text-align: justify">{{ $t("repeater.instruction6") }}</p>
+            <p style="text-align: justify">
+              {{ $t("repeater.instruction6") }}
+            </p>
             <p style="text-align: justify">
               {{ $t("repeater.clickButton") }}
               <i style="color: white" class="material-icons">add_alert</i
@@ -2278,7 +2895,7 @@
             width: isFullScreen || isMobile ? '100%' : 'auto',
             height: isFullScreen
               ? '100%'
-              : isMobile && isLandscape
+              : (isMobile && isLandscape) || isDictation
               ? '0'
               : isMobile && isWaveSurfer
               ? '30%'
@@ -2332,12 +2949,34 @@
             </button>
           </p>
         </div>
+        <div
+          v-if="showFakeAlert && !browserHiJack && !isFavOnPlay && !onRevision"
+          class="showMsg"
+          style="color: springgreen; bottom: 1.5em; z-index: 1008"
+        >
+          <p style="font-size: 1em">
+            {{ $t("repeater.wrongMedia") }}
+          </p>
+        </div>
+        <div
+          v-if="showAlert"
+          class="showMsg"
+          style="color: springgreen; bottom: 1.5em; z-index: 1008"
+        >
+          <p style="font-size: 1em">
+            {{ $t("repeater.tsc18") }}
+          </p>
+        </div>
         <span
           @mousedown="startDrag"
           @mouseup="endDrag"
           @touchstart="startTouch"
           @touchend="endTouch"
-          v-if="srtSubtitles && isMediaType == 1"
+          v-if="
+            srtSubtitles &&
+            ((isMediaType == 1 && !isDictation) ||
+              (isDictation && isEditSubandNotes))
+          "
           style="
             width: 100%;
             margin: 0;
@@ -2352,10 +2991,20 @@
           v-if="
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
           "
+          style="height: 50%; display: flex; flex-direction: column"
         >
+          <div
+            @mousedown="startDrag"
+            @mouseup="endDrag"
+            @touchstart="startTouch"
+            @touchend="endTouch"
+            style="flex-grow: 1"
+          ></div>
+
           <textarea
-            v-show="!isEmpty"
+            v-if="!isEmpty && !showSpell && !showCloze && !showSenWord"
             id="editArea3"
+            ref="targetTextArea"
             @touchmove="touchMoveF"
             @mousedown="startDragS"
             @mouseup="endDragS"
@@ -2366,19 +3015,226 @@
             :placeholder="defaultDictation"
             style="
               width: 100%;
-              font-size: 1.5em;
+              font-size: 2em;
               background-color: black;
               color: white;
               border: none;
               resize: none;
               text-align: center;
-              padding: 0;
+              padding: 0 0 6px 0;
               white-space: pre-wrap;
             "
+            :style="{
+              color: !autoRealCheck ? 'white' : isRight ? 'green' : 'red',
+            }"
           ></textarea>
+
+          <div v-if="showCloze" class="cloze-section">
+            <div class="feedback" v-if="showFeedback">
+              <p
+                :style="{
+                  color:
+                    Math.round((correctCount / totalBlanks) * 100) == 100
+                      ? 'green'
+                      : 'red',
+                }"
+              >
+                正确率: {{ correctCount }}/{{ totalBlanks }} ({{
+                  Math.round((correctCount / totalBlanks) * 100)
+                }}%)
+              </p>
+            </div>
+            <!-- 单词模式：字母挖空 -->
+            <div v-if="isSingleWord" class="cloze-word">
+              <div class="letters-container">
+                <template v-for="(letter, index) in processedLetters">
+                  <template v-if="letter.isBlank">
+                    <input
+                      :key="`input-${index}`"
+                      type="text"
+                      v-model="userLetterAnswers[index]"
+                      :class="{
+                        'letter-input': true,
+                        correct: letter.isChecked && letter.isCorrect,
+                        incorrect: letter.isChecked && !letter.isCorrect,
+                      }"
+                      @input="handleLetterInput(index)"
+                      @blur="checkLetterAnswer(index)"
+                      maxlength="1"
+                      size="1"
+                      style="padding: 0"
+                    />
+                  </template>
+                  <template v-else>
+                    <span :key="`char-${index}`" class="fixed-letter">{{
+                      letter.char
+                    }}</span>
+                  </template>
+                </template>
+              </div>
+            </div>
+
+            <!-- 句子模式：单词挖空 -->
+            <div v-else class="cloze-sentence">
+              <span
+                v-for="(item, index) in processedItems"
+                :key="index"
+                class="word-item"
+              >
+                <template v-if="item.isBlank">
+                  <input
+                    type="text"
+                    v-model="userAnswers[index]"
+                    :class="{
+                      'blank-input': true,
+                      correct: item.isChecked && item.isCorrect,
+                      incorrect: item.isChecked && !item.isCorrect,
+                    }"
+                    @blur="checkAnswer(index)"
+                    maxlength="20"
+                    style="color: white"
+                  />
+                </template>
+                <template v-else>
+                  {{ item.text }}
+                </template>
+              </span>
+            </div>
+          </div>
+
+          <div v-if="showSenWord" class="sw-vocabulary-reader">
+            <div class="sw-sentence-container">
+              <div
+                v-for="(swWord, index) in swSentenceData"
+                :key="index"
+                class="sw-word-card"
+                @mouseenter="
+                  swDisplayMode === 'hover' && (swWord.swHover = true)
+                "
+                @mouseleave="
+                  swDisplayMode === 'hover' && (swWord.swHover = false)
+                "
+              >
+                <!-- 音标显示 -->
+                <div
+                  class="sw-phonetic"
+                  :class="{
+                    'sw-show-phonetic':
+                      (swDisplayMode === 'hover' &&
+                        (swWord.swHover || swIsSpeaking === index)) ||
+                      swDisplayMode === 'always',
+                  }"
+                  @click="readSenWord(swWord.text, 2)"
+                >
+                  {{ swWord.phonetic }}
+                </div>
+
+                <!-- 单词显示 -->
+                <div
+                  class="sw-word"
+                  :class="{ 'sw-speaking': swIsSpeaking === index }"
+                  @click="readSenWord(swWord.text, 2)"
+                >
+                  {{ swWord.text }}
+                </div>
+
+                <!-- 释义显示 -->
+                <div
+                  class="sw-definition"
+                  :class="{
+                    'sw-show-definition':
+                      (swDisplayMode === 'hover' &&
+                        (swWord.swHover || swIsSpeaking === index)) ||
+                      swDisplayMode === 'always',
+                  }"
+                  @click="readSenWord(swWord.definition, 1)"
+                >
+                  {{ swWord.definition }}
+                </div>
+              </div>
+            </div>
+            <div class="sw-header">
+              <button class="sw-toggle-btn" @click="swToggleDisplayMode">
+                {{
+                  swDisplayMode === "always"
+                    ? "切换到悬停显示"
+                    : "切换到始终显示"
+                }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="showSpell" class="game-container">
+            <div v-if="showGame" class="spelling-area">
+              <div
+                class="current-spelling"
+                :class="{ 'is-correct': isCorrect }"
+              >
+                <template v-if="isSentence && !splitSentenceByLetter">
+                  <div
+                    v-for="(word, index) in currentSpelling"
+                    :key="index"
+                    class="spelled-word"
+                    @click="!isCorrect && removeFromSpelling(index)"
+                  >
+                    {{ word }}
+                  </div>
+                </template>
+                <template v-else>
+                  <div
+                    v-for="(letter, index) in currentSpelling"
+                    :key="index"
+                    class="spelled-letter"
+                    :title="letter === ' ' ? '空格' : ''"
+                    @click="!isCorrect && removeFromSpelling(index)"
+                  >
+                    {{ letter === " " ? "␣" : letter }}
+                  </div>
+                </template>
+              </div>
+              <div
+                v-if="currentSpelling.length === originalItems.length"
+                :class="{
+                  'correct-message': isCorrect,
+                  'error-message': !isCorrect,
+                }"
+              >
+                <i
+                  class="fas"
+                  :class="isCorrect ? 'fa-check-circle' : 'fa-times-circle'"
+                ></i>
+                {{
+                  isCorrect
+                    ? isSentence && !splitSentenceByLetter
+                      ? "句子顺序正确！"
+                      : "拼写正确！"
+                    : isSentence && !splitSentenceByLetter
+                    ? "句子顺序错误！"
+                    : "拼写错误！"
+                }}
+              </div>
+              <div class="shuffled-items">
+                <button
+                  v-for="(item, index) in shuffledItems"
+                  :key="index"
+                  @click="addToSpelling(item)"
+                  :disabled="!item || isCorrect"
+                  :class="
+                    isSentence && !splitSentenceByLetter
+                      ? 'word-btn'
+                      : 'letter-btn'
+                  "
+                  :title="item === ' ' ? '空格' : ''"
+                >
+                  {{ item === " " ? "␣" : item }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <span
+          :class="{ 'custom-text': isPinyin }"
           v-html="subtitleContent"
           id="subArea"
           @mousedown="startDragS"
@@ -2397,16 +3253,13 @@
             z-index: 1000;
           "
           :style="{
-            fontSize: isDictation ? '1.4em' : '',
+            fontSize: isDictation ? '1.25em' : '',
             top: isMediaType == 1 ? 0 : '4em',
             overflowY:
               !isMobile && isFullScreen && !isDictation ? 'unset' : 'auto',
           }"
         >
         </span>
-        <p v-if="isMediaType == 0" style="color: red">
-          {{ $t("repeater.wrongMedia") }}
-        </p>
         <p v-if="srtSubtitles == null" style="color: red">
           This .srt file's format is incorrect. It should be encoded using
           UTF-8.
@@ -2466,7 +3319,7 @@
               @touchstart.self="startTouchS"
               @touchmove.prevent
               @touchend.self="endTouchS"
-              style="padding: 0.25em 0; margin: 0"
+              style="padding: 0; margin: 0"
             >
               <button
                 v-if="canRecording && !isFavOnPlay"
@@ -2494,43 +3347,7 @@
                   >mic_off</i
                 >
               </button>
-              <button
-                v-if="!isFavOnPlay"
-                :disabled="loading || isSetting || isRecording || !canDownload"
-                class="action"
-                @click="
-                  openAlert(
-                    2,
-                    $t('repeater.confirmDownloadDictation2'),
-                    'downloadDictation'
-                  )
-                "
-                :title="$t('repeater.downloadDicRec')"
-              >
-                <i
-                  style="font-size: 1.7em"
-                  :style="{
-                    color: !isRecording && canDownload ? 'springgreen' : 'grey',
-                  }"
-                  class="material-icons"
-                  >cloud_download</i
-                >
-              </button>
-              <button
-                class="action"
-                name="buttons"
-                @click="dictationCheck"
-                :title="$t('repeater.dictationCheck')"
-              >
-                <i
-                  style="font-size: 1.7em"
-                  :style="{
-                    color: isCheck ? 'red' : 'springgreen',
-                  }"
-                  class="material-icons"
-                  >spellcheck</i
-                >
-              </button>
+
               <button
                 v-if="!isFavOnPlay"
                 :disabled="loading || isSetting || isRecording || !audioUrl"
@@ -2552,89 +3369,88 @@
                   >campaign</i
                 >
               </button>
+
               <button
-                v-if="!isFavOnPlay"
-                :disabled="
-                  loading ||
-                  isSetting ||
-                  isRecording ||
-                  (dictationArray.length == 0 && audioRecordArray.length == 0)
-                "
                 class="action"
-                @click="
-                  openAlert(
-                    2,
-                    $t('repeater.confirmUploadDictation2', {
-                      recordingDir:
-                        '/!PDJ/user-' +
-                        user.username +
-                        '/Repeater-backup/Rec-' +
-                        mediaName.slice(0, -4),
-                    }),
-                    'uploadDictation'
-                  )
-                "
-                :title="$t('repeater.uploadDicRec')"
+                name="buttons"
+                @click="switchSenData"
+                :title="$t('repeater.tsc0005')"
               >
                 <i
-                  style="font-size: 1.7em"
+                  style="font-size: 1.5em"
                   :style="{
-                    color:
-                      !isRecording &&
-                      (dictationArray.length > 0 || audioRecordArray.length > 0)
-                        ? 'springgreen'
-                        : 'grey',
+                    color: !showSenWord ? 'springgreen' : 'red',
                   }"
                   class="material-icons"
-                  >cloud_upload</i
+                  >accessible_forward</i
+                >
+              </button>
+
+              <button
+                class="action"
+                name="buttons"
+                @click="
+                  closeAllParts();
+                  showSpell = !showSpell;
+                  splitInput();
+                "
+                :title="$t('repeater.tsc005')"
+              >
+                <i
+                  style="font-size: 1.5em"
+                  :style="{
+                    color: !showSpell ? 'springgreen' : 'red',
+                  }"
+                  class="material-icons"
+                  >assist_walker</i
+                >
+              </button>
+
+              <button
+                class="action"
+                name="buttons"
+                @click="
+                  closeAllParts();
+                  showCloze = !showCloze;
+                "
+                :title="$t('repeater.tsc006')"
+              >
+                <i
+                  style="font-size: 1.5em"
+                  :style="{
+                    color: !showCloze ? 'springgreen' : 'red',
+                  }"
+                  class="material-icons"
+                  >escalator</i
                 >
               </button>
               <button
-                v-if="!isFavOnPlay"
-                :disabled="
-                  loading ||
-                  isSetting ||
-                  isRecording ||
-                  (dictationArray.length == 0 &&
-                    audioRecordArray.length == 0 &&
-                    !canDownload)
-                "
                 class="action"
-                @click="
-                  openAlert(
-                    2,
-                    $t('repeater.confirmdeleteDicRec', {
-                      dictationFile:
-                        '!PDJ/user-' +
-                        user.username +
-                        '/Repeater-backup/' +
-                        mediaName.slice(0, -4) +
-                        '-dictation.txt',
-                      recordDir:
-                        '!PDJ/user-' +
-                        user.username +
-                        '/Repeater-backup/Rec-' +
-                        mediaName.slice(0, -4) +
-                        '/',
-                    }),
-                    'deleteDicRec'
-                  )
-                "
-                :title="$t('repeater.clearAllDicRec')"
+                name="buttons"
+                @click="dictationCheck"
+                :title="$t('repeater.dictationCheck')"
               >
                 <i
                   style="font-size: 1.7em"
                   :style="{
-                    color:
-                      !isRecording &&
-                      (dictationArray.length > 0 ||
-                        audioRecordArray.length > 0 ||
-                        canDownload)
-                        ? 'springgreen'
-                        : 'grey',
+                    color: isCheck ? 'red' : 'springgreen',
                   }"
                   class="material-icons"
-                  >delete</i
+                  >spellcheck</i
+                >
+              </button>
+              <button
+                class="action"
+                name="buttons"
+                @click="showDicSetting = true"
+                :title="$t('repeater.tsc001')"
+              >
+                <i
+                  :style="{
+                    color: !showDicSetting ? 'springgreen' : 'red',
+                  }"
+                  class="material-icons"
+                  >settings_applications</i
                 >
               </button>
             </p>
@@ -2804,7 +3620,8 @@
             @touchstart="startTouchS"
             @touchend="endTouchS"
             @touchmove="touchMoveM"
-            v-model.lazy="subFirstLine"
+            @blur="subFirstLine = subFirstLineTemp"
+            v-model="subFirstLineTemp"
             placeholder="...Subtitle First Line..."
             :rows="rowsNum"
             style="
@@ -2836,7 +3653,8 @@
             @mouseup="endDragS"
             @touchstart="startTouchS"
             @touchend="endTouchS"
-            v-model.lazy="subSecLine"
+            @blur="subSecLine = subSecLineTemp"
+            v-model.lazy="subSecLineTemp"
             placeholder="...Subtitle Second Line..."
             :rows="rowsNum"
             style="
@@ -2866,9 +3684,10 @@
             @mouseup="endDragS"
             @touchstart="startTouchS"
             @touchend="endTouchS"
+            @blur="note = noteTemp"
             rows="2"
-            v-model.lazy="note"
-            placeholder="...NOTES..., use format [Original Text: Translation] to add a New Word or Phrase."
+            v-model.lazy="noteTemp"
+            placeholder="Note Line"
             style="
               width: 100%;
               font-size: 0.8em;
@@ -2948,6 +3767,7 @@
 
             <button
               v-if="isEditSubandNotes"
+              :disabled="fakeAudio"
               class="action"
               name="buttons"
               @click="onSubtools1"
@@ -2956,7 +3776,11 @@
               <i
                 style="font-size: 1.3em"
                 :style="{
-                  color: this.showsubTools1 ? 'red' : 'springgreen',
+                  color: this.showsubTools1
+                    ? 'red'
+                    : this.fakeAudio
+                    ? '#bbbaba'
+                    : 'springgreen',
                 }"
                 class="material-icons"
                 >transcribe</i
@@ -2990,6 +3814,24 @@
           @touchmove.prevent
           @touchend.self="endTouchS"
         >
+          <button
+            v-if="(showSpell || showCloze) && isDictation && !isEditSubandNotes"
+            class="action"
+            name="buttons"
+            @click="undoLastStep"
+            :disabled="showSpell && (!historyStack.length || isCorrect)"
+            :title="$t('repeater.undo')"
+          >
+            <i
+              style="
+                color: springgreen;
+                padding: 0 0.5em 0.5em 0.5em;
+                font-size: 1.2em;
+              "
+              class="material-icons"
+              >replay</i
+            >
+          </button>
           <button
             v-if="isEditSubandNotes"
             :disabled="loading || historyIndex < 1 || undoAlert"
@@ -3068,6 +3910,23 @@
               style="font-size: 1.3em; padding: 0 0 0.5em 0"
               class="material-icons"
               >redo</i
+            >
+          </button>
+          <button
+            v-if="(showSpell || showCloze) && isDictation && !isEditSubandNotes"
+            class="action"
+            name="buttons"
+            @click="resetSpelling"
+            :title="$t('repeater.redo')"
+          >
+            <i
+              style="
+                color: springgreen;
+                padding: 0 0.5em 0.5em 0.5em;
+                font-size: 1.2em;
+              "
+              class="material-icons"
+              >restart_alt</i
             >
           </button>
         </div>
@@ -3167,16 +4026,11 @@
       ></audio>
 
       <div
-        v-if="showAddNew"
+        v-if="showEditNew"
         :disabled="loading || isSetting || !isSingle"
-        style="
-          z-index: 1008;
-          position: fixed;
-          right: 1em;
-          width: 18em;
-          text-align: right;
-        "
+        style="z-index: 1008; position: fixed; right: 1em; text-align: right"
         :style="{
+          width: isMobile ? '18em' : '45%',
           bottom: isWaveSurfer
             ? '6.5em'
             : isFullScreen && !isSingle
@@ -3184,24 +4038,13 @@
             : '2.5em',
         }"
       >
-        <button
-          v-if="!showEditNew"
-          class="action"
-          @click="addANewWord"
-          :title="$t('repeater.addnewWord')"
-        >
-          <i style="color: white; font-size: 2em" class="material-icons"
-            >add_circle</i
-          >
-        </button>
-
         <div
           v-if="showEditNew"
           id="showEditNew"
           style="border-radius: 10px; background: grey; padding: 0.3em"
         >
           <p style="display: flex; align-items: center; color: white">
-            New word:&nbsp;
+            <span>New Word:&nbsp;&nbsp;</span>
             <input
               style="padding: 0.2em; flex-grow: 1; margin-right: 0.2em"
               class="input input--repeater"
@@ -3211,7 +4054,7 @@
             />
             <button
               class="action"
-              @click="readNewWord"
+              @click="clickWord()"
               :title="$t('repeater.word1')"
             >
               <i
@@ -3222,11 +4065,12 @@
             </button>
           </p>
           <p style="display: flex; align-items: center; color: white">
+            <span v-if="!isMobile">Translation:&nbsp;</span>
             <input
               style="flex-grow: 1; padding: 0.2em; margin-right: 0.2em"
               class="input input--repeater"
               type="text"
-              placeholder="Translation"
+              placeholder="Translation -Notes"
               v-model="newTranslation"
             />
             <button
@@ -3240,6 +4084,16 @@
                 >auto_stories</i
               >
             </button>
+          </p>
+          <p style="display: flex; align-items: center; color: white">
+            <span v-if="!isMobile">Note:&nbsp;</span>
+            <input
+              style="flex-grow: 1; padding: 0.2em; margin-right: 0.2em"
+              class="input input--repeater"
+              type="text"
+              placeholder="mnemonics, fixed collocations, etc."
+              v-model="wordNotes"
+            />
             <button
               @click="saveWordToSRT"
               style="background: gray; border: 0; padding: 0"
@@ -3256,7 +4110,7 @@
       </div>
 
       <div
-        v-if="(showRetracePlay || showTempSpeed) && !showEditNew && !showAddNew"
+        v-if="(showRetracePlay || showTempSpeed) && !showEditNew"
         :disabled="loading || isSetting"
         style="z-index: 1007; position: fixed; left: 1em"
         :style="{
@@ -3380,6 +4234,7 @@ import url from "@/utils/url";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
 import { setTimeout } from "core-js";
+import { Howl } from "howler";
 import localforage from "localforage";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
@@ -3394,6 +4249,63 @@ export default {
   },
   data: function () {
     return {
+      PDJWordListContent: "",
+      moreLetters: 0.5,
+      prSentences: null,
+      prFileName: "PDJ句子英汉互译",
+      prAllSelected: true,
+      prSelectedIndexes: {},
+
+      prOutput: false,
+      ttsName: "",
+      swDisplayMode: "always",
+      swIsSpeaking: -1,
+      wordDataResolver: null,
+      showSenWord: false,
+      swSentenceData: [],
+      wordPhonetic: "",
+      listWord: null,
+      dictionaryWord: null,
+      dictionary: [],
+      wordList: [],
+      percentage: 30,
+      dRead: 2,
+      processedItems: [],
+      userAnswers: [],
+      originalWords: [],
+      blankIndices: [],
+      processedLetters: [],
+      userLetterAnswers: [],
+      originalLetters: [],
+      blankLetterIndices: [],
+      showCloze: false,
+      showFeedback: false,
+      isSingleWord: false,
+      originalValue: "",
+      originalItems: [],
+      shuffledItems: [],
+      currentSpelling: [],
+      showGame: false,
+      isCorrect: false,
+      isSentence: false,
+      splitSentenceByLetter: false,
+      historyStack: [],
+      showDicSetting: false,
+      showSpell: false,
+      showAlert: false,
+      fakeAudio: false,
+      lastI: 10000,
+      tempFakeAudio: false,
+      showFakeAlert: false,
+      tempUrl: "",
+      tempType: 1,
+      fakeStatus: false,
+      audioEnded: true,
+      keySound: null,
+      allowLoadDiction: false,
+      typingSound: true,
+      downArrow: false,
+      readOriginByTTS: false,
       langTranscribe: "en-US",
       recognition1: null,
       isRecordingTrans: false,
@@ -3559,9 +4471,12 @@ export default {
       pauseTimeTransLine: 3,
       speedOfUtter: 1,
       isUtterTransLineFirstly: false,
+      langInOriginLine: "en-US",
+      langInOriginLinedefault: "en-US",
       langInTransLine: navigator.language || navigator.userLanguage,
       langInTransLinedefault: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
+      lineNumOfOrigin: 1,
       isAutoDetectLang: true,
       touches: 0,
       isPauseAfterFirstDone: false,
@@ -3574,10 +4489,12 @@ export default {
       utterThis: null,
       isPlayFullFavList: false,
       autoCloseCheck: true,
-      ignoreC: false,
+      autoRealCheck: true,
+      ignoreC: true,
       audio: null,
       isSystemTTS: "Yes",
       note: "     ",
+      noteTemp: "     ",
       confirmType: "",
       showSubtitleList: false,
       showNewWordList: false,
@@ -3586,17 +4503,20 @@ export default {
       isEditSubandNotes: false,
       isDictation: false,
       subFirstLine: "     ",
+      subFirstLineTemp: "     ",
       startTimeTemp: 0,
       endTimeTemp: 0,
       subSecLine: "     ",
+      subSecLineTemp: "     ",
       firstMount: true,
       numOfKeys: 0,
       playFromCache: false,
       reader: 0,
-      showAddNew: false,
+      readerO: 0,
       showEditNew: false,
-      newWord: " ",
+      newWord: "",
       newTranslation: "",
+      wordNotes: "",
       withTrans: false,
       changeOld: [],
       changeNew: [],
@@ -3628,7 +4548,6 @@ export default {
       tempFavContent: "",
       notSaveFav: false,
       notFromStarttimeTempChg: true,
-      fromMerge: false,
       redoAlert: false,
       undoAlert: false,
       fetchCount: 0,
@@ -3644,16 +4563,54 @@ export default {
       showWaveformInfo: false,
       localPeaks: [],
       transcribeUrl: "defaultkey1,eastasia",
-      TTSurl:
-        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=",
+      TTSurl: "azure-tts:defaultkey1,eastasia,en-US-GuyNeural",
+      TTSurlO: "azure-tts:defaultkey1,eastasia,en-US-GuyNeural",
     };
   },
 
   computed: {
     ...mapState(["req", "user", "oldReq", "jwt", "loading"]),
+
+    readLang() {
+      if (this.dRead == 1) return "朗读译文";
+      if (this.dRead == 2) return "朗读原文";
+      if (this.dRead == 3) return "复读";
+      else return "静音";
+    },
+
+    prSelectedSentences() {
+      return this.prSentences.filter(
+        (sentence, index) => this.prSelectedIndexes[index]
+      );
+    },
+    isPinyin() {
+      return this.srtSubtitles[0].content.split("\r\n")[0].startsWith("PinYin");
+    },
     fromLocal() {
       if (this.isFromLocal == 0) return this.$t("repeater.subTranscribe00");
       else return this.$t("repeater.subTranscribe01");
+    },
+
+    inputSentence() {
+      if (!this.showCloze) return null;
+      else
+        return this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfOrigin - 1
+        ];
+    },
+
+    inputWord() {
+      if (
+        !this.showSpell ||
+        !this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfOrigin - 1
+        ]
+      )
+        return null;
+      else
+        return this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfOrigin - 1
+        ];
     },
 
     oldTextHighLight() {
@@ -3696,6 +4653,10 @@ export default {
     },
 
     defaultDictation() {
+      if (this.isRecording && this.isFromLocal == 0)
+        return this.$t("repeater.dictationDefault2");
+      if (this.isRecording && this.isFromLocal == 1)
+        return this.$t("repeater.dictationDefault3");
       if (this.isFavOnPlay) return this.$t("repeater.dictationDefault1");
       else return this.$t("repeater.dictationDefault");
     },
@@ -3826,6 +4787,18 @@ export default {
       } else return 0;
     },
 
+    totalReadersO() {
+      if (this.hasSpeechSynthesis) {
+        let voices = window.speechSynthesis.getVoices();
+        let formattedLang =
+          this.langInOriginLine.substring(0, 3) +
+          this.langInOriginLine.substring(3).toUpperCase();
+        return voices.filter(function (voice) {
+          return voice.lang.includes(formattedLang);
+        }).length;
+      } else return 0;
+    },
+
     subSwitch() {
       if (
         this.isSetting ||
@@ -3875,70 +4848,91 @@ export default {
       return this.isMobile && !this.isLandscape ? 2 : 1;
     },
 
-    srtSubtitles() {
-      if (!this.isFavOnPlay) {
-        var formatContent = "";
-        if (this.reqF.size == 0)
-          formatContent =
-            "1\n00:00:01,000 --> 00:00:02,000\n Click edit to modified. \n \r\n";
-        else formatContent = this.reqF.content;
-        formatContent = this.formatAll(formatContent);
-        var subtitles = [];
-        var textSubtitles = formatContent.split("\n\n");
-        for (var i = 0; i < textSubtitles.length; ++i) {
-          var textSubtitle = textSubtitles[i].split("\n");
-          if (textSubtitle.length >= 2) {
-            var sn = i + 1;
-            var startTimeUnformat = textSubtitle[1].split(" --> ")[0];
-            var startHH = startTimeUnformat.split(":")[0];
-            var startMM = startTimeUnformat.split(":")[1];
-            var startSS = startTimeUnformat.split(":")[2];
-            var startMS = startTimeUnformat.split(",")[1];
-            var startTime =
-              parseFloat(startHH) * 3600 +
-              parseFloat(startMM) * 60 +
-              parseFloat(startSS) +
-              (parseFloat(startMS) + this.timeStampChangeStart) / 1000;
-            var endTimeUnformat = textSubtitle[1].split(" --> ")[1];
-            if (!endTimeUnformat) return null;
-            var endHH = endTimeUnformat.split(":")[0];
-            var endMM = endTimeUnformat.split(":")[1];
-            var endSS = endTimeUnformat.split(":")[2];
-            var endMS = endTimeUnformat.split(",")[1];
-            var endTime =
-              parseFloat(endHH) * 3600 +
-              parseFloat(endMM) * 60 +
-              parseFloat(endSS) +
-              (parseFloat(endMS) + this.timeStampChangeEnd - 1) / 1000;
-            var content = "";
-            if (textSubtitle.length >= 3) {
-              content = textSubtitle[2]
-                .replace(/^\s\s*/, "")
-                .replace(/\s\s*$/, "");
-              if (content == "") content = " ";
-              if (textSubtitle.length > 3) {
-                for (var j = 3; j < textSubtitle.length; j++) {
-                  content +=
-                    "\r\n" +
-                    textSubtitle[j].replace(/^\s\s*/, "").replace(/\s\s*$/, "");
-                }
+    totalBlanks() {
+      return this.isSingleWord
+        ? this.blankLetterIndices.length
+        : this.blankIndices.length;
+    },
+    correctCount() {
+      if (this.isSingleWord) {
+        return this.processedLetters.filter(
+          (letter) => letter.isChecked && letter.isCorrect
+        ).length;
+      } else {
+        return this.processedItems.filter(
+          (item) => item.isChecked && item.isCorrect
+        ).length;
+      }
+    },
+
+    srtSubtitlesO() {
+      var formatContent = "";
+      if (this.reqF.size == 0)
+        formatContent =
+          "1\n00:00:01,000 --> 00:00:02,000\nEmpty File. Add sentences in Edit mode, and use TTS to read aloud the original text.";
+      else formatContent = this.reqF.content;
+      formatContent = this.formatAll(formatContent);
+      var subtitles = [];
+      var textSubtitles = formatContent.split("\n\n");
+      for (var i = 0; i < textSubtitles.length; ++i) {
+        var textSubtitle = textSubtitles[i].split("\n");
+        if (textSubtitle.length >= 2) {
+          var sn = i + 1;
+          var startTimeUnformat = textSubtitle[1].split(" --> ")[0];
+          var startHH = startTimeUnformat.split(":")[0];
+          var startMM = startTimeUnformat.split(":")[1];
+          var startSS = startTimeUnformat.split(":")[2];
+          var startMS = startTimeUnformat.split(",")[1];
+          var startTime =
+            parseFloat(startHH) * 3600 +
+            parseFloat(startMM) * 60 +
+            parseFloat(startSS) +
+            (parseFloat(startMS) + this.timeStampChangeStart) / 1000;
+          var endTimeUnformat = textSubtitle[1].split(" --> ")[1];
+          if (!endTimeUnformat) return null;
+          var endHH = endTimeUnformat.split(":")[0];
+          var endMM = endTimeUnformat.split(":")[1];
+          var endSS = endTimeUnformat.split(":")[2];
+          var endMS = endTimeUnformat.split(",")[1];
+          var endTime =
+            parseFloat(endHH) * 3600 +
+            parseFloat(endMM) * 60 +
+            parseFloat(endSS) +
+            (parseFloat(endMS) + this.timeStampChangeEnd - 1) / 1000;
+          var content = "";
+          if (textSubtitle.length >= 3) {
+            content = textSubtitle[2]
+              .replace(/^\s\s*/, "")
+              .replace(/\s\s*$/, "");
+            if (content == "") content = " ";
+            if (textSubtitle.length > 3) {
+              for (var j = 3; j < textSubtitle.length; j++) {
+                content +=
+                  "\r\n" +
+                  textSubtitle[j].replace(/^\s\s*/, "").replace(/\s\s*$/, "");
               }
             }
-            var subtitle = {
-              sn: sn,
-              timeStamp: textSubtitle[1],
-              startTime: startTime,
-              endTime: endTime,
-              content: content,
-            };
-            subtitles.push(subtitle);
           }
+          var subtitle = {
+            sn: sn,
+            timeStamp: textSubtitle[1],
+            startTime: startTime,
+            endTime: endTime,
+            content: content,
+          };
+          subtitles.push(subtitle);
         }
-        return subtitles;
+      }
+      return subtitles;
+    },
+
+    srtSubtitles() {
+      if (!this.isFavOnPlay) {
+        return this.srtSubtitlesO;
       } else if (this.isPlayFullFavList) {
         return this.favList;
       } else {
-        return this.currentFileFavList;
+        return this.favList;
       }
     },
 
@@ -4087,18 +5081,18 @@ export default {
             origin = this.srtSubtitles[i].content
               .split("\r\n")[2]
               .split("[")
-              [j].split(":")[0];
+              [j].split("::")[0];
 
             if (
               this.srtSubtitles[i].content
                 .split("\r\n")[2]
                 .split("[")
-                [j].split(":")[1]
+                [j].split("::")[1]
             ) {
               trans = this.srtSubtitles[i].content
                 .split("\r\n")[2]
                 .split("[")
-                [j].split(":")[1]
+                [j].split("::")[1]
                 .split("]")[0];
 
               if (origin !== "") {
@@ -4119,32 +5113,23 @@ export default {
     },
 
     isMediaType() {
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        if (
-          this.srtSubtitles[this.sentenceIndex - 1].mediaName.includes(".mp4")
-        ) {
-          return 2;
-        } else return 1;
-      } else {
-        if (this.onRevision) {
-          return this.reviseType;
-        }
-        if (this.listing && this.reqF.name) {
-          for (var i = 0; i < this.listing.length; ++i) {
-            if (
-              this.listing[i].name == this.reqF.name.replace(".srt", ".mp4")
-            ) {
-              return 2;
-            } else if (
-              this.listing[i].name == this.reqF.name.replace(".srt", ".mp3")
-            ) {
-              return 1;
-            }
+      if (this.fakeAudio) return 1;
+      if (this.onRevision) {
+        return this.reviseType;
+      }
+      if (this.listing && this.reqF.name) {
+        for (var i = 0; i < this.listing.length; ++i) {
+          if (this.listing[i].name == this.reqF.name.replace(".srt", ".mp4")) {
+            return 2;
+          } else if (
+            this.listing[i].name == this.reqF.name.replace(".srt", ".mp3")
+          ) {
+            return 1;
           }
-          return 0;
-        } else {
-          return -1;
         }
+        return 0;
+      } else {
+        return -1;
       }
     },
 
@@ -4157,23 +5142,16 @@ export default {
     },
 
     currentFileFavList() {
-      let currentMediaName = this.reqF.name;
-      return this.favList.filter(function (item) {
-        return item.rawPath == currentMediaName;
-      });
+      return this.favList;
     },
 
     mediaName() {
-      if (this.isFavOnPlay && this.isPlayFullFavList) {
-        return this.srtSubtitles[this.sentenceIndex - 1].mediaName;
+      if (this.isMediaType == 1) {
+        return this.reqF.name.replace(".srt", ".mp3");
+      } else if (this.isMediaType == 2) {
+        return this.reqF.name.replace(".srt", ".mp4");
       } else {
-        if (this.isMediaType == 1) {
-          return this.reqF.name.replace(".srt", ".mp3");
-        } else if (this.isMediaType == 2) {
-          return this.reqF.name.replace(".srt", ".mp4");
-        } else {
-          return "";
-        }
+        return "";
       }
     },
 
@@ -4258,13 +5236,13 @@ export default {
             line = line.replaceAll("#@#@", "#@").replaceAll("@#@#", "@#");
           }
           return line
-            .replaceAll("#@", "<span style='color: yellow'>")
+            .replaceAll("#@", "<span style='color: green'>")
             .replaceAll("@#", "</span>");
         };
         contentLine1 = cleanHighlight(contentLine1);
         contentLine2 = cleanHighlight(contentLine2);
 
-        contentAll = `<p style='margin-top: 0px; color: green'>${contentLine1}</p><p style='color: green'>${contentLine2}</p>`;
+        contentAll = `<p style='margin-top: 0px; color: yellow'>${contentLine1}</p><p style='color: yellow'>${contentLine2}</p>`;
       } else if (
         currentSubtitle.content.split("\r\n")[2] &&
         currentSubtitle.content.split("\r\n")[2].includes("[")
@@ -4272,17 +5250,16 @@ export default {
         const parts = currentSubtitle.content.split("\r\n")[2].split("[");
         parts.slice(1).forEach((part) => {
           const highLightWord = part.includes(":")
-            ? part.split(":")[0]
+            ? part.split("::")[0]
             : part.split("]")[0];
           if (highLightWord.trim() !== "") {
-            contentLine1 = contentLine1.replaceAll(
-              highLightWord,
-              `#@${highLightWord}@#`
+            const escapedB = highLightWord.replace(
+              /[.*+?^${}()|[\]\\]/g,
+              "\\$&"
             );
-            contentLine2 = contentLine2.replaceAll(
-              highLightWord,
-              `#@${highLightWord}@#`
-            );
+            const regex = new RegExp(`\\b(${escapedB})`, "ig");
+            contentLine1 = contentLine1.replace(regex, "#@$1@#");
+            contentLine2 = contentLine2.replace(regex, "#@$1@#");
           }
         });
 
@@ -4309,6 +5286,36 @@ export default {
       return contentAll;
     },
 
+    fakeAudioUrl() {
+      let urla = api.getDownloadURL(this.req, true);
+      let rawUrl = urla.split("/api/")[0] + "/static/blank2h.mp3";
+      return rawUrl;
+    },
+
+    isRight() {
+      if (this.dictationContent !== "" && this.isDictation) {
+        if (
+          !this.ignoreC &&
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")
+            [this.lineNumOfOrigin - 1].startsWith(this.dictationContent)
+        )
+          return true;
+        if (
+          this.ignoreC &&
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")
+            [this.lineNumOfOrigin - 1].replace(/[\p{P}]+/gu, "")
+            .toLowerCase()
+            .startsWith(
+              this.dictationContent.replace(/[\p{P}]+/gu, "").toLowerCase()
+            )
+        )
+          return true;
+        else return false;
+      } else return false;
+    },
+
     isTouchDevice() {
       return (
         "ontouchstart" in window ||
@@ -4324,6 +5331,15 @@ export default {
         ];
       return hasContent !== undefined && hasContent !== " ";
     },
+
+    canUtterO() {
+      let hasContent =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfOrigin - 1
+        ];
+      return hasContent !== undefined && hasContent !== " ";
+    },
+
     isIphone() {
       return /iPhone/i.test(navigator.userAgent);
     },
@@ -4334,14 +5350,60 @@ export default {
       this.updatePreview();
     },
 
+    srtSubtitlesO: {
+      handler(newVal) {
+        this.favList = newVal.filter((item) => {
+          return item?.content?.includes("[star];");
+        });
+      },
+      deep: true,
+      immediate: true,
+    },
+
+    prOutput() {
+      if (this.prOutput) {
+        this.prSentences = this.srtSubtitles;
+        this.prToggleSelectAll();
+      }
+    },
+
+    prSelectedIndexes: {
+      handler(newPrSelectedIndexes) {
+        const selectedCount =
+          Object.values(newPrSelectedIndexes).filter(Boolean).length;
+        this.prAllSelected = selectedCount === this.prSentences.length;
+      },
+      deep: true,
+    },
+
+    splitSentenceByLetter() {
+      this.splitInput();
+    },
+
+    inputWord() {
+      if (this.inputWord && this.inputWord.trim() !== "") this.splitInput();
+    },
+
+    inputSentence() {
+      if (this.inputSentence && this.inputSentence.trim() !== "")
+        this.generateCloze();
+    },
+
     isFromLocal() {
       this.transcriptionResult = "";
+      this.save();
     },
 
     transcriptionResult() {
-      if (!this.isProcessing1 && !this.isProcessing2) {
+      if (
+        this.isEditSubandNotes &&
+        !this.isProcessing1 &&
+        !this.isProcessing2
+      ) {
         let newText = document.getElementById("newText");
         newText.style.height = newText.scrollHeight + "px";
+      } else if (!this.isEditSubandNotes && this.isDictation) {
+        this.dictationContent = this.transcriptionResult;
       }
     },
 
@@ -4444,13 +5506,65 @@ export default {
       this.save();
     },
 
+    readOriginByTTS: function () {
+      this.save();
+    },
+
     newWord: function () {
-      if (this.showAddNew || this.showEditNew) {
+      if (this.newWord.trim() == "") return; //This one is important to save too many requests, can't be ignored.
+      if (!this.showSenWord) this.cleanUp1();
+      if (this.showEditNew || this.showSenWord) {
         this.getOriginLang();
         this.newTranslation = "";
-        if (this.translatorUrl.includes("zure-translator"))
-          this.azureTranslate();
-        else this.aliTranslate(2);
+        this.newWord = this.newWord.replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
+        this.listWord = null;
+        if (this.wordList.length > 0) {
+          this.listWord = this.findWord(this.wordList, this.newWord);
+        }
+        if (this.listWord) {
+          this.newTranslation = this.listWord.partOfSpeech;
+          this.wordNotes = this.listWord.wordNote;
+          this.wordPhonetic = this.listWord.pronunciation.split(" ")[1];
+          this.getPromise();
+        } else {
+          this.wordNotes = "";
+          this.dictionaryWord = null;
+          this.dictionaryWord = this.findWord(this.dictionary, this.newWord);
+          if (this.dictionaryWord) {
+            this.newTranslation = this.dictionaryWord.partOfSpeech;
+            this.wordPhonetic = this.dictionaryWord.pronunciation.split(" ")[1];
+            this.getPromise();
+          } else {
+            this.wordPhonetic = "";
+            if (window.localStorage.getItem("word" + this.newWord)) {
+              this.newTranslation = window.localStorage.getItem(
+                "word" + this.newWord
+              );
+              this.getPromise();
+            } else {
+              this.newTranslation = "";
+              if (this.translatorUrl.includes("zure-translator"))
+                this.azureTranslate();
+              else this.aliTranslate(2);
+            }
+          }
+        }
+      }
+      if (!(this.showSenWord && !this.showEditNew)) this.clickWord();
+    },
+
+    showEditNew: function () {
+      if (!this.showEditNew) this.newWord = "";
+    },
+
+    fakeAudio: function () {
+      if (this.fakeAudio) {
+        if (!this.isFavOnPlay || !this.onRevision || !this.showRevision) {
+          this.showFakeAlert = true;
+          setTimeout(() => {
+            this.showFakeAlert = false;
+          }, 3000);
+        }
       }
     },
 
@@ -4485,8 +5599,32 @@ export default {
       }
     },
     isDictation: function () {
+      this.closeAllParts();
       if (this.isFavOnPlay) this.dictationContent = "";
       else this.handleIsDictation();
+      if (this.isDictation) {
+        setTimeout(() => {
+          this.$refs.targetTextArea.focus();
+        }, 10);
+
+        this.initSpeechRecognition();
+        let urla = api.getDownloadURL(this.req, true);
+        let typeUrl = urla.split("/api/")[0] + "/static/type.mp3";
+        this.keySound = new Howl({
+          src: [typeUrl],
+          volume: 0.5, //0-1
+          preload: true,
+        });
+        document.addEventListener("keydown", this.handleKeyPress);
+      } else {
+        if (this.recognition1 && this.isRecordingTrans) {
+          this.recognition1.stop();
+        }
+        document.removeEventListener("keydown", this.handleKeyPress);
+        if (this.keySound) {
+          this.keySound.unload();
+        }
+      }
     },
     dictationContent: function () {
       if (this.isFavOnPlay) return;
@@ -4549,10 +5687,18 @@ export default {
         this.cacheCleanUp();
       window.localStorage.setItem("max", this.maxCacheNum);
     },
+    isMediaType: function () {
+      if (this.isMediaType == 0) {
+        this.raw = this.fakeAudioUrl;
+        this.isMediaType = 1;
+        this.fakeAudio = true;
+      }
+    },
 
     mediaName: function () {
       if (this.isMediaType !== -1) {
         this.checkDownload();
+        this.getNewWordList();
         if (
           !window.localStorage.getItem(this.mediaName) &&
           !(this.isFavOnPlay && this.isPlayFullFavList)
@@ -4594,7 +5740,10 @@ export default {
 
     startTimeTemp: function () {
       if (this.isSwitching) return;
-      if (String(this.startTimeTemp).split(".")[1].length !== 3) {
+      if (
+        String(this.startTimeTemp).split(".")[1] &&
+        String(this.startTimeTemp).split(".")[1].length !== 3
+      ) {
         this.startTimeTemp = parseFloat(this.startTimeTemp.toFixed(3));
       }
       this.notFromStarttimeTempChg = false;
@@ -4604,7 +5753,8 @@ export default {
         !this.hasMoveAll &&
         this.isWaveSurfer &&
         this.regions &&
-        this.regions.getRegions()[this.sentenceIndex - 1]
+        this.regions.getRegions()[this.sentenceIndex - 1] &&
+        this.sentenceIndex <= this.lastI
       ) {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           start: this.startTimeTemp,
@@ -4623,7 +5773,10 @@ export default {
 
     endTimeTemp: function () {
       if (this.isSwitching) return;
-      if (String(this.endTimeTemp).split(".")[1].length !== 3) {
+      if (
+        String(this.endTimeTemp).split(".")[1] &&
+        String(this.endTimeTemp).split(".")[1].length !== 3
+      ) {
         this.endTimeTemp = parseFloat(this.endTimeTemp.toFixed(3));
       }
       this.onEdit = true;
@@ -4631,13 +5784,17 @@ export default {
       if (
         this.isWaveSurfer &&
         this.regions &&
-        this.regions.getRegions()[this.sentenceIndex - 1]
+        this.regions.getRegions()[this.sentenceIndex - 1] &&
+        this.sentenceIndex <= this.lastI
       ) {
         this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
           start: this.startTimeTemp,
           end: this.endTimeTemp - 0.03,
         });
-        if (this.sentenceIndex < this.srtSubtitles.length && !this.altPressed)
+        if (
+          this.sentenceIndex < Math.min(this.srtSubtitles.length, this.lastI) &&
+          !this.altPressed
+        )
           this.regions.getRegions()[this.sentenceIndex].setOptions({
             start: this.srtSubtitles[this.sentenceIndex].startTime,
           });
@@ -4645,19 +5802,24 @@ export default {
     },
 
     subFirstLine: function () {
-      if (this.subFirstLine.trim() == "") this.subFirstLine = "";
+      if (this.subFirstLineTemp !== this.subFirstLine)
+        this.subFirstLineTemp = this.subFirstLine;
+      if (this.subFirstLine?.trim() == "") this.subFirstLine = "";
       if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
     },
 
     subSecLine: function () {
+      if (this.subSecLineTemp !== this.subSecLine)
+        this.subSecLineTemp = this.subSecLine;
       if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
     },
 
     note: function () {
+      if (this.noteTemp !== this.note) this.noteTemp = this.note;
       if (this.isSwitching) return;
       this.onEdit = true;
       this.saveSub();
@@ -4666,7 +5828,6 @@ export default {
     sentenceIndex: function () {
       this.onLoop();
       this.calcFav();
-      this.showAddNew = false;
       this.showEditNew = false;
       if (!this.isSingle && this.dubbingMode && this.isUtterTransLine) {
         if (this.utterThis) window.speechSynthesis.cancel();
@@ -4681,15 +5842,20 @@ export default {
       }
       if (this.isEditSubandNotes) {
         this.startTimeTemp =
-          this.srtSubtitles[this.sentenceIndex - 1].startTime;
-        this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].endTime;
+          this.srtSubtitles[this.sentenceIndex - 1]?.startTime;
+        this.endTimeTemp = this.srtSubtitles[this.sentenceIndex - 1]?.endTime;
         this.subFirstLine =
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
+          this.srtSubtitles[this.sentenceIndex - 1]?.content.split("\r\n")[0];
         this.subSecLine =
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
+          this.srtSubtitles[this.sentenceIndex - 1]?.content.split("\r\n")[1];
         this.note =
-          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
-        if (this.isWaveSurfer && this.regions) {
+          this.srtSubtitles[this.sentenceIndex - 1]?.content.split("\r\n")[2];
+        if (
+          this.isWaveSurfer &&
+          this.regions &&
+          this.regions.getRegions()[this.sentenceIndex - 1] &&
+          this.sentenceIndex <= this.lastI
+        ) {
           this.regions.getRegions()[this.sentenceIndex - 1].setOptions({
             start: this.startTimeTemp,
             end: this.endTimeTemp - 0.03,
@@ -4715,7 +5881,8 @@ export default {
           const tempCon = this.dictationArray.find(
             (item) => item.id === this.sentenceIndex
           );
-          if (tempCon) this.dictationContent = tempCon.con;
+          if (tempCon && this.allowLoadDiction)
+            this.dictationContent = tempCon.con;
         }
         if (this.autoCloseCheck) {
           this.isCheck = false;
@@ -4731,6 +5898,19 @@ export default {
             this.audioUrl = URL.createObjectURL(this.audioBlob);
           }
         }
+        if (
+          this.isDictation &&
+          !this.showSpell &&
+          !this.showCloze &&
+          !this.showSenWord
+        ) {
+          setTimeout(() => {
+            this.$refs.targetTextArea.focus();
+          }, 10);
+        }
+      }
+      if (this.showSenWord) {
+        this.swGetData();
       }
     },
 
@@ -4843,6 +6023,11 @@ export default {
       this.save();
     },
 
+    TTSurlO: function () {
+      this.TTSurlO = this.TTSurlO.replaceAll(" ", "");
+      this.save();
+    },
+
     transcribeUrl: function () {
       if (this.transcribeUrl == "") this.transcribeUrl = "defaultkey1,eastasia";
       this.save();
@@ -4871,6 +6056,15 @@ export default {
       this.lineNumOfTrans = Math.floor(this.lineNumOfTrans);
       if (this.lineNumOfTrans < 1) this.lineNumOfTrans = 1;
       if (this.lineNumOfTrans > 3) this.lineNumOfTrans = 3;
+      if (this.isAutoDetectLang && this.lineNumOfOrigin == this.lineNumOfTrans)
+        this.lineNumOfOrigin = this.lineNumOfTrans == 1 ? 2 : 1;
+      if (!this.isAutoDetectLang) this.save();
+    },
+
+    lineNumOfOrigin: function () {
+      this.lineNumOfOrigin = Math.floor(this.lineNumOfOrigin);
+      if (this.lineNumOfOrigin < 1) this.lineNumOfOrigin = 1;
+      if (this.lineNumOfOrigin > 3) this.lineNumOfOrigin = 3;
       if (!this.isAutoDetectLang) this.save();
     },
 
@@ -4880,6 +6074,9 @@ export default {
         window.localStorage.removeItem(this.mediaName + "line2");
         this.langInTransLine = navigator.language || navigator.userLanguage;
         this.detectLangAuto();
+        if (this.lineNumOfOrigin == this.lineNumOfTrans) {
+          this.lineNumOfOrigin = this.lineNumOfTrans == 1 ? 2 : 1;
+        }
       }
       this.save();
     },
@@ -4904,9 +6101,22 @@ export default {
       this.save();
     },
 
+    autoRealCheck: function () {
+      this.save();
+    },
+
     ignoreC: function () {
       this.save();
     },
+
+    allowLoadDiction: function () {
+      this.save();
+    },
+
+    typingSound: function () {
+      this.save();
+    },
+
     showRetracePlay: function () {
       this.save();
     },
@@ -4941,6 +6151,14 @@ export default {
       } else this.reader = 0;
     },
 
+    readerO() {
+      if (this.hasSpeechSynthesis) {
+        if (this.readerO < 1) this.readerO = 1;
+        this.readerO = Math.floor(this.readerO);
+        window.localStorage.setItem("readerO", this.readerO);
+      } else this.readerO = 0;
+    },
+
     srtSubtitlesLength: function () {
       if (
         !this.redoAlert &&
@@ -4950,6 +6168,16 @@ export default {
       ) {
         this.updateRgns();
       }
+    },
+
+    onRevision: function () {
+      if (this.onRevision) {
+        this.tempReadS = this.readOriginByTTS;
+        setTimeout(() => {
+          if (Math.round(this.currentMedia.duration) == 6888)
+            this.readOriginByTTS = true;
+        }, 100);
+      } else this.readOriginByTTS = this.tempReadS;
     },
 
     raw: function () {
@@ -5003,7 +6231,8 @@ export default {
     this.updatePreview();
     this.initUtter();
     if (this.reqF.size == 0) {
-      this.reqF.content = "1\n00:00:01,000 --> 00:00:03,000";
+      this.reqF.content =
+        "1\n00:00:01,000 --> 00:00:02,000\nEmpty File. Add sentences in Edit mode, and use TTS to read aloud the original text.";
       this.saveSubNow();
     }
     if (this.reqF.content == undefined || this.srtSubtitlesLength == 0) {
@@ -5012,6 +6241,7 @@ export default {
     this.reqF.content = this.formatAll(this.reqF.content);
     if (this.onOffline) this.allowCache = true;
     this.getReader();
+    this.getDictionary();
     if (!this.checkLocalStorageSpace()) {
       this.openAlert(1, this.$t("repeater.alertSpace"));
     }
@@ -5031,16 +6261,566 @@ export default {
   },
 
   methods: {
-    readNewWord() {
-      if (this.newWord !== " " && this.showEditNew) {
-        if (this.isSystemTTS == "Yes") this.testTTSVoice(1);
-        else this.testTTSurl(1);
+    toOutput() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.prOutput = true;
+    },
+    prToggleSelectAll() {
+      const newPrSelectedIndexes = {};
+      if (this.prAllSelected) {
+        this.prSentences.forEach((sentence, index) => {
+          newPrSelectedIndexes[index] = true;
+        });
       }
+      this.prSelectedIndexes = newPrSelectedIndexes;
+    },
+
+    prGenerateHTML() {
+      if (this.prSelectedSentences.length === 0) {
+        alert("请至少选择一个句子");
+        return;
+      }
+
+      const htmlContent = this.prCreateHTMLTable();
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${this.prFileName}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
+    prPrintDirectly() {
+      if (this.prSelectedSentences.length === 0) {
+        alert("请至少选择一个句子");
+        return;
+      }
+
+      const htmlContent = this.prCreateHTMLTable();
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    },
+
+    prCreateHTMLTable() {
+      const rowsPerPage = 30;
+      const totalSheets = Math.ceil(
+        this.prSelectedSentences.length / rowsPerPage
+      );
+      let html = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${this.prFileName}</title>
+    <style>
+        @page {
+            size: A4 portrait; /* A4竖向排版 */
+            margin: 0 1.5cm;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-size: 12px;
+        }
+        .prPage {
+            page-break-after: always;
+            margin-bottom: 20px;
+        }
+        .prPage:last-child {
+            page-break-after: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #000;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 0 8px;
+            text-align: left;
+            height: 32px;
+        }
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .prRowNumber {
+            text-align: center;
+            width: 40px;
+        }
+        .prEnglishCell {
+            width: 388px;
+            font-size: 1em;
+        }
+        .prChineseCell {
+            width: 388px;
+            font-size: 1em;
+        }
+        .prCheckboxCell {
+            text-align: center;
+            width: 40px
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+            .prPage {
+                margin: 0;
+            }
+            @page {
+              margin-top: 15mm; /* 上页边距（mm单位更适合打印） */
+              margin-bottom: 15mm; /* 下页边距 */
+            }
+        }
+    </style>
+</head>
+<body>
+    `;
+
+      for (let sheetIndex = 0; sheetIndex < totalSheets; sheetIndex++) {
+        html += `<div class="prPage">`;
+        html += `<table>`;
+        const startIndex = sheetIndex * rowsPerPage;
+        const endIndex = Math.min(
+          startIndex + rowsPerPage,
+          this.prSelectedSentences.length
+        );
+
+        for (let i = startIndex; i < endIndex; i++) {
+          const sentence = this.prSelectedSentences[i];
+          html += `<tr>`;
+          html += `<td class="prRowNumber">${i + 1}</td>`;
+          html += `<td class="prEnglishCell">${
+            sentence.content.split("\r\n")[this.lineNumOfOrigin - 1]
+          }</td>`;
+          html += `<td class="prChineseCell">${
+            sentence.content.split("\r\n")[this.lineNumOfTrans - 1]
+          }</td>`;
+          html += `<td class="prCheckboxCell">□</td>`;
+          html += `</tr>`;
+        }
+
+        html += `</table></div>`;
+      }
+
+      html += `</body></html>`;
+      return html;
+    },
+
+    readSenWord(x, y) {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.showEditNew = false;
+      this.newWord = x.replace(/\[.*?\]/g, "");
+      if (y != 1) this.clickWord();
+      else this.clickTrans();
+      setTimeout(() => {
+        this.newWord = "";
+      }, 500);
+    },
+    switchSenData() {
+      this.closeAllParts();
+      this.showSenWord = !this.showSenWord;
+      if (this.showSenWord) this.swGetData();
+    },
+    swToggleDisplayMode() {
+      this.swDisplayMode = this.swDisplayMode === "always" ? "hover" : "always";
+      this.swIsSpeaking = -1;
+      this.swSentenceData.forEach((swWord) => {
+        swWord.swHover = false;
+      });
+    },
+
+    getPromise() {
+      if (this.wordDataResolver) {
+        this.wordDataResolver({
+          phonetic: this.wordPhonetic,
+          definition: this.newTranslation,
+        });
+        this.wordDataResolver = null;
+      }
+    },
+    swGetData() {
+      this.swSentenceData = this.swGetSentenceDataInit();
+      setTimeout(() => {
+        this.getRealData();
+      }, 10);
+    },
+    async getRealData() {
+      this.swSentenceData = await this.swGetSentenceData();
+    },
+
+    swGetSentenceDataInit() {
+      let swWordArray = this.srtSubtitles[this.sentenceIndex - 1].content
+        .split("\r\n")
+        [this.lineNumOfOrigin - 1].split(" ");
+      let swWordList = [];
+      for (let i = 0; i < swWordArray.length; ++i) {
+        const phonetic = "";
+        const definition = "";
+        swWordList.push({
+          text: swWordArray[i],
+          phonetic,
+          definition,
+          swHover: false,
+        });
+      }
+      return swWordList;
+    },
+
+    async swGetSentenceData() {
+      let swWordArray = this.srtSubtitles[this.sentenceIndex - 1].content
+        .split("\r\n")
+        [this.lineNumOfOrigin - 1].split(" ");
+      let swWordList = [];
+      for (let i = 0; i < swWordArray.length; ++i) {
+        this.newWord = swWordArray[i].replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
+        const { phonetic, definition } = await new Promise((resolve) => {
+          this.wordDataResolver = resolve;
+        });
+        swWordList.push({
+          text: swWordArray[i],
+          phonetic,
+          definition,
+          swHover: false,
+        });
+      }
+      this.newWord = "";
+      return swWordList;
+    },
+
+    removeFromSpelling(index) {
+      if (this.isCorrect) return;
+      this.historyStack.push({
+        currentSpelling: [...this.currentSpelling],
+        shuffledItems: [...this.shuffledItems],
+      });
+      const item = this.currentSpelling.splice(index, 1)[0];
+      this.shuffledItems.push(item);
+      this.checkCorrectness();
+    },
+
+    switchDRead() {
+      this.dRead = this.dRead + 1;
+      if (this.dRead >= 5) this.dRead = 1;
+    },
+    generateCloze() {
+      this.reset(false);
+      this.showCloze = true;
+      this.showFeedback = false;
+
+      const trimmedInput = this.inputSentence.trim();
+
+      this.isSingleWord = this.checkIfSingleWord(trimmedInput);
+
+      if (this.isSingleWord) {
+        this.processWord(trimmedInput);
+      } else {
+        this.processSentence(trimmedInput);
+      }
+    },
+
+    checkIfSingleWord(input) {
+      return (
+        !/\s+/.test(input) &&
+        /^[a-zA-Z'-]+$/.test(input.replace(/[^a-zA-Z']/g, ""))
+      );
+    },
+
+    processSentence(sentence) {
+      const words = this.tokenizeSentence(sentence);
+      this.originalWords = [...words];
+
+      const totalWords = words.filter((word) => this.isWord(word)).length;
+      const blankCount = Math.max(
+        1,
+        Math.round((totalWords * this.percentage) / 100)
+      );
+
+      this.selectRandomBlanks(words, blankCount);
+
+      this.processedItems = words.map((word, index) => {
+        const isBlank = this.blankIndices.includes(index);
+        return {
+          text: word,
+          isBlank,
+          isChecked: false,
+          isCorrect: false,
+        };
+      });
+
+      this.userAnswers = Array(words.length).fill("");
+    },
+
+    processWord(word) {
+      const letters = word.split("");
+      this.originalLetters = [...letters];
+
+      const letterCount = letters.length;
+      const blankCount = Math.max(
+        1,
+        Math.min(
+          letterCount - 1,
+          Math.round((letterCount * this.percentage) / 100)
+        )
+      );
+
+      this.selectRandomLetterBlanks(letterCount, blankCount);
+
+      this.processedLetters = letters.map((char, index) => {
+        const isBlank = this.blankLetterIndices.includes(index);
+        return {
+          char,
+          isBlank,
+          isAnswered: false,
+          isCorrect: false,
+        };
+      });
+
+      this.userLetterAnswers = Array(letters.length).fill("");
+    },
+
+    tokenizeSentence(sentence) {
+      return sentence.match(/\b\w+\b|[^\w\s]|\s+/g) || [];
+    },
+
+    isWord(token) {
+      return /\b\w+\b/.test(token) && token.trim() !== "";
+    },
+
+    selectRandomBlanks(tokens, count) {
+      const wordIndices = [];
+      tokens.forEach((token, index) => {
+        if (this.isWord(token)) {
+          wordIndices.push(index);
+        }
+      });
+
+      const actualCount = Math.min(count, wordIndices.length);
+      const shuffled = [...wordIndices].sort(() => 0.5 - Math.random());
+      this.blankIndices = shuffled.slice(0, actualCount);
+    },
+
+    selectRandomLetterBlanks(totalLetters, count) {
+      const indices = Array.from({ length: totalLetters }, (_, i) => i);
+      const shuffled = indices.sort(() => 0.5 - Math.random());
+      this.blankLetterIndices = shuffled.slice(0, count);
+    },
+
+    checkAnswer(index) {
+      const userAnswer = this.userAnswers[index]?.trim().toLowerCase() || "";
+      const correctAnswer =
+        this.originalWords[index]?.trim().toLowerCase() || "";
+
+      this.processedItems[index].isChecked = true;
+      this.processedItems[index].isCorrect = userAnswer === correctAnswer;
+
+      this.checkAllAnswered();
+    },
+
+    handleLetterInput(index) {
+      const originalCase = this.originalLetters[index];
+      let userInput = this.userLetterAnswers[index] || "";
+
+      userInput =
+        originalCase === originalCase.toUpperCase()
+          ? userInput.toUpperCase()
+          : userInput.toLowerCase();
+
+      this.userLetterAnswers[index] = userInput;
+    },
+
+    checkLetterAnswer(index) {
+      const userInput = this.userLetterAnswers[index] || "";
+      this.processedLetters[index].isChecked = true;
+      this.processedLetters[index].isCorrect =
+        userInput === this.originalLetters[index];
+      this.checkAllAnswered();
+    },
+
+    checkAllAnswers() {
+      if (this.isSingleWord) {
+        this.blankLetterIndices.forEach((index) => {
+          this.checkLetterAnswer(index);
+        });
+      } else {
+        this.blankIndices.forEach((index) => {
+          this.checkAnswer(index);
+        });
+      }
+      this.showFeedback = true;
+    },
+
+    checkAllAnswered() {
+      let allAnswered = false;
+
+      if (this.isSingleWord) {
+        allAnswered = this.blankLetterIndices.every(
+          (index) => this.userLetterAnswers[index] !== ""
+        );
+      } else {
+        allAnswered = this.blankIndices.every(
+          (index) => this.userAnswers[index] !== ""
+        );
+      }
+
+      if (allAnswered) {
+        this.showFeedback = true;
+      }
+    },
+
+    reset(clearInput = true) {
+      if (clearInput) {
+        this.inputSentence = "";
+      }
+      this.processedItems = [];
+      this.userAnswers = [];
+      this.originalWords = [];
+      this.blankIndices = [];
+      this.processedLetters = [];
+      this.userLetterAnswers = [];
+      this.originalLetters = [];
+      this.blankLetterIndices = [];
+      this.showCloze = false;
+      this.showFeedback = false;
+      this.isSingleWord = false;
+    },
+
+    splitInput() {
+      if (!this.inputWord || this.inputWord.trim() == "") return;
+
+      const processedInput = this.inputWord.trim();
+      this.isSentence = processedInput.includes(" ");
+
+      if (this.isSentence && !this.splitSentenceByLetter) {
+        this.originalItems = processedInput
+          .split(" ")
+          .filter((word) => word.trim() !== "");
+        if (this.originalItems.length < 2) {
+          return;
+        }
+      } else {
+        let processedChars = processedInput;
+        if (processedChars.length < 1) {
+          return;
+        }
+        this.originalItems = processedChars.split("");
+      }
+
+      this.originalValue =
+        this.isSentence && !this.splitSentenceByLetter
+          ? this.originalItems.join(" ")
+          : this.originalItems.join("");
+      this.showGame = true;
+      this.resetSpelling();
+    },
+
+    addToSpelling(item) {
+      if (item && item.trim() !== "") {
+        if (this.newWord.trim() == item.trim()) this.clickWord();
+        else this.newWord = item.trim();
+        setTimeout(() => {
+          this.newWord = "";
+        }, 500);
+      }
+      if (this.isCorrect) return;
+
+      this.historyStack.push({
+        currentSpelling: [...this.currentSpelling],
+        shuffledItems: [...this.shuffledItems],
+      });
+
+      const index = this.shuffledItems.indexOf(item);
+      if (index !== -1) {
+        this.shuffledItems.splice(index, 1);
+        this.currentSpelling.push(item);
+        this.checkCorrectness();
+      }
+    },
+
+    undoLastStep() {
+      if (this.showSpell) {
+        if (!this.historyStack.length) return;
+
+        const lastState = this.historyStack.pop();
+        this.currentSpelling = lastState.currentSpelling;
+        this.shuffledItems = lastState.shuffledItems;
+        this.checkCorrectness();
+      } else if (this.showCloze) {
+        this.userAnswers = [];
+      }
+    },
+
+    checkCorrectness() {
+      const currentValue =
+        this.isSentence && !this.splitSentenceByLetter
+          ? this.currentSpelling.join(" ")
+          : this.currentSpelling.join("");
+      this.isCorrect = currentValue === this.originalValue;
+    },
+
+    resetSpelling() {
+      if (this.showSpell) {
+        this.currentSpelling = [];
+        this.isCorrect = false;
+        this.shuffledItems = this.shuffleItems([...this.originalItems]);
+        let addCount = 0;
+        if (!(this.isSentence && !this.splitSentenceByLetter))
+          addCount = Math.floor(this.shuffledItems.length * this.moreLetters);
+        for (let i = 0; i < addCount; i++) {
+          const randomLetter = this.getRandomLetter();
+          const insertIndex = Math.floor(
+            Math.random() * (this.shuffledItems.length + 1)
+          );
+          this.shuffledItems.splice(insertIndex, 0, randomLetter);
+        }
+        this.historyStack = [];
+      } else if (this.showCloze) {
+        this.generateCloze();
+      }
+    },
+
+    getRandomLetter() {
+      return String.fromCharCode(97 + Math.floor(Math.random() * 26));
+    },
+
+    shuffleItems(items) {
+      const shuffled = [...items];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
     },
 
     toDisableDrag() {
       if (!this.isMobile && this.disableDrag) {
         this.disableDrag();
+      }
+    },
+
+    handleKeyPress(event) {
+      if (this.typingSound) {
+        const isLetterOrPunctuation = /^[a-zA-Z ,.;:?]$/.test(event.key);
+        if (
+          isLetterOrPunctuation &&
+          !this.showEditNew &&
+          document.getElementById("editArea3") &&
+          document.getElementById("editArea3").contains(document.activeElement)
+        ) {
+          this.keySound.play();
+        }
       }
     },
 
@@ -5060,13 +6840,17 @@ export default {
       this.transcriptionResult = this.transcriptionResult
         .replaceAll("; ", ";")
         .replaceAll(";", "; ");
-      let newText = document.getElementById("newText");
-      newText.style.height = "auto"; // reset height
-      setTimeout(() => {
-        newText.style.height = newText.scrollHeight + "px";
-        let allText = document.getElementById("allText");
-        allText.scrollTop = allText.scrollHeight;
-      }, 1);
+      if (this.isEditSubandNotes) {
+        let newText = document.getElementById("newText");
+        newText.style.height = "auto"; // reset height
+        setTimeout(() => {
+          newText.style.height = newText.scrollHeight + "px";
+          let allText = document.getElementById("allText");
+          allText.scrollTop = allText.scrollHeight;
+        }, 1);
+      } else {
+        this.transcriptionResult = this.transcriptionResult.trim();
+      }
     },
 
     nextSen() {
@@ -5084,7 +6868,11 @@ export default {
 
     transcribe() {
       if (this.isFromLocal == 0) this.startRecognition();
-      else this.transcribeSegment();
+      else {
+        setTimeout(() => {
+          this.transcribeSegment();
+        }, 100);
+      }
     },
 
     playTranscribe() {
@@ -5106,14 +6894,15 @@ export default {
           this.currentMedia.play();
         }, 20);
       } else this.currentMedia.play();
-
-      this.currentMedia.currentTime = startSecond1;
+      let startA = Math.min(this.currentMedia.duration - 1, startSecond1);
+      this.currentMedia.currentTime = startA;
       this.currentMedia.playbackRate = this.speedTranscribe;
 
       this.intervalId = setInterval(() => {
         if (
           this.currentMedia.currentTime >=
-          this.srtSubtitles[this.sentenceIndex - 1].endTime
+            this.srtSubtitles[this.sentenceIndex - 1].endTime ||
+          this.currentMedia.currentTime >= this.currentMedia.duration - 0.5
         ) {
           if (this.intervalId) {
             clearInterval(this.intervalId);
@@ -5130,30 +6919,36 @@ export default {
         this.openAlert(1, this.$t("repeater.tsc16"));
         return;
       }
-      this.isProcessing2 = true;
-      const startSecond = this.startTimeTemp;
-      this.currentMedia.play();
-      this.currentMedia.currentTime = startSecond;
-      this.currentMedia.playbackRate = this.speedTranscribe;
+      if (this.isEditSubandNotes) {
+        this.isProcessing2 = true;
+        const startSecond = this.startTimeTemp;
+        this.currentMedia.play();
+        let startA = Math.min(this.currentMedia.duration - 1, startSecond);
+        this.currentMedia.currentTime = startA;
+        this.currentMedia.playbackRate = this.speedTranscribe;
+      }
       this.isRecordingTrans = true;
       this.transcriptionResult = "";
       this.recognition1.start();
 
-      this.intervalId = setInterval(() => {
-        if (
-          this.currentMedia.currentTime >=
-          this.srtSubtitles[this.sentenceIndex - 1].endTime
-        ) {
-          if (this.intervalId) {
-            clearInterval(this.intervalId);
+      if (this.isEditSubandNotes) {
+        this.intervalId = setInterval(() => {
+          if (
+            this.currentMedia.currentTime >=
+              this.srtSubtitles[this.sentenceIndex - 1].endTime ||
+            this.currentMedia.currentTime >= this.currentMedia.duration - 0.5
+          ) {
+            if (this.intervalId) {
+              clearInterval(this.intervalId);
+            }
+            this.stopRecognition();
           }
-          this.stopRecognition();
-        }
-      }, 100);
+        }, 100);
+      }
     },
 
     stopRecognition() {
-      this.currentMedia.pause();
+      if (this.currentMedia) this.currentMedia.pause();
       this.isRecordingTrans = false;
       this.recognition1.stop();
       this.isProcessing2 = false;
@@ -5166,7 +6961,7 @@ export default {
       ) {
         this.speechRecognitionSupported = true;
       } else return;
-      // generate voice recognition instance
+      // generate a voice recognition instance
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition1 = new SpeechRecognition();
@@ -5207,32 +7002,45 @@ export default {
       this.isProcessing1 = true;
       if (!this.transcribeUrl) this.transcribeUrl = "defaultkey1,eastasia";
       this.transcribeUrl = this.transcribeUrl.toString();
-      if (this.transcribeUrl.includes("defaultkey"))
-        this.openAlert(1, this.$t("repeater.tsc18"));
-      this.transcriptionResult = this.$t("repeater.tsc19");
+      if (this.transcribeUrl.includes("defaultkey")) {
+        this.showAlert = true;
+        setTimeout(() => {
+          this.showAlert = false;
+        }, 2000);
+      }
+      if (this.isEditSubandNotes)
+        this.transcriptionResult = this.$t("repeater.tsc19");
+      else this.transcriptionResult = "";
       try {
-        const startSecond = this.startTimeTemp;
-        const endSecond = this.endTimeTemp;
-        if (endSecond - startSecond >= 15) {
-          this.openAlert(1, this.$t("repeater.tsc20"));
-          this.transcriptionResult = "";
-          this.isProcessing1 = false;
-          return;
+        let audioBlob = null;
+        if (this.isEditSubandNotes) {
+          const startSecond = this.startTimeTemp;
+          const endSecond = this.endTimeTemp;
+          if (endSecond - startSecond >= 15) {
+            this.openAlert(1, this.$t("repeater.tsc20"));
+            this.transcriptionResult = "";
+            this.isProcessing1 = false;
+            return;
+          }
+          // create a virtual video element.
+          const virtualVideo = document.createElement("video");
+          virtualVideo.style.display = "none";
+          virtualVideo.width = 0;
+          virtualVideo.height = 0;
+          virtualVideo.src = this.raw;
+          document.body.appendChild(virtualVideo);
+          //extract and transform audio
+          audioBlob = await this.extractAudioSegment(virtualVideo, startSecond);
+          // destroy the virtual video to disconnect the audioContext.
+          virtualVideo.remove();
+        } else {
+          try {
+            const wavBlob = await this.mp3ToWav(this.audioBlob);
+            audioBlob = wavBlob;
+          } catch (error) {
+            console.error("处理音频时出错:", error);
+          }
         }
-        // create a virtual video element.
-        const virtualVideo = document.createElement("video");
-        virtualVideo.style.display = "none";
-        virtualVideo.width = 0;
-        virtualVideo.height = 0;
-        virtualVideo.src = this.raw;
-        document.body.appendChild(virtualVideo);
-        //extract and transform audio
-        const audioBlob = await this.extractAudioSegment(
-          virtualVideo,
-          startSecond
-        );
-        // destroy the virtual video to disconnect the audioContext.
-        virtualVideo.remove();
         const result = await this.callAzureSpeechService(audioBlob);
         this.transcriptionResult = result;
         this.formatTranscriptionResult();
@@ -5242,6 +7050,125 @@ export default {
       } finally {
         this.isProcessing1 = false;
       }
+    },
+
+    mp3ToWav(mp3Blob) {
+      function convertAudioBufferToWav(audioBuffer) {
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        let interleaved;
+        if (numChannels === 2) {
+          interleaved = interleave(
+            audioBuffer.getChannelData(0),
+            audioBuffer.getChannelData(1)
+          );
+        } else {
+          interleaved = audioBuffer.getChannelData(0);
+        }
+
+        const buffer = new ArrayBuffer(44 + interleaved.length * 2);
+        const view = new DataView(buffer);
+
+        writeWavFileHeader(view, interleaved.length, numChannels, sampleRate);
+
+        let offset = 44;
+        for (let i = 0; i < interleaved.length; i++) {
+          const sample = Math.max(-1, Math.min(1, interleaved[i]));
+          view.setInt16(
+            offset,
+            sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+            true
+          );
+          offset += 2;
+        }
+
+        return buffer;
+      }
+
+      function interleave(left, right) {
+        const length = left.length + right.length;
+        const result = new Float32Array(length);
+
+        let index = 0;
+        let inputIndex = 0;
+
+        while (index < length) {
+          result[index++] = left[inputIndex];
+          result[index++] = right[inputIndex];
+          inputIndex++;
+        }
+
+        return result;
+      }
+
+      function writeWavFileHeader(view, length, numChannels, sampleRate) {
+        view.setUint8(0, "R".charCodeAt(0));
+        view.setUint8(1, "I".charCodeAt(0));
+        view.setUint8(2, "F".charCodeAt(0));
+        view.setUint8(3, "F".charCodeAt(0));
+
+        const fileSize = 36 + length * 2;
+        view.setUint32(4, fileSize, true);
+
+        view.setUint8(8, "W".charCodeAt(0));
+        view.setUint8(9, "A".charCodeAt(0));
+        view.setUint8(10, "V".charCodeAt(0));
+        view.setUint8(11, "E".charCodeAt(0));
+
+        view.setUint8(12, "f".charCodeAt(0));
+        view.setUint8(13, "m".charCodeAt(0));
+        view.setUint8(14, "t".charCodeAt(0));
+        view.setUint8(15, " ".charCodeAt(0));
+
+        view.setUint32(16, 16, true);
+
+        view.setUint16(20, 1, true);
+
+        view.setUint16(22, numChannels, true);
+
+        view.setUint32(24, sampleRate, true);
+
+        view.setUint32(28, sampleRate * numChannels * 2, true);
+
+        view.setUint16(32, numChannels * 2, true);
+
+        view.setUint16(34, 16, true);
+
+        view.setUint8(36, "d".charCodeAt(0));
+        view.setUint8(37, "a".charCodeAt(0));
+        view.setUint8(38, "t".charCodeAt(0));
+        view.setUint8(39, "a".charCodeAt(0));
+
+        view.setUint32(40, length * 2, true);
+      }
+
+      return new Promise((resolve, reject) => {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const fileReader = new FileReader();
+
+        fileReader.onload = function () {
+          audioContext.decodeAudioData(
+            this.result,
+            (audioBuffer) => {
+              const wavBuffer = convertAudioBufferToWav(audioBuffer);
+              const wavBlob = new Blob([wavBuffer], { type: "audio/wav" });
+              resolve(wavBlob);
+              audioContext.close();
+            },
+            (error) => {
+              audioContext.close();
+              reject(new Error(error.message));
+            }
+          );
+        };
+
+        fileReader.onerror = function () {
+          reject(new Error(this.error.message));
+        };
+
+        fileReader.readAsArrayBuffer(mp3Blob);
+      });
     },
 
     async extractAudioSegment(video, startSecond) {
@@ -5379,7 +7306,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob data to the azure server.
+      // send Blob data to server..........................................................................................
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
@@ -5423,7 +7350,8 @@ export default {
         const tempCon = this.dictationArray.find(
           (item) => item.id === this.sentenceIndex
         );
-        if (tempCon) this.dictationContent = tempCon.con;
+        if (tempCon && this.allowLoadDiction)
+          this.dictationContent = tempCon.con;
 
         this.isShowLine1 = true;
         this.isShowLine2 = true;
@@ -5509,6 +7437,9 @@ export default {
     testTransUrl() {
       this.newWord = "Hello";
       this.showTransPage();
+      setTimeout(() => {
+        this.newWord = "";
+      }, 1000);
     },
 
     testTranslatorUrl() {
@@ -5521,6 +7452,9 @@ export default {
       } else {
         this.openAlert(1, this.$t("repeater.alert007"));
       }
+      setTimeout(() => {
+        this.newWord = "";
+      }, 1000);
     },
 
     openAlert(a, x, c, d) {
@@ -5541,7 +7475,6 @@ export default {
       if (this.confirmType == "downloadDictation") {
         this.downloadDicRec();
       } else if (this.confirmType == "fetch") {
-        this.favList = [];
         if (this.isAutoDetectLang) this.autoDetectLangInTrans();
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
@@ -5553,12 +7486,7 @@ export default {
       } else if (this.confirmType == "fetchRevision") {
         this.reviseData.splice(this.tempIndex, 1);
       } else if (this.confirmType == "wrongSrc") {
-        setTimeout(() => {
-          if (this.isFavOnPlay && this.isPlayFullFavList) {
-            this.switchIsFav();
-          }
-          return;
-        }, 500);
+        console.log("wrongSrc");
       } else if (this.confirmType == "delete") {
         this.deleteSentence();
       } else if (this.confirmType == "deleteWord") {
@@ -5580,6 +7508,8 @@ export default {
         this.readyStatus();
       } else if (this.confirmType == "delRevision") {
         this.reviseData.splice(this.tempIndex, 1);
+      } else if (this.confirmType == "saveWordList") {
+        this.saveSpecialSub(8);
       }
       return;
     },
@@ -5635,7 +7565,7 @@ export default {
 
     onSubtools() {
       this.showsubTools = true;
-      this.showAddNew = false;
+      this.showEditNew = false;
       this.cleanUp1();
       this.cleanUp2();
     },
@@ -5643,7 +7573,7 @@ export default {
     onSubtools1() {
       this.showsubTools1 = true;
       this.transcriptionResult = "";
-      this.showAddNew = false;
+      this.showEditNew = false;
       this.cleanUp1();
       this.cleanUp2();
     },
@@ -5687,6 +7617,7 @@ export default {
     },
     handleCancel1() {
       this.showsubTools1 = false;
+      this.showDicSetting = false;
     },
 
     handleCancel10() {
@@ -5711,7 +7642,7 @@ export default {
         } else if (type == 3) {
           this.originDectLang();
         } else if (type == 2) {
-          if (this.showAddNew || this.showEditNew) {
+          if (this.showEditNew || this.showSenWord) {
             this.getTrans();
           }
         }
@@ -5814,7 +7745,6 @@ export default {
       const finalUrl = `${
         this.endpointAli
       }/?${queryString}&Signature=${this.percentEncode(signature)}`;
-
       fetch(finalUrl)
         .then((response) => response.text())
         .then((data) => {
@@ -5854,8 +7784,14 @@ export default {
                   return;
                 }
 
-                if (this.showAddNew) {
+                if (this.showEditNew || this.showSenWord) {
                   this.newTranslation = translatedElement.textContent;
+                  if (this.showSenWord)
+                    window.localStorage.setItem(
+                      "word" + this.newWord,
+                      this.newTranslation
+                    );
+                  this.getPromise();
                 }
               } else {
                 this.translatedText = translatedElement.textContent;
@@ -5869,7 +7805,15 @@ export default {
                   this.openAlert(1, this.$t("repeater.alert007"));
                   return;
                 }
-                if (this.showAddNew || this.showEditNew) {
+                if (this.showSenWord) {
+                  this.newTranslation = "";
+                  window.localStorage.setItem(
+                    "word" + this.newWord,
+                    this.newTranslation
+                  );
+                  this.getPromise();
+                }
+                if (this.showEditNew) {
                   this.getTrans();
                 }
               } else {
@@ -5887,7 +7831,15 @@ export default {
                 this.openAlert(1, this.$t("repeater.alert004"));
                 return;
               }
-              if (this.showAddNew || this.showEditNew) {
+              if (this.showSenWord) {
+                this.newTranslation = "";
+                window.localStorage.setItem(
+                  "word" + this.newWord,
+                  this.newTranslation
+                );
+                this.getPromise();
+              }
+              if (this.showEditNew) {
                 this.getTrans();
               }
             } else {
@@ -5906,7 +7858,15 @@ export default {
               this.openAlert(1, this.$t("repeater.alert005"));
               return;
             }
-            if (this.showAddNew || this.showEditNew) {
+            if (this.showSenWord) {
+              this.newTranslation = "";
+              window.localStorage.setItem(
+                "word" + this.newWord,
+                this.newTranslation
+              );
+              this.getPromise();
+            }
+            if (this.showEditNew) {
               this.getTrans();
             }
           } else {
@@ -6064,7 +8024,7 @@ export default {
         return;
       }
       let filteredArray = "";
-      if (this.showAddNew || this.showEditNew) {
+      if (this.showEditNew || this.showSenWord) {
         if (this.targetLanguage == "aa") {
           this.targetLanguage = this.langInTransLine.replace(/-[^-]*$/, "");
         }
@@ -6112,12 +8072,25 @@ export default {
           this.openAlert(1, this.translatedText);
           return;
         }
-        if (this.showAddNew) {
+        if (this.showEditNew || this.showSenWord) {
           this.newTranslation = this.translatedText;
+          if (this.showSenWord)
+            window.localStorage.setItem(
+              "word" + this.newWord,
+              this.newTranslation
+            );
+          this.getPromise();
         } else this.saveTranslate();
       } catch (error) {
         this.translatedText = "";
-        if (this.showAddNew || this.showEditNew) {
+        if (this.showSenWord) {
+          this.newTranslation = "";
+          window.localStorage.setItem(
+            "word" + this.newWord,
+            this.newTranslation
+          );
+          this.getPromise();
+        } else if (this.showEditNew) {
           this.getTrans();
         } else {
           this.openAlert(1, this.$t("repeater.alert007"));
@@ -6231,6 +8204,97 @@ export default {
       }
     },
 
+    async getDictionary() {
+      try {
+        let urla = api.getDownloadURL(this.req, true);
+        let url = urla.split("/api/")[0] + "/static/dictionary01.txt";
+        var res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`${res.status}`);
+        }
+        const textContent = await res.text();
+        const lines = textContent.split(/\r?\n/);
+        const wordList = lines
+          .filter((line) => line.trim() !== "")
+          .map((line, index) => {
+            const parts = line.split("||");
+            if (parts.length < 11) {
+              console.warn(`row ${index + 1} WrongFormat: ${line}`);
+              return null;
+            }
+            return {
+              number: parts[0],
+              word: parts[1],
+              pronunciation: parts[2],
+              phoneticSplit: parts[3],
+              syllable: parts[4],
+              roots: parts[5],
+              partOfSpeech: parts[6],
+              collocation: parts[7],
+              exampleSentence: parts[8],
+              exampleTranslation: parts[9],
+              level: parts[10],
+            };
+          })
+          .filter((item) => item !== null);
+        this.dictionary = wordList;
+      } catch (e) {
+        console.error(e);
+      }
+    },
+
+    async getNewWordList() {
+      try {
+        var content = await api.fetch(
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt"
+        );
+        const lines = content.content.split(/\r?\n/);
+        const wordList = lines
+          .filter((line) => line.trim() !== "")
+          .map((line, index) => {
+            const parts = line.split("||");
+            if (parts.length < 18) {
+              console.warn(`row ${index + 1} WrongFormat: ${line}`);
+              return null;
+            }
+            return {
+              number: parts[0],
+              word: parts[1],
+              pronunciation: parts[2],
+              phoneticSplit: parts[3],
+              syllable: parts[4],
+              roots: parts[5],
+              partOfSpeech: parts[6],
+              collocation: parts[7],
+              exampleSentence: parts[8],
+              exampleTranslation: parts[9],
+              level: parts[10],
+              wordNote: parts[11],
+              familiarity: parts[12],
+              date: parts[13],
+              require: parts[14],
+              temp1: parts[15],
+              temp2: parts[16],
+              temp3: parts[17],
+            };
+          })
+          .filter((item) => item !== null);
+        this.wordList = wordList;
+      } catch (e) {
+        alert("找不到生词表PDJ-wordlist.txt，将在添加生词时新建。");
+      }
+    },
+
+    findWord(dictionary, targetWord) {
+      if (!Array.isArray(dictionary)) return [];
+      else
+        return dictionary.find((item) => {
+          return (
+            item.word && item.word.toLowerCase() === targetWord.toLowerCase()
+          );
+        });
+    },
+
     selectOption(option) {
       if (this.timeOutId1) clearTimeout(this.timeOutId1);
       this.subtitleLang = Number(option.split(".")[0]);
@@ -6274,13 +8338,34 @@ export default {
       this.openAlert(1, this.$t("repeater.alertAutoDetect"));
     },
 
+    alertOriginTTS() {
+      this.openAlert(1, this.$t("repeater.alertOriginTTS"));
+    },
+
+    closeAllParts() {
+      this.showSpell = false;
+      this.showCloze = false;
+      this.showSenWord = false;
+      if (this.isRecording) this.recording();
+    },
+
     recording() {
+      this.showSpell = false;
+      this.showCloze = false;
+      this.showSenWord = false;
+      this.cleanUp1();
+      this.cleanUp2();
       if (this.isRecording) {
         this.stopRecording();
+        if (this.isFromLocal == 1) this.transcribe();
+        else this.stopRecognition();
       } else {
+        this.transcriptionResult = "";
         this.startRecording();
+        if (this.isFromLocal != 1) this.transcribe();
       }
     },
+
     async startRecording() {
       this.cleanUp1();
       this.cleanUp2();
@@ -6309,15 +8394,13 @@ export default {
     },
 
     stopRecording() {
-      if (this.mediaRecorder) {
-        this.mediaRecorder.stop();
-        setTimeout(() => {
-          this.playRecording();
-        }, 100);
-      }
+      if (this.mediaRecorder) this.mediaRecorder.stop();
     },
 
     playRecording() {
+      this.showSpell = false;
+      this.showCloze = false;
+      this.showSenWord = false;
       if (this.audioUrl) {
         this.cleanUp1();
         this.cleanUp2();
@@ -6799,15 +8882,18 @@ export default {
     updateRgns() {
       this.regions.clearRegions();
       for (var i = 1; i <= this.srtSubtitles.length; ++i) {
-        this.regions.addRegion({
-          start: this.srtSubtitles[i - 1].startTime,
-          end: this.srtSubtitles[i - 1].endTime - 0.03,
-          id: i,
-          content: i.toString(),
-          color: "rgba(0, 255, 0, 0.25)",
-          drag: !this.isMobile,
-          resize: true,
-        });
+        if (this.srtSubtitles[i - 1].endTime <= this.currentMedia.duration) {
+          this.lastI = i;
+          this.regions.addRegion({
+            start: this.srtSubtitles[i - 1].startTime,
+            end: this.srtSubtitles[i - 1].endTime - 0.03,
+            id: i,
+            content: i.toString(),
+            color: "rgba(0, 255, 0, 0.25)",
+            drag: !this.isMobile,
+            resize: true,
+          });
+        }
       }
     },
 
@@ -6883,9 +8969,8 @@ export default {
             PDJcontent.split(this.reqF.name + "private")[1].split("\n\n")[0]
           );
         } else this.setPara(PDJcontent.split("\n\n")[0]);
-
         this.reviseData = JSON.parse(PDJcontent.split("\n\n\n\n")[1]);
-        this.favList = JSON.parse(PDJcontent.split("Subtitle:")[1]);
+        this.PDJWordListContent = PDJcontent.split("PDJWordList::")[1];
         this.calcFav();
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
@@ -6962,6 +9047,22 @@ export default {
         this.langInTransLine = JSON.parse(PDJcontent.split("::")[11]);
         this.lineNumOfTrans = Number(JSON.parse(PDJcontent.split("::")[12]));
       }
+      if (!this.isAutoDetectLang && PDJcontent.split("::")[45]) {
+        this.langInOriginLine = JSON.parse(PDJcontent.split("::")[44]);
+        this.lineNumOfOrigin = Number(JSON.parse(PDJcontent.split("::")[45]));
+      }
+      if (PDJcontent.split("::")[46])
+        this.TTSurlO = JSON.parse(PDJcontent.split("::")[46]);
+      if (PDJcontent.split("::")[47] && !this.fakeAudio)
+        this.readOriginByTTS = JSON.parse(PDJcontent.split("::")[47]);
+      if (PDJcontent.split("::")[48])
+        this.autoRealCheck = JSON.parse(PDJcontent.split("::")[48]);
+      if (PDJcontent.split("::")[49])
+        this.allowLoadDiction = JSON.parse(PDJcontent.split("::")[49]);
+      if (PDJcontent.split("::")[50])
+        this.typingSound = JSON.parse(PDJcontent.split("::")[50]);
+      if (PDJcontent.split("::")[51])
+        this.isFromLocal = Number(JSON.parse(PDJcontent.split("::")[51]));
     },
 
     autoSet() {
@@ -7128,7 +9229,7 @@ export default {
               vmm.cachedKeys = vmcachedKeys;
               setTimeout(() => {
                 if (keyName !== vmm.mediaName) {
-                  return; // may multiple run at the same time, limit up to 2.
+                  return; // may multiple run at the same time, so need to limit up to 2.
                 }
                 if (!vmm.isSingle && !vmm.currentMedia.paused) {
                   window.localStorage.setItem(
@@ -7276,17 +9377,10 @@ export default {
 
     calcFav() {
       this.isFav = false;
-      if (this.isFavOnPlay) this.isFav = true;
-      else if (this.currentFileFavList) {
-        for (var i = 0; i < this.currentFileFavList.length; ++i) {
-          if (
-            this.currentFileFavList[i].startTime ==
-            this.srtSubtitles[this.sentenceIndex - 1].startTime
-          ) {
-            this.isFav = true;
-          }
-        }
-      }
+      if (
+        this.srtSubtitles[this.sentenceIndex - 1]?.content?.includes("[star];")
+      )
+        this.isFav = true;
     },
 
     async revisionPlay(name, startIndex, oRawPath, index) {
@@ -7339,16 +9433,16 @@ export default {
     },
 
     calcRaw() {
+      if (this.fakeAudio) {
+        this.raw = this.fakeAudioUrl;
+        return;
+      }
       let srtUrl = api.getDownloadURL(this.reqF, true);
       if (this.isFavOnPlay && this.isPlayFullFavList) {
-        this.raw =
-          srtUrl.split("/raw/")[0] +
-          "/raw/" +
-          this.srtSubtitles[this.sentenceIndex - 1].originalRawPath.split(
-            "?"
-          )[0] +
-          "?" +
-          srtUrl.split("?")[1];
+        this.raw = this.fakeAudioUrl;
+        this.fakeAudio = true;
+        this.isMediaType = 1;
+        return;
       } else {
         if (srtUrl && this.isMediaType == 1) {
           this.raw = srtUrl.replace(".srt", ".mp3");
@@ -7454,12 +9548,10 @@ export default {
       }
     },
 
-    addANewWord() {
-      this.showEditNew = true;
-    },
-
-    saveWordToSRT() {
-      let newphrase = "[" + this.newWord + ":" + this.newTranslation + "]; ";
+    saveWordToSRT(x) {
+      let newphrase = "";
+      if (x == 1) newphrase = "[star];";
+      else newphrase = "[" + this.newWord + "::" + this.newTranslation + "]; ";
       this.cleanUp1();
       this.cleanUp2();
       this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -7468,22 +9560,211 @@ export default {
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[0];
       this.subSecLine =
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[1];
-      this.note =
-        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
+      if (
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
+        this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")[2]
+          .includes("[" + this.newWord.trim() + "::")
+      ) {
+        let t1 = this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")[2]
+          .split("[" + this.newWord.trim() + "::")[1];
+        const index = t1.indexOf("];");
+        let part2 = index !== -1 ? t1.slice(index + 2) : t1;
+
+        this.note =
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")[2]
+            .split("[" + this.newWord.trim() + "::")[0] + part2;
+      } else {
+        this.note =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
+      }
       if (this.note == undefined) this.note = "";
       this.note = this.note + newphrase;
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
         this.note;
       this.onEdit = true;
       this.saveSub();
-      this.showAddNew = false;
       this.showEditNew = false;
+      if (x != 1) this.saveToWordList();
+    },
+
+    async saveToWordList() {
+      const date = Date.now();
+      let newW = null;
+      if (this.listWord) {
+        this.updateWordProperty(this.listWord, {
+          word: this.newWord,
+          partOfSpeech: this.newTranslation,
+          wordNote: this.wordNotes,
+          date: date,
+        });
+      } else if (this.dictionaryWord) {
+        let ex1 = "";
+        let ex2 = "";
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n") &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfTrans - 1
+          ] &&
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")
+            [this.lineNumOfTrans - 1].trim() !== "" &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfOrigin - 1
+          ]
+        ) {
+          ex2 =
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+              this.lineNumOfTrans - 1
+            ];
+          ex1 =
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+              this.lineNumOfOrigin - 1
+            ];
+        } else {
+          ex2 = this.dictionaryWord.exampleTranslation;
+          ex1 = this.dictionaryWord.exampleSentence;
+        }
+
+        newW = {
+          number: this.dictionaryWord.number,
+          word: this.dictionaryWord.word,
+          pronunciation: this.dictionaryWord.pronunciation,
+          phoneticSplit: this.dictionaryWord.phoneticSplit,
+          syllable: this.dictionaryWord.syllable,
+          roots: this.dictionaryWord.roots,
+          partOfSpeech: this.newTranslation,
+          collocation: this.dictionaryWord.collocation,
+          exampleSentence: ex1,
+          exampleTranslation: ex2,
+          level: this.dictionaryWord.level,
+          wordNote: this.wordNotes,
+          familiarity: 0,
+          date: date,
+          require: 0,
+          temp1: 0,
+          temp2: 0,
+          temp3: 0,
+        };
+        this.wordList.push(newW);
+      } else {
+        let ex1 = "";
+        let ex2 = "";
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n") &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfTrans - 1
+          ] &&
+          this.srtSubtitles[this.sentenceIndex - 1].content
+            .split("\r\n")
+            [this.lineNumOfTrans - 1].trim() !== "" &&
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfOrigin - 1
+          ]
+        ) {
+          ex2 =
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+              this.lineNumOfTrans - 1
+            ];
+          ex1 =
+            this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+              this.lineNumOfOrigin - 1
+            ];
+        } else {
+          ex2 = "...";
+          ex1 = "...";
+        }
+
+        newW = {
+          number: 20002,
+          word: this.newWord,
+          pronunciation: "...",
+          phoneticSplit: "...",
+          syllable: "...",
+          roots: "...",
+          partOfSpeech: this.newTranslation,
+          collocation: "...",
+          exampleSentence: ex1,
+          exampleTranslation: ex2,
+          level: "-self-",
+          wordNote: this.wordNotes,
+          familiarity: 0,
+          date: date,
+          require: 0,
+          temp1: 0,
+          temp2: 0,
+          temp3: 0,
+        };
+        this.wordList.push(newW);
+      }
+      this.saveToWordListFile();
+    },
+
+    async saveToWordListFile() {
+      try {
+        const lines = this.wordList.map((item) => {
+          const parts = [
+            item.number || 20002,
+            item.word != "" ? item.word : "-",
+            item.pronunciation != "" ? item.pronunciation : "-",
+            item.phoneticSplit != "" ? item.phoneticSplit : "-",
+            item.syllable != "" ? item.syllable : "-",
+            item.roots != "" ? item.roots : "-",
+            item.partOfSpeech != "" ? item.partOfSpeech : "-",
+            item.collocation != "" ? item.collocation : "-",
+            item.exampleSentence != "" ? item.exampleSentence : "-",
+            item.exampleTranslation != "" ? item.exampleTranslation : "-",
+            item.level || "0",
+            item.wordNote != "" ? item.wordNote : "-",
+            item.familiarity || 0,
+            item.date || 0,
+            item.require || 0,
+            item.temp1 || 0,
+            item.temp2 || 0,
+            item.temp3 || 0,
+          ];
+          return parts.join("||");
+        });
+
+        const textContent = lines.join("\n");
+        await api.post(
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt",
+          textContent,
+          true
+        );
+      } catch (error) {
+        alert(
+          "failed to save newWord to /!PDJ/user-" +
+            this.user.username +
+            "/PDJ-wordlist.txt",
+          error
+        );
+      }
+    },
+
+    updateWordProperty(targetWord, newProperties) {
+      const target = this.wordList.find(
+        (item) => item.word.toLowerCase() === targetWord.word.toLowerCase()
+      );
+
+      if (!target) {
+        console.warn(`not found: ${targetWord.word}`);
+        return;
+      }
+      Object.assign(target, newProperties);
     },
 
     getReader() {
-      if (!this.hasSpeechSynthesis) this.reader = 0;
+      if (!this.hasSpeechSynthesis) {
+        this.reader = 0;
+        this.readerO = 0;
+      }
       if (window.localStorage.getItem("reader") == null) this.reader = 1;
       else this.reader = Number(window.localStorage.getItem("reader"));
+      if (window.localStorage.getItem("readerO") == null) this.readerO = 1;
+      else this.readerO = Number(window.localStorage.getItem("readerO"));
     },
 
     initUtter() {
@@ -7501,8 +9782,9 @@ export default {
         if (this.isSystemTTS == "Yes") this.utterTransLine();
         if (this.isSystemTTS == "No" && this.audio) this.audio.muted = true;
         this.currentMedia.play();
-        this.currentMedia.currentTime =
-          this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        let tempS = this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        let startA = Math.min(this.currentMedia.duration - 1, tempS);
+        this.currentMedia.currentTime = startA;
         this.currentMedia.muted = true;
         setTimeout(() => {
           this.currentMedia.muted = false;
@@ -7532,6 +9814,16 @@ export default {
     singleModePlay() {
       this.cleanUp1();
       if (!this.isReadyToPlay) return;
+      if (this.isDictation) {
+        if (this.dRead == 4) return;
+        else if (this.dRead == 1) {
+          this.utterTransLine();
+          return;
+        } else if (this.dRead == 2) {
+          this.playSection();
+          return;
+        }
+      }
 
       if (this.replayFromStart) {
         if (
@@ -7569,7 +9861,22 @@ export default {
       this.cleanUp1();
       this.cleanUp2();
       if (this.isFavOnPlay && this.showNewWordList) return;
-      this.click();
+      if (this.showNewWordList && !this.withTrans) {
+        let y = this.newWordList[indexWordList].origin;
+        if (y) {
+          if (this.newWord.trim() != y.trim()) this.newWord = y.trim();
+          else this.clickWord();
+        }
+      } else this.click();
+    },
+
+    clickWord() {
+      if (this.isSystemTTS == "Yes") this.testTTSVoiceO(1);
+      else this.testTTSurlO(1);
+    },
+    clickTrans() {
+      if (this.isSystemTTS == "Yes") this.testTTSVoice(1);
+      else this.testTTSurl(1);
     },
 
     switchShowList() {
@@ -7650,6 +9957,29 @@ export default {
       }
     },
 
+    testTTSurlO(x) {
+      let originLineContent =
+        this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+          this.lineNumOfOrigin - 1
+        ];
+      let text =
+        originLineContent !== undefined && originLineContent !== " "
+          ? originLineContent
+          : "no content";
+      if (x == 1) text = this.newWord;
+      if (this.TTSurlO.includes("zure-tts:")) {
+        this.azureTTSO(text, 2);
+      } else {
+        let ttsFullUrlO = this.TTSurlO + text;
+        this.audio.src = ttsFullUrlO;
+        this.audio.playbackRate = this.curSpeed();
+        this.audio.play().catch(() => {
+          this.openAlert(1, this.$t("repeater.alert008"));
+        });
+        this.audio.addEventListener("ended", this.endUtterO, false);
+      }
+    },
+
     getTranscribeKey() {
       let r = "";
       let s = "";
@@ -7680,6 +10010,33 @@ export default {
     },
 
     azureTTS(text, type) {
+      this.ttsName = this.TTSurl + text;
+      let vmm = this;
+      localforage
+        .getItem(this.ttsName)
+        .then(function (value) {
+          if (!this.utterInProcess && type == 1) return;
+          vmm.audio.src = URL.createObjectURL(value);
+          vmm.audio.playbackRate = vmm.curSpeed();
+          vmm.audio.play();
+          if (type == 1) {
+            if (!vmm.isSingle && vmm.dubbingMode) {
+              vmm.utterInProcess = false;
+              return;
+            }
+            if (vmm.isDictation && !vmm.isEditSubandNotes && vmm.dRead == 1) {
+              vmm.utterInProcess = false;
+              return;
+            }
+            vmm.audio.addEventListener("ended", vmm.endUtter, false);
+          }
+        })
+        .catch(function () {
+          vmm.azureTTS1(text, type);
+        });
+    },
+
+    azureTTS1(text, type) {
       let r = "";
       let v = "";
       let s = "";
@@ -7755,19 +10112,29 @@ export default {
                   }, 1000);
                   return;
                 } else {
-                  this.openAlert(
-                    1,
-                    "Wrong Azure TTS settings, or network error!"
-                  );
+                  console.log("too many requests to azure TTS");
                   return;
                 }
               }
+
+              localforage
+                .setItem(this.ttsName, blob)
+                .then(() => {})
+                .catch(() => {});
               if (!this.utterInProcess && type == 1) return;
               this.audio.src = URL.createObjectURL(blob);
               this.audio.playbackRate = this.speedOfUtter;
               this.audio.play();
               if (type == 1) {
                 if (!this.isSingle && this.dubbingMode) {
+                  this.utterInProcess = false;
+                  return;
+                }
+                if (
+                  this.isDictation &&
+                  !this.isEditSubandNotes &&
+                  this.dRead == 1
+                ) {
                   this.utterInProcess = false;
                   return;
                 }
@@ -7809,6 +10176,122 @@ export default {
         });
     },
 
+    azureTTSO(text, type) {
+      this.ttsName = this.TTSurlO + text;
+      let vmm = this;
+      localforage
+        .getItem(this.ttsName)
+        .then(function (value) {
+          vmm.audio.src = URL.createObjectURL(value);
+          vmm.audio.playbackRate = vmm.curSpeed();
+          vmm.audio.play();
+          if (type == 2) {
+            vmm.audio.addEventListener("ended", vmm.endUtterO, false);
+          }
+        })
+        .catch(function () {
+          vmm.azureTTSO1(text, type);
+        });
+    },
+
+    azureTTSO1(text, type) {
+      let r = "";
+      let v = "";
+      let s = "";
+      let x;
+      if (this.TTSurlO.startsWith("azure-tts:defaultkey1")) {
+        x = this.getKeyFromServer(1);
+        s = x[0];
+        r = x[1];
+        if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
+        else v = "";
+      } else if (this.TTSurlO.startsWith("azure-tts:defaultkey2")) {
+        x = this.getKeyFromServer(2);
+        s = x[0];
+        r = x[1];
+        if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
+        else v = "";
+      } else if (this.TTSurlO.startsWith("azure-tts:defaultkey3")) {
+        x = this.getKeyFromServer(3);
+        s = x[0];
+        r = x[1];
+        if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
+        else v = "";
+      } else if (this.TTSurlO.startsWith("Azure-tts:defaultkey")) {
+        x = this.getKeyFromServer(6);
+        s = x[0];
+        r = x[1];
+        if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
+        else v = "";
+      } else {
+        s = this.TTSurlO.split("azure-tts:")[1].split(",")[0].trim();
+
+        if (this.TTSurlO.split(",")[1]) r = this.TTSurlO.split(",")[1].trim();
+        else r = "";
+
+        if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
+        else v = "";
+      }
+
+      const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
+      const accessToken = this.gT(s, r);
+
+      accessToken
+        .then((token) => {
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
+            "User-Agent": "YourAppName",
+          };
+
+          const body = `
+          <speak version='1.0' xml:lang='${v.replace(/-[^-]*$/, "")}'>
+            <voice name='${v}'>
+              ${text}
+            </voice>
+          </speak>
+        `;
+
+          fetch(endpoint, {
+            method: "POST",
+            headers: headers,
+            body: body,
+          })
+            .then((response) => response.blob())
+            .then((blob) => {
+              if (blob.size == 0) {
+                console.log("too many requests to azure TTS");
+                return;
+              }
+
+              localforage
+                .setItem(this.ttsName, blob)
+                .then(() => {})
+                .catch(() => {});
+
+              this.audio.src = URL.createObjectURL(blob);
+              this.audio.playbackRate = this.curSpeed();
+              this.audio.play();
+              if (type == 2) {
+                this.audio.addEventListener("ended", this.endUtterO, false);
+              }
+            })
+            .catch((error) => {
+              this.openAlert(
+                1,
+                "Wrong Azure TTS settings, or network error!",
+                error
+              );
+              return;
+            });
+        })
+        .catch(() => {
+          this.openAlert(1, this.$t("repeater.alert010"));
+          return;
+        });
+    },
+
     async gT(s, r) {
       const tokenEndpoint = `https://${r}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
       const headers = {
@@ -7845,7 +10328,7 @@ export default {
     },
 
     testTTSVoice(x) {
-      if ((this.isUtterTransLine || x == 1) && this.isSystemTTS == "Yes") {
+      if (this.isSystemTTS == "Yes") {
         this.cleanUp1();
         this.cleanUp2();
         let transLineContent =
@@ -7866,8 +10349,8 @@ export default {
         this.utterThis.rate = this.speedOfUtter;
         let voices = window.speechSynthesis.getVoices();
         let formattedLang =
-          this.langInTransLine.substring(0, 3) +
-          this.langInTransLine.substring(3).toUpperCase();
+          this.utterThis.lang.substring(0, 3) +
+          this.utterThis.lang.substring(3).toUpperCase();
         this.utterThis.voice = voices.filter(function (voice) {
           return voice.lang.includes(formattedLang);
         })[this.reader - 1];
@@ -7879,9 +10362,51 @@ export default {
       }
     },
 
+    testTTSVoiceO(x) {
+      if (this.isSystemTTS == "Yes") {
+        if (x != 2) {
+          this.cleanUp1();
+          this.cleanUp2();
+        }
+        let originLineContent =
+          this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
+            this.lineNumOfOrigin - 1
+          ];
+        this.utterThis.text =
+          originLineContent !== undefined &&
+          originLineContent !== " " &&
+          originLineContent !== ""
+            ? originLineContent
+            : "no content";
+        if (x == 1) this.utterThis.text = this.newWord;
+        if (this.langInOriginLine == "") {
+          this.langInOriginLine = "en-US";
+        }
+        this.utterThis.lang = this.langInOriginLine;
+        this.utterThis.rate = this.curSpeed();
+        let voices = window.speechSynthesis.getVoices();
+        let formattedLang =
+          this.utterThis.lang.substring(0, 3) +
+          this.utterThis.lang.substring(3).toUpperCase();
+        this.utterThis.voice = voices.filter(function (voice) {
+          return voice.lang.includes(formattedLang);
+        })[this.readerO - 1];
+        window.speechSynthesis.speak(this.utterThis);
+        this.utterThis.onend = () => {
+          if (x != 2) {
+            this.cleanUp1();
+            this.cleanUp2();
+          } else this.audioEnded = true;
+        };
+      }
+    },
+
     utterTransLine() {
       this.utterInProcess = true;
-      if (this.isUtterTransLine && this.isSystemTTS == "Yes") {
+      if (
+        (this.isUtterTransLine || this.isDictation) &&
+        this.isSystemTTS == "Yes"
+      ) {
         let transLineContent =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
@@ -7909,10 +10434,17 @@ export default {
           this.utterInProcess = false;
           return;
         }
+        if (this.isDictation && !this.isEditSubandNotes && this.dRead == 1) {
+          this.utterInProcess = false;
+          return;
+        }
         this.utterThis.onend = () => {
           this.endUtter();
         };
-      } else if (this.isUtterTransLine && this.isSystemTTS == "No") {
+      } else if (
+        (this.isUtterTransLine || this.isDictation) &&
+        this.isSystemTTS == "No"
+      ) {
         this.ttsReader();
       }
     },
@@ -7947,9 +10479,18 @@ export default {
           this.utterInProcess = false;
           return;
         }
+        if (this.isDictation && !this.isEditSubandNotes && this.dRead == 1) {
+          this.utterInProcess = false;
+          return;
+        }
         this.audio.addEventListener("ended", this.endUtter, false);
       }
     },
+    endUtterO() {
+      this.audio.removeEventListener("ended", this.endUtterO, false);
+      this.audioEnded = true;
+    },
+
     endUtter() {
       this.audio.removeEventListener("ended", this.endUtter, false);
       if (!this.isSingle && this.dubbingMode) return;
@@ -8016,10 +10557,7 @@ export default {
               )
                 this.sentenceIndex = Number(this.loopStart);
               else this.sentenceIndex = this.sentenceIndex + 1;
-              if (
-                !this.autoPlay ||
-                (this.isFavOnPlay && this.isPlayFullFavList)
-              ) {
+              if (!this.autoPlay) {
                 this.cleanUp1();
                 return;
               }
@@ -8081,13 +10619,15 @@ export default {
 
     resetTTSurl() {
       this.TTSurl =
-        "https://dds.dui.ai/runtime/v1/synthesize?voiceId=xijunm&speed=1.1&volume=100&text=";
+        "azure-tts:defaultkey1,eastasia,zh-CN-YunyiMultilingualNeural";
+      this.TTSurlO = "azure-tts:defaultkey1,eastasia,en-US-GuyNeural";
     },
     resetTranslatorurl() {
       this.translatorUrl = "ali-translator:default";
     },
     cleanUp1() {
       this.utterInProcess = false;
+      if (this.wordDataResolver) this.wordDataResolver = null;
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (this.currentMedia) this.currentMedia.pause();
       if (this.audio) this.audio.pause();
@@ -8169,66 +10709,30 @@ export default {
     },
 
     switchIsFav() {
-      let srtUrl = api.getDownloadURL(this.reqF, true);
-      let originRaw = "";
-      if (srtUrl && this.isMediaType == 1) {
-        originRaw = srtUrl.replace(".srt", ".mp3");
-      } else if (srtUrl && this.isMediaType == 2) {
-        originRaw = srtUrl.replace(".srt", ".mp4");
-      } else originRaw = "";
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         this.isFav = !this.isFav;
         if (this.isFav) {
           //add a fav
-          var fav = {
-            rawPath: this.reqF.name,
-            mediaName: this.mediaName,
-            originalRawPath: originRaw.split("?")[0].split("/raw/")[1],
-            startTime: this.srtSubtitles[this.sentenceIndex - 1].startTime,
-            endTime: this.srtSubtitles[this.sentenceIndex - 1].endTime,
-            content: this.srtSubtitles[this.sentenceIndex - 1].content,
-          };
-          this.favList.push(fav);
-          this.save();
+          this.saveWordToSRT(1);
+          return;
         } else {
           //remove a fav
           if (this.isFavOnPlay) {
             this.cleanUp2();
             this.cleanUp1();
           }
-
-          if (this.fromMerge) {
-            this.fromMerge = false;
-            var nowStartTime1 = this.srtSubtitles[this.sentenceIndex].startTime;
-            this.favList = this.favList.filter(function (item) {
-              return item.startTime !== nowStartTime1;
-            });
-          }
-
-          if (this.notFromStarttimeTempChg) {
-            var nowStartTime =
-              this.srtSubtitles[this.sentenceIndex - 1].startTime;
-            this.favList = this.favList.filter(function (item) {
-              return item.startTime !== nowStartTime;
-            });
-          } else {
-            this.notFromStarttimeTempChg = true;
-            var nowEndTime = this.srtSubtitles[this.sentenceIndex - 1].endTime;
-            this.favList = this.favList.filter(function (item) {
-              return item.endTime !== nowEndTime;
-            });
-          }
-
-          this.save();
+          this.deleteWord(1);
           if (this.isFavOnPlay) {
-            if (this.srtSubtitles.length < 1) {
-              this.isFavOnPlay = false;
-              return;
-            }
-            if (this.sentenceIndex > this.srtSubtitles.length) {
-              this.sentenceIndex = this.sentenceIndex - 1;
-            }
-            this.isFav = true;
+            setTimeout(() => {
+              if (this.srtSubtitles.length < 1) {
+                this.isFavOnPlay = false;
+                return;
+              }
+              if (this.sentenceIndex > this.srtSubtitles.length) {
+                this.sentenceIndex = this.sentenceIndex - 1;
+              }
+              this.isFav = true;
+            }, 100);
           }
         }
       }
@@ -8416,15 +10920,22 @@ export default {
 
     click() {
       this.touches++;
+      this.showFakeAlert = false;
       if (this.isFirstClick) this.firstClick();
       this.fromClick = true;
       if (this.isEditSubandNotes) this.cleanUp2();
       this.cleanUp1();
       if (this.isEditSubandNotes || this.isDictation) {
-        this.toBlur();
+        if (this.downArrow && this.isDictation) {
+          this.downArrow = false;
+        } else this.toBlur();
       }
 
-      if (!(this.utterInProcess && this.isSystemTTS == "No")) {
+      if (
+        !(this.utterInProcess && this.isSystemTTS == "No") &&
+        !this.readOriginByTTS &&
+        !this.fakeAudio
+      ) {
         this.click1();
       } else {
         if (this.touches == 2) {
@@ -8437,6 +10948,9 @@ export default {
         }
 
         this.timeOutId3 = setTimeout(() => {
+          if (this.newWord !== "") {
+            return;
+          }
           this.touches = 0;
           if (this.isSingle) {
             setTimeout(() => {
@@ -8471,7 +10985,9 @@ export default {
         this.clickTimer = setTimeout(() => {
           this.clickTimer = null;
         }, 300);
-
+        if (this.newWord !== "") {
+          return;
+        }
         this.touches = 0;
         if (this.isSingle) {
           setTimeout(() => {
@@ -8605,13 +11121,16 @@ export default {
       ) {
         this.cleanUp1();
         this.cleanUp2();
-        this.showAddNew = true;
-        this.newWord = window.getSelection().toString();
+        this.showEditNew = true;
+        this.newWord = window
+          .getSelection()
+          .toString()
+          .trim()
+          .replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
       } else {
         if (timeNow - this.startTime < 1000)
           window.getSelection().removeAllRanges();
         this.fixbug1();
-        this.showAddNew = false;
         this.showEditNew = false;
         if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
           this.click();
@@ -8631,11 +11150,14 @@ export default {
         this.fixbug1();
         this.cleanUp1();
         this.cleanUp2();
-        this.showAddNew = true;
-        this.newWord = window.getSelection().toString();
+        this.showEditNew = true;
+        this.newWord = window
+          .getSelection()
+          .toString()
+          .trim()
+          .replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
       } else {
         this.fixbug1();
-        this.showAddNew = false;
         this.showEditNew = false;
       }
     },
@@ -8643,7 +11165,6 @@ export default {
     endDragG() {
       if (!this.isReadyToPlay || this.isTouchDevice) return;
       this.fixbug1();
-      this.showAddNew = false;
       this.showEditNew = false;
     },
 
@@ -8785,13 +11306,16 @@ export default {
       ) {
         this.cleanUp1();
         this.cleanUp2();
-        this.showAddNew = true;
-        this.newWord = window.getSelection().toString();
+        this.showEditNew = true;
+        this.newWord = window
+          .getSelection()
+          .toString()
+          .trim()
+          .replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
       } else {
         if (timeNow - this.startTime < 1000)
           window.getSelection().removeAllRanges();
         this.fixbug1();
-        this.showAddNew = false;
         this.showEditNew = false;
         if (Math.abs(this.distanceX) < 5 && Math.abs(this.distanceY) < 5)
           this.click();
@@ -8810,11 +11334,14 @@ export default {
         this.fixbug1();
         this.cleanUp1();
         this.cleanUp2();
-        this.showAddNew = true;
-        this.newWord = window.getSelection().toString();
+        this.showEditNew = true;
+        this.newWord = window
+          .getSelection()
+          .toString()
+          .trim()
+          .replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
       } else {
         this.fixbug1();
-        this.showAddNew = false;
         this.showEditNew = false;
       }
     },
@@ -8832,7 +11359,6 @@ export default {
 
     endTouchG() {
       this.fixbug1();
-      this.showAddNew = false;
       this.showEditNew = false;
     },
 
@@ -8935,11 +11461,7 @@ export default {
             setTimeout(() => {
               this.isSwitching = false;
             }, 200);
-            if (
-              (this.isSingle && !this.autoPlay) ||
-              (this.isFavOnPlay && this.isPlayFullFavList)
-            )
-              return;
+            if (this.isSingle && !this.autoPlay) return;
             if (this.isSingle) {
               if (this.isFirstClick) return;
               this.click();
@@ -8962,11 +11484,7 @@ export default {
           setTimeout(() => {
             this.isSwitching = false;
           }, 200);
-          if (
-            (this.isSingle && !this.autoPlay) ||
-            (this.isFavOnPlay && this.isPlayFullFavList)
-          )
-            return;
+          if (this.isSingle && !this.autoPlay) return;
           if (this.isSingle) {
             if (this.isFirstClick) return;
             this.click();
@@ -8996,11 +11514,7 @@ export default {
             setTimeout(() => {
               this.isSwitching = false;
             }, 200);
-            if (
-              (this.isSingle && !this.autoPlay) ||
-              (this.isFavOnPlay && this.isPlayFullFavList)
-            )
-              return;
+            if (this.isSingle && !this.autoPlay) return;
             if (this.isSingle) {
               if (this.isFirstClick) return;
               this.click();
@@ -9023,11 +11537,7 @@ export default {
           setTimeout(() => {
             this.isSwitching = false;
           }, 200);
-          if (
-            (this.isSingle && !this.autoPlay) ||
-            (this.isFavOnPlay && this.isPlayFullFavList)
-          )
-            return;
+          if (this.isSingle && !this.autoPlay) return;
           if (this.isSingle) {
             if (this.isFirstClick) return;
             this.click();
@@ -9156,37 +11666,57 @@ export default {
       }
     },
 
+    curSpeed() {
+      var cSpeed = this.currentSpeed.replaceAll(",", " ");
+      var nowSpeed;
+      cSpeed = cSpeed.replaceAll("   ", " ");
+      cSpeed = cSpeed.replaceAll("  ", " ");
+      if (cSpeed.split(" ")[this.playCount]) {
+        if (this.onTempSpeed) {
+          this.normalSpeed = Number(cSpeed.split(" ")[this.playCount]);
+          nowSpeed = this.tempSpeed;
+        } else {
+          nowSpeed = Number(cSpeed.split(" ")[this.playCount]);
+        }
+      } else {
+        if (this.onTempSpeed) {
+          this.normalSpeed = 1;
+          nowSpeed = this.tempSpeed;
+        } else {
+          nowSpeed = 1;
+        }
+      }
+      return nowSpeed;
+    },
+
     playSection() {
+      if (this.isDictation && !this.isEditSubandNotes && this.dRead == 1) {
+        this.cleanUp1();
+        this.cleanUp2();
+        return;
+      }
       if (this.currentMedia && this.currentMedia.removeEventListener) {
         this.currentMedia.removeEventListener("timeupdate", this.syncSub);
       }
       if (!this.isReadyToPlay) return;
       if (this.currentMedia) {
+        this.startTime = new Date().getTime();
         if (this.isIphone) {
           setTimeout(() => {
-            this.currentMedia.play();
+            if (this.readOriginByTTS || this.fakeAudio) {
+              this.audioEnded = false;
+              if (this.isSystemTTS == "Yes") this.testTTSVoiceO(2);
+              else this.testTTSurlO(2);
+            } else this.currentMedia.play();
           }, 20);
-        } else this.currentMedia.play();
-        var cSpeed = this.currentSpeed.replaceAll(",", " ");
-        cSpeed = cSpeed.replaceAll("   ", " ");
-        cSpeed = cSpeed.replaceAll("  ", " ");
-        if (cSpeed.split(" ")[this.playCount]) {
-          if (this.onTempSpeed) {
-            this.normalSpeed = Number(cSpeed.split(" ")[this.playCount]);
-            this.currentMedia.playbackRate = this.tempSpeed;
-          } else {
-            this.currentMedia.playbackRate = Number(
-              cSpeed.split(" ")[this.playCount]
-            );
-          }
         } else {
-          if (this.onTempSpeed) {
-            this.normalSpeed = 1;
-            this.currentMedia.playbackRate = this.tempSpeed;
-          } else {
-            this.currentMedia.playbackRate = 1;
-          }
+          if (this.readOriginByTTS || this.fakeAudio) {
+            this.audioEnded = false;
+            if (this.isSystemTTS == "Yes") this.testTTSVoiceO(2);
+            else this.testTTSurlO(2);
+          } else this.currentMedia.play();
         }
+        this.currentMedia.playbackRate = this.curSpeed();
         this.sessionLength =
           (this.srtSubtitles[this.sentenceIndex - 1].endTime -
             this.srtSubtitles[this.sentenceIndex - 1].startTime +
@@ -9199,24 +11729,36 @@ export default {
           0.2;
 
         if (this.fromRetrace) {
-          this.currentMedia.currentTime = Math.max(
+          let tempS = Math.max(
             this.currentMedia.currentTime - this.retraceTime,
             this.srtSubtitles[this.sentenceIndex - 1].startTime
           );
+
+          let startA = Math.min(this.currentMedia.duration - 1, tempS);
+          this.currentMedia.currentTime = startA;
           playLength =
-            (this.srtSubtitles[this.sentenceIndex - 1].endTime -
+            (Math.min(
+              this.srtSubtitles[this.sentenceIndex - 1].endTime,
+              this.currentMedia.duration - 0.5
+            ) -
               this.currentMedia.currentTime) /
               this.currentMedia.playbackRate -
             0.3;
           this.fromRetrace = false;
-        } else
-          this.currentMedia.currentTime =
-            this.srtSubtitles[this.sentenceIndex - 1].startTime;
+        } else {
+          let tempS = this.srtSubtitles[this.sentenceIndex - 1].startTime;
 
-        this.startTime = new Date().getTime();
-        this.timeOutId = setTimeout(() => {
-          this.isEnd();
-        }, playLength * 1000);
+          let startA = Math.min(this.currentMedia.duration - 1, tempS);
+          this.currentMedia.currentTime = startA;
+        }
+        if (!this.readOriginByTTS && !this.fakeAudio)
+          this.timeOutId = setTimeout(() => {
+            this.isEnd();
+          }, playLength * 1000);
+        else
+          this.timeOutId = setTimeout(() => {
+            this.isEnd();
+          }, 1000);
       }
     },
     isEnd() {
@@ -9227,11 +11769,13 @@ export default {
 
     sessionEnd() {
       this.timeDiff = (new Date().getTime() - this.startTime) / 1000;
-      // include the situation the subtitle timestamp exceed the media length.
+      // subtitle timestamp exceed the media length.
       if (
         this.timeDiff > this.sessionLength &&
         this.srtSubtitles[this.sentenceIndex - 1].endTime <=
-          this.currentMedia.duration
+          this.currentMedia.duration &&
+        !this.readOriginByTTS &&
+        !this.fakeAudio
       ) {
         if (this.intervalId) {
           clearInterval(this.intervalId);
@@ -9244,16 +11788,27 @@ export default {
         this.playSection();
         return;
       }
+
       if (
-        this.currentMedia.currentTime >=
-          this.srtSubtitles[this.sentenceIndex - 1].endTime ||
-        this.srtSubtitles[this.sentenceIndex - 1].endTime >=
-          this.currentMedia.duration
+        (!this.readOriginByTTS &&
+          !this.fakeAudio &&
+          this.currentMedia.currentTime >=
+            Math.min(
+              this.srtSubtitles[this.sentenceIndex - 1].endTime,
+              this.currentMedia.duration - 0.4
+            )) ||
+        (this.readOriginByTTS && this.audioEnded) ||
+        (this.fakeAudio && this.audioEnded)
       ) {
         if (this.intervalId) {
           clearInterval(this.intervalId);
         }
         this.currentMedia.pause();
+        if (this.isDictation && !this.isEditSubandNotes && this.dRead == 2) {
+          this.cleanUp1();
+          this.cleanUp2();
+          return;
+        }
         if (this.playCount >= this.repeatTimes - 1) {
           if (this.replayFromStart) this.playCount = 0;
           this.cleanUp1();
@@ -9299,10 +11854,7 @@ export default {
                 )
                   this.sentenceIndex = Number(this.loopStart);
                 else this.sentenceIndex = this.sentenceIndex + 1;
-                if (
-                  !this.autoPlay ||
-                  (this.isFavOnPlay && this.isPlayFullFavList)
-                ) {
+                if (!this.autoPlay) {
                   this.cleanUp1();
                   return;
                 }
@@ -9378,10 +11930,7 @@ export default {
             )
               this.sentenceIndex = Number(this.loopStart);
             else this.sentenceIndex = this.sentenceIndex + 1;
-            if (
-              !this.autoPlay ||
-              (this.isFavOnPlay && this.isPlayFullFavList)
-            ) {
+            if (!this.autoPlay) {
               this.cleanUp1();
               return;
             }
@@ -9414,8 +11963,8 @@ export default {
         "\n\n\n\n" +
         JSON.stringify(this.reviseData) +
         "\n\n\n\n" +
-        "Subtitle:" +
-        JSON.stringify(this.favList);
+        "PDJWordList::" +
+        this.PDJWordListContent;
       this.hasPrivate = false;
       this.tempFavContent = favContent;
       this.hasConfirmed = true;
@@ -9511,6 +12060,22 @@ export default {
         JSON.stringify(this.customCss1) +
         "::" +
         JSON.stringify(this.customCss2) +
+        "::" +
+        JSON.stringify(this.langInOriginLine) +
+        "::" +
+        JSON.stringify(this.lineNumOfOrigin) +
+        "::" +
+        JSON.stringify(this.TTSurlO) +
+        "::" +
+        JSON.stringify(this.readOriginByTTS) +
+        "::" +
+        JSON.stringify(this.autoRealCheck) +
+        "::" +
+        JSON.stringify(this.allowLoadDiction) +
+        "::" +
+        JSON.stringify(this.typingSound) +
+        "::" +
+        JSON.stringify(this.isFromLocal) +
         "::"
       );
     },
@@ -9546,8 +12111,8 @@ export default {
         "\n\n\n\n" +
         JSON.stringify(this.reviseData) +
         "\n\n\n\n" +
-        "Subtitle:" +
-        JSON.stringify(this.favList);
+        "PDJWordList::" +
+        this.PDJWordListContent;
       this.tempFavContent = favContent;
       this.saveNow();
     },
@@ -9923,14 +12488,12 @@ export default {
           } else if (x == 6) {
             newContent =
               textSubtitles[i].split("\n")[2] +
-              "\n" +
+              "\t" +
               textSubtitles[i].split("\n")[3] +
-              "\n" +
+              "\t" +
               textSubtitles[i].split("\n")[4];
           } else if (x == 7) {
             newContent =
-              textSubtitles[i].split("\n")[0] +
-              "\n" +
               textSubtitles[i].split("\n")[2] +
               "\n" +
               textSubtitles[i].split("\n")[3] +
@@ -9972,8 +12535,6 @@ export default {
               textSubtitles[i].split("\n")[3];
           } else if (x == 7) {
             newContent =
-              textSubtitles[i].split("\n")[0] +
-              "\n" +
               textSubtitles[i].split("\n")[2] +
               "\n" +
               textSubtitles[i].split("\n")[3];
@@ -10007,10 +12568,7 @@ export default {
           } else if (x == 6) {
             newContent = textSubtitles[i].split("\n")[2];
           } else if (x == 7) {
-            newContent =
-              textSubtitles[i].split("\n")[0] +
-              "\n" +
-              textSubtitles[i].split("\n")[2];
+            newContent = textSubtitles[i].split("\n")[2];
           }
         }
 
@@ -10053,8 +12611,15 @@ export default {
         else if (x == 6) pdjBackUp = "text-" + today + "-" + id + ".txt";
         else if (x == 7) pdjBackUp = "text-serial-" + today + "-" + id + ".txt";
         else if (x == 8) {
-          pdjBackUp = "newWord-" + today + "-" + id + ".txt";
-          formatContent = "";
+          pdjBackUp =
+            this.mediaName.slice(0, -4) +
+            "-newWord-" +
+            today +
+            "-" +
+            id +
+            ".txt";
+          formatContent =
+            "No.\tNew Word\tTranslate\tSentence\tSentence\tSentence Note\n";
 
           if (this.newWordList.length < 1) {
             this.openAlert(1, this.$t("repeater.noNewWord"));
@@ -10063,18 +12628,34 @@ export default {
           }
           for (let i = 1; i <= this.newWordList.length; i++) {
             let newWord = this.newWordList[i - 1];
+            let a = newWord.trans.trim();
+            let c = this.srtSubtitles[newWord.num].content.split("\r\n")[0]
+              ? this.srtSubtitles[newWord.num].content.split("\r\n")[0].trim()
+              : "";
+            let d = this.srtSubtitles[newWord.num].content.split("\r\n")[1]
+              ? this.srtSubtitles[newWord.num].content.split("\r\n")[1].trim()
+              : "";
+            let e = this.srtSubtitles[newWord.num].content
+              .split("\r\n")[2]
+              .replace(/\[.*?\];/g, "")
+              ? this.srtSubtitles[newWord.num].content
+                  .split("\r\n")[2]
+                  .replace(/\[.*?\];/g, "")
+                  .trim()
+              : "";
             formatContent =
               formatContent +
               i +
-              ". " +
-              newWord.origin +
-              "     " +
-              newWord.trans +
-              "   [ " +
-              this.srtSubtitles[newWord.num].content.split("\r\n")[0] +
-              "  -" +
-              this.srtSubtitles[newWord.num].content.split("\r\n")[1] +
-              " ]" +
+              ".\t" +
+              newWord.origin.trim() +
+              "\t" +
+              a +
+              "\t" +
+              c +
+              "\t" +
+              d +
+              "\t" +
+              e +
               "\n";
           }
         } else if (x == 9) {
@@ -10142,13 +12723,11 @@ export default {
     },
 
     deleteSentence() {
+      if (this.srtSubtitlesLength == 1) return;
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
-      if (this.isFav) {
-        this.switchIsFav();
-      }
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -10172,28 +12751,44 @@ export default {
       this.saveSubFinal();
     },
 
-    deleteWord() {
+    deleteWord(x) {
       this.onRUdo = true;
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
       var formatContent = this.reqF.content;
+      var oldIndex = this.srtSubtitles[this.sentenceIndex - 1].sn;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
       var textSubtitles = formatContent.split("\n\n");
-      var delWord = textSubtitles[this.sentenceIndex - 1].split(
-        "[" + this.deleteNewWord
-      );
-      const index = delWord[1].indexOf("]");
-      let part2 = delWord[1].slice(index + 1);
-      part2 = part2.replace(/^;/, "");
-
-      var newContent = delWord[0] + part2;
-      formatContent = formatContent.replace(
-        textSubtitles[this.sentenceIndex - 1],
-        newContent
-      );
-
+      var newContent;
+      if (x !== 1) {
+        var delWord = textSubtitles[this.sentenceIndex - 1].split(
+          "[" + this.deleteNewWord + "::"
+        );
+        const index = delWord[1].indexOf("]");
+        let part2 = delWord[1].slice(index + 1);
+        part2 = part2.replace(/^;/, "");
+        newContent = delWord[0] + part2;
+      } else {
+        if (this.isFavOnPlay) {
+          newContent = textSubtitles[oldIndex - 1].replaceAll("[star];", "");
+        } else
+          newContent = textSubtitles[this.sentenceIndex - 1].replaceAll(
+            "[star];",
+            ""
+          );
+      }
+      if (this.isFavOnPlay && x == 1)
+        formatContent = formatContent.replace(
+          textSubtitles[oldIndex - 1],
+          newContent
+        );
+      else
+        formatContent = formatContent.replace(
+          textSubtitles[this.sentenceIndex - 1],
+          newContent
+        );
       formatContent = formatContent.replaceAll("\n\n\n\n", "\n\n");
       formatContent = formatContent.replaceAll(/^\s*\r?\n|\r?\n\s*$/g, "");
       formatContent = formatContent.replaceAll(";;", ";");
@@ -10218,12 +12813,6 @@ export default {
       setTimeout(() => {
         this.onRUdo = false;
       }, 1000);
-      this.fromMerge = true;
-      var hasFav = false;
-      if (this.isFav) {
-        this.switchIsFav();
-        hasFav = true;
-      }
       var formatContent = this.reqF.content;
       formatContent = this.formatAll(formatContent);
       this.changeOld[this.historyIndex] = formatContent;
@@ -10299,7 +12888,6 @@ export default {
 
       setTimeout(() => {
         this.sentenceIndex = tempI;
-        if (hasFav) this.switchIsFav();
       }, 10);
 
       window.localStorage.setItem(this.mediaName, formatContent);
@@ -10372,22 +12960,56 @@ export default {
           newEndTime = textSubtitles[this.sentenceIndex]
             .split("\n")[1]
             .split(" --> ")[0];
+          if (
+            this.srtSubtitles[this.sentenceIndex].startTime -
+              this.srtSubtitles[this.sentenceIndex - 1].endTime <=
+            0.0015
+          ) {
+            var timeSS = this.convertToHMS(
+              this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
+                this.timeStampChangeEnd
+            );
+            newStartTime =
+              timeSS.hours +
+              ":" +
+              timeSS.minutes +
+              ":" +
+              timeSS.seconds +
+              "," +
+              timeSS.milliseconds;
+          }
         } else {
-          var time = this.convertToHMS(
+          var timeS = this.convertToHMS(
+            this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
+              this.timeStampChangeEnd +
+              1 +
+              500
+          );
+
+          var timeE = this.convertToHMS(
             this.srtSubtitles[this.sentenceIndex - 1].endTime * 1000 -
               this.timeStampChangeEnd +
               1 +
               3000
           );
 
-          newEndTime =
-            time.hours +
+          newStartTime =
+            timeS.hours +
             ":" +
-            time.minutes +
+            timeS.minutes +
             ":" +
-            time.seconds +
+            timeS.seconds +
             "," +
-            time.milliseconds;
+            timeS.milliseconds;
+
+          newEndTime =
+            timeE.hours +
+            ":" +
+            timeE.minutes +
+            ":" +
+            timeE.seconds +
+            "," +
+            timeE.milliseconds;
         }
       }
       var line1 = "0" + textSubtitles[this.sentenceIndex - 1].split("\n")[0];
@@ -10758,12 +13380,6 @@ export default {
           nCont
         );
       }
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
       window.localStorage.setItem(this.mediaName, this.reqF.content);
       if (this.timeOutId3) clearTimeout(this.timeOutId3);
       this.timeOutId3 = setTimeout(() => {
@@ -10801,6 +13417,11 @@ export default {
             true
           );
         }
+        if (this.reqF.size == 0) {
+          setTimeout(() => {
+            location.reload();
+          }, 100);
+        }
       } catch (error) {
         return;
       }
@@ -10816,13 +13437,6 @@ export default {
       this.reqF.content = this.changeOld[this.historyIndex];
       this.cleanUp1();
       this.cleanUp2();
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
-
       this.refresh();
       if (!this.undoAlert) {
         this.undoAlert = true;
@@ -10849,12 +13463,6 @@ export default {
       this.historyIndex = this.historyIndex + 1;
       this.cleanUp1();
       this.cleanUp2();
-      if (this.isFav) {
-        this.switchIsFav();
-        setTimeout(() => {
-          this.switchIsFav();
-        }, 10);
-      }
       this.refresh();
       if (!this.redoAlert) {
         this.redoAlert = true;
@@ -10999,10 +13607,57 @@ export default {
         // Alt + Delete
         this.deleteSentence();
         this.toDisableDrag();
+      } else if (
+        event.key === "Enter" &&
+        this.altPressed &&
+        this.isEditSubandNotes
+      ) {
+        this.cleanUp1();
+        this.cleanUp2();
+        this.note = this.noteTemp;
+        this.subFirstLine = this.subFirstLineTemp;
+        this.subSecLine = this.subSecLineTemp;
+        setTimeout(() => {
+          this.addSentence();
+        }, 200);
       }
 
-      if (event.which === 39 && this.sentenceIndex < this.srtSubtitles.length) {
+      if (
+        (event.key === "Enter" || event.keyCode === 13) &&
+        this.isDictation &&
+        !this.showEditNew
+      ) {
+        event.preventDefault();
+        this.isCheck = !this.isCheck;
+      }
+
+      if (
+        (event.key === "Delete" || event.keyCode === 46) &&
+        this.isDictation &&
+        !this.showEditNew
+      ) {
+        event.preventDefault();
+        this.dictationContent = "";
+      }
+
+      if (
+        (event.which === 39 ||
+          ((event.key === "PageDown" ||
+            event.keyCode === 34 ||
+            (event.key === "Tab" && !this.showCloze)) &&
+            this.isDictation &&
+            !this.showEditNew)) &&
+        this.sentenceIndex < this.srtSubtitles.length
+      ) {
         // right arrow
+        if (
+          event.key === "PageDown" ||
+          event.keyCode === 34 ||
+          (event.key === "Tab" && !this.showCloze)
+        ) {
+          event.preventDefault();
+          this.downArrow = true;
+        }
         if (
           (document.getElementById("editArea0") &&
             document
@@ -11023,7 +13678,8 @@ export default {
           (document.getElementById("editArea3") &&
             document
               .getElementById("editArea3")
-              .contains(document.activeElement)) ||
+              .contains(document.activeElement) &&
+            !this.downArrow) ||
           (document.getElementById("showEditNew") &&
             document
               .getElementById("showEditNew")
@@ -11032,13 +13688,10 @@ export default {
           return;
         this.cleanUp2();
         this.cleanUp1();
+        if (this.downArrow) this.downArrow = false;
         if (this.random) this.sentenceIndex = this.getRandomInt();
         else this.sentenceIndex = this.sentenceIndex + 1;
-        if (
-          (this.isSingle && !this.autoPlay) ||
-          (this.isFavOnPlay && this.isPlayFullFavList)
-        )
-          return;
+        if (this.isSingle && !this.autoPlay) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
@@ -11050,8 +13703,18 @@ export default {
           }, 1);
         }
         return;
-      } else if (event.which === 37 && this.sentenceIndex > 1) {
+      } else if (
+        (event.which === 37 ||
+          ((event.key === "PageUp" || event.keyCode === 33) &&
+            this.isDictation &&
+            !this.showEditNew)) &&
+        this.sentenceIndex > 1
+      ) {
         // left arrow
+        if (event.key === "PageUp" || event.keyCode === 33) {
+          event.preventDefault();
+          this.downArrow = true;
+        }
         if (
           (document.getElementById("editArea0") &&
             document
@@ -11072,7 +13735,8 @@ export default {
           (document.getElementById("editArea3") &&
             document
               .getElementById("editArea3")
-              .contains(document.activeElement)) ||
+              .contains(document.activeElement) &&
+            !this.downArrow) ||
           (document.getElementById("showEditNew") &&
             document
               .getElementById("showEditNew")
@@ -11081,13 +13745,10 @@ export default {
           return;
         this.cleanUp2();
         this.cleanUp1();
+        if (this.downArrow) this.downArrow = false;
         if (this.random) this.sentenceIndex = this.getRandomInt();
         else this.sentenceIndex = this.sentenceIndex - 1;
-        if (
-          (this.isSingle && !this.autoPlay) ||
-          (this.isFavOnPlay && this.isPlayFullFavList)
-        )
-          return;
+        if (this.isSingle && !this.autoPlay) return;
         if (this.isSingle) {
           if (this.isFirstClick) return;
           this.click();
@@ -11101,10 +13762,13 @@ export default {
         return;
       } else if (event.which === 38) {
         // up arrow
+        event.preventDefault();
         this.cleanUp1();
       } else if (event.which === 40) {
         // down arrow
+        event.preventDefault();
         this.cleanUp1();
+        this.downArrow = true;
         if (this.isFirstClick) this.firstClick();
         if (this.isSingle) {
           setTimeout(() => {
@@ -11160,6 +13824,10 @@ export default {
     },
 
     close() {
+      if (this.prOutput) {
+        this.prOutput = false;
+        return;
+      }
       if (this.isSetting) {
         this.onSetting();
         return;
@@ -11213,7 +13881,355 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+@font-face {
+  font-family: "MyRelativeFont"; /* 自定义字体名称 */
+  /* 相对路径：从当前组件所在目录（components）向上一级（到src），再进入assets/fonts */
+  src: url("../../assets/fonts/myfont.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* 使用字体 */
+.custom-text {
+  font-family: "MyRelativeFont", sans-serif;
+  font-size: 20px;
+}
+
+.percentage-control {
+  margin-bottom: 20px;
+}
+
+.slider {
+  width: 100%;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 4px;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3498db;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #2980b9;
+}
+
+.badge {
+  display: inline-block;
+  background-color: #e1f5fe;
+  color: #0288d1;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cloze-section {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* 句子模式样式 */
+.cloze-sentence {
+  color: wheat;
+  font-size: 1.5em;
+  margin-bottom: 45px;
+  line-height: 1.8;
+}
+
+.word-item {
+  margin: 0;
+}
+
+.blank-input {
+  width: 9rem;
+  padding: 6px 2px;
+  background: gray;
+  border: 2px solid #bdc3c7;
+  border-radius: 4px;
+  margin: 0 5px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+/* 单词模式样式 */
+.cloze-word {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.letters-container {
+  color: wheat;
+  font-size: 24px;
+  letter-spacing: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.letter-input {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 20px;
+  text-align: center;
+  margin: 0 2px;
+  transition: all 0.3s;
+}
+
+.fixed-letter {
+  min-width: 30px;
+  text-align: center;
+}
+
+/* 通用输入样式 */
+.blank-input:focus,
+.letter-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.blank-input.correct,
+.letter-input.correct {
+  border-color: #2ecc71;
+  background-color: rgba(46, 204, 113);
+}
+
+.blank-input.incorrect,
+.letter-input.incorrect {
+  border-color: #e74c3c;
+  background-color: #e66666;
+}
+
+.feedback {
+  border-radius: 4px;
+  text-align: center;
+  font-size: 17px;
+}
+
+.game-container {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  padding: 0 10px;
+}
+.spelling-area {
+  animation: fadeIn 0.5s ease;
+}
+.current-spelling {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  min-height: 45px;
+  align-items: center;
+  padding: 0 0 35px 0;
+  border-radius: 0 0 8px 0;
+}
+.spelled-letter {
+  width: 45px;
+  height: 45px;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer; /* 新增：添加鼠标指针样式 */
+}
+/* 新增：添加悬停效果 */
+.spelled-letter:not(.is-correct):hover {
+  background-color: #e1e8ed;
+  transform: scale(1.05);
+}
+.spelled-word {
+  padding: 3px 8px;
+  background-color: #f1f5f9;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  cursor: pointer; /* 新增：添加鼠标指针样式 */
+}
+/* 新增：添加悬停效果 */
+.spelled-word:not(.is-correct):hover {
+  background-color: #e1e8ed;
+  transform: scale(1.05);
+}
+.is-correct .spelled-letter,
+.is-correct .spelled-word {
+  background-color: #2ecc71;
+  color: white;
+  cursor: default;
+}
+.correct-message {
+  text-align: center;
+  color: #2ecc71;
+  font-size: 18px;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.error-message {
+  text-align: center;
+  color: #e74c3c;
+  font-size: 18px;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.shuffled-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 45px;
+}
+.letter-btn {
+  width: 50px;
+  height: 50px;
+  border: none;
+  border-radius: 8px;
+  background-color: #3498db;
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.1);
+  position: relative;
+}
+.word-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background-color: #3498db;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.1);
+}
+.letter-btn:disabled,
+.word-btn:disabled {
+  background-color: #ecf0f1;
+  color: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.letter-btn:not(:disabled):hover,
+.word-btn:not(:disabled):hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(52, 152, 219, 0.2);
+}
+.letter-btn:not(:disabled):active,
+.word-btn:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.1);
+}
+.control-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.undo-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background-color: #9b59b6;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+.undo-btn:disabled {
+  background-color: #bb8fce;
+  cursor: not-allowed;
+}
+.undo-btn:not(:disabled):hover {
+  background-color: #8e44ad;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.option-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #3498db;
+}
+.spelled-letter[title="空格"]::after,
+.letter-btn[title="空格"]::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #2c3e50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.spelled-letter[title="空格"]:hover::after,
+.letter-btn[title="空格"]:hover::after {
+  opacity: 1;
+}
 #repeater {
   background-color: rgba(0, 0, 0, 0.99);
   position: fixed;
@@ -11348,9 +14364,9 @@ input:disabled {
 
 .custom-alert-content button {
   margin-top: 10px;
-  width: auto; /* 让按钮宽度根据内容自适应 */
-  max-width: 200px; /* 设置按钮最大宽度 */
-  align-self: center; /* 让按钮在水平方向居中 */
+  width: auto;
+  max-width: 200px;
+  align-self: center;
 }
 
 .subTools-overlay {
@@ -11434,7 +14450,6 @@ input:disabled {
 
 .popUp-backLayer {
   perspective: 1000px;
-  /* 添加3D透视效果 */
   touch-action: auto;
 }
 
@@ -11444,7 +14459,6 @@ input:disabled {
   background: #ffffff;
   border-radius: 15px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  /* 增加阴影 */
   text-align: center;
   transform-style: preserve-3d;
   animation: scaleIn 0.6s ease-in-out;
@@ -11504,7 +14518,6 @@ input:disabled {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
 }
 
-/* 动画效果 */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -11560,6 +14573,459 @@ input:disabled {
     width: 7em;
     margin: 0.3em 0;
     border-radius: 3px;
+  }
+}
+.sw-vocabulary-reader {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  font-family: "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.sw-header {
+  text-align: center;
+  padding: 0.5em;
+}
+
+.sw-title {
+  color: #e0e0e0; /* 标题改为浅灰色 */
+  margin: 0;
+  font-weight: 700;
+  font-size: 2rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.sw-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background-color: #64b5f6; /* 调整强调色为亮蓝色 */
+  border-radius: 2px;
+}
+
+.sw-toggle-btn {
+  background-color: aqua;
+  color: black;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.sw-toggle-btn:hover {
+  background-color: #1976d2; /* 按钮悬停颜色加深 */
+  transform: translateY(-2px);
+}
+
+.sw-sentence-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.5rem;
+  width: 100%;
+  max-height: 90%;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.sw-word-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sw-word-card:hover {
+  background-color: rgba(255, 255, 255, 0.05); /* 悬停时添加浅色背景 */
+  transform: translateY(-3px);
+}
+
+/* 音标样式 */
+.sw-phonetic {
+  color: #64b5f6;
+  font-size: 0.85rem;
+  font-family: "Times New Roman", Times, serif;
+  margin-bottom: 0.2rem; /* 保持固定间距 */
+  opacity: 0;
+  height: 1em;
+  visibility: hidden; /* 隐藏但保持占位 */
+  transition: all 0.3s ease;
+}
+
+.sw-show-phonetic {
+  opacity: 1;
+  visibility: visible; /* 显示时可见 */
+}
+
+/* 单词样式 */
+.sw-word {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: gold;
+  margin-bottom: 0.2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  padding: 0.2rem 0.5rem;
+}
+
+/* 朗读动画效果 */
+.sw-speaking {
+  color: #90caf9; /* 朗读中的单词颜色更亮 */
+  animation: swPulse 1s ease-in-out;
+}
+
+@keyframes swPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(100, 181, 246, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(100, 181, 246, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(100, 181, 246, 0);
+  }
+}
+
+/* 释义样式 */
+.sw-definition {
+  color: #bbbbbb; /* 释义改为中灰色 */
+  font-size: 0.75rem;
+  text-align: center;
+  max-width: 120px;
+  line-height: 1.4;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 2.8em;
+}
+
+.sw-show-definition {
+  opacity: 1;
+  visibility: visible; /* 显示时可见 */
+}
+
+.sw-instructions {
+  color: #bbbbbb; /* 说明文本改为中灰色 */
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background-color: rgba(100, 181, 246, 0.1); /* 说明文本背景改为透明蓝色 */
+  border-radius: 6px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sw-header {
+    text-align: center;
+    padding: 0.5em;
+  }
+
+  .sw-title {
+    font-size: 1.5rem;
+  }
+
+  .sw-word {
+    font-size: 1.1rem;
+  }
+}
+
+#sentencePrintGenerator {
+  background-color: #f5f7fa;
+  color: #333;
+  line-height: 1.6;
+  overflow-y: auto;
+  height: calc(100% - 4.2em);
+  top: 4.2em;
+  position: absolute;
+  width: 100%;
+}
+
+.prContainer {
+  margin: 0 auto;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.prHeader {
+  background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+  color: white;
+  padding: 20px 30px;
+  justify-content: left !important;
+}
+
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.prSubtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.prContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.prSection {
+  padding: 25px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.prSectionTitle {
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.prSectionTitle i {
+  margin-right: 10px;
+  color: #00b894;
+}
+
+.prWordList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.prWordItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 15px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  flex-wrap: wrap;
+}
+
+.prWordItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prWordItem input[type="checkbox"] {
+  margin-right: 12px;
+  margin-top: 3px;
+  transform: scale(1.2);
+}
+
+.prWordText {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 5px;
+  width: calc(100% - 30px);
+}
+
+.prPartOfSpeech {
+  margin-left: 30px;
+  font-style: italic;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  width: calc(100% - 30px);
+}
+
+.prSelectAll {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  background-color: #e8f4fc;
+  border-radius: 6px;
+}
+
+.prSelectAll input[type="checkbox"] {
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+.prExcelOptions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.prOptionGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+input[type="number"],
+input[type="text"] {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1.2em;
+}
+
+.prPreview {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+}
+
+.prPreviewTitle {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.prPreviewContent {
+  background-color: white;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  min-height: 200px;
+  overflow-x: auto;
+}
+
+.prPreviewTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+}
+
+.prPreviewTable td {
+  border: 1px solid #000;
+  padding: 8px;
+  text-align: center;
+  height: 46px;
+}
+
+.prCheckboxCell {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.prCheckbox {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #7f8c8d;
+  border-radius: 2px;
+  display: inline-block;
+  margin: 0 2px;
+}
+
+.prExportButtons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.prExportBtn {
+  padding: 12px 25px;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  border: none;
+  min-width: 180px;
+}
+
+.prHtmlBtn {
+  background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+  color: white;
+}
+
+.prPrintBtn {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+}
+
+.prExportBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 206, 201, 0.4);
+}
+
+.prExportBtn:active {
+  transform: translateY(0);
+}
+
+.prExportBtn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.prStats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .prWordList {
+    grid-template-columns: 1fr;
+  }
+
+  .prExcelOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .prSection {
+    padding: 15px;
+  }
+
+  .prExportButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .prStats {
+    flex-direction: column;
+    align-items: center;
   }
 }
 </style>

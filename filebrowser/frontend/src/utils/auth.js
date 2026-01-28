@@ -54,7 +54,11 @@ export async function login(username, password, recaptcha) {
 
   if (res.status === 200) {
     window.localStorage.setItem("lastRawToken", body);
-    if (!Number(window.localStorage.getItem("isReminder")) == 1)
+    if (
+      !Number(window.localStorage.getItem("isReminder")) == 1 &&
+      !Number(window.localStorage.getItem("isWordReciter")) == 1 &&
+      !Number(window.localStorage.getItem("isMistakeBook")) == 1
+    )
       window.localStorage.setItem("lastOnLineRepeaterToken", body);
     else window.localStorage.setItem("lastOnLineReminderToken", body);
     parseToken(body);

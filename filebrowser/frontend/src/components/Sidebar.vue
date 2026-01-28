@@ -39,8 +39,8 @@
           :aria-label="$t('sidebar.subTransfer1')"
           :title="$t('sidebar.subTransfer1')"
         >
-          <i class="material-icons">conveyor_belt</i>
-          <span>{{ $t("sidebar.subTransfer") }}</span>
+          <i class="material-icons" style="color: blue">conveyor_belt</i>
+          <span style="color: blue">{{ $t("sidebar.subTransfer") }}</span>
         </button>
         <button
           class="action"
@@ -48,8 +48,8 @@
           :aria-label="$t('sidebar.transcribe1')"
           :title="$t('sidebar.transcribe1')"
         >
-          <i class="material-icons">subtitles</i>
-          <span>{{ $t("sidebar.transcribe") }}</span>
+          <i class="material-icons" style="color: blue">subtitles</i>
+          <span style="color: blue">{{ $t("sidebar.transcribe") }}</span>
         </button>
       </div>
       <div>
@@ -212,6 +212,7 @@ export default {
       if (this.user.locale == "zh-cn") window.open(transcriptionZh, "_blank");
       else window.open(transcriptionEn, "_blank");
     },
+
     subTransfer() {
       this.toRoot();
       setTimeout(() => {

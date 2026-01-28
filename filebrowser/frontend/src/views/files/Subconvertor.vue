@@ -404,7 +404,7 @@ input[type="text"] {
 }
 
 .mt-8 {
-  margin-top: 4.5rem;
+  margin-top: 1.5rem;
 }
 
 .ml-2 {
@@ -676,7 +676,8 @@ export default {
       const files = (await api.fetch(this.inputDirectoryHandle)).items;
       this.selectedLrcFiles = files.filter((file) => {
         const ext = file.name.split(".").pop().toLowerCase();
-        return ["lrc", "srt", "ass", "vtt"].includes(ext);
+        // 添加对txt文件的支持
+        return ["lrc", "srt", "ass", "vtt", "txt"].includes(ext);
       });
     },
 
@@ -707,12 +708,14 @@ export default {
     async readDirectoryFiles(directoryHandle) {
       const files = [];
       for await (const entry of directoryHandle.values()) {
+        // 添加对txt文件的支持
         if (
           entry.kind === "file" &&
           (entry.name.toLowerCase().endsWith(".lrc") ||
             entry.name.toLowerCase().endsWith(".srt") ||
             entry.name.toLowerCase().endsWith(".ass") ||
-            entry.name.toLowerCase().endsWith(".vtt"))
+            entry.name.toLowerCase().endsWith(".vtt") ||
+            entry.name.toLowerCase().endsWith(".txt"))
         ) {
           files.push(entry);
         }
@@ -771,6 +774,34 @@ export default {
       }
 
       return iconv.decode(new Uint8Array(buffer), encoding);
+    },
+    // 新增TXT转SRT方法
+    txtToSrt(txtText) {
+      // 按空行分割文本
+      const lines = txtText
+        .split(/\n\s*\n/)
+        .map((line) => line.trim())
+        .filter((line) => line); // 过滤空行
+
+      let srt = "";
+      const intervalMs = 2000; // 每句间隔2秒
+      const durationMs = 2000; // 每句持续2秒
+
+      lines.forEach((text, index) => {
+        const startTimeMs = index * (intervalMs + durationMs);
+        const endTimeMs = startTimeMs + durationMs;
+
+        // 处理文本中的换行符
+        const formattedText = text;
+
+        srt += `${index + 1}\n`;
+        srt += `${this.formatSrtTime(startTimeMs)} --> ${this.formatSrtTime(
+          endTimeMs
+        )}\n`;
+        srt += `${formattedText}\n\n`;
+      });
+
+      return srt;
     },
     lrcToSrt(lrcText) {
       const splitChar = this.splitChar.trim();
@@ -944,11 +975,17 @@ export default {
         if (parts.length >= 3) {
           const timeInfo = parts[1].split(" --> ");
           const startTime = timeInfo[0];
-          const text = parts.slice(2).join("\n");
+          // 将多行文本合并为一行，用空格和^来分隔。
+          const text = parts.slice(2).join(" ^").trim();
 
-          const [, minutes, seconds] = startTime.split(":");
+          const [hours, minutes, seconds] = startTime.split(":");
           const [sec, ms] = seconds.split(",");
-          const lrcTime = `[${minutes}:${sec}.${ms.slice(0, 2)}]`;
+          // 确保时间格式正确，处理小时部分
+          const lrcMinutes =
+            hours === "00"
+              ? minutes
+              : (parseInt(hours) * 60 + parseInt(minutes)).toString();
+          const lrcTime = `[${lrcMinutes}:${sec}.${ms.slice(0, 2)}]`;
           lrc += `${lrcTime}${text}\n`;
         }
       });
@@ -1030,7 +1067,12 @@ export default {
         try {
           const ext = fileHandle.name.split(".").pop().toLowerCase();
           let content;
-          if (ext === "srt") {
+
+          // 处理TXT文件
+          if (ext === "txt") {
+            const txtText = await this.readFileWithEncoding(fileHandle);
+            content = this.txtToSrt(txtText);
+          } else if (ext === "srt") {
             content = await this.readFileWithEncoding(fileHandle);
           } else if (ext === "lrc") {
             const lrcText = await this.readFileWithEncoding(fileHandle);
@@ -1075,7 +1117,7 @@ export default {
             content = this.srtToVtt(content);
           }
           const outputFileName = fileHandle.name.replace(
-            /\.(lrc|ass|vtt|srt)$/,
+            /\.(lrc|ass|vtt|srt|txt)$/, // 添加对txt的支持
             `.${this.outputFormat}`
           );
           if (this.isFromLocal == 0) {
@@ -1136,6 +1178,7 @@ export default {
       if (fileName.endsWith(".srt")) return "SRT";
       if (fileName.endsWith(".ass")) return "ASS";
       if (fileName.endsWith(".vtt")) return "VTT";
+      if (fileName.endsWith(".txt")) return "TXT"; // 添加TXT类型识别
       return "未知";
     },
     // 新增刷新页面的方法
@@ -1149,10 +1192,10 @@ export default {
 #subConvertor {
   background-color: white;
   position: fixed;
-  top: 0;
+  top: 4em;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 4.2em);
   z-index: 1005;
   overflow-y: auto;
 }

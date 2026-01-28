@@ -23,6 +23,8 @@ const state = {
   prompts: [],
   showShell: false,
   showSubConvertor: false,
+  showWordReciter: false,
+
 };
 
 export default new Vuex.Store({

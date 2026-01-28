@@ -81,6 +81,9 @@ const mutations = {
   updateShowSubConvertor: (state, value) => {
     state.showSubConvertor = value;
   },
+  updateShowWordReciter: (state, value) => {
+    state.showWordReciter = value;
+  },
   updateRequest: (state, value) => {
     const selectedItems = state.selected.map((i) => state.req.items[i]);
     state.oldReq = state.req;
