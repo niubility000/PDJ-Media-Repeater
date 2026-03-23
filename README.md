@@ -52,27 +52,24 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-20260128 6.8 Big update:  add another two main functions: wordreciter, mistake book.
+20260323 6.9.8 update:  some fixes.
 
-[filebrowser-windows.zip](https://github.com/user-attachments/files/24899499/filebrowser-windows.zip)
+[filebrowser-windows.zip](https://github.com/user-attachments/files/26174647/filebrowser-windows.zip)
 
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/24899501/filebrowser-linux-amd64.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/26174655/filebrowser-linux-amd64.zip)
 
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/24899507/filebrowser-linux-arm64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/26174658/filebrowser-linux-arm64.zip)
 
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/24899510/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/26174661/filebrowser-darwin-amd64.for.mac.zip)
 
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/24899513/filebrowser-darwin-arm64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/26174665/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
 
-[filebrowser_source_code.zip](https://github.com/user-attachments/files/24899570/filebrowser_source_code.zip)
+[filebrowser_source_code.zip](https://github.com/user-attachments/files/26174679/filebrowser_source_code.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 
-Sample Media: [sample-media-1.zip](https://github.com/niubility000/PDJ-Media-Repeater/files/14899256/sample-media-1.zip)
-
-(Note: In settings, Language Used In translation Line should be zh-CN for this sample media.)
 
 ## Quick Launch
 
