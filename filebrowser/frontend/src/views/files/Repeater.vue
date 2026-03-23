@@ -434,6 +434,84 @@
         </div>
       </div>
 
+      <div
+        v-if="prOutput2"
+        class="popUp-mask"
+        style="width: 100%; height: 100vh; background: white"
+      >
+        <div
+          class="popUp-backLayer"
+          style="width: 100%; height: 100vh; background: white"
+        >
+          <div
+            style="height: 4em; display: flex; justify-content: space-between"
+          >
+            <button @click="close">
+              <i class="material-icons">close</i>
+            </button>
+            <button @click="prPrintWords">打印（横版A4）</button>
+          </div>
+          <div class="prArticlePreview" style="height: calc(100vh - 4em)">
+            <div
+              v-if="prArticlePreviewData.length == 0"
+              class="sw-sentence-container1"
+            >
+              Please wait, preparing...
+            </div>
+
+            <div
+              v-if="prArticlePreviewData.length !== 0"
+              class="sw-sentence-container1"
+            >
+              <div
+                v-for="(swWord, index) in prArticlePreviewData"
+                :key="index"
+                class="sw-word-card"
+                :style="{ fontSize: fontSizeVar + 'px' }"
+                @mouseenter="
+                  swDisplayMode === 'hover' && (swWord.swHover = true)
+                "
+                @mouseleave="
+                  swDisplayMode === 'hover' && (swWord.swHover = false)
+                "
+              >
+                <!-- 音标显示 -->
+                <div
+                  class="sw-phonetic sw-show-phonetic"
+                  style="color: black; font-size: 0.9em !important"
+                  @click="readSenWord(swWord.text, 2)"
+                >
+                  {{ swWord.phonetic }}
+                </div>
+
+                <!-- 单词显示 -->
+                <div
+                  class="sw-word sw-speaking"
+                  style="color: black; font-size: 0.9em !important"
+                  @click="readSenWord(swWord.text, 2)"
+                >
+                  {{ swWord.text }}
+                </div>
+
+                <!-- 释义显示 -->
+                <div
+                  class="sw-definition sw-show-definition"
+                  style="
+                    color: black;
+                    max-width: 100px;
+                    line-height: 1;
+                    height: 2em !important;
+                  "
+                  @click="readSenWord(swWord.definition, 1)"
+                >
+                  {{ swWord.definition }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="prOutput" class="popUp-mask">
         <div class="popUp-backLayer" style="width: 100%; height: 100%">
           <div
@@ -1330,7 +1408,7 @@
             <i
               style="color: red; font-size: 1em; background-color: #e8e8e8"
               class="material-icons"
-              >save</i
+              >print</i
             >
           </button>
 
@@ -1381,7 +1459,7 @@
             style="height: 2em; border-width: 1px; min-width: 3em; flex-grow: 1"
             type="text"
             :placeholder="showCasePlaceHolder"
-            v-model.lazy="rOldWord"
+            v-model="rOldWord"
           />
           <span v-if="isMobile" style="width: 4em; text-align: center"
             >in Line
@@ -1476,12 +1554,12 @@
             v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(index, index)"
+            @click="chooseSentence(subtitle.sn, index, 1)"
           >
             <p
               style="cursor: pointer"
               :style="{
-                color: sentenceIndex == index + 1 ? 'blue' : 'white',
+                color: cIndex == index + 1 ? 'blue' : 'white',
               }"
             >
               {{ index + 1 }}.
@@ -1596,7 +1674,7 @@
             v-for="(newWord, index) in newWordList"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(newWord.num, index)"
+            @click="chooseSentence(newWord.num, index, 2)"
           >
             <p
               v-if="!newWord.showTrans && !withTrans"
@@ -1852,6 +1930,9 @@
                 v-model="langInTransLine"
               />
             </div>
+            <p style="color: springgreen">
+              自动检测可能不准！请仔细核对以上四项的设置，否则可能导致TTS朗读失败。
+            </p>
 
             <div style="color: white">
               <p style="margin-bottom: 0">
@@ -2412,20 +2493,6 @@
                 v-model="dubbingMode"
               />
               {{ $t("repeater.dubbingMode") }}
-            </p>
-            <hr style="border: none; border-top: 1px solid black; height: 0" />
-            <p
-              :style="{
-                color: !isFavOnPlay ? 'white' : '#bbbaba',
-              }"
-              style="text-align: justify; text-align-last: left"
-            >
-              <input
-                :disabled="isFavOnPlay"
-                type="checkbox"
-                v-model="isPlayFullFavList"
-              />
-              {{ $t("repeater.playFullFavList") }}
             </p>
             <hr style="border: none; border-top: 1px solid black; height: 0" />
             <p style="text-align: justify; text-align-last: left; color: white">
@@ -2991,7 +3058,7 @@
           v-if="
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
           "
-          style="height: 50%; display: flex; flex-direction: column"
+          style="height: 60%; display: flex; flex-direction: column"
         >
           <div
             @mousedown="startDrag"
@@ -3092,7 +3159,11 @@
                     }"
                     @blur="checkAnswer(index)"
                     maxlength="20"
-                    style="color: white"
+                    style="
+                      background: black;
+                      border: none;
+                      border-bottom: 2px solid wheat;
+                    "
                   />
                 </template>
                 <template v-else>
@@ -3108,6 +3179,7 @@
                 v-for="(swWord, index) in swSentenceData"
                 :key="index"
                 class="sw-word-card"
+                :style="{ fontSize: fontSizeVar + 'px' }"
                 @mouseenter="
                   swDisplayMode === 'hover' && (swWord.swHover = true)
                 "
@@ -3153,7 +3225,7 @@
                 </div>
               </div>
             </div>
-            <div class="sw-header">
+            <div class="sw-header" style="color: beige">
               <button class="sw-toggle-btn" @click="swToggleDisplayMode">
                 {{
                   swDisplayMode === "always"
@@ -3161,6 +3233,12 @@
                     : "切换到始终显示"
                 }}
               </button>
+              &nbsp;&nbsp;&nbsp;&nbsp;
+              <button class="sw-toggle-btn" @click="toOutput2">全文打印</button>
+              &nbsp;&nbsp;&nbsp;&nbsp;
+              <button class="sw-toggle-btn" @click="fontSizeVar++">大</button>
+              {{ fontSizeVar }}
+              <button class="sw-toggle-btn" @click="fontSizeVar--">小</button>
             </div>
           </div>
 
@@ -3311,6 +3389,7 @@
           v-if="
             isMediaType > 0 && srtSubtitles && !isEditSubandNotes && isDictation
           "
+          style="margin-top: 1em"
         >
           <span>
             <p
@@ -3390,8 +3469,7 @@
                 class="action"
                 name="buttons"
                 @click="
-                  closeAllParts();
-                  showSpell = !showSpell;
+                  switchAllParts(1);
                   splitInput();
                 "
                 :title="$t('repeater.tsc005')"
@@ -3409,10 +3487,7 @@
               <button
                 class="action"
                 name="buttons"
-                @click="
-                  closeAllParts();
-                  showCloze = !showCloze;
-                "
+                @click="switchAllParts(2)"
                 :title="$t('repeater.tsc006')"
               >
                 <i
@@ -4249,13 +4324,15 @@ export default {
   },
   data: function () {
     return {
-      PDJWordListContent: "",
+      cIndex: 0,
+      fontSizeVar: 16,
+      prArticlePreviewData: [],
       moreLetters: 0.5,
       prSentences: null,
       prFileName: "PDJ句子英汉互译",
       prAllSelected: true,
       prSelectedIndexes: {},
-
+      prOutput2: false,
       prOutput: false,
       ttsName: "",
       swDisplayMode: "always",
@@ -4477,7 +4554,7 @@ export default {
       langInTransLinedefault: navigator.language || navigator.userLanguage,
       lineNumOfTrans: 2,
       lineNumOfOrigin: 1,
-      isAutoDetectLang: true,
+      isAutoDetectLang: false,
       touches: 0,
       isPauseAfterFirstDone: false,
       pauseAfterFirstDone: false,
@@ -4563,7 +4640,7 @@ export default {
       showWaveformInfo: false,
       localPeaks: [],
       transcribeUrl: "defaultkey1,eastasia",
-      TTSurl: "azure-tts:defaultkey1,eastasia,en-US-GuyNeural",
+      TTSurl: "azure-tts:defaultkey1,eastasia,zh-CN-YunyiMultilingualNeural",
       TTSurlO: "azure-tts:defaultkey1,eastasia,en-US-GuyNeural",
     };
   },
@@ -4579,7 +4656,7 @@ export default {
     },
 
     prSelectedSentences() {
-      return this.prSentences.filter(
+      return this.prSentences?.filter(
         (sentence, index) => this.prSelectedIndexes[index]
       );
     },
@@ -5071,29 +5148,30 @@ export default {
       for (var i = 0; i < this.srtSubtitles.length; ++i) {
         if (
           this.srtSubtitles[i].content.split("\r\n")[2] &&
-          this.srtSubtitles[i].content.split("\r\n")[2].includes("[")
+          this.srtSubtitles[i].content.split("\r\n")[2].includes("{[")
         ) {
           for (
             var j = 1;
-            j < this.srtSubtitles[i].content.split("\r\n")[2].split("[").length;
+            j <
+            this.srtSubtitles[i].content.split("\r\n")[2].split("{[").length;
             ++j
           ) {
             origin = this.srtSubtitles[i].content
               .split("\r\n")[2]
-              .split("[")
+              .split("{[")
               [j].split("::")[0];
 
             if (
               this.srtSubtitles[i].content
                 .split("\r\n")[2]
-                .split("[")
+                .split("{[")
                 [j].split("::")[1]
             ) {
               trans = this.srtSubtitles[i].content
                 .split("\r\n")[2]
-                .split("[")
+                .split("{[")
                 [j].split("::")[1]
-                .split("]")[0];
+                .split("]}")[0];
 
               if (origin !== "") {
                 sIndex = parseInt(this.srtSubtitles[i].sn) - 1;
@@ -5245,13 +5323,13 @@ export default {
         contentAll = `<p style='margin-top: 0px; color: yellow'>${contentLine1}</p><p style='color: yellow'>${contentLine2}</p>`;
       } else if (
         currentSubtitle.content.split("\r\n")[2] &&
-        currentSubtitle.content.split("\r\n")[2].includes("[")
+        currentSubtitle.content.split("\r\n")[2].includes("{[")
       ) {
-        const parts = currentSubtitle.content.split("\r\n")[2].split("[");
+        const parts = currentSubtitle.content.split("\r\n")[2].split("{[");
         parts.slice(1).forEach((part) => {
           const highLightWord = part.includes(":")
             ? part.split("::")[0]
-            : part.split("]")[0];
+            : part.split("]}")[0];
           if (highLightWord.trim() !== "") {
             const escapedB = highLightWord.replace(
               /[.*+?^${}()|[\]\\]/g,
@@ -5348,6 +5426,11 @@ export default {
   watch: {
     $route: function () {
       this.updatePreview();
+    },
+    prOutput2() {
+      if (this.prOutput2) {
+        this.generateLayout2Preview();
+      }
     },
 
     srtSubtitlesO: {
@@ -5537,9 +5620,13 @@ export default {
           } else {
             this.wordPhonetic = "";
             if (window.localStorage.getItem("word" + this.newWord)) {
-              this.newTranslation = window.localStorage.getItem(
-                "word" + this.newWord
-              );
+              this.newTranslation = window.localStorage
+                .getItem("word" + this.newWord)
+                .split("::")[0];
+              this.wordPhonetic = window.localStorage
+                .getItem("word" + this.newWord)
+                ?.split("::")[1];
+
               this.getPromise();
             } else {
               this.newTranslation = "";
@@ -5599,7 +5686,7 @@ export default {
       }
     },
     isDictation: function () {
-      this.closeAllParts();
+      this.switchAllParts();
       if (this.isFavOnPlay) this.dictationContent = "";
       else this.handleIsDictation();
       if (this.isDictation) {
@@ -6245,6 +6332,10 @@ export default {
     if (!this.checkLocalStorageSpace()) {
       this.openAlert(1, this.$t("repeater.alertSpace"));
     }
+    this.loadBaiDuTJScript();
+    setTimeout(() => {
+      this.pageView();
+    }, 500);
   },
 
   beforeDestroy() {
@@ -6261,11 +6352,185 @@ export default {
   },
 
   methods: {
+    prPrintWords() {
+      if (this.prArticlePreviewData.length === 0) {
+        alert("暂无单词数据可打印");
+        return;
+      }
+      const htmlContent = this.prCreateWordPrintHTML();
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    },
+    prCreateWordPrintHTML() {
+      let html = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词文章打印-${this.prFileName || "单词列表"}</title>
+    <style>
+        /* 核心：A4横版设置 - 最小页边距 */
+        @page {
+            size: A4 landscape;
+            margin-top: 0.8cm;    // 上
+            margin-right: 0.2cm;  /* 右边距 */
+            margin-bottom: 0.2cm; /* 下边距 */
+            margin-left: 0.9cm;   /* 左边距 */
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-size: 11pt; /* 基础字号，保证紧凑 */
+            line-height: 1.2; /* 行高紧凑，减少留白 */
+        }
+        /* 打印容器：最大化利用横版宽度，自动换行 */
+        .print-container {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 2px 0; /* 进一步减小容器内边距 */
+            word-wrap: break-word; /* 自动换行 */
+        }
+        /* 单个单词单元：行内块布局，连续排列+自动换行 */
+        .word-unit {
+            display: inline-block; /* 行内块，连续排列 */
+            margin: 0 0 4px 0; /* 进一步减小单词单元间距 */
+            vertical-align: top; /* 顶部对齐，排版整齐 */
+            width: 89px; /* 固定宽度，保证排版规整 */
+            box-sizing: border-box; /* 确保宽度包含内边距 */
+            padding: 0; /* 增加少量内边距，避免内容贴边 */
+            }
+        /* 音标样式：居上、小号、黑色，紧凑显示 */
+        .phonetic {
+            display: block;
+            font-size: 9pt;
+            color: #111;
+            height: 1em; /* 固定高度，避免对齐错乱 */
+            line-height: 1em; /* 行高和高度一致，垂直居中 */
+            margin: 0 auto; /* 水平居中 */
+            }
+        /* 单词样式：核心突出，加粗 */
+        .word-text {
+            display: block;
+            font-size: 11pt;
+            font-weight: bold;
+            color: #000;
+            margin: 1px 0;
+            line-height: 1.1em; /* 优化行高，垂直居中 */
+        }
+        /* 释义样式：居下、小号，清晰不抢焦点 */
+        .definition {
+            display: block;
+            font-size: 7pt;
+            color: #333;
+            height: 2.3em; /* 固定高度，保证行对齐 */
+            overflow: hidden; /* 超长释义省略，避免排版混乱 */
+            text-overflow: ellipsis;
+            line-height: 1.15em; /* 优化行高，多行也能居中 */
+        }
+        /* 打印专属优化 */
+        @media print {
+            body {
+                padding: 0;
+            }
+            .print-container {
+                padding: 0;
+            }
+            /* 打印时间距略调，适配纸质显示 */
+            .word-unit {
+                margin: 0 5px 3px 0; /* 打印时进一步减小间距 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+  `;
+
+      // 循环生成连续排列的单词单元
+      this.prArticlePreviewData.forEach((swWord) => {
+        // 转义HTML特殊字符，避免解析出错
+        const phonetic = swWord.phonetic
+          ? this.escapeHtml(swWord.phonetic)
+          : "";
+        const text = swWord.text ? this.escapeHtml(swWord.text) : "";
+        const definition = swWord.definition
+          ? this.escapeHtml(swWord.definition)
+          : "";
+
+        // 单个单词单元：音标上 → 单词中 → 释义下，行内块连续排列
+        html += `
+      <div class="word-unit">
+        <span class="phonetic">${phonetic || "-"}</span>
+        <span class="word-text">${text}</span>
+        <span class="definition">${definition}</span>
+      </div>
+    `;
+      });
+
+      html += `
+    </div>
+</body>
+</html>`;
+      return html;
+    },
+
+    // 辅助函数：转义HTML特殊字符
+    escapeHtml(str) {
+      if (!str) return "";
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    },
+
+    async generateLayout2Preview() {
+      if (this.prArticlePreviewData.length !== 0) return;
+      let tempArtical = "";
+      for (const sentence of this.srtSubtitles) {
+        const originalLine =
+          sentence.content.split("\r\n")[this.lineNumOfOrigin - 1];
+        tempArtical = tempArtical?.trim() + " " + originalLine?.trim();
+      }
+      const wordData = tempArtical?.split(" ");
+      this.prArticlePreviewData = await this.swGetSentenceData(wordData); // 假设函数接收句子字符串
+    },
+    loadBaiDuTJScript() {
+      if (document.getElementById("baidu-tongji-script")) return;
+      window._hmt = window._hmt || [];
+      const hm = document.createElement("script");
+      hm.id = "baidu-tongji-script";
+      hm.src = "https://hm.baidu.com/hm.js?8cd25f4a6ff603e61707fa049681a149";
+      const s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    },
+
+    pageView() {
+      if (window._hmt) {
+        window._hmt.push(["_trackPageview", "/Repeater"]);
+      }
+    },
+
     toOutput() {
       this.cleanUp1();
       this.cleanUp2();
       this.prOutput = true;
     },
+
+    toOutput2() {
+      this.cleanUp1();
+      this.cleanUp2();
+      this.prOutput2 = true;
+    },
+
     prToggleSelectAll() {
       const newPrSelectedIndexes = {};
       if (this.prAllSelected) {
@@ -6329,11 +6594,11 @@ export default {
             margin: 0;
             padding: 0;
             background: white;
-            font-size: 12px;
+            font-size: 1em;
         }
         .prPage {
             page-break-after: always;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .prPage:last-child {
             page-break-after: auto;
@@ -6379,8 +6644,8 @@ export default {
                 margin: 0;
             }
             @page {
-              margin-top: 15mm; /* 上页边距（mm单位更适合打印） */
-              margin-bottom: 15mm; /* 下页边距 */
+              margin-top: 12mm; /* 上页边距（mm单位更适合打印） */
+              margin-bottom: 12mm; /* 下页边距 */
             }
         }
     </style>
@@ -6430,8 +6695,7 @@ export default {
       }, 500);
     },
     switchSenData() {
-      this.closeAllParts();
-      this.showSenWord = !this.showSenWord;
+      this.switchAllParts(3);
       if (this.showSenWord) this.swGetData();
     },
     swToggleDisplayMode() {
@@ -6479,22 +6743,48 @@ export default {
       return swWordList;
     },
 
-    async swGetSentenceData() {
-      let swWordArray = this.srtSubtitles[this.sentenceIndex - 1].content
-        .split("\r\n")
-        [this.lineNumOfOrigin - 1].split(" ");
+    async swGetSentenceData(x) {
+      let swWordArray;
+      if (!x)
+        swWordArray = this.srtSubtitles[this.sentenceIndex - 1].content
+          .split("\r\n")
+          [this.lineNumOfOrigin - 1].split(" ");
+      else swWordArray = x;
       let swWordList = [];
       for (let i = 0; i < swWordArray.length; ++i) {
         this.newWord = swWordArray[i].replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
-        const { phonetic, definition } = await new Promise((resolve) => {
-          this.wordDataResolver = resolve;
-        });
-        swWordList.push({
-          text: swWordArray[i],
-          phonetic,
-          definition,
-          swHover: false,
-        });
+        if (
+          this.newWord != "" &&
+          swWordArray[i].replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "") !=
+            swWordArray[i - 1]?.replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "")
+        ) {
+          const { phonetic, definition } = await new Promise((resolve) => {
+            this.wordDataResolver = resolve;
+          });
+          swWordList.push({
+            text: swWordArray[i],
+            phonetic,
+            definition,
+            swHover: false,
+          });
+        } else if (
+          swWordArray[i].replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "") ==
+          swWordArray[i - 1]?.replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "")
+        ) {
+          swWordList.push({
+            text: swWordArray[i],
+            phonetic: this.wordPhonetic,
+            definition: this.newTranslation,
+            swHover: false,
+          });
+        } else {
+          swWordList.push({
+            text: swWordArray[i],
+            phonetic: "",
+            definition: "",
+            swHover: false,
+          });
+        }
       }
       this.newWord = "";
       return swWordList;
@@ -7306,7 +7596,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob data to server..........................................................................................
+      // send Blob data to server...............................................................................................
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
@@ -7786,12 +8076,28 @@ export default {
 
                 if (this.showEditNew || this.showSenWord) {
                   this.newTranslation = translatedElement.textContent;
-                  if (this.showSenWord)
-                    window.localStorage.setItem(
-                      "word" + this.newWord,
-                      this.newTranslation
-                    );
-                  this.getPromise();
+
+                  fetch(
+                    "https://api.dictionaryapi.dev/api/v2/entries/en/" +
+                      this.newWord
+                  )
+                    .then((res) => res.json())
+                    .then((data) => {
+                      this.wordPhonetic = data?.[0]?.phonetics?.[0]?.text || "";
+                    })
+                    .catch((err) => {
+                      console.error("获取音标失败：", err);
+                      this.wordPhonetic = "";
+                    })
+                    .finally(() => {
+                      if (this.showSenWord) {
+                        window.localStorage.setItem(
+                          "word" + this.newWord,
+                          this.newTranslation + "::" + this.wordPhonetic
+                        );
+                      }
+                      this.getPromise();
+                    });
                 }
               } else {
                 this.translatedText = translatedElement.textContent;
@@ -7807,9 +8113,10 @@ export default {
                 }
                 if (this.showSenWord) {
                   this.newTranslation = "";
+                  this.wordPhonetic = "";
                   window.localStorage.setItem(
                     "word" + this.newWord,
-                    this.newTranslation
+                    this.newTranslation + "::" + this.wordPhonetic
                   );
                   this.getPromise();
                 }
@@ -7833,9 +8140,10 @@ export default {
               }
               if (this.showSenWord) {
                 this.newTranslation = "";
+                this.wordPhonetic = "";
                 window.localStorage.setItem(
                   "word" + this.newWord,
-                  this.newTranslation
+                  this.newTranslation + "::" + this.wordPhonetic
                 );
                 this.getPromise();
               }
@@ -7860,9 +8168,10 @@ export default {
             }
             if (this.showSenWord) {
               this.newTranslation = "";
+              this.wordPhonetic = "";
               window.localStorage.setItem(
                 "word" + this.newWord,
-                this.newTranslation
+                this.newTranslation + "::" + this.wordPhonetic
               );
               this.getPromise();
             }
@@ -8074,20 +8383,36 @@ export default {
         }
         if (this.showEditNew || this.showSenWord) {
           this.newTranslation = this.translatedText;
-          if (this.showSenWord)
-            window.localStorage.setItem(
-              "word" + this.newWord,
-              this.newTranslation
-            );
-          this.getPromise();
+
+          fetch(
+            "https://api.dictionaryapi.dev/api/v2/entries/en/" + this.newWord
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              this.wordPhonetic = data?.[0]?.phonetics?.[0]?.text || "";
+            })
+            .catch((err) => {
+              console.error("获取音标失败：", err);
+              this.wordPhonetic = "";
+            })
+            .finally(() => {
+              if (this.showSenWord) {
+                window.localStorage.setItem(
+                  "word" + this.newWord,
+                  this.newTranslation + "::" + this.wordPhonetic
+                );
+              }
+              this.getPromise();
+            });
         } else this.saveTranslate();
       } catch (error) {
         this.translatedText = "";
         if (this.showSenWord) {
           this.newTranslation = "";
+          this.wordPhonetic = "";
           window.localStorage.setItem(
             "word" + this.newWord,
-            this.newTranslation
+            this.newTranslation + "::" + this.wordPhonetic
           );
           this.getPromise();
         } else if (this.showEditNew) {
@@ -8246,7 +8571,7 @@ export default {
     async getNewWordList() {
       try {
         var content = await api.fetch(
-          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt"
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt"
         );
         const lines = content.content.split(/\r?\n/);
         const wordList = lines
@@ -8273,15 +8598,15 @@ export default {
               familiarity: parts[12],
               date: parts[13],
               require: parts[14],
-              temp1: parts[15],
-              temp2: parts[16],
+              favorite: parts[15],
+              user2: parts[16],
               temp3: parts[17],
             };
           })
           .filter((item) => item !== null);
         this.wordList = wordList;
       } catch (e) {
-        alert("找不到生词表PDJ-wordlist.txt，将在添加生词时新建。");
+        alert("找不到生词表PDJ-WordList.txt，将在添加生词时新建。");
       }
     },
 
@@ -8342,10 +8667,13 @@ export default {
       this.openAlert(1, this.$t("repeater.alertOriginTTS"));
     },
 
-    closeAllParts() {
-      this.showSpell = false;
-      this.showCloze = false;
-      this.showSenWord = false;
+    switchAllParts(x) {
+      if (x == 1) this.showSpell = !this.showSpell;
+      else this.showSpell = false;
+      if (x == 2) this.showCloze = !this.showCloze;
+      else this.showCloze = false;
+      if (x == 3) this.showSenWord = !this.showSenWord;
+      else this.showSenWord = false;
       if (this.isRecording) this.recording();
     },
 
@@ -8970,7 +9298,6 @@ export default {
           );
         } else this.setPara(PDJcontent.split("\n\n")[0]);
         this.reviseData = JSON.parse(PDJcontent.split("\n\n\n\n")[1]);
-        this.PDJWordListContent = PDJcontent.split("PDJWordList::")[1];
         this.calcFav();
         if (!this.hasSpeechSynthesis) {
           this.isSystemTTS = "No";
@@ -9551,7 +9878,8 @@ export default {
     saveWordToSRT(x) {
       let newphrase = "";
       if (x == 1) newphrase = "[star];";
-      else newphrase = "[" + this.newWord + "::" + this.newTranslation + "]; ";
+      else
+        newphrase = "{[" + this.newWord + "::" + this.newTranslation + "]}; ";
       this.cleanUp1();
       this.cleanUp2();
       this.startTimeTemp = this.srtSubtitles[this.sentenceIndex - 1].startTime;
@@ -9564,18 +9892,18 @@ export default {
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] &&
         this.srtSubtitles[this.sentenceIndex - 1].content
           .split("\r\n")[2]
-          .includes("[" + this.newWord.trim() + "::")
+          .includes("{[" + this.newWord.trim() + "::")
       ) {
         let t1 = this.srtSubtitles[this.sentenceIndex - 1].content
           .split("\r\n")[2]
-          .split("[" + this.newWord.trim() + "::")[1];
-        const index = t1.indexOf("];");
+          .split("{[" + this.newWord.trim() + "::")[1];
+        const index = t1.indexOf("]};");
         let part2 = index !== -1 ? t1.slice(index + 2) : t1;
 
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content
             .split("\r\n")[2]
-            .split("[" + this.newWord.trim() + "::")[0] + part2;
+            .split("{[" + this.newWord.trim() + "::")[0] + part2;
       } else {
         this.note =
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2];
@@ -9599,6 +9927,7 @@ export default {
           partOfSpeech: this.newTranslation,
           wordNote: this.wordNotes,
           date: date,
+          require: this.listWord.require + " 0",
         });
       } else if (this.dictionaryWord) {
         let ex1 = "";
@@ -9627,7 +9956,6 @@ export default {
           ex2 = this.dictionaryWord.exampleTranslation;
           ex1 = this.dictionaryWord.exampleSentence;
         }
-
         newW = {
           number: this.dictionaryWord.number,
           word: this.dictionaryWord.word,
@@ -9643,10 +9971,10 @@ export default {
           wordNote: this.wordNotes,
           familiarity: 0,
           date: date,
-          require: 0,
-          temp1: 0,
-          temp2: 0,
-          temp3: 0,
+          require: "0",
+          favorite: 0,
+          user2: "0,0," + date,
+          temp3: "0,0",
         };
         this.wordList.push(newW);
       } else {
@@ -9693,9 +10021,9 @@ export default {
           familiarity: 0,
           date: date,
           require: 0,
-          temp1: 0,
-          temp2: 0,
-          temp3: 0,
+          favorite: 0,
+          user2: "0,0," + date,
+          temp3: "0,0",
         };
         this.wordList.push(newW);
       }
@@ -9721,16 +10049,16 @@ export default {
             item.familiarity || 0,
             item.date || 0,
             item.require || 0,
-            item.temp1 || 0,
-            item.temp2 || 0,
-            item.temp3 || 0,
+            item.favorite || 0,
+            item.user2 || "0,0,0",
+            item.temp3 || "0,0",
           ];
           return parts.join("||");
         });
 
         const textContent = lines.join("\n");
         await api.post(
-          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt",
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt",
           textContent,
           true
         );
@@ -9738,7 +10066,7 @@ export default {
         alert(
           "failed to save newWord to /!PDJ/user-" +
             this.user.username +
-            "/PDJ-wordlist.txt",
+            "/PDJ-WordList.txt",
           error
         );
       }
@@ -9850,9 +10178,14 @@ export default {
       }
     },
 
-    chooseSentence(index, indexWordList) {
-      this.sentenceIndex = index;
-      this.sentenceIndex = index + 1;
+    chooseSentence(index, indexWordList, type) {
+      if (type == 1) {
+        this.sentenceIndex = index + 1;
+        this.sentenceIndex = index;
+      } else {
+        this.sentenceIndex = index;
+        this.sentenceIndex = index + 1;
+      }
       if (this.showNewWordList && !this.withTrans) {
         if (this.newWordList.length > 0)
           this.newWordList[indexWordList].showTrans = true;
@@ -9867,7 +10200,10 @@ export default {
           if (this.newWord.trim() != y.trim()) this.newWord = y.trim();
           else this.clickWord();
         }
-      } else this.click();
+      } else {
+        this.cIndex = indexWordList + 1;
+        this.click();
+      }
     },
 
     clickWord() {
@@ -10335,6 +10671,11 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
           ];
+
+        const regex =
+          /^[-!@#$%^&*(),.?":{}|<>；，。！？、`~·_+=\\/[\]{}'’"“”]+/;
+        transLineContent = transLineContent.replace(regex, "");
+
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -10372,6 +10713,11 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfOrigin - 1
           ];
+
+        const regex =
+          /^[-!@#$%^&*(),.?":{}|<>；，。！？、`~·_+=\\/[\]{}'’"“”]+/;
+        originLineContent = originLineContent.replace(regex, "");
+
         this.utterThis.text =
           originLineContent !== undefined &&
           originLineContent !== " " &&
@@ -10411,6 +10757,9 @@ export default {
           this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
             this.lineNumOfTrans - 1
           ];
+        const regex =
+          /^[-!@#$%^&*(),.?":{}|<>；，。！？、`~·_+=\\/[\]{}'’"“”]+/;
+        transLineContent = transLineContent.replace(regex, "");
         this.utterThis.text =
           transLineContent !== undefined &&
           transLineContent !== " " &&
@@ -10453,6 +10802,8 @@ export default {
         this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[
           this.lineNumOfTrans - 1
         ];
+      const regex = /^[-!@#$%^&*(),.?":{}|<>；，。！？、`~·_+=\\/[\]{}'’"“”]+/;
+      transLineContent = transLineContent.replace(regex, "");
       let text =
         transLineContent !== undefined &&
         transLineContent !== " " &&
@@ -11958,13 +12309,7 @@ export default {
       let customConfig = this.getConfig();
 
       let favContent =
-        "public" +
-        customConfig +
-        "\n\n\n\n" +
-        JSON.stringify(this.reviseData) +
-        "\n\n\n\n" +
-        "PDJWordList::" +
-        this.PDJWordListContent;
+        "public" + customConfig + "\n\n\n\n" + JSON.stringify(this.reviseData);
       this.hasPrivate = false;
       this.tempFavContent = favContent;
       this.hasConfirmed = true;
@@ -12091,28 +12436,22 @@ export default {
       let customConfig = this.getConfig();
 
       let favContent = window.localStorage.getItem(this.favFileName);
-      var allConfig = favContent.split("\n\n\n\n")[0];
+      var allConfig = favContent?.split("\n\n\n\n")[0];
       let oldConfig = "";
-      if (this.isPrivate == "Yes" && this.hasPrivate) {
+      if (this.isPrivate == "Yes" && this.hasPrivate && allConfig) {
         oldConfig = allConfig
           .split(this.reqF.name + "privatecustomConfig::")[1]
           .split("\n\n")[0];
-        allConfig = allConfig.replace(
+        allConfig = allConfig?.replace(
           this.reqF.name + "privatecustomConfig::" + oldConfig,
           this.reqF.name + "private" + customConfig
         );
       } else {
-        oldConfig = allConfig.split("\n\n")[0];
-        allConfig = allConfig.replace(oldConfig, "public" + customConfig);
+        oldConfig = allConfig?.split("\n\n")[0];
+        allConfig = allConfig?.replace(oldConfig, "public" + customConfig);
       }
 
-      favContent =
-        allConfig +
-        "\n\n\n\n" +
-        JSON.stringify(this.reviseData) +
-        "\n\n\n\n" +
-        "PDJWordList::" +
-        this.PDJWordListContent;
+      favContent = allConfig + "\n\n\n\n" + JSON.stringify(this.reviseData);
       this.tempFavContent = favContent;
       this.saveNow();
     },
@@ -12764,9 +13103,9 @@ export default {
       var newContent;
       if (x !== 1) {
         var delWord = textSubtitles[this.sentenceIndex - 1].split(
-          "[" + this.deleteNewWord + "::"
+          "{[" + this.deleteNewWord + "::"
         );
-        const index = delWord[1].indexOf("]");
+        const index = delWord[1].indexOf("]}");
         let part2 = delWord[1].slice(index + 1);
         part2 = part2.replace(/^;/, "");
         newContent = delWord[0] + part2;
@@ -13788,7 +14127,7 @@ export default {
           }, 1);
         }
       } else if (event.which === 27) {
-        // esc
+        // esc .......................
         this.close();
       }
     },
@@ -13824,6 +14163,10 @@ export default {
     },
 
     close() {
+      if (this.prOutput2) {
+        this.prOutput2 = false;
+        return;
+      }
       if (this.prOutput) {
         this.prOutput = false;
         return;
@@ -13883,14 +14226,12 @@ export default {
 
 <style scoped>
 @font-face {
-  font-family: "MyRelativeFont"; /* 自定义字体名称 */
+  font-family: "MyRelativeFont";
   /* 相对路径：从当前组件所在目录（components）向上一级（到src），再进入assets/fonts */
   src: url("../../assets/fonts/myfont.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
-
-/* 使用字体 */
 .custom-text {
   font-family: "MyRelativeFont", sans-serif;
   font-size: 20px;
@@ -13945,8 +14286,6 @@ export default {
   margin-top: 0;
   margin-bottom: 20px;
 }
-
-/* 句子模式样式 */
 .cloze-sentence {
   color: wheat;
   font-size: 1.5em;
@@ -13961,15 +14300,12 @@ export default {
 .blank-input {
   width: 9rem;
   padding: 6px 2px;
-  background: gray;
-  border: 2px solid #bdc3c7;
+  color: white;
   border-radius: 4px;
   margin: 0 5px;
   text-align: center;
   transition: all 0.3s;
 }
-
-/* 单词模式样式 */
 .cloze-word {
   text-align: center;
   margin-bottom: 45px;
@@ -14001,25 +14337,19 @@ export default {
   min-width: 30px;
   text-align: center;
 }
-
-/* 通用输入样式 */
 .blank-input:focus,
 .letter-input:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 .blank-input.correct,
 .letter-input.correct {
-  border-color: #2ecc71;
-  background-color: rgba(46, 204, 113);
+  color: springgreen;
 }
 
 .blank-input.incorrect,
 .letter-input.incorrect {
-  border-color: #e74c3c;
-  background-color: #e66666;
+  color: red;
 }
 
 .feedback {
@@ -14060,9 +14390,8 @@ export default {
   color: #2c3e50;
   transition: all 0.3s ease;
   position: relative;
-  cursor: pointer; /* 新增：添加鼠标指针样式 */
+  cursor: pointer;
 }
-/* 新增：添加悬停效果 */
 .spelled-letter:not(.is-correct):hover {
   background-color: #e1e8ed;
   transform: scale(1.05);
@@ -14078,9 +14407,8 @@ export default {
   font-weight: 600;
   color: #2c3e50;
   transition: all 0.3s ease;
-  cursor: pointer; /* 新增：添加鼠标指针样式 */
+  cursor: pointer;
 }
-/* 新增：添加悬停效果 */
 .spelled-word:not(.is-correct):hover {
   background-color: #e1e8ed;
   transform: scale(1.05);
@@ -14589,10 +14917,11 @@ input:disabled {
 .sw-header {
   text-align: center;
   padding: 0.5em;
+  padding-top: 2em;
 }
 
 .sw-title {
-  color: #e0e0e0; /* 标题改为浅灰色 */
+  color: #e0e0e0; /* 标题颜色改为浅灰色 */
   margin: 0;
   font-weight: 700;
   font-size: 2rem;
@@ -14616,7 +14945,7 @@ input:disabled {
   background-color: aqua;
   color: black;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5em;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -14645,6 +14974,22 @@ input:disabled {
   transition: all 0.3s ease;
 }
 
+.sw-sentence-container1 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.5rem;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
 .sw-word-card {
   display: flex;
   flex-direction: column;
@@ -14663,7 +15008,7 @@ input:disabled {
 /* 音标样式 */
 .sw-phonetic {
   color: #64b5f6;
-  font-size: 0.85rem;
+  font-size: 1.2em;
   font-family: "Times New Roman", Times, serif;
   margin-bottom: 0.2rem; /* 保持固定间距 */
   opacity: 0;
@@ -14679,7 +15024,7 @@ input:disabled {
 
 /* 单词样式 */
 .sw-word {
-  font-size: 1.3rem;
+  font-size: 1.3em;
   font-weight: 600;
   color: gold;
   margin-bottom: 0.2rem;
@@ -14711,8 +15056,8 @@ input:disabled {
 
 /* 释义样式 */
 .sw-definition {
-  color: #bbbbbb; /* 释义改为中灰色 */
-  font-size: 0.75rem;
+  color: #bbbbbb; /* 释义的颜色改为中灰色 */
+  font-size: 0.75em;
   text-align: center;
   max-width: 120px;
   line-height: 1.4;
@@ -14724,15 +15069,15 @@ input:disabled {
 
 .sw-show-definition {
   opacity: 1;
-  visibility: visible; /* 显示时可见 */
+  visibility: visible;
 }
 
 .sw-instructions {
-  color: #bbbbbb; /* 说明文本改为中灰色 */
+  color: #bbbbbb;
   font-size: 0.9rem;
   margin: 0;
   padding: 0.5rem 1rem;
-  background-color: rgba(100, 181, 246, 0.1); /* 说明文本背景改为透明蓝色 */
+  background-color: rgba(100, 181, 246, 0.1);
   border-radius: 6px;
 }
 
@@ -14748,7 +15093,7 @@ input:disabled {
   }
 
   .sw-word {
-    font-size: 1.1rem;
+    font-size: 1.1em;
   }
 }
 
@@ -15026,6 +15371,52 @@ input[type="text"] {
   .prStats {
     flex-direction: column;
     align-items: center;
+  }
+}
+
+.prArticlePreview .article-preview-page {
+  font-family: "SimSun", serif; /* 适合打印的字体 */
+  line-height: 1.8;
+  text-align: justify;
+  padding: 20px;
+  background: white;
+  border: 1px solid #ccc;
+}
+.article-word {
+  position: relative;
+  display: inline-block;
+  margin: 0 2px;
+  vertical-align: baseline;
+}
+.word-phonetic {
+  position: absolute;
+  font-size: 0.7em;
+  top: -1em; /* 上标音标 */
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #666;
+}
+.word-translation {
+  position: absolute;
+  font-size: 0.7em;
+  bottom: -1.2em; /* 下标翻译 */
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #333;
+}
+/* 打印专用样式 (使用 @media print) */
+@media print {
+  .article-preview-page {
+    width: 210mm;
+    height: 297mm;
+    padding: 20mm;
+    margin: 0;
+  }
+  /* 隐藏非打印元素 */
+  .no-print {
+    display: none !important;
   }
 }
 </style>

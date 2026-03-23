@@ -288,6 +288,11 @@ export default {
   },
 
   mounted() {
+    this.loadBaiDuTJScript();
+    setTimeout(() => {
+      this.pageView();
+    }, 500);
+
     if (!window.localStorage.getItem("isOffline"))
       window.localStorage.setItem("isOffline", 0);
     if (!window.localStorage.getItem("lastRawToken")) this.allowOffline = false;
@@ -345,6 +350,23 @@ export default {
       this.showResult();
       this.showCleanUp = false;
     },
+
+    loadBaiDuTJScript() {
+      if (document.getElementById("baidu-tongji-script")) return;
+      window._hmt = window._hmt || [];
+      const hm = document.createElement("script");
+      hm.id = "baidu-tongji-script";
+      hm.src = "https://hm.baidu.com/hm.js?8cd25f4a6ff603e61707fa049681a149";
+      const s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    },
+
+    pageView() {
+      if (window._hmt) {
+        window._hmt.push(["_trackPageview", "/login"]);
+      }
+    },
+
     cacheCleanUp() {
       var vm = this;
       localforage

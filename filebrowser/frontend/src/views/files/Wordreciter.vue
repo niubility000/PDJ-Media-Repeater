@@ -15,7 +15,11 @@
 
       <span
         v-if="
-          !initReciter && studyWordList.length > 0 && !addWord && !insertWord
+          !initReciter &&
+          studyWordList.length > 0 &&
+          !addWord &&
+          !insertWord &&
+          !isUser2
         "
       >
         &nbsp;
@@ -25,10 +29,28 @@
           studyWordList[wordIndex - 1].level.split(" ")[0]
         }}&nbsp;&nbsp;{{ studyWordList[wordIndex - 1].require }}]
       </span>
-      <span v-if="initReciter && wordList.length > 0">
-        &nbsp;升级测验：{{ initTList.length }}
 
-        &nbsp;&nbsp;单词学习：{{ initSList.length }}
+      <span
+        v-if="
+          !initReciter &&
+          studyWordList.length > 0 &&
+          !addWord &&
+          !insertWord &&
+          isUser2
+        "
+      >
+        &nbsp;
+        {{ studyWordList[wordIndex - 1].user2.split(",")[0] }}
+
+        &nbsp;&nbsp;[{{ studyWordList[wordIndex - 1].number }}&nbsp;&nbsp;{{
+          studyWordList[wordIndex - 1].level.split(" ")[0]
+        }}&nbsp;&nbsp;{{ studyWordList[wordIndex - 1].require }}]
+      </span>
+
+      <span v-if="initReciter && wordList.length > 0">
+        &nbsp;升级测验：{{ initTList.length }} &nbsp;&nbsp;单词学习：{{
+          initSList.length
+        }}
       </span>
       <span style="flex-grow: 1"></span>
       <span
@@ -52,7 +74,9 @@
           }"
           >{{ nb }}/</span
         >
+
         <span
+          v-if="!initReciter && !addWord"
           style="
             display: inline-block;
             text-align: right;
@@ -64,6 +88,34 @@
             color: isSetting ? 'grey' : 'blue',
           }"
           >{{ ttl }}</span
+        >
+        <span
+          v-if="isTesting"
+          style="
+            display: inline-block;
+            text-align: right;
+            border: none;
+            padding: 0;
+            margin: 0 0.5em 0 0;
+          "
+          :style="{
+            color: isSetting ? 'grey' : 'blue',
+          }"
+          >({{ testLength - groupNumber * (testRound - 1) }})</span
+        >
+        <span
+          v-if="initReciter || addWord"
+          style="
+            display: inline-block;
+            text-align: right;
+            border: none;
+            padding: 0;
+            margin: 0 0.5em 0 0;
+          "
+          :style="{
+            color: isSetting ? 'grey' : 'blue',
+          }"
+          >{{ wordList.length }}</span
         >
       </span>
       <button
@@ -127,11 +179,11 @@
                 />
               </p>
               <span>
-                自建分类：-1代表选择全部
+                自建分类：-1代表选择全部(多值用空格分隔)
                 <input
                   class="input input--repeater"
                   style="width: 4em"
-                  type="number"
+                  type="text"
                   v-model.lazy="prRequireLevel"
                 />
               </span>
@@ -146,7 +198,7 @@
                   max="1000"
                   v-model.number.lazy="prFilterFam1"
                 />
-                to:
+                to
                 <input
                   class="input input--repeater"
                   style="width: 4em"
@@ -388,6 +440,29 @@
             >汉译英</span
           >
         </p>
+        <p
+          style="
+            margin: 0;
+            padding-right: 0.2em;
+            background-color: white;
+            color: black;
+            display: flex;
+            align-items: center;
+          "
+        >
+          <button class="action" name="buttons" :title="$t('repeater.search')">
+            <i style="color: green; font-size: 1em" class="material-icons"
+              >find_replace</i
+            >
+          </button>
+          <input
+            style="height: 2em; border-width: 1px; min-width: 3em; flex-grow: 1"
+            type="text"
+            placeholder="搜索（忽略大小写）"
+            v-model="keyWord"
+          />
+        </p>
+
         <ul
           v-if="studyWordList.length > 0"
           id="myWordList"
@@ -399,78 +474,119 @@
             overflow-y: auto;
             list-style-type: none;
           "
-          @click.self="studyWordList[wordIndex - 1].temp3 = 0"
+          @click.self="tested[wordIndex - 1] = 0"
           @touchmove.stop.passive
         >
-          <li
-            v-for="(newWord, index) in studyWordList"
-            :key="index"
-            :id="index + 1"
-            @click.stop="chooseSentence(index)"
-            @dblclick="toDetail(index)"
-            style="align-items: center"
-          >
-            <span> {{ index + 1 }}. </span>
-            <button
-              v-if="Number(newWord.temp1) == 1"
-              class="action"
-              name="buttons"
-              @click.stop="studyWordList[index].temp1 = 0"
+          <template v-for="(newWord, index) in studyWordList">
+            <li
+              v-if="
+                newWord.word.includes(keyWord) ||
+                newWord.partOfSpeech.includes(keyWord)
+              "
+              :key="index"
+              :id="index + 1"
+              @click.stop="chooseSentence(index)"
+              @dblclick="toDetail(index)"
+              style="align-items: center"
             >
-              <i style="color: yellow; font-size: 1em" class="material-icons"
-                >star</i
+              <span> {{ index + 1 }}. </span>
+              <button
+                v-if="!isUser2 && Number(newWord.favorite) == 1"
+                class="action"
+                name="buttons"
+                @click.stop="studyWordList[index].favorite = 0"
               >
-            </button>
-            <button
-              v-if="Number(newWord.temp1) == 0"
-              class="action"
-              name="buttons"
-              @click.stop="studyWordList[index].temp1 = 1"
-            >
-              <i
-                style="color: springgreen; font-size: 1em"
-                class="material-icons"
-                >star_outline</i
+                <i style="color: yellow; font-size: 1em" class="material-icons"
+                  >star</i
+                >
+              </button>
+              <button
+                v-if="isUser2 && Number(newWord.user2.split(',')[1]) == 1"
+                class="action"
+                name="buttons"
+                @click.stop="
+                  studyWordList[index].user2 =
+                    studyWordList[index].user2.split(',')[0] +
+                    ',0,' +
+                    studyWordList[index].user2.split(',')[2]
+                "
               >
-            </button>
-            <span
-              v-if="!isTrans || Number(newWord.temp3) !== 0"
-              style="
-                display: inline-block;
-                width: 25%;
-                color: greenyellow;
-                cursor: pointer;
-              "
-              >{{ newWord.word }}</span
-            >
-            <span
-              v-if="isTrans && Number(newWord.temp3) == 0"
-              style="
-                display: inline-block;
-                width: 25%;
-                color: greenyellow;
-                cursor: pointer;
-              "
-            ></span>
-            <span
-              v-if="Number(newWord.temp3) !== 0 || isTrans"
-              style="
-                display: inline-block;
-                width: 50%;
-                color: wheat;
-                cursor: pointer;
-              "
-              >{{ newWord.partOfSpeech }}</span
-            >
-            <hr
-              v-if="(index + 1) % 5 != 0"
-              style="border: none; border-top: 1px solid black; height: 0"
-            />
-            <hr
-              v-if="(index + 1) % 5 == 0"
-              style="border: none; border-top: 1px solid wheat; height: 0"
-            />
-          </li>
+                <i style="color: yellow; font-size: 1em" class="material-icons"
+                  >star</i
+                >
+              </button>
+              <button
+                v-if="!isUser2 && Number(newWord.favorite) == 0"
+                class="action"
+                name="buttons"
+                @click.stop="studyWordList[index].favorite = 1"
+              >
+                <i
+                  style="color: springgreen; font-size: 1em"
+                  class="material-icons"
+                  >star_outline</i
+                >
+              </button>
+
+              <button
+                v-if="isUser2 && Number(newWord.user2.split(',')[1]) == 0"
+                class="action"
+                name="buttons"
+                @click.stop="
+                  studyWordList[index].user2 =
+                    studyWordList[index].user2.split(',')[0] +
+                    ',1,' +
+                    studyWordList[index].user2.split(',')[2]
+                "
+              >
+                <i
+                  style="color: springgreen; font-size: 1em"
+                  class="material-icons"
+                  >star_outline</i
+                >
+              </button>
+
+              <span
+                v-if="!isTrans || (tested[index] && tested[index] !== 0)"
+                style="
+                  display: inline-block;
+                  width: 25%;
+                  font-size: 1.2em;
+                  color: greenyellow;
+                  cursor: pointer;
+                "
+                >{{ newWord.word }}</span
+              >
+              <span
+                v-if="isTrans && (!tested[index] || tested[index] == 0)"
+                style="
+                  display: inline-block;
+                  width: 25%;
+                  font-size: 1.2em;
+                  color: greenyellow;
+                  cursor: pointer;
+                "
+              ></span>
+              <span
+                v-if="(tested[index] && tested[index] !== 0) || isTrans"
+                style="
+                  display: inline-block;
+                  width: 50%;
+                  color: wheat;
+                  cursor: pointer;
+                "
+                >{{ newWord.partOfSpeech }}</span
+              >
+              <hr
+                v-if="(index + 1) % 5 != 0"
+                style="border: none; border-top: 1px solid black; height: 0"
+              />
+              <hr
+                v-if="(index + 1) % 5 == 0"
+                style="border: none; border-top: 1px solid wheat; height: 0"
+              />
+            </li>
+          </template>
         </ul>
       </div>
     </div>
@@ -491,26 +607,6 @@
           </button>
         </div>
         <div>
-          <p>
-            <button
-              class="action"
-              style="color: white"
-              name="buttons"
-              @click.stop="toShuffle(1)"
-            >
-              乱顺
-            </button>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <button
-              class="action"
-              style="color: white"
-              name="buttons"
-              @click.stop="toShuffle(2)"
-            >
-              逆序
-            </button>
-          </p>
-
           <hr style="border: none; border-top: 1px solid black; height: 0" />
         </div>
         <p>
@@ -567,14 +663,9 @@
         </p>
         <p>
           <input type="checkbox" v-model="isAutoNext" />
-          自动播放下一个单词
+          自动切换下一个单词
         </p>
         <div>
-          <hr style="border: none; border-top: 1px solid black; height: 0" />
-          <p>
-            <input type="checkbox" v-model="autoRead" />
-            切换时自动朗读单词
-          </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p>
             <input type="checkbox" v-model="isFromLocal" />
@@ -587,8 +678,54 @@
           </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p>
+            <input type="checkbox" v-model="showMedia" />
+            开启单词图片和视频浏览
+          </p>
+          <div
+            style="margin-left: 1em"
+            :style="{ color: showMedia ? 'white' : 'darkgray' }"
+          >
+            <p>
+              <input
+                :disabled="!showMedia"
+                type="radio"
+                id="pic"
+                value="1"
+                v-model="selectedMedia"
+              />
+              单词图片
+            </p>
+            <p>
+              <input
+                :disabled="!showMedia"
+                type="radio"
+                id="video"
+                value="2"
+                v-model="selectedMedia"
+              />
+              单词视频
+            </p>
+            <p>
+              * 将在
+              <i
+                style="font-size: 1.2em; color: springgreen"
+                class="material-icons"
+                >volume_up</i
+              >
+              前显示按钮
+              <i
+                style="font-size: 1.2em; color: springgreen"
+                class="material-icons"
+                >perm_media</i
+              >。单词图片和视频可用豆包等ai生成，并命名为'单词.jpg'，或
+              '单词.mp4'
+              (全小写)，放入服务器上的!PDJ/media文件夹内，系统将自动调用。在单词图片或视频浏览页面切换单词时，将自动寻找下一个有图片或视频的单词。
+            </p>
+          </div>
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
+          <p>
             *
-            纯键盘操作指南：左箭头--上一词；右箭头：下一词；向下箭头--朗读当前单词；回车键--朗读当前单词或切换到下一词；向上箭头--在纠音、排序、填空、听写等页面切换显示单词和释义，以方便核对。
+            纯键盘操作指南：左箭头--上一词；右箭头：下一词；向下箭头--朗读当前单词；回车键--朗读当前单词或切换到下一词；向上箭头(或点击相应区域)--在纠音、排序、填空、听写等页面切换显示单词和释义，以方便核对或进行打字练习。
           </p>
 
           <hr style="border: none; border-top: 1px solid black; height: 0" />
@@ -601,7 +738,11 @@
     </div>
 
     <div v-if="isWordReciter" style="height: 100%; width: 100%">
-      <div v-if="initReciter && !prOutput" style="height: 100%; width: 100%">
+      <div
+        v-if="initReciter && !prOutput"
+        style="height: 100%; margin: auto"
+        :style="{ width: isMobile ? '100%' : '60%' }"
+      >
         <div
           style="
             width: 100%;
@@ -611,32 +752,26 @@
             text-align: center;
           "
         >
-          <p style="margin-top: 30vh">PDJ一生词表</p>
+          <p style="margin-top: 18vh">PDJ一生词表</p>
         </div>
         <p
-          style="display: flex; justify-content: space-around; padding: 24px 0"
+          style="
+            display: flex;
+            justify-content: space-around;
+            padding: 24px 0 58px 0;
+          "
         >
           <button
-            v-if="!closeWordTest"
-            :disabled="initTList.length == 0"
+            :disabled="loadT"
             class="action"
             name="buttons"
             @click="isTest"
-            style="font-size: 1.5em; color: springgreen"
+            style="font-size: 2em"
             :style="{
-              color: initTList.length == 0 ? 'gray' : 'springgreen',
+              color: loadT ? 'gray' : '#3498db',
             }"
           >
             升级测验
-          </button>
-          <button
-            v-if="closeWordTest"
-            disabled
-            class="action"
-            name="buttons"
-            style="font-size: 1.5em; color: gray"
-          >
-            升级测验(关)
           </button>
           <button
             class="action"
@@ -644,26 +779,16 @@
             :disabled="initSList.length == 0"
             @click="
               switchShow();
+              tested = [];
+              testDone = [];
               toStudy();
             "
-            style="font-size: 1.5em"
+            style="font-size: 2em"
             :style="{
-              color: initSList.length == 0 ? 'gray' : 'springgreen',
+              color: initSList.length == 0 ? 'gray' : '#3498db',
             }"
           >
             单词学习
-          </button>
-          <button
-            class="action"
-            name="buttons"
-            @click="
-              newWord = '';
-              switchShow();
-              toAddWord();
-            "
-            style="font-size: 1.5em; color: springgreen"
-          >
-            添加生词
           </button>
         </p>
         <p style="display: flex; justify-content: space-around">
@@ -677,7 +802,19 @@
             "
             style="font-size: 1.5em; color: springgreen"
           >
-            设置与说明
+            设置
+          </button>
+          <button
+            class="action"
+            name="buttons"
+            @click="
+              newWord = '';
+              switchShow();
+              toAddWord();
+            "
+            style="font-size: 1.5em; color: springgreen"
+          >
+            添加生词
           </button>
           <button
             class="action"
@@ -688,7 +825,7 @@
             "
             style="font-size: 1.5em; color: springgreen"
           >
-            打印单词列表
+            打印
           </button>
         </p>
       </div>
@@ -711,35 +848,133 @@
           v-if="addWord"
           style="width: 100%; display: flex; align-items: center"
         >
-          <span style="margin-left: auto; margin-right: auto"
-            >在单词表末尾添加生词</span
-          ><span style="margin-right: 1em" @click="toAddBatchWord"
-            >批量添加</span
+          <span
+            v-if="!addBatchWord"
+            style="
+              margin-left: auto;
+              margin-right: auto;
+              font-size: 1.5em;
+              color: springgreen;
+            "
+            >在单词表末尾添加一个生词</span
+          >
+          <span
+            v-if="addBatchWord"
+            style="
+              margin-left: auto;
+              margin-right: auto;
+              font-size: 1.5em;
+              color: springgreen;
+            "
+            >在单词表末尾批量添加生词</span
+          >
+          <span
+            v-if="!addBatchWord"
+            style="
+              margin-right: 1em;
+              font-size: 1.2em;
+              color: yellow;
+              cursor: pointer;
+            "
+            @click="toAddBatchWord"
+            >批量添加单词</span
+          >
+          <span
+            v-if="addBatchWord"
+            style="
+              margin-right: 1em;
+              font-size: 1.2em;
+              color: yellow;
+              cursor: pointer;
+            "
+            @click="toAddBatchWord"
+            >添加单个单词</span
           >
         </p>
         <p v-if="insertWord">在当前单词后添加生词(按正序位置)</p>
 
         <div v-if="addBatchWord" style="text-align: left">
-          <p style="display: flex; align-items: center; margin-top: 3em">
-            <span>选择分级：</span>
-            <input
-              class="input input--repeater"
-              style="flex-grow: 1"
-              type="text"
-              placeholder="如小学、初中、高中、四级、六级、考研、托福、雅思、GRE"
-              v-model="prFilterLevel"
-            />
+          <p style="display: flex; justify-content: space-evenly">
+            <button
+              class="action"
+              name="buttons"
+              @click.stop="fromBuildIn = true"
+            >
+              <i
+                style="font-size: 1.2em"
+                :style="{
+                  color: !fromBuildIn ? 'yellow' : 'springgreen',
+                }"
+                class="material-icons"
+                >从内置词库添加</i
+              >
+            </button>
+            <button
+              class="action"
+              name="buttons"
+              @click.stop="fromBuildIn = false"
+            >
+              <i
+                style="font-size: 1.2em"
+                :style="{
+                  color: fromBuildIn ? 'yellow' : 'springgreen',
+                }"
+                class="material-icons"
+                >从自定义词表添加</i
+              >
+            </button>
           </p>
-          <p>
-            已选择{{
-              this.batchNewList.length
-            }}个单词（不包含已在单词本中的单词）
-          </p>
-          <p>
-            添加前建议先备份单词本，单词本文件位于服务器上的!PDJ/user-{{
-              user.username
-            }}/PDJ-wordlist.txt。
-          </p>
+          <div v-if="fromBuildIn">
+            <p style="display: flex; align-items: center; margin-top: 3em">
+              <span>选择分级：</span>
+              <input
+                class="input input--repeater"
+                style="flex-grow: 1"
+                type="text"
+                placeholder="如小学、初中、高中、四级、六级、考研、托福、雅思、GRE"
+                v-model="prFilterLevel"
+              />
+            </p>
+            <p>
+              已选择{{
+                this.batchNewList.length
+              }}个单词（不包含已在单词本中的单词）
+            </p>
+            <p>
+              添加前建议先备份单词本，单词本文件位于服务器上的!PDJ/user-{{
+                user.username
+              }}/PDJ-WordList.txt。
+            </p>
+          </div>
+          <div v-if="!fromBuildIn">
+            <p style="margin-bottom: 0">
+              请在下方输入，每行一个单词或词组(也可以是句子，将作为一个单词处理)
+            </p>
+            <textarea
+              placeholder="...can't leave blank..."
+              rows="10"
+              style="
+                color: blue;
+                font-size: 1.2em;
+                padding: 0.5em;
+                border: none;
+                resize: none;
+                width: 100%;
+                text-align: justify;
+              "
+              v-model="batchAddSelf"
+            ></textarea>
+            <p style="display: flex; align-items: center">
+              <span class="cl1">自建分类：</span>
+              <input
+                style="flex-grow: 1; text-align: left"
+                class="input input--repeater addNew"
+                type="text"
+                placeholder="请填入数字。如0代表'未分类'；1代表'快乐英语'；2代表'剑桥英语'等。多个分类值请用空格分隔。"
+                v-model.lazy="batchRequire"
+              />
+            </p>
+          </div>
         </div>
 
         <div v-if="!addBatchWord">
@@ -843,7 +1078,7 @@
             />
           </p>
           <p class="cl2">
-            <span class="cl1">词汇等级</span>
+            <span class="cl1">词汇等级：</span>
             <input
               style="flex-grow: 1; text-align: left"
               class="input input--repeater addNew"
@@ -852,37 +1087,48 @@
             />
           </p>
           <p class="cl2">
-            <span class="cl1">自建分类</span>
+            <span class="cl1">自建分类：</span>
             <input
               style="flex-grow: 1; text-align: left"
               class="input input--repeater addNew"
-              type="number"
-              placeholder="请填入数字。如0代表'未分类'；1代表'必背'；2代表'识认'等"
+              type="text"
+              placeholder="请填入数字。如0代表'未分类'；1代表'快乐英语'；2代表'剑桥英语'等。多个分类值请用空格分隔。"
               v-model.lazy="addNewWord.require"
             />
           </p>
         </div>
         <p>
-          <button class="action" name="buttons" @click.stop="saveToWordList()">
+          <button
+            class="action"
+            :disabled="!allSet"
+            name="buttons"
+            @click.stop="saveToWordList()"
+          >
             <i
-              style="font-size: 1.5em; color: springgreen"
+              style="font-size: 1.5em"
+              :style="{ color: allSet ? 'springgreen' : 'gray' }"
               class="material-icons"
               >保存</i
             >
           </button>
           &nbsp;&nbsp;&nbsp;&nbsp;
-          <button class="action" name="buttons" @click.stop="close()">
+          <button
+            class="action"
+            :disabled="!allSet"
+            name="buttons"
+            @click.stop="close()"
+          >
             <i
-              style="font-size: 1.5em; color: springgreen"
+              style="font-size: 1.5em"
+              :style="{ color: allSet ? 'springgreen' : 'gray' }"
               class="material-icons"
               >退出</i
             >
           </button>
         </p>
       </div>
-
       <div
-        v-if="isTesting && studyWordList.length > 0"
+        v-if="isTesting && studyWordList.length > 0 && !showQuickTest1"
         style="
           height: 100%;
           width: 100%;
@@ -902,7 +1148,7 @@
             v-if="showSelectT"
             class="clz-vocabulary-test"
             @touchmove.stop.passive
-            style="height: auto; overflow-y: hidden"
+            style="height: auto; overflow-y: hidden; flex-direction: column"
           >
             <div class="clz-test-container allow-select">
               <div v-if="!showCToET">
@@ -929,11 +1175,34 @@
                         option.partOfSpeech !== clzCorrectAnswer,
                       'clz-disabled': clzIsAnswered,
                     }"
+                    style="padding: 0"
                     @click.stop="clzHandleSelect(option.partOfSpeech)"
                   >
-                    <span style="color: blue">{{ option.partOfSpeech }}</span>
                     <span
+                      style="
+                        color: blue;
+                        text-align: left;
+                        cursor: help;
+                        padding: 1em 0 1em 0.5em;
+                      "
+                      @click.stop="readOption(1, option.partOfSpeech)"
+                    >
+                      {{
+                        index == 0
+                          ? "A."
+                          : index == 1
+                          ? "B."
+                          : index == 2
+                          ? "C."
+                          : index == 3
+                          ? "D."
+                          : "E."
+                      }}&nbsp;{{ option.partOfSpeech }}
+                    </span>
+                    <span
+                      @click.stop="readOption(0, option.word)"
                       class="clz-original-word"
+                      style="cursor: help; padding: 1em 0.5em 1em 0"
                       v-if="clzIsAnswered && option.word"
                     >
                       {{ option.word }}
@@ -966,11 +1235,34 @@
                         option.word !== clzCorrectAnswer,
                       'clz-disabled': clzIsAnswered,
                     }"
+                    style="padding: 0"
                     @click.stop="clzHandleSelect(option.word)"
                   >
-                    <span style="color: blue">{{ option.word }}</span>
                     <span
+                      style="
+                        color: blue;
+                        text-align: left;
+                        cursor: help;
+                        padding: 1em 0 1em 0.5em;
+                      "
+                      @click.stop="readOption(0, option.word)"
+                    >
+                      {{
+                        index == 0
+                          ? "A."
+                          : index == 1
+                          ? "B."
+                          : index == 2
+                          ? "C."
+                          : index == 3
+                          ? "D."
+                          : "E."
+                      }}&nbsp;{{ option.word }}
+                    </span>
+                    <span
+                      @click.stop="readOption(1, option.partOfSpeech)"
                       class="clz-original-meaning"
+                      style="cursor: help; padding: 1em 0.5em 1em 0"
                       v-if="clzIsAnswered && option.partOfSpeech"
                     >
                       {{ option.partOfSpeech }}
@@ -979,6 +1271,19 @@
                 </div>
               </div>
             </div>
+            <p
+              v-if="!clzIsAnswered"
+              @click.stop="clzHandleSelect('888888')"
+              style="
+                color: white;
+                background: red;
+                padding: 0.2em;
+                cursor: pointer;
+                font-weight: 500;
+              "
+            >
+              不会
+            </p>
           </div>
 
           <div v-if="!showSelectT">
@@ -1094,20 +1399,64 @@
           </div>
           <p style="text-align: center">
             <button
-              v-if="Number(studyWordList[wordIndex - 1].temp1) == 1"
+              v-if="
+                !isUser2 && Number(studyWordList[wordIndex - 1].favorite) == 1
+              "
               class="action"
               name="buttons"
-              @click.stop="studyWordList[wordIndex - 1].temp1 = 0"
+              @click.stop="studyWordList[wordIndex - 1].favorite = 0"
             >
               <i style="font-size: 1.2em; color: yellow" class="material-icons"
                 >star</i
               >
             </button>
             <button
-              v-if="Number(studyWordList[wordIndex - 1].temp1) == 0"
+              v-if="
+                isUser2 &&
+                Number(studyWordList[wordIndex - 1].user2.split(',')[1]) == 1
+              "
               class="action"
               name="buttons"
-              @click.stop="studyWordList[wordIndex - 1].temp1 = 1"
+              @click.stop="
+                studyWordList[wordIndex - 1].user2 =
+                  studyWordList[wordIndex - 1].user2.split(',')[0] +
+                  ',0,' +
+                  studyWordList[wordIndex - 1].user2.split(',')[2]
+              "
+            >
+              <i style="font-size: 1.2em; color: yellow" class="material-icons"
+                >star</i
+              >
+            </button>
+
+            <button
+              v-if="
+                !isUser2 && Number(studyWordList[wordIndex - 1].favorite) == 0
+              "
+              class="action"
+              name="buttons"
+              @click.stop="studyWordList[wordIndex - 1].favorite = 1"
+            >
+              <i
+                style="font-size: 1.2em; color: springgreen"
+                class="material-icons"
+                >star_outline</i
+              >
+            </button>
+
+            <button
+              v-if="
+                isUser2 &&
+                Number(studyWordList[wordIndex - 1].user2.split(',')[1]) == 0
+              "
+              class="action"
+              name="buttons"
+              @click.stop="
+                studyWordList[wordIndex - 1].user2 =
+                  studyWordList[wordIndex - 1].user2.split(',')[0] +
+                  ',1,' +
+                  studyWordList[wordIndex - 1].user2.split(',')[2]
+              "
             >
               <i
                 style="font-size: 1.2em; color: springgreen"
@@ -1117,40 +1466,350 @@
             </button>
           </p>
           <p v-if="!isAnswered" style="color: black">-</p>
-          <p v-if="isCorrect && isAnswered" style="color: green">
+          <p
+            v-if="isCorrect && isAnswered && !isUser2 && !isReview"
+            style="color: green"
+          >
             正确，此单词已升级至{{
               studyWordList[wordIndex - 1].familiarity
             }}级！
           </p>
-          <p v-if="!isCorrect && isAnswered" style="color: red">
+          <p
+            v-if="isCorrect && isAnswered && isUser2 && !isReview"
+            style="color: green"
+          >
+            正确，此单词已升级至{{
+              studyWordList[wordIndex - 1].user2.split(",")[0]
+            }}级！
+          </p>
+          <p v-if="!isCorrect && isAnswered && !isReview" style="color: red">
             错误，此单词已降至0级！
+          </p>
+          <p v-if="isAnswered && isReview" style="color: red">
+            错题复习，熟悉度不变。
           </p>
           <p style="text-align: center">
             <button
               v-if="!isAnswered && !showSelectT"
-              style="border-radius: 5px; background: bisque"
+              class="action"
+              style="
+                border-radius: 5px;
+                cursor: pointer;
+                padding: 5px;
+                background: blue;
+                color: white;
+              "
               @click.stop="checkAnswser"
             >
               提交
             </button>
             <button
               v-if="isAnswered"
-              style="border-radius: 5px"
+              class="action"
+              name="buttons"
+              @click.stop="editWord = true"
+            >
+              <i
+                style="font-size: 1.5em"
+                :style="{
+                  color: !editWord ? 'springgreen' : 'red',
+                }"
+                class="material-icons"
+                >drive_file_rename_outline</i
+              >
+            </button>
+            <span v-if="isAnswered"> &nbsp;&nbsp; </span>
+            <button
+              v-if="isAnswered && wordIndex <= studyWordList.length - 1"
+              :disabled="wordIndex > studyWordList.length - 1"
+              class="action"
+              style="
+                border-radius: 5px;
+                cursor: pointer;
+                padding: 5px;
+                background: blue;
+                color: white;
+              "
               @click.stop="toNextWord"
             >
               下一词
+            </button>
+            <button
+              v-if="
+                wordIndex > studyWordList.length - 1 && isAnswered && !roundDone
+              "
+              class="action"
+              style="
+                border-radius: 5px;
+                cursor: pointer;
+                padding: 5px;
+                background: green;
+                color: white;
+              "
+              @click.stop="getWrong"
+            >
+              本组错题复习
             </button>
           </p>
         </div>
         <div style="height: 30vh"></div>
       </div>
+      <div
+        v-if="isTesting && studyWordList.length > 0 && showQuickTest1"
+        style="
+          width: 100%;
+          height: calc(100% - 4.2em);
+          bottom: 0;
+          background-color: black;
+          position: fixed;
+        "
+      >
+        <div
+          style="
+            background-color: gray;
+            color: whitesmoke;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 50%;
+            transform: translate(-50%, 0);
+            bottom: 0.2em;
+            border-radius: 10px;
+            top: 4.2em;
+          "
+          :style="{
+            width: mobileScreen ? '100%' : '65%',
+          }"
+        >
+          <p
+            style="
+              padding: 0 1em;
+              color: yellow;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <span>快速刷词自测</span>
+            <span
+              style="cursor: pointer"
+              :style="{
+                color: !isTrans ? 'springgreen' : 'red',
+              }"
+              @click="switchOToT"
+              >汉译英</span
+            >
+          </p>
+          <ul
+            v-if="studyWordList.length > 0"
+            id="myWordList"
+            style="
+              position: relative;
+              width: 100%;
+              max-height: 100%;
+              padding: 0 1em;
+              overflow-y: auto;
+              list-style-type: none;
+            "
+            @click.self="tested[wordIndex - 1] = 0"
+            @touchmove.stop.passive
+          >
+            <li
+              v-for="(newWord, index) in studyWordList"
+              :key="index"
+              :id="index + 1"
+              @click.stop="chooseSentence(index)"
+              style="align-items: center"
+            >
+              <div
+                style="
+                  align-items: center;
+                  display: flex;
+                  justify-content: space-between;
+                "
+                :style="{
+                  background: !testDone[index]
+                    ? 'gray'
+                    : testDone[index] == 2
+                    ? 'forestgreen'
+                    : 'red',
+                }"
+              >
+                <div style="display: flex; align-items: center; flex-grow: 1">
+                  <span> &nbsp;&nbsp;{{ index + 1 }}. </span>
+                  <button
+                    v-if="!isUser2 && Number(newWord.favorite) == 1"
+                    class="action"
+                    name="buttons"
+                    @click.stop="studyWordList[index].favorite = 0"
+                  >
+                    <i
+                      style="color: yellow; font-size: 1em"
+                      class="material-icons"
+                      >star</i
+                    >
+                  </button>
+                  <button
+                    v-if="isUser2 && Number(newWord.user2.split(',')[1]) == 1"
+                    class="action"
+                    name="buttons"
+                    @click.stop="
+                      studyWordList[index].user2 =
+                        studyWordList[index].user2.split(',')[0] +
+                        ',0,' +
+                        studyWordList[index].user2.split(',')[2]
+                    "
+                  >
+                    <i
+                      style="color: yellow; font-size: 1em"
+                      class="material-icons"
+                      >star</i
+                    >
+                  </button>
+                  <button
+                    v-if="!isUser2 && Number(newWord.favorite) == 0"
+                    class="action"
+                    name="buttons"
+                    @click.stop="studyWordList[index].favorite = 1"
+                  >
+                    <i
+                      style="color: springgreen; font-size: 1em"
+                      class="material-icons"
+                      >star_outline</i
+                    >
+                  </button>
+
+                  <button
+                    v-if="isUser2 && Number(newWord.user2.split(',')[1]) == 0"
+                    class="action"
+                    name="buttons"
+                    @click.stop="
+                      studyWordList[index].user2 =
+                        studyWordList[index].user2.split(',')[0] +
+                        ',1,' +
+                        studyWordList[index].user2.split(',')[2]
+                    "
+                  >
+                    <i
+                      style="color: springgreen; font-size: 1em"
+                      class="material-icons"
+                      >star_outline</i
+                    >
+                  </button>
+
+                  <span
+                    v-if="!isTrans || (tested[index] && tested[index] !== 0)"
+                    style="
+                      display: inline-block;
+                      width: 25%;
+                      font-size: 1.2em;
+                      color: greenyellow;
+                      cursor: pointer;
+                    "
+                    >{{ newWord.word }}</span
+                  >
+                  <span
+                    v-if="isTrans && (!tested[index] || tested[index] == 0)"
+                    style="
+                      display: inline-block;
+                      width: 25%;
+                      font-size: 1.2em;
+                      color: greenyellow;
+                      cursor: pointer;
+                    "
+                  ></span>
+                  <span
+                    v-if="(tested[index] && tested[index] !== 0) || isTrans"
+                    style="
+                      display: inline-block;
+                      width: 50%;
+                      color: wheat;
+                      cursor: pointer;
+                    "
+                    >{{ newWord.partOfSpeech }}</span
+                  >
+                  <span
+                    v-if="(!tested[index] || tested[index] == 0) && !isTrans"
+                    style="
+                      display: inline-block;
+                      width: 50%;
+                      color: wheat;
+                      cursor: pointer;
+                    "
+                  ></span>
+                </div>
+                <div>
+                  <button
+                    v-if="!testDone[index]"
+                    style="border-radius: 5px; background: white; color: red"
+                    @click.stop="answered(index, 0)"
+                  >
+                    不会
+                  </button>
+                  &nbsp;&nbsp;
+                  <button
+                    v-if="!testDone[index]"
+                    style="border-radius: 5px; background: white; color: green"
+                    @click.stop="answered(index, 1)"
+                  >
+                    会
+                  </button>
+                  <button
+                    v-if="testDone[index]"
+                    class="action"
+                    name="buttons"
+                    @click.stop="
+                      tested[wordIndex - 1] = 0;
+                      wordIndex = index + 1;
+                      editWord = true;
+                    "
+                  >
+                    <i
+                      style="font-size: 1em"
+                      :style="{
+                        color: !editWord ? 'springgreen' : 'red',
+                      }"
+                      class="material-icons"
+                      >drive_file_rename_outline</i
+                    >
+                  </button>
+                </div>
+              </div>
+              <hr
+                v-if="(index + 1) % 5 != 0"
+                style="border: none; border-top: 1px solid black; height: 0"
+              />
+              <hr
+                v-if="(index + 1) % 5 == 0"
+                style="border: none; border-top: 1px solid wheat; height: 0"
+              />
+            </li>
+          </ul>
+          <p style="text-align: center">
+            <button
+              v-if="testLength - groupNumber * testRound > 0"
+              class="action"
+              style="
+                border-radius: 5px;
+                cursor: pointer;
+                padding: 5px;
+                background: green;
+                color: white;
+              "
+              @click.stop="toNextGroup"
+            >
+              下一组
+            </button>
+          </p>
+        </div>
+      </div>
 
       <div
-        v-if="isStudying && studyWordList.length > 0"
+        v-if="editWord && studyWordList.length > 0"
         style="height: 100%; width: 100%; display: flex; flex-direction: column"
       >
         <div
-          v-if="editWord"
           @touchmove.stop.passive
           style="
             width: 100%;
@@ -1159,6 +1818,7 @@
             color: white;
             text-align: center;
             overflow-y: auto;
+            background: black;
           "
           @click.self="
             readContent = studyWordList[wordIndex - 1].word
@@ -1278,12 +1938,12 @@
             />
           </p>
           <p class="cl2">
-            <span class="cl1">自建分类</span>
+            <span class="cl1">自建分类:</span>
             <input
               style="flex-grow: 1; text-align: left"
               class="input input--repeater"
-              type="number"
-              placeholder="请填入数字。如0代表'未分类'；1代表'必背'；2代表'识认'等"
+              type="text"
+              placeholder="请填入数字。如0代表'未分类'；1代表'快乐英语'；2代表'剑桥英语'等。"
               v-model.lazy="studyWordList[wordIndex - 1].require"
             />
           </p>
@@ -1295,9 +1955,95 @@
             >
           </button>
         </div>
-
+      </div>
+      <div
+        v-if="isStudying && studyWordList.length > 0"
+        style="height: 100%; width: 100%; display: flex; flex-direction: column"
+      >
         <div
-          v-if="!editWord"
+          v-if="!editWord && toMedia"
+          style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: calc(100% - 4.2em);
+          "
+        >
+          <div
+            v-if="selectedMedia == 1"
+            style="flex-grow: 1; width: 100%; height: 100%; overflow: hidden"
+          >
+            <img
+              :src="imgSrc"
+              alt="此单词无图片，自动寻找下一个有图片的单词。"
+              @error="if (wordIndex < studyWordList.length) wordIndex++;"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+                color: white;
+                font-size: 1.18em;
+                text-align: center;
+              "
+            />
+          </div>
+          <div
+            v-if="selectedMedia == 2"
+            style="flex-grow: 1; width: 100%; height: 100%; overflow: hidden"
+          >
+            <video
+              ref="player"
+              :src="vidSrc"
+              controls
+              loop
+              @error="if (wordIndex < studyWordList.length) wordIndex++;"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+                color: white;
+                font-size: 1.18em;
+                text-align: center;
+              "
+            >
+              此单词无视频，自动寻找下一个有视频的单词。
+            </video>
+          </div>
+          <p
+            @mousedown.self="startDrag"
+            @mouseup.self="endDrag"
+            @touchstart.self="startTouch"
+            @touchend.self="endTouch"
+            style="
+              width: 95%;
+              font-size: 2em;
+              font-weight: 600;
+              color: wheat;
+              display: flex;
+              justify-content: space-between;
+            "
+          >
+            <span
+              style="color: white; font-size: 2rem"
+              @click.stop="toLastWord"
+            >
+              &#8249;
+            </span>
+            <span>
+              {{ studyWordList[wordIndex - 1].word }}
+            </span>
+            <span
+              style="color: white; font-size: 2rem"
+              @click.stop="toNextWord"
+            >
+              &#8250;
+            </span>
+          </p>
+        </div>
+        <div
+          v-if="!editWord && !toMedia"
           style="
             width: 100%;
             height: calc(100% - 4.2em);
@@ -1307,9 +2053,56 @@
         >
           <div
             style="height: 60%; display: flex; flex-direction: column"
+            :style="{ alignItems: !showSelect ? 'center' : 'normal' }"
             @click="click"
           >
-            <div style="flex-grow: 1"></div>
+            <div style="flex-grow: 1">
+              <div
+                style="
+                  margin: 0 auto;
+                  color: gray;
+                  padding: 8px 0px;
+                  font-size: 1.58em;
+                  display: flex;
+                  flex-direction: column;
+                  padding-top: 3em;
+                  gap: 16px;
+                "
+                v-if="
+                  (showRead || showCloze || showDic || showSpell) && !isMobile
+                "
+              >
+                <button
+                  @click.stop="onTransO = !onTransO"
+                  style="
+                    text-align: center;
+                    display: block;
+                    border: 0;
+                    background-color: black;
+                    font-size: 1.5em;
+                  "
+                  :style="{
+                    color: onTransO ? 'cyan' : 'black',
+                  }"
+                >
+                  {{ studyWordList[wordIndex - 1].word }}
+                </button>
+                <button
+                  @click.stop="onTransT = !onTransT"
+                  style="
+                    text-align: center;
+                    display: block;
+                    border: 0;
+                    background-color: black;
+                  "
+                  :style="{
+                    color: onTransT ? 'cyan' : 'black',
+                  }"
+                >
+                  {{ studyWordList[wordIndex - 1].partOfSpeech }}
+                </button>
+              </div>
+            </div>
             <div
               v-if="showGeneral"
               class="word-card allow-select"
@@ -1322,20 +2115,37 @@
               <div class="word-title">
                 <span
                   v-if="studyWordList[wordIndex - 1].pronunciation != '-'"
-                  style="font-size: 0.8em"
+                  :style="{ fontSize: showAll ? '1em' : '1.8em' }"
                   >英{{
-                    studyWordList[wordIndex - 1].pronunciation.split(" ")[0]
-                  }}&nbsp;&nbsp;&nbsp;&nbsp;美{{
-                    studyWordList[wordIndex - 1].pronunciation.split(" ")[1]
+                    studyWordList[wordIndex - 1].pronunciation.split("] [")[0]
+                  }}]&nbsp;&nbsp;&nbsp;&nbsp;美[{{
+                    studyWordList[wordIndex - 1].pronunciation.split("] [")[1]
                   }}</span
                 >
                 <p
-                  style="margin: 8px 0; font-weight: 500"
+                  style="margin: 8px 0; font-weight: 500; cursor: pointer"
                   :style="{ fontSize: !isMobile ? '5em' : '3.5em' }"
+                  v-if="showAll"
+                  @click.stop="showAll = !showAll"
                 >
                   {{ studyWordList[wordIndex - 1].word }}
                 </p>
-                <span>{{ studyWordList[wordIndex - 1].partOfSpeech }}</span>
+                <p
+                  style="
+                    margin: 60px 0;
+                    font-weight: 500;
+                    cursor: pointer;
+                    word-break: break-all;
+                  "
+                  :style="{ fontSize: !isMobile ? '8em' : '5em' }"
+                  v-if="!showAll"
+                  @click.stop="showAll = !showAll"
+                >
+                  {{ studyWordList[wordIndex - 1].word }}
+                </p>
+                <span v-if="showAll">{{
+                  studyWordList[wordIndex - 1].partOfSpeech
+                }}</span>
               </div>
               <p
                 style="
@@ -1343,6 +2153,7 @@
                   justify-content: space-between;
                   margin-bottom: 0;
                 "
+                v-if="showAll"
               >
                 <span v-if="studyWordList[wordIndex - 1].wordNote != '-'"
                   >助记法：{{ studyWordList[wordIndex - 1].wordNote }}</span
@@ -1356,16 +2167,33 @@
                   }}</span
                 >
               </p>
-              <p style="margin-bottom: 0">
+              <p style="margin-bottom: 0" v-if="showAll">
                 例句：{{ studyWordList[wordIndex - 1].exampleSentence }}
               </p>
-              <p>译文：{{ studyWordList[wordIndex - 1].exampleTranslation }}</p>
+              <p v-if="showAll">
+                译文：{{ studyWordList[wordIndex - 1].exampleTranslation }}
+              </p>
             </div>
             <div
               v-if="showPhonics && !canGenerate"
-              style="width: 100%; height: 60%; color: white; text-align: center"
+              class="word-card"
+              style="padding: 16px"
+              :style="{
+                width: isMobile ? '100%' : '60%',
+              }"
+              @touchmove.stop.passive
             >
-              无相应信息，请重新编辑...
+              <div class="word-title">
+                <h2 style="font-size: 3em">
+                  {{ wordData.word }}
+                </h2>
+              </div>
+              <p style="text-align: center; margin: 0">
+                {{ wordData.partOfSpeech }}
+              </p>
+              <p style="text-align: center; margin: 0">
+                无相应自然拼读信息，请重新编辑...
+              </p>
             </div>
             <div
               v-if="showPhonics && canGenerate"
@@ -1403,8 +2231,7 @@
                     class="syllable-item"
                     :class="{
                       highlighted:
-                        highlightedIndex !== null &&
-                        syllable.indexes.includes(highlightedIndex),
+                        highlightedIndex !== null && syllable.sIndex == groupI,
                     }"
                   >
                     {{ syllable.text }}
@@ -1426,7 +2253,7 @@
                     :key="'phoneme' + index"
                     class="phoneme-item"
                     :class="{ highlighted: highlightedIndex === index }"
-                    @click.stop="handleItemClick(index)"
+                    @click.stop="handleItemClick(index, phonics.groupIndex)"
                   >
                     {{ phonics.phoneme }} </span
                   >&nbsp;]
@@ -1439,7 +2266,7 @@
                     :key="'letter' + index"
                     class="letter-item"
                     :class="{ highlighted: highlightedIndex === index }"
-                    @click.stop="handleItemClick(index)"
+                    @click.stop="handleItemClick(index, phonics.groupIndex)"
                   >
                     {{ phonics.letters }}
                   </span>
@@ -1454,16 +2281,21 @@
               v-model="dictationContent"
               :placeholder="defaultDictation"
               style="
-                width: 100%;
+                width: 60%;
                 font-size: 1.88em;
                 background-color: black;
                 color: white;
-                border: none;
+                border-top: none;
+                border-left: none;
+                border-right: none;
+                border-bottom-width: 2px;
+                border-bottom-color: wheat;
                 text-align: center;
-                padding: 0 0 18px 0;
+                padding: 0px 0px 8px;
               "
               :style="{
                 color: !realCheck ? 'white' : isRight ? 'green' : 'red',
+                margin: showDic && !isMobile ? '0px 0px 58px' : '0px 0px 18px',
               }"
             />
 
@@ -1491,13 +2323,14 @@
                         :key="`input-${index}`"
                         type="text"
                         v-model="userLetterAnswers[index]"
+                        class="autoFocus"
                         :class="{
                           'letter-input': true,
                           correct: letter.isChecked && letter.isCorrect,
                           incorrect: letter.isChecked && !letter.isCorrect,
                         }"
                         @click.stop
-                        @input="handleLetterInput(index)"
+                        @input="handleLetterInput(index, $event)"
                         maxlength="1"
                         size="1"
                         style="padding: 0"
@@ -1567,7 +2400,7 @@
                 flex-direction: column;
                 gap: 6px;
               "
-              v-if="showRead || showCloze || showDic || showSpell"
+              v-if="(showRead || showCloze || showDic || showSpell) && isMobile"
             >
               <button
                 @click.stop="onTransO = !onTransO"
@@ -1575,10 +2408,10 @@
                   text-align: center;
                   display: block;
                   border: 0;
-                  background-color: black;
+                  background-color: darkslategrey;
                 "
                 :style="{
-                  color: onTransO ? 'gray' : 'black',
+                  color: onTransO ? 'cyan' : 'darkslategrey',
                 }"
               >
                 {{ studyWordList[wordIndex - 1].word }}
@@ -1589,16 +2422,15 @@
                   text-align: center;
                   display: block;
                   border: 0;
-                  background-color: black;
+                  background-color: darkslategrey;
                 "
                 :style="{
-                  color: onTransT ? 'gray' : 'black',
+                  color: onTransT ? 'cyan' : 'darkslategrey',
                 }"
               >
                 {{ studyWordList[wordIndex - 1].partOfSpeech }}
               </button>
             </div>
-
             <p
               v-if="showRead"
               style="display: flex; justify-content: center; text-align: center"
@@ -1691,14 +2523,36 @@
                           option.partOfSpeech !== clzCorrectAnswer,
                         'clz-disabled': clzIsAnswered,
                       }"
+                      style="padding: 0"
                       @click.stop="clzHandleSelect(option.partOfSpeech)"
                     >
-                      <span style="color: blue">{{ option.partOfSpeech }}</span>
                       <span
-                        class="clz-original-word"
-                        v-if="clzIsAnswered && option.word"
+                        style="
+                          color: blue;
+                          text-align: left;
+                          cursor: help;
+                          padding: 1em 0 1em 0.5em;
+                        "
+                        @click.stop="readOption(1, option.partOfSpeech)"
                       >
-                        {{ option.word }}
+                        {{
+                          index == 0
+                            ? "A."
+                            : index == 1
+                            ? "B."
+                            : index == 2
+                            ? "C."
+                            : index == 3
+                            ? "D."
+                            : "E."
+                        }}&nbsp;{{ option.partOfSpeech }}
+                      </span>
+                      <span
+                        @click.stop="readOption(0, option.word)"
+                        class="clz-original-word"
+                        style="cursor: help; padding: 1em 0.5em 1em 0"
+                        v-if="clzIsAnswered && option.word"
+                        >{{ option.word }}
                       </span>
                     </div>
                   </div>
@@ -1731,14 +2585,36 @@
                           option.word !== clzCorrectAnswer,
                         'clz-disabled': clzIsAnswered,
                       }"
+                      style="padding: 0"
                       @click.stop="clzHandleSelect(option.word)"
                     >
-                      <span style="color: blue">{{ option.word }}</span>
                       <span
-                        class="clz-original-meaning"
-                        v-if="clzIsAnswered && option.partOfSpeech"
+                        style="
+                          color: blue;
+                          text-align: left;
+                          cursor: help;
+                          padding: 1em 0 1em 0.5em;
+                        "
+                        @click.stop="readOption(0, option.word)"
                       >
-                        {{ option.partOfSpeech }}
+                        {{
+                          index == 0
+                            ? "A."
+                            : index == 1
+                            ? "B."
+                            : index == 2
+                            ? "C."
+                            : index == 3
+                            ? "D."
+                            : "E."
+                        }}&nbsp;{{ option.word }}</span
+                      >
+                      <span
+                        @click.stop="readOption(1, option.partOfSpeech)"
+                        class="clz-original-meaning"
+                        style="cursor: help; padding: 1em 0.5em 1em 0"
+                        v-if="clzIsAnswered && option.partOfSpeech"
+                        >{{ option.partOfSpeech }}
                       </span>
                     </div>
                   </div>
@@ -1761,6 +2637,18 @@
               &#8249;
             </span>
             <span>
+              <button
+                v-if="showMedia"
+                class="action"
+                name="buttons"
+                @click.stop="toMedia = true"
+              >
+                <i
+                  style="font-size: 1.5em; color: springgreen"
+                  class="material-icons"
+                  >perm_media</i
+                >
+              </button>
               <button class="action" name="buttons" @click.stop="playAll">
                 <i
                   style="font-size: 1.5em"
@@ -1845,20 +2733,64 @@
             style="flex-grow: 1; text-align: center; font-size: 1.2em"
           >
             <button
-              v-if="Number(studyWordList[wordIndex - 1].temp1) == 1"
+              v-if="
+                !isUser2 && Number(studyWordList[wordIndex - 1].favorite) == 1
+              "
               class="action"
               name="buttons"
-              @click.stop="studyWordList[wordIndex - 1].temp1 = 0"
+              @click.stop="studyWordList[wordIndex - 1].favorite = 0"
             >
               <i style="font-size: 1.5em; color: yellow" class="material-icons"
                 >star</i
               >
             </button>
             <button
-              v-if="Number(studyWordList[wordIndex - 1].temp1) == 0"
+              v-if="
+                isUser2 &&
+                Number(studyWordList[wordIndex - 1].user2.split(',')[1]) == 1
+              "
               class="action"
               name="buttons"
-              @click.stop="studyWordList[wordIndex - 1].temp1 = 1"
+              @click.stop="
+                studyWordList[wordIndex - 1].user2 =
+                  studyWordList[wordIndex - 1].user2.split(',')[0] +
+                  ',0,' +
+                  studyWordList[wordIndex - 1].user2.split(',')[2]
+              "
+            >
+              <i style="font-size: 1.5em; color: yellow" class="material-icons"
+                >star</i
+              >
+            </button>
+
+            <button
+              v-if="
+                !isUser2 && Number(studyWordList[wordIndex - 1].favorite) == 0
+              "
+              class="action"
+              name="buttons"
+              @click.stop="studyWordList[wordIndex - 1].favorite = 1"
+            >
+              <i
+                style="font-size: 1.5em; color: springgreen"
+                class="material-icons"
+                >star_outline</i
+              >
+            </button>
+
+            <button
+              v-if="
+                isUser2 &&
+                Number(studyWordList[wordIndex - 1].user2.split(',')[1]) == 0
+              "
+              class="action"
+              name="buttons"
+              @click.stop="
+                studyWordList[wordIndex - 1].user2 =
+                  studyWordList[wordIndex - 1].user2.split(',')[0] +
+                  ',1,' +
+                  studyWordList[wordIndex - 1].user2.split(',')[2]
+              "
             >
               <i
                 style="font-size: 1.5em; color: springgreen"
@@ -2346,25 +3278,26 @@
             </p>
           </div>
         </div>
-
-        <div
-          style="display: flex; flex-direction: row; align-items: center"
-          :style="{ width: isMobile ? '100%' : '70%' }"
-        >
-          <span
-            :style="{ color: isUtterTransLine ? 'white' : '#bbbaba' }"
-            style="margin-left: 1em"
-            class="subject"
-          >
+        <p style="align-items: center">
+          <span style="margin-left: 1em; color: white" class="subject">
+            原文朗读速度：
+          </span>
+          <input
+            class="input input--repeater"
+            type="number"
+            v-model.number.lazy="speedOfOrigin"
+          />
+        </p>
+        <p style="align-items: center">
+          <span style="margin-left: 1em; color: white" class="subject">
             {{ $t("repeater.speedOfUttering") }}
           </span>
           <input
-            :disabled="!isUtterTransLine"
             class="input input--repeater"
-            type="text"
+            type="number"
             v-model.number.lazy="speedOfUtter"
           />
-        </div>
+        </p>
 
         <hr style="border: none; border-top: 1px solid black; height: 0" />
 
@@ -2516,20 +3449,25 @@
             class="action"
             name="buttons"
             style="color: yellow"
-            @click.stop="
-              isInstruction = false;
-              studyWordList = initTList;
-            "
+            @click.stop="closeInstruction"
           >
             关闭
           </button>
         </p>
         <p style="text-align: justify; text-align-last: left; color: white">
-          PDJ一生词表将背单词设计为升级游戏：0级为新词，默认8级为最高级（可自定义）。并按照计划间隔天数进行升级测验。检测通过后将提升一级，检测失败将降为0级（生词）。当单词到达最高级后将不再进行检测（但仍可使用单词学习功能进行学习）。
+          PDJ一生词表将背单词设计为熟悉度的升级游戏：熟悉度0级为生词，8级为最高级(可自定义)。并按照自定义间隔天数进行升级测验。测验通过后熟悉度将提升一级，测验失败时熟悉度将降为0级(生词)。当单词熟悉度到达最高级后将不再进行测验(但仍可使用单词学习功能进行学习)。推荐一个方案：可以将'熟悉度最高等级'设为1。若单词表有200个单词，可以每日升级测验20个，每日升级测验剩余数达到180、160、140...即可，10日内可完成任务。期间每日不会的单词会在升级测验中不断出现，直到答对为止。并且第二天升级测验时还会出现前一天不会的单词。这样可以大量反复记忆不会的单词，效果非常好。当所有单词都升级到一级后，可以清空'清空当前用户所有学习记录'，重新再来一轮。
         </p>
         <p style="text-align: justify; text-align-last: left; color: white">
-          升级测验的词表为已到检测日期但未完成检测的所有单词。单词学习列表默认将包括所有生词和今日已完成检测的单词（可自定义，但不会包括升级测验中的单词，除非在下方关闭了升级测验功能）。
+          升级测验的词表为已到测验日期但未完成测验的所有单词。单词学习的词表默认只包括所有今日升级测验中错误的单词（也可通过下方选项或"关闭'升级测验'功能"来自定义单词学习中的词表）。
         </p>
+        <p style="text-align: justify; text-align-last: left; color: white">
+          注：一生词表也可以用来背句子，只要将单词项填写为句子即可。音标等不适用项留空即可。背诵和翻译常用句子比单纯背单词更为实用。
+        </p>
+        <p>
+          <input type="checkbox" v-model="isUser2" />
+          使用第二用户(与主用户单词表一致，但学习进度不同)。
+        </p>
+
         <hr style="border: none; border-top: 1px solid black; height: 0" />
         <p
           style="
@@ -2544,7 +3482,7 @@
           <span>设置：</span>
         </p>
         <p>
-          最高等级：
+          熟悉度最高等级：
           <input
             class="input input--repeater"
             type="number"
@@ -2562,6 +3500,12 @@
             v-model.lazy="testInterval"
           />
         </p>
+        <p>
+          <input type="checkbox" v-model="sequence2" />
+          词表逆序 &nbsp;&nbsp;
+          <input type="checkbox" v-model="sequence1" />
+          词表乱序
+        </p>
         <hr style="border: none; border-top: 1px solid black; height: 0" />
 
         <p
@@ -2574,24 +3518,38 @@
             justify-content: space-between;
           "
         >
-          <span>选择词表：</span>
+          <span
+            >选择词表：(总词表共{{ wordList.length }}词，已选择{{
+              totalSelected.length
+            }}词)</span
+          >
         </p>
         <p style="display: flex; align-items: center">
-          <span>分级：</span>
+          <span>分级选择(单值)：</span>
           <input
             class="input input--repeater"
             type="text"
             style="flex-grow: 1"
-            placeholder="如'小学'或'初中'、'高中'、'四级'、'六级'、'考研'、'托福'、'雅思'、'GRE'等"
+            placeholder="如：小学、初中、高中、四级、六级、考研、托福、雅思、GRE"
             v-model.lazy="filterLevel"
           />
         </p>
         <p style="display: flex; align-items: center">
-          自建分类：-1代表选择全部
+          自建分类选择：-1代表选择全部(多值用空格分隔)
           <input
             class="input input--repeater"
-            type="number"
+            type="text"
             v-model.lazy="requireLevel"
+          />
+        </p>
+        <p style="display: flex; align-items: center; padding-left: 1em">
+          * 自建分类备忘：
+          <input
+            class="input input--repeater"
+            style="flex-grow: 1"
+            type="text"
+            placeholder="自建分类推荐使用数字表示，此处可填写各数字所代表的分类名称。如：10：课本同步；11：新东方词书；12：考纲词汇"
+            v-model.lazy="levelMemo"
           />
         </p>
         <p>
@@ -2603,7 +3561,7 @@
             max="1000"
             v-model.number.lazy="filterFam1"
           />
-          to:
+          to
           <input
             class="input input--repeater"
             type="number"
@@ -2612,6 +3570,33 @@
             v-model.number.lazy="filterFam2"
           />
         </p>
+        <hr style="border: none; border-top: 1px solid black; height: 0" />
+        <p>
+          <input type="checkbox" v-model="autoRead" />
+          切换单词后自动朗读
+        </p>
+        <hr style="border: none; border-top: 1px solid black; height: 0" />
+        <p>
+          升级测验分组单词数：(测验时组内单词将乱序显示)
+          <input
+            class="input input--repeater"
+            type="number"
+            min="1"
+            style="width: 4em"
+            v-model.number.lazy="groupNumber"
+          />
+        </p>
+        <p>
+          升级测验的错题复习中，单词答错
+          <input
+            class="input input--repeater"
+            type="number"
+            min="1"
+            style="width: 4em"
+            v-model.number.lazy="wrongAddToFav"
+          />次后自动加入收藏列表。
+        </p>
+
         <hr style="border: none; border-top: 1px solid black; height: 0" />
         <p
           style="
@@ -2623,45 +3608,54 @@
             justify-content: space-between;
           "
         >
-          <span>'升级测验'题型设置(由难到易)：</span>
+          <span>'单词学习'词表范围选择：</span>
+        </p>
+
+        <select v-model="sRange" class="select-field">
+          <option
+            v-for="option in sList"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+
+        <hr style="border: none; border-top: 1px solid black; height: 0" />
+        <p
+          style="
+            padding: 0 1em;
+            color: yellow;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <span>'升级测验'题型设置(由易到难)：</span>
         </p>
         <p>纯键盘操作：可使用回车键'提交'和切换到'下一题'。</p>
-        <div :style="{ color: closeWordTest ? 'darkgray' : 'white' }">
+        <div style="color: white">
           <div
             :style="{
               color: showSelectT ? 'darkgray' : 'white',
             }"
           >
             <div style="color: white; display: flex; flex-direction: column">
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :disabled="closeWordTest"
-                  v-model="selectedValue"
-                  :value="1"
-                />
-                题型一：看释义默写单词，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :disabled="closeWordTest"
-                  v-model="selectedValue"
-                  :value="5"
-                />
-                题型二：听单词默写单词(可同时自行说释义)，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :disabled="closeWordTest"
-                  v-model="selectedValue"
-                  :value="2"
-                />
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="3" />
+                题型一：选择题(根据单词选释义)
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="4" />
+                题型二：选择题(根据释义选单词)
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="2" />
                 题型三：字母排序，看释义拼单词。干扰字符比例：(0为无干扰字符)
                 <input
                   class="input input--repeater"
-                  :disabled="selectedValue != 2 || closeWordTest"
+                  :disabled="selectedValue != 2"
                   type="number"
                   min="0"
                   max="2"
@@ -2669,31 +3663,33 @@
                   style="width: 4em; margin: 0; padding: 0"
                   v-model.lazy.number="moreLetters"
                 />
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :disabled="closeWordTest"
-                  v-model="selectedValue"
-                  :value="3"
-                />
-                题型四：选择题(根据单词选释义)
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :disabled="closeWordTest"
-                  v-model="selectedValue"
-                  :value="4"
-                />
-                题型五：选择题(根据释义选单词)
-              </label>
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="6" />
+                题型四：快刷列表自测
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="5" />
+                题型五：听单词默写单词(可同时自行说释义)，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="1" />
+                题型六：看释义默写单词，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
+              </span>
             </div>
           </div>
         </div>
+        <hr style="border: none; border-top: 1px solid black; height: 0" />
         <p>
-          <input type="checkbox" v-model="closeWordTest" />
-          关闭'升级测验'功能。相应单词将显示在'单词学习'的列表中。
+          清空当前用户所有学习记录(请谨慎操作，可提前备份)：
+          <button
+            class="action"
+            style="color: red; font-size: 1.1em"
+            name="buttons"
+            @click.stop="resetAll"
+          >
+            确定
+          </button>
         </p>
       </div>
     </div>
@@ -2715,12 +3711,43 @@ export default {
   name: "wordreciter",
   data: function () {
     return {
+      allSet: true,
+      selectedMedia: 1,
+      showMedia: false,
+      toMedia: false,
+      totalSelectedList: [],
+      wrongAddToFav: 1,
+      wrongNum: 0,
+      groupI: 0,
+      roundDone: false,
+      testAllList: [],
+      testRound: 1,
+      sRange: "option1",
+      isReview: false,
+      groupNumber: 10,
+      keyWord: "",
+      fromOnline: false,
+      wordDataResolver: null,
+      wordDataTimeoutTimer: null,
+      batchSaveTimer: null,
+      batchAddSelf: "",
+      batchRequire: "",
+      fromBuildIn: true,
+      sequence1: false,
+      sequence2: true,
+      settingLoaded: false,
+      tested: [],
+      testDone: [],
+      showQuickTest1: false,
+      isUser2: false,
+      levelMemo: "",
+      toEditWord: false,
+      showAll: true,
       printWithPron: false,
       activeInput: false,
       addBatchWord: false,
-      PDJRepeaterContent: "",
       showLToET: false,
-      selectedValue: 1,
+      selectedValue: 0,
       isDicTest: false,
       onTransT: false,
       onTransO: false,
@@ -2743,9 +3770,8 @@ export default {
       moreLetters: 0.5,
       inputByLetters: false,
       showTestSetting: false,
-      closeWordTest: false,
-      requireLevel: -1,
-      prRequireLevel: -1,
+      requireLevel: "-1",
+      prRequireLevel: "-1",
       maxLevel: 8,
       isInstruction: false,
       filterLevel: "",
@@ -2754,19 +3780,30 @@ export default {
       prFilterLevel: "",
       prFilterFam1: 0,
       prFilterFam2: 8,
-
       showFav: false,
       isAutoNext: true,
       readCount: 0,
       options: [
         { value: "option1", label: "单词" },
         { value: "option2", label: "字母拼写" },
+        { value: "option9", label: "自然拼读" },
         { value: "option3", label: "释义" },
         { value: "option4", label: "助记法" },
         { value: "option5", label: "词根词缀" },
         { value: "option6", label: "固定搭配" },
         { value: "option7", label: "例句原文" },
         { value: "option8", label: "例句译文" },
+      ],
+      sList: [
+        { value: "option1", label: "仅包含在今日升级测验中错误的单词" },
+        {
+          value: "option2",
+          label: "仅包含所有未到测试时间的最后一次升级测验中错误的单词",
+        },
+        { value: "option3", label: "仅包含新添加的未经过升级测验的单词" },
+        { value: "option4", label: "仅包含所有未到测试时间的单词" },
+        { value: "option6", label: "仅包含所有收藏的单词" },
+        { value: "option5", label: "包含所有单词" },
       ],
       selectList: [
         { value: "option1", isRemoving: false },
@@ -2798,10 +3835,10 @@ export default {
         wordNote: "",
         familiarity: 0,
         date: "",
-        require: Number(window.localStorage.getItem("require")) || 0,
-        temp1: 0,
-        temp2: 0,
-        temp3: 0,
+        require: window.localStorage.getItem("require") || "0",
+        favorite: 0,
+        user2: "0,0,0",
+        temp3: "0,0",
       },
       formData: {
         word: "",
@@ -2833,7 +3870,8 @@ export default {
       isAnswered: false,
       answerWord: "",
       studyWordList: [],
-      testInterval: "1 1 2 3 5 8 12 18",
+      testLength: "0",
+      testInterval: "0 2 4 6 10 15 23 35",
       isWordReciter: true,
       initReciter: true,
       isTesting: false,
@@ -2953,7 +3991,6 @@ export default {
       timeOutId2: null,
       timeOutId4: null,
       random: false,
-      currentSpeed: "0.8 0.5",
       listing: null,
       isSetting: false,
       isEmpty: false,
@@ -2965,9 +4002,9 @@ export default {
       isShowLine1: true,
       isShowLine2: true,
       isShowLine3: false,
-      isUtterTransLine: true,
       pauseTimeTransLine: 3,
       speedOfUtter: 1,
+      speedOfOrigin: 1,
       langInOriginLine: "en-US",
       langInOriginLinedefault: "en-US",
       langInTransLine: navigator.language || navigator.userLanguage,
@@ -3023,6 +4060,28 @@ export default {
         return true;
       else return false;
     },
+    imgSrc() {
+      let a = api.getDownloadURL(this.reqF, true);
+      a =
+        a.split("/api")[0] +
+        "/api/raw/!PDJ/media/" +
+        this.studyWordList[this.wordIndex - 1].word.toLowerCase().trim() +
+        ".jpg" +
+        a.split("rawundefined")[1];
+      return a;
+    },
+
+    vidSrc() {
+      let a = api.getDownloadURL(this.reqF, true);
+      a =
+        a.split("/api")[0] +
+        "/api/raw/!PDJ/media/" +
+        this.studyWordList[this.wordIndex - 1].word.toLowerCase().trim() +
+        ".mp4" +
+        a.split("rawundefined")[1];
+      return a;
+    },
+
     clzCurrentWord() {
       return this.studyWordList[this.wordIndex - 1];
     },
@@ -3051,29 +4110,64 @@ export default {
         this.requireLevel,
         this.filterFam1,
         this.filterFam2,
-        this.closeWordTest,
+        this.sRange,
         this.isFromLocal,
         this.showSelectT,
         this.showCToET,
         this.showCToE,
         this.selectList,
-        this.onTransT,
+        this.speedOfOrigin,
         this.isDicTest,
         this.onTransO,
         this.showLToET,
         this.selectedValue,
+        this.levelMemo,
+        this.sequence1,
+        this.sequence2,
+        this.groupNumber,
+        this.isUser2,
+        this.wrongAddToFav,
+        this.showMedia,
+        this.selectedMedia,
       ];
     },
     initTList() {
-      if (this.initReciter && this.wordList.length != 0)
-        return this.getStudyWordList(1);
-      else return [];
+      if (this.initReciter && this.wordList.length != 0) {
+        let tempL = this.getStudyWordList(1);
+        if (this.sequence1) {
+          for (let i = tempL.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tempL[i], tempL[j]] = [tempL[j], tempL[i]];
+          }
+        }
+        if (this.sequence2) {
+          for (let i = 0; i < Math.floor(tempL.length / 2); i++) {
+            const j = tempL.length - 1 - i;
+            [tempL[i], tempL[j]] = [tempL[j], tempL[i]];
+          }
+        }
+        return tempL;
+      } else return [];
     },
     initSList() {
-      if (this.initReciter && this.wordList.length != 0)
-        return this.getStudyWordList(2);
-      else return [];
+      if (this.initReciter && this.wordList.length != 0) {
+        let tempL = this.getStudyWordList(2);
+        if (this.sequence1) {
+          for (let i = tempL.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tempL[i], tempL[j]] = [tempL[j], tempL[i]];
+          }
+        }
+        if (this.sequence2) {
+          for (let i = 0; i < Math.floor(tempL.length / 2); i++) {
+            const j = tempL.length - 1 - i;
+            [tempL[i], tempL[j]] = [tempL[j], tempL[i]];
+          }
+        }
+        return tempL;
+      } else return [];
     },
+
     prTempList() {
       return this.prGetStudyWordList();
     },
@@ -3120,7 +4214,13 @@ export default {
         return this.studyWordList[this.wordIndex - 1].word;
       else return null;
     },
-
+    loadT() {
+      return (
+        this.initTList.length == 0 ||
+        this.studyWordList.length == 0 ||
+        this.studyWordList.length > this.groupNumber
+      );
+    },
     inputWord() {
       if (
         (!this.showSpell && this.isStudying) ||
@@ -3184,9 +4284,8 @@ export default {
 
     defaultDictation() {
       if (!this.isRecording && this.isWordReciter && this.showRead)
-        return "请点击录音按钮开始，或使用系统输入法的语音输入";
-      if (this.showDic)
-        return "可使用键盘输入，或系统输入法的语音输入、手写输入";
+        return "请点击录音按钮开始，或使用语音输入";
+      if (this.showDic) return "请在此输入";
       if (this.isRecording && this.isFromLocal)
         return this.$t("repeater.dictationDefault2");
       if (this.isRecording && !this.isFromLocal)
@@ -3205,7 +4304,7 @@ export default {
     },
 
     favFileName() {
-      return "/!PDJ/user-" + this.user.username + "/PDJ-Repeater.txt";
+      return "/!PDJ/user-" + this.user.username + "/PDJ-WLSettings.txt";
     },
 
     key1() {
@@ -3251,6 +4350,26 @@ export default {
           return voice.lang.includes(formattedLang);
         }).length;
       } else return 0;
+    },
+
+    totalSelected() {
+      if (this.initReciter)
+        return this.wordList.filter((obj) => {
+          let a = 0;
+          if (!this.isUser2) a = Number(obj.familiarity);
+          else a = Number(obj.user2.split(",")[0]);
+          if (a >= this.maxLevel || a < this.filterFam1 || a > this.filterFam2)
+            return false;
+          let k = false;
+          let kk = this.requireLevel.trim().split(" ");
+          for (let i = 0; i < kk.length; i++) {
+            if (obj.require.trim().split(" ").includes(kk[i])) k = true;
+          }
+          if (this.requireLevel.trim() != "-1" && !k) return false;
+          if (!obj.level.includes(this.filterLevel)) return false;
+          return true;
+        });
+      else return [];
     },
 
     totalBlanks() {
@@ -3363,26 +4482,37 @@ export default {
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = false;
+        this.showQuickTest1 = false;
       } else if (this.selectedValue == 2) {
         this.inputByLetters = true;
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = false;
+        this.showQuickTest1 = false;
       } else if (this.selectedValue == 3) {
         this.inputByLetters = false;
         this.showSelectT = true;
         this.showCToET = false;
         this.showLToET = false;
+        this.showQuickTest1 = false;
       } else if (this.selectedValue == 4) {
         this.inputByLetters = false;
         this.showSelectT = true;
         this.showCToET = true;
         this.showLToET = false;
+        this.showQuickTest1 = false;
       } else if (this.selectedValue == 5) {
         this.inputByLetters = false;
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = true;
+        this.showQuickTest1 = false;
+      } else if (this.selectedValue == 6) {
+        this.inputByLetters = false;
+        this.showSelectT = false;
+        this.showCToET = false;
+        this.showLToET = false;
+        this.showQuickTest1 = true;
       }
     },
     prTempList() {
@@ -3431,12 +4561,29 @@ export default {
         }
       }
     },
-    settingArr(newVal) {
-      window.localStorage.setItem(
-        "wordReciterSettings",
-        JSON.stringify(newVal)
-      );
-      this.saveNow();
+
+    settingArr: {
+      handler(newVal) {
+        if (this.settingLoaded) {
+          window.localStorage.setItem(
+            "wordReciterSettings",
+            JSON.stringify(newVal)
+          );
+          this.saveNow();
+        }
+      },
+      deep: true,
+      immediate: false,
+    },
+
+    totalSelected: {
+      handler(newVal) {
+        if (newVal.length !== 0) {
+          this.totalSelectedList = newVal;
+        }
+      },
+      deep: true,
+      immediate: true,
     },
 
     inputByLetters() {
@@ -3445,7 +4592,8 @@ export default {
       }
     },
     "addNewWord.require"() {
-      window.localStorage.setItem("require", this.addNewWord.require);
+      if (!this.addNewWord.require.includes(" "))
+        window.localStorage.setItem("require", this.addNewWord.require);
     },
 
     realCheck() {
@@ -3463,7 +4611,26 @@ export default {
     wordList: {
       handler(newVal, oldVal) {
         if (oldVal.length == 0) return;
-        this.saveToWordListFile();
+        if (this.addBatchWord && !this.fromBuildIn) {
+          if (this.batchSaveTimer) {
+            clearTimeout(this.batchSaveTimer);
+            this.batchSaveTimer = null;
+          }
+          this.batchSaveTimer = setTimeout(() => {
+            this.saveToWordListFile();
+          }, 3000);
+        } else {
+          if (this.batchSaveTimer) {
+            clearTimeout(this.batchSaveTimer);
+            this.batchSaveTimer = null;
+          }
+          this.saveToWordListFile();
+        }
+        if (this.isStudying && this.showPhonics) {
+          this.setFormdata();
+        } else if (this.isStudying && this.showSelect) {
+          this.clzGenerateOptions();
+        }
       },
       deep: true,
       immediate: false,
@@ -3472,8 +4639,18 @@ export default {
     filterLevel() {
       this.filterLevel = this.filterLevel.trim();
     },
-    initReciter() {
-      if (this.initReciter) this.studyWordList = this.getStudyWordList(1);
+
+    initTList: {
+      handler(newVal) {
+        if (newVal.length !== 0) {
+          setTimeout(() => {
+            this.studyWordList = newVal;
+            this.initTest();
+          }, 100);
+        }
+      },
+      deep: true,
+      immediate: false,
     },
     testInterval() {
       this.testInterval = this.testInterval.trim().replace(/\s+/g, " ");
@@ -3501,11 +4678,7 @@ export default {
           this.readContent = this.studyWordList[this.wordIndex - 1].word
             ? this.studyWordList[this.wordIndex - 1].word
             : "empty";
-          this.readContent = this.readContent
-            .split("")
-            .map((char) => char + "!")
-            .join("");
-          this.readPart(0);
+          this.letterRead(this.readContent);
         } else if (this.selectList[this.readCount - 1].value == "option3") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].partOfSpeech != "-"
@@ -3517,31 +4690,89 @@ export default {
             this.studyWordList[this.wordIndex - 1].wordNote != "-"
               ? this.studyWordList[this.wordIndex - 1].wordNote
               : "empty";
+          this.readContent = "助记法：" + this.readContent;
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option5") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].roots != "-"
               ? this.studyWordList[this.wordIndex - 1].roots
               : "empty";
+          this.readContent = "词根词缀：" + this.readContent;
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option6") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].collocation != "-"
               ? this.studyWordList[this.wordIndex - 1].collocation
               : "empty";
+          this.readContent = "collocation" + this.readContent;
           this.readPart(0);
         } else if (this.selectList[this.readCount - 1].value == "option7") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].exampleSentence != "-"
               ? this.studyWordList[this.wordIndex - 1].exampleSentence
               : "empty";
+          this.readContent = "example: " + this.readContent;
           this.readPart(0);
         } else if (this.selectList[this.readCount - 1].value == "option8") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].exampleTranslation != "-"
               ? this.studyWordList[this.wordIndex - 1].exampleTranslation
               : "empty";
+          this.readContent = "例句翻译：" + this.readContent;
           this.readPart(1);
+        } else if (this.selectList[this.readCount - 1].value == "option9") {
+          if (
+            !this.showPhonics &&
+            this.studyWordList[this.wordIndex - 1].pronunciation.split(
+              "["
+            )[2] &&
+            this.studyWordList[this.wordIndex - 1].phoneticSplit.includes(
+              "="
+            ) &&
+            this.studyWordList[this.wordIndex - 1].syllable != ""
+          ) {
+            this.formData.word =
+              this.studyWordList[this.wordIndex - 1].word.trim();
+            this.formData.partOfSpeech =
+              this.studyWordList[this.wordIndex - 1].partOfSpeech.trim();
+            this.formData.phonetics.uk = this.studyWordList[
+              this.wordIndex - 1
+            ].pronunciation
+              .split("[")[1]
+              .split("]")[0];
+            this.formData.phonetics.us = this.studyWordList[
+              this.wordIndex - 1
+            ].pronunciation
+              .split("[")[2]
+              .split("]")[0];
+            this.formData.syllablesInput =
+              this.studyWordList[this.wordIndex - 1].syllable;
+            this.formData.phonicsInput = this.studyWordList[
+              this.wordIndex - 1
+            ].phoneticSplit.replaceAll(",", ";");
+
+            const pairs = this.formData.phonicsInput
+              .split(";")
+              .filter((pair) => pair.trim());
+            this.wordData.phonics = pairs.map((item, index) => {
+              const [letters, phoneme] = item
+                .split("=")
+                .map((part) => part.trim());
+              return {
+                letters: letters || "",
+                phoneme: phoneme || "-",
+                index,
+              };
+            });
+          }
+          if (this.canGenerate) {
+            this.readWord();
+          } else {
+            this.readContent = this.studyWordList[this.wordIndex - 1].word
+              ? this.studyWordList[this.wordIndex - 1].word
+              : "empty";
+            this.readPart(0);
+          }
         }
       }
     },
@@ -3579,6 +4810,7 @@ export default {
     newWord() {
       if (this.readCount !== 0) return;
       this.newWord = this.newWord.replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, "");
+      const date = Date.now();
       if (this.newWord.trim() == "") {
         this.addNewWord.number = 20002;
         this.addNewWord.word = "";
@@ -3593,12 +4825,12 @@ export default {
         this.addNewWord.level = "";
         this.addNewWord.wordNote = "";
         this.addNewWord.familiarity = 0;
-        this.addNewWord.date = "";
-        this.addNewWord.require =
-          Number(window.localStorage.getItem("require")) || 0;
-        this.addNewWord.temp1 = 0;
-        this.addNewWord.temp2 = 0;
-        this.addNewWord.temp3 = 0;
+        this.addNewWord.date = date;
+        this.addNewWord.require = window.localStorage.getItem("require") || "0";
+        this.addNewWord.favorite = 0;
+        this.addNewWord.user2 = "0,0," + date;
+        this.addNewWord.temp3 = "0,0";
+        if (this.addBatchWord && !this.fromBuildIn) this.getPromise();
         return; //This one is important to save too many requests, can't be ignored.
       }
       this.cleanUp();
@@ -3610,12 +4842,26 @@ export default {
       if (this.listWord) {
         this.addNewWord = { ...this.listWord };
         this.addNewWord.word = this.newWord;
-        if (this.addWord) alert("已在单词表中，保存后将更新到单词本末尾。");
+        if (this.addWord) {
+          if (!this.addBatchWord) {
+            const isConfirm = window.confirm(
+              "此单词已在单词表中。点击确定后，保存时此单词作为新词更新到单词本末尾；点击取消后，将对此单词进行更新，不改变在单词本中的位置和学习进度。"
+            );
+            if (!isConfirm) this.toEditWord = true;
+          }
+          if (window.localStorage.getItem("require"))
+            this.addNewWord.require =
+              this.addNewWord.require +
+                " " +
+                window.localStorage.getItem("require") || "0";
+        }
         if (this.insertWord)
-          alert("已在单词表中，保存后将移动到当前单词之后。");
+          alert("已在单词表中，保存后此单词将移动到当前单词之后。");
+        if (this.addBatchWord && !this.fromBuildIn) this.getPromise();
       } else {
         this.dictionaryWord = null;
         this.dictionaryWord = this.findWord(this.dictionary, this.newWord);
+        const date = Date.now();
         if (this.dictionaryWord) {
           this.addNewWord.number = this.dictionaryWord.number;
           this.addNewWord.word = this.dictionaryWord.word;
@@ -3631,25 +4877,28 @@ export default {
           this.addNewWord.level = this.dictionaryWord.level;
           this.addNewWord.wordNote = "";
           this.addNewWord.familiarity = 0;
-          this.addNewWord.date = "";
+          this.addNewWord.date = date;
           this.addNewWord.require =
-            Number(window.localStorage.getItem("require")) || 0;
-          this.addNewWord.temp1 = 0;
-          this.addNewWord.temp2 = 0;
-          this.addNewWord.temp3 = 0;
+            window.localStorage.getItem("require") || "0";
+          this.addNewWord.favorite = 0;
+          this.addNewWord.user2 = "0,0," + date;
+          this.addNewWord.temp3 = "0,0";
+          if (this.addBatchWord && !this.fromBuildIn) this.getPromise();
         } else {
-          const date = Date.now();
           this.addNewWord.word = this.newWord;
           this.addNewWord.number = 20001;
           this.addNewWord.familiarity = 0;
           this.addNewWord.date = date;
+          this.addNewWord.user2 = "0,0," + date;
           if (this.translatorUrl.includes("zure-translator"))
             this.azureTranslate();
           else this.aliTranslate(2);
         }
       }
-      this.readContent = this.newWord;
-      this.readPart(0);
+      if (!this.addBatchWord) {
+        this.readContent = this.newWord;
+        this.readPart(0);
+      }
     },
 
     TTSurl: function () {
@@ -3659,13 +4908,15 @@ export default {
     TTSurlO: function () {
       this.TTSurlO = this.TTSurlO.replaceAll(" ", "");
     },
-
     transcribeUrl: function () {
       if (this.transcribeUrl == "") this.transcribeUrl = "defaultkey1,eastasia";
     },
 
     speedOfUtter: function () {
       if (this.speedOfUtter < 0.1) this.speedOfUtter = 0.1;
+    },
+    speedOfOrigin: function () {
+      if (this.speedOfOrigin < 0.1) this.speedOfOrigin = 0.1;
     },
     isAutoDetectLang: function () {
       if (this.isAutoDetectLang) {
@@ -3687,12 +4938,13 @@ export default {
 
     wordIndex() {
       if (
-        this.isTesting ||
+        (this.isTesting && this.autoRead) ||
         (this.isStudying && this.autoRead && this.readCount == 0)
-      )
+      ) {
         this.readTestWord();
+      }
       if (this.showPhonics) {
-        this.switchShow();
+        this.readContent = this.studyWordList[this.wordIndex - 1].word;
         this.setFormdata();
       }
       this.transcriptionResult = "";
@@ -3735,11 +4987,12 @@ export default {
     if (!this.checkLocalStorageSpace()) {
       this.openAlert(1, this.$t("repeater.alertSpace"));
     }
-    setTimeout(() => {
-      this.studyWordList = this.initTList;
-    }, 100);
     if (this.translatorUrl.includes("li-translator:"))
       this.getTranslateReport();
+    this.loadBaiDuTJScript();
+    setTimeout(() => {
+      this.pageView();
+    }, 500);
   },
 
   beforeDestroy() {
@@ -3760,8 +5013,6 @@ export default {
       let PDJcontent = "";
       try {
         let serverContent = await api.fetch("/files" + this.favFileName);
-        this.PDJRepeaterContent =
-          serverContent.content.split("PDJWordList::")[0];
         if (serverContent.content.split("PDJWordList::")[1])
           PDJcontent = serverContent.content.split("PDJWordList::")[1];
         if (PDJcontent != "")
@@ -3791,28 +5042,141 @@ export default {
           this.maxLevel = arr[17];
           this.testInterval = arr[18];
           this.filterLevel = arr[19];
-          this.requireLevel = arr[20];
+          this.requireLevel = String(arr[20]);
           this.filterFam1 = arr[21];
           this.filterFam2 = arr[22];
-          this.closeWordTest = arr[23];
+          this.sRange = arr[23];
           this.isFromLocal = arr[24];
           this.showSelectT = arr[25];
           this.showCToET = arr[26];
           this.showCToE = arr[27];
           this.selectList = arr[28];
-          this.onTransT = arr[29];
+          this.speedOfOrigin = arr[29] || 1;
           this.isDicTest = arr[30];
           this.onTransO = arr[31];
           this.showLToET = arr[32];
           this.selectedValue = arr[33];
+          this.levelMemo = arr[34];
+          this.sequence1 = arr[35];
+          this.sequence2 = arr[36];
+          this.groupNumber = arr[37] || 10;
+          this.isUser2 = arr[38] || false;
+          this.wrongAddToFav = arr[39] || 1;
+          this.showMedia = arr[40] || false;
+          this.selectedMedia = arr[41] || 1;
+        }
+        setTimeout(() => {
+          this.settingLoaded = true;
+          if (this.selectedValue == 0) this.selectedValue = 3;
+        }, 300);
+      }
+    },
+
+    letterRead(item) {
+      if (item && item.trim() !== "") {
+        let i = 0;
+        item = item + " ";
+        const max = item.length;
+        this.intervalId = setInterval(() => {
+          if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+          }
+          if (item[i] !== " ") {
+            const audioPath =
+              this.urla.split("/api/")[0] +
+              "/static/ipa/" +
+              item[i].toLowerCase() +
+              ".mp3";
+            this.currentAudioPlay(audioPath);
+          }
+
+          i++;
+          if (i >= max) {
+            clearInterval(this.intervalId);
+            this.handleRead();
+          }
+        }, 1000);
+      } else this.handleRead();
+    },
+
+    answered(index, an) {
+      this.tested[this.wordIndex - 1] = 0;
+      this.wordIndex = index;
+      this.wordIndex = index + 1;
+      this.tested[index] = 1;
+      if (an == 1) {
+        this.testDone[index] = 2;
+        if (this.isTesting && !this.isUser2) {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].familiarity =
+              Number(this.studyWordList[this.wordIndex - 1].familiarity) + 1;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].date = date;
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "0," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+          }
+        } else if (this.isTesting && this.isUser2) {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",0";
+            const fav =
+              Number(
+                this.studyWordList[this.wordIndex - 1].user2.split(",")[0]
+              ) + 1;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].user2 =
+              fav +
+              "," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          }
+        }
+      } else {
+        if (this.isTesting && !this.isUser2) {
+          this.testDone[index] = 3;
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "1," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+            this.studyWordList[this.wordIndex - 1].familiarity = 0;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].date = date;
+          }
+        } else if (this.isTesting && this.isUser2) {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",1";
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].user2 =
+              "0," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          }
         }
       }
     },
 
+    loadBaiDuTJScript() {
+      if (document.getElementById("baidu-tongji-script")) return;
+      window._hmt = window._hmt || [];
+      const hm = document.createElement("script");
+      hm.id = "baidu-tongji-script";
+      hm.src = "https://hm.baidu.com/hm.js?8cd25f4a6ff603e61707fa049681a149";
+      const s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    },
+
+    pageView() {
+      if (window._hmt) {
+        window._hmt.push(["_trackPageview", "/wordReciter"]);
+      }
+    },
+
     async saveNow() {
-      if (this.PDJRepeaterContent == "") return;
       const tempConfig = window.localStorage.getItem("wordReciterSettings");
-      const allContent = this.PDJRepeaterContent + "PDJWordList::" + tempConfig;
+      const allContent = "PDJWordList::" + tempConfig;
       try {
         await api.post("/files" + this.favFileName, allContent, true);
       } catch (error) {
@@ -4046,23 +5410,28 @@ export default {
     clzGenerateOptions() {
       this.clzSelectedOption = null;
       this.clzIsAnswered = false;
-      const includeCorrect = Math.random() < 0.8;
+      const includeCorrect = Math.random() < 0.95;
       let otherWords;
+      let poolList;
+      if (this.totalSelectedList.length >= 4) poolList = this.totalSelectedList;
+      else poolList = this.wordList;
       if (
         (this.isStudying && !this.showCToE) ||
         (this.isTesting && !this.showCToET)
       ) {
-        this.clzCorrectAnswer = includeCorrect
-          ? this.clzCurrentWord.partOfSpeech
-          : "以上全不对";
-        otherWords = this.wordList.filter(
-          (word) => word.partOfSpeech !== this.clzCurrentWord.partOfSpeech
+        this.clzCorrectAnswer =
+          includeCorrect && this.clzCurrentWord
+            ? this.clzCurrentWord?.partOfSpeech
+            : "以上全不对";
+        otherWords = poolList.filter(
+          (word) => word.partOfSpeech !== this.clzCurrentWord?.partOfSpeech
         );
       } else {
-        this.clzCorrectAnswer = includeCorrect
-          ? this.clzCurrentWord.word
-          : "以上全不对";
-        otherWords = this.wordList.filter(
+        this.clzCorrectAnswer =
+          includeCorrect && this.clzCurrentWord
+            ? this.clzCurrentWord.word
+            : "以上全不对";
+        otherWords = poolList.filter(
           (word) => word.word !== this.clzCurrentWord.word
         );
       }
@@ -4094,7 +5463,7 @@ export default {
         ? [
             ...randomOptions,
             {
-              partOfSpeech: this.clzCurrentWord.partOfSpeech,
+              partOfSpeech: this.clzCurrentWord?.partOfSpeech,
               word: this.clzCurrentWord.word,
             },
           ]
@@ -4277,21 +5646,71 @@ export default {
       if (this.isTesting) this.isAnswered = true;
       let audioPath = "";
       if (option === this.clzCorrectAnswer) {
-        if (this.isTesting) {
+        if (this.isTesting && !this.isUser2) {
           this.isCorrect = true;
-          this.studyWordList[this.wordIndex - 1].familiarity =
-            Number(this.studyWordList[this.wordIndex - 1].familiarity) + 1;
-          const date = Date.now();
-          this.studyWordList[this.wordIndex - 1].date = date;
+          this.tested[this.wordIndex - 1] = 0;
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "0," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+            this.studyWordList[this.wordIndex - 1].familiarity =
+              Number(this.studyWordList[this.wordIndex - 1].familiarity) + 1;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].date = date;
+          }
+        } else if (this.isTesting && this.isUser2) {
+          this.isCorrect = true;
+          this.tested[this.wordIndex - 1] = 0;
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",0";
+            const fav =
+              Number(
+                this.studyWordList[this.wordIndex - 1].user2.split(",")[0]
+              ) + 1;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].user2 =
+              fav +
+              "," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          }
         }
         audioPath = this.urla.split("/api/")[0] + "/static/right.mp3";
         this.currentAudioPlay(audioPath);
       } else {
-        if (this.isTesting) {
+        if (this.isTesting && !this.isUser2) {
           this.isCorrect = false;
-          this.studyWordList[this.wordIndex - 1].familiarity = 0;
-          const date = Date.now();
-          this.studyWordList[this.wordIndex - 1].date = date;
+          this.tested[this.wordIndex - 1] = 1;
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "1," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+            this.studyWordList[this.wordIndex - 1].familiarity = 0;
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].date = date;
+          } else {
+            if (this.wrongNum == this.wrongAddToFav) {
+              this.studyWordList[this.wordIndex - 1].favorite = 1;
+            }
+          }
+        } else if (this.isTesting && this.isUser2) {
+          this.isCorrect = false;
+          this.tested[this.wordIndex - 1] = 1;
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",1";
+            const date = Date.now();
+            this.studyWordList[this.wordIndex - 1].user2 =
+              "0," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          } else if (this.wrongNum == this.wrongAddToFav) {
+            this.studyWordList[this.wordIndex - 1].user2 =
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[0] +
+              ",1," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[2];
+          }
         }
         audioPath = this.urla.split("/api/")[0] + "/static/wrong.mp3";
         this.currentAudioPlay(audioPath);
@@ -4310,7 +5729,7 @@ export default {
       }
       if (x == 3) {
         alert(
-          "单词默写表使用方法：左侧为汉译英练习区域，右侧为英译汉练习区域。可沿单词列左侧竖实线折叠后进行练习。错误时可在对错记录区画X。在书写区1练习完成单词默写后，可沿其右侧的虚线裁剪或折叠，下次在书写区2继续默写。在全部练习完成后。单词卡布局使用方法：沿竖中线剪开，每部分再对折，每三行剪开，在对错记录区打孔，即可做成单词卡。注1：单词释义可在单词编辑页面进行修改。注2：可用excel打开生成的html文件并进行编辑和打印。注3：完整单词本文件位于服务器上的!PDJ/user-{{user.username}}/PDJ-wordlist.txt(请经常备份，以免丢失或损毁)，可将其内容复制到excel表格中(用||分割)，并根据需要删除多余的属性行和单词列，自行制作打印格式。"
+          "单词默写表使用方法：左侧为汉译英练习区域，右侧为英译汉练习区域。可沿单词列左侧竖实线折叠后进行练习。错误时可在对错记录区画X。在书写区1练习完成单词默写后，可沿其右侧的虚线裁剪或折叠，下次在书写区2继续默写。在全部练习完成后。单词卡布局使用方法：沿竖中线剪开，每部分再对折，每三行剪开，在对错记录区打孔，即可做成单词卡。注1：单词释义可在单词编辑页面进行修改。注2：可用excel打开生成的html文件并进行编辑和打印。注3：完整单词本文件位于服务器上的!PDJ/user-{{user.username}}/PDJ-WordList.txt(请经常备份，以免丢失或损毁)，可将其内容复制到excel表格中(用||分割)，并根据需要删除多余的属性行和单词列，自行制作打印格式。"
         );
       }
     },
@@ -4329,7 +5748,8 @@ export default {
         (this.isTesting &&
           !this.isAnswered &&
           !this.showSelectT &&
-          !this.showLToET) ||
+          !this.showLToET &&
+          !this.showQuickTest1) ||
         (this.isTesting &&
           !this.isAnswered &&
           this.showSelectT &&
@@ -4339,14 +5759,17 @@ export default {
           this.showSelectT &&
           !this.showCToET) ||
         (this.isStudying &&
+          !this.showNewWordList &&
           !this.clzIsAnswered &&
           this.showSelect &&
           this.showCToE) ||
         (this.isStudying &&
+          !this.showNewWordList &&
           this.clzIsAnswered &&
           this.showSelect &&
           !this.showCToE) ||
         (this.isStudying &&
+          !this.showNewWordList &&
           this.isDicTest &&
           (((this.showDic || this.showRead) && !this.realCheck) ||
             this.showGeneral ||
@@ -4380,7 +5803,8 @@ export default {
 
     toFavList() {
       if (!this.showFav) {
-        const tempList = this.getStudyWordList(3);
+        this.testAllList = this.studyWordList;
+        const tempList = this.getFavWordList();
         if (tempList.length == 0) {
           alert("单词收藏列表为空！请添加单词收藏后再试！");
           return;
@@ -4390,7 +5814,7 @@ export default {
           this.wordIndex = 1;
         }
       } else {
-        this.studyWordList = this.getStudyWordList(2);
+        this.studyWordList = this.testAllList;
         this.wordIndex = this.tempIndex;
       }
       this.showFav = !this.showFav;
@@ -4406,12 +5830,21 @@ export default {
       this.currentAudio.play();
     },
 
+    initTest() {
+      this.testLength = this.studyWordList.length;
+      this.testAllList = this.studyWordList;
+      this.testRound = 1;
+      this.studyWordList = this.studyWordList.slice(0, this.groupNumber);
+      this.toShuffle(1);
+    },
+
     playAll() {
       if (this.readCount == 0) {
+        this.cleanUp();
         this.readCount = 1;
         this.showReadAll = false;
       } else {
-        this.click();
+        this.cleanUp();
       }
     },
     handleAdd() {
@@ -4442,16 +5875,16 @@ export default {
     },
 
     switchOToT() {
-      this.studyWordList[this.wordIndex - 1].temp3 = 0;
+      this.tested[this.wordIndex - 1] = 0;
       this.isTrans = !this.isTrans;
     },
     chooseSentence(index) {
-      this.studyWordList[this.wordIndex - 1].temp3 = 0;
+      this.tested[this.wordIndex - 1] = 0;
+      this.wordIndex = index;
       this.wordIndex = index + 1;
-      this.studyWordList[index].temp3 = 1;
-      if (!this.autoRead) this.click();
+      this.tested[index] = 1;
+      this.click();
     },
-
     testPhonics() {
       this.switchShow();
       this.setFormdata();
@@ -4468,14 +5901,14 @@ export default {
       this.checkCorrectness();
     },
     setFormdata() {
+      this.formData.word = this.studyWordList[this.wordIndex - 1].word.trim();
+      this.formData.partOfSpeech =
+        this.studyWordList[this.wordIndex - 1].partOfSpeech.trim();
       if (
         this.studyWordList[this.wordIndex - 1].pronunciation.split("[")[2] &&
         this.studyWordList[this.wordIndex - 1].phoneticSplit.includes("=") &&
         this.studyWordList[this.wordIndex - 1].syllable != ""
       ) {
-        this.formData.word = this.studyWordList[this.wordIndex - 1].word.trim();
-        this.formData.partOfSpeech =
-          this.studyWordList[this.wordIndex - 1].partOfSpeech.trim();
         this.formData.phonetics.uk = this.studyWordList[
           this.wordIndex - 1
         ].pronunciation
@@ -4491,49 +5924,56 @@ export default {
         ].phoneticSplit.replaceAll(",", ";");
         this.formData.syllablesInput =
           this.studyWordList[this.wordIndex - 1].syllable;
-        if (this.canGenerate) {
-          this.generatePhonicsCard();
-        }
       }
+      this.generatePhonicsCard();
       this.showPhonics = true;
     },
     generatePhonicsCard() {
       this.wordData.word = this.formData.word;
       this.wordData.partOfSpeech = this.formData.partOfSpeech;
-      this.wordData.phonetics = { ...this.formData.phonetics };
-      const syllablesText = this.formData.syllablesInput.trim().split("-");
-      this.wordData.syllables = syllablesText.map((text, sIndex) => {
+      if (!this.canGenerate) {
+        this.wordData.phonetics = [];
+        this.wordData.syllables = [];
+        this.wordData.phonics = [];
+      } else {
+        this.wordData.phonetics = { ...this.formData.phonetics };
+        const syllablesText = this.formData.syllablesInput.trim().split("-");
+        this.wordData.syllables = syllablesText.map((text, sIndex) => {
+          return { text, sIndex };
+        });
         const pairs = this.formData.phonicsInput
           .split(";")
           .filter((pair) => pair.trim());
-        const totalLetters = pairs.length;
-        const lettersPerSyllable = Math.ceil(
-          totalLetters / syllablesText.length
-        );
-        const startIndex = sIndex * lettersPerSyllable;
-        let endIndex = startIndex + lettersPerSyllable;
-        if (endIndex > totalLetters) endIndex = totalLetters;
-        const indexes = [];
-        for (let i = startIndex; i < endIndex; i++) {
-          indexes.push(i);
-        }
-
-        return { text, indexes };
-      });
-      const pairs = this.formData.phonicsInput
-        .split(";")
-        .filter((pair) => pair.trim());
-      this.wordData.phonics = pairs.map((item, index) => {
-        const [letters, phoneme] = item.split("=").map((part) => part.trim());
-        return {
-          letters: letters || "",
-          phoneme: phoneme || "-",
-          index,
-        };
-      });
+        let deepC = [...syllablesText];
+        this.wordData.phonics = pairs.map((item, index) => {
+          let groupIndex;
+          const [letters, phoneme] = item.split("=").map((part) => part.trim());
+          for (let ii = 0; ii < syllablesText.length; ii++) {
+            if (
+              item.split("=")[0].trim() &&
+              deepC[ii].includes(item.split("=")[0].trim())
+            ) {
+              deepC[ii] = deepC[ii].replace(item.split("=")[0].trim(), "");
+              groupIndex = ii;
+              break;
+            } else if (deepC[ii].length !== "") {
+              deepC[ii] = "";
+              groupIndex = ii + 1;
+              break;
+            }
+          }
+          return {
+            letters: letters || "",
+            phoneme: phoneme || "-",
+            index,
+            groupIndex,
+          };
+        });
+      }
       this.highlightedIndex = null;
     },
-    handleItemClick(index) {
+    handleItemClick(index, x) {
+      this.groupI = x;
       this.cleanUp();
       this.highlightedIndex = index;
       this.playPhonemeAudio(index);
@@ -4658,7 +6098,7 @@ export default {
     },
 
     readWord() {
-      this.cleanUp();
+      if (this.readCount == 0) this.cleanUp();
       let index = 0;
       const totalPhonemes = this.wordData.phonics.length;
 
@@ -4674,7 +6114,12 @@ export default {
           index++;
         } else {
           clearInterval(this.speechInterval);
-          setTimeout(() => (this.highlightedIndex = null), 500);
+          setTimeout(() => {
+            this.highlightedIndex = null;
+            if (this.readCount != 0) {
+              this.handleRead();
+            }
+          }, 500);
         }
       }, 800);
     },
@@ -4688,6 +6133,7 @@ export default {
         (this.inputByLetters && this.isTesting)
       )
         resultStr = this.currentSpelling.join("");
+      const date = Date.now();
       if (
         (this.showSpell && this.isStudying) ||
         (this.inputByLetters &&
@@ -4701,18 +6147,67 @@ export default {
             this.studyWordList[this.wordIndex - 1].word.toLowerCase())
       ) {
         this.isCorrect = true;
-        this.studyWordList[this.wordIndex - 1].familiarity =
-          Number(this.studyWordList[this.wordIndex - 1].familiarity) + 1;
+        this.tested[this.wordIndex - 1] = 0;
+        if (!this.isUser2) {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "0," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+            this.studyWordList[this.wordIndex - 1].familiarity =
+              Number(this.studyWordList[this.wordIndex - 1].familiarity) + 1;
+            this.studyWordList[this.wordIndex - 1].date = date;
+          }
+        } else {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",0";
+            let fav =
+              Number(
+                this.studyWordList[this.wordIndex - 1].user2.split(",")[0]
+              ) + 1;
+            this.studyWordList[this.wordIndex - 1].user2 =
+              fav +
+              "," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          }
+        }
         audioPath = this.urla.split("/api/")[0] + "/static/right.mp3";
       } else {
         this.isCorrect = false;
-        this.studyWordList[this.wordIndex - 1].familiarity = 0;
+        this.tested[this.wordIndex - 1] = 1;
+        if (!this.isUser2) {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              "1," + this.studyWordList[this.wordIndex - 1].temp3.split(",")[1];
+            this.studyWordList[this.wordIndex - 1].familiarity = 0;
+            this.studyWordList[this.wordIndex - 1].date = date;
+          } else {
+            if (this.wrongNum == this.wrongAddToFav) {
+              this.studyWordList[this.wordIndex - 1].favorite = 1;
+            }
+          }
+        } else {
+          if (!this.isReview) {
+            this.studyWordList[this.wordIndex - 1].temp3 =
+              this.studyWordList[this.wordIndex - 1].temp3.split(",")[0] + ",1";
+            this.studyWordList[this.wordIndex - 1].user2 =
+              0 +
+              "," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
+              "," +
+              date;
+          } else if (this.wrongNum == this.wrongAddToFav) {
+            this.studyWordList[this.wordIndex - 1].user2 =
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[0] +
+              ",1," +
+              this.studyWordList[this.wordIndex - 1].user2.split(",")[2];
+          }
+        }
         audioPath = this.urla.split("/api/")[0] + "/static/wrong.mp3";
       }
       this.isAnswered = true;
       this.currentAudioPlay(audioPath);
-      const date = Date.now();
-      this.studyWordList[this.wordIndex - 1].date = date;
     },
 
     switchShow() {
@@ -4742,7 +6237,7 @@ export default {
           .getItem(this.ttsName)
           .then(function (value) {
             vmm.audio.src = URL.createObjectURL(value);
-            vmm.audio.playbackRate = vmm.curSpeed();
+            vmm.audio.playbackRate = vmm.speedOfOrigin;
             vmm.audio.play();
             if (vmm.readCount != 0)
               vmm.audio.onended = () => {
@@ -4754,6 +6249,10 @@ export default {
             return;
           });
       } else this.readNow(x);
+    },
+    readOption(x, y) {
+      this.readContent = y.replace(/\[.*?\]/g, " ").trim();
+      this.readNow(x);
     },
     readNow(x) {
       if (x == 0) {
@@ -4776,13 +6275,28 @@ export default {
 
     prGetStudyWordList() {
       return this.wordList.filter((obj) => {
-        if (this.prRequireLevel != -1 && obj.require != this.prRequireLevel)
-          return false;
+        let k = false;
+        let kk = this.prRequireLevel.trim().split(" ");
+        for (let i = 0; i < kk.length; i++) {
+          if (obj.require.trim().split(" ").includes(kk[i])) k = true;
+        }
+        if (this.prRequireLevel.trim() != "-1" && !k) return false;
+        let a = 0;
+        if (!this.isUser2) a = Number(obj.familiarity);
+        else a = Number(obj.user2.split(",")[0]);
         return (
           obj.level.includes(this.prFilterLevel) &&
-          obj.familiarity >= this.prFilterFam1 &&
-          obj.familiarity <= this.prFilterFam2
+          a >= this.prFilterFam1 &&
+          a <= this.prFilterFam2
         );
+      });
+    },
+
+    getFavWordList() {
+      return this.studyWordList.filter((obj) => {
+        if (!this.isUser2 && obj.favorite == 1) return true;
+        else if (this.isUser2 && obj.user2.split(",")[1] == "1") return true;
+        else return false;
       });
     },
 
@@ -4800,74 +6314,104 @@ export default {
       if (this.testInterval == "Need more numbers...")
         this.testInterval = this.generateReviewIntervals(this.maxLevel);
       if (x == 1) {
-        if (!this.closeWordTest) {
-          return this.wordList.filter((obj) => {
-            if (obj.familiarity >= this.maxLevel) return false;
-            if (this.requireLevel != -1 && obj.require != this.requireLevel)
-              return false;
-            let days = Number(this.testInterval.split(" ")[obj.familiarity]);
-            const timeDiff = Math.abs(obj.date - todayTimestamp);
-            return (
-              timeDiff > 24 * 60 * 60 * 1000 * days &&
-              obj.level.includes(this.filterLevel) &&
-              obj.familiarity >= this.filterFam1 &&
-              obj.familiarity <= this.filterFam2
-            );
-          });
-        } else return [];
+        return this.wordList.filter((obj) => {
+          let a = 0;
+          if (!this.isUser2) a = Number(obj.familiarity);
+          else a = Number(obj.user2.split(",")[0]);
+          let c = 0;
+          if (!this.isUser2) c = Number(obj.temp3.split(",")[0]);
+          else c = Number(obj.temp3.split(",")[1]);
+          if (a >= this.maxLevel) return false;
+          let k = false;
+          let kk = this.requireLevel.trim().split(" ");
+          for (let i = 0; i < kk.length; i++) {
+            if (obj.require.trim().split(" ").includes(kk[i])) k = true;
+          }
+          if (this.requireLevel.trim() != "-1" && !k) return false;
+          let days = Number(this.testInterval.split(" ")[a]);
+          let b = 0;
+          if (!this.isUser2) b = Number(obj.date);
+          else b = Number(obj.user2.split(",")[2]);
+          const timeDiff = Math.abs(b - todayTimestamp);
+          const dateObj = new Date(b);
+          dateObj.setHours(0, 0, 0, 0);
+          const dateZeroTimestamp = dateObj.getTime();
+          if (dateZeroTimestamp == todayTimestamp && c == 1) return false;
+          return (
+            timeDiff > 24 * 60 * 60 * 1000 * days &&
+            obj.level.includes(this.filterLevel) &&
+            a >= this.filterFam1 &&
+            a <= this.filterFam2
+          );
+        });
       } else if (x == 2) {
-        if (!this.closeWordTest)
+        if (this.sRange !== "option5")
           return this.wordList.filter((obj) => {
-            if (obj.familiarity >= this.maxLevel) return false;
-            if (this.requireLevel != -1 && obj.require != this.requireLevel)
+            let a = 0;
+            if (!this.isUser2) a = Number(obj.familiarity);
+            else a = Number(obj.user2.split(",")[0]);
+            if (
+              a >= this.maxLevel ||
+              a < this.filterFam1 ||
+              a > this.filterFam2
+            )
               return false;
-            let days = Number(this.testInterval.split(" ")[obj.familiarity]);
-            const timeDiff = Math.abs(obj.date - todayTimestamp);
-            return (
-              timeDiff <= 24 * 60 * 60 * 1000 * days &&
-              obj.level.includes(this.filterLevel) &&
-              obj.familiarity >= this.filterFam1 &&
-              obj.familiarity <= this.filterFam2
-            );
+
+            let k = false;
+            let kk = this.requireLevel.trim().split(" ");
+            for (let i = 0; i < kk.length; i++) {
+              if (obj.require.trim().split(" ").includes(kk[i])) k = true;
+            }
+            if (this.requireLevel.trim() != "-1" && !k) return false;
+            if (!obj.level.includes(this.filterLevel)) return false;
+            let days = Number(this.testInterval.split(" ")[a]);
+            let b = 0;
+            if (!this.isUser2) b = Number(obj.date);
+            else b = Number(obj.user2.split(",")[2]);
+            const dateObj = new Date(b);
+            dateObj.setHours(0, 0, 0, 0);
+            const dateZeroTimestamp = dateObj.getTime();
+            const timeDiff = todayTimestamp - dateZeroTimestamp;
+            let c = 0;
+            if (!this.isUser2) c = Number(obj.temp3.split(",")[0]);
+            else c = Number(obj.temp3.split(",")[1]);
+            if (this.sRange == "option4") {
+              return timeDiff <= 24 * 60 * 60 * 1000 * days;
+            } else if (this.sRange == "option3") {
+              let bb = 0;
+              if (!this.isUser2) b = Number(obj.temp3.split(",")[0]);
+              else b = Number(obj.temp3.split(",")[1]);
+              return a == 0 && bb == 0;
+            } else if (this.sRange == "option2") {
+              return timeDiff <= 24 * 60 * 60 * 1000 * days && c == 1;
+            } else if (this.sRange == "option6") {
+              let m = 0;
+              if (!this.isUser2) m = obj.favorite;
+              else m = Number(obj.user2.split(",")[1]);
+              return m == 1;
+            } else {
+              return dateZeroTimestamp == todayTimestamp && c == 1;
+            }
           });
         else
           return this.wordList.filter((obj) => {
-            if (obj.familiarity >= this.maxLevel) return false;
-            if (this.requireLevel != -1 && obj.require != this.requireLevel)
+            let a = 0;
+            if (!this.isUser2) a = Number(obj.familiarity);
+            else a = Number(obj.user2.split(",")[0]);
+            if (
+              a >= this.maxLevel ||
+              a < this.filterFam1 ||
+              a > this.filterFam2
+            )
               return false;
-            return (
-              obj.level.includes(this.filterLevel) &&
-              obj.familiarity >= this.filterFam1 &&
-              obj.familiarity <= this.filterFam2
-            );
-          });
-      } else if (x == 3) {
-        if (!this.closeWordTest)
-          return this.wordList.filter((obj) => {
-            if (obj.familiarity >= this.maxLevel || Number(obj.temp1) == 0)
-              return false;
-            if (this.requireLevel != -1 && obj.require != this.requireLevel)
-              return false;
-            let days = Number(this.testInterval.split(" ")[obj.familiarity]);
-            const timeDiff = Math.abs(obj.date - todayTimestamp);
-            return (
-              timeDiff <= 24 * 60 * 60 * 1000 * days &&
-              obj.level.includes(this.filterLevel) &&
-              obj.familiarity >= this.filterFam1 &&
-              obj.familiarity <= this.filterFam2
-            );
-          });
-        else
-          return this.wordList.filter((obj) => {
-            if (obj.familiarity >= this.maxLevel || Number(obj.temp1) == 0)
-              return false;
-            if (this.requireLevel != -1 && obj.require != this.requireLevel)
-              return false;
-            return (
-              obj.level.includes(this.filterLevel) &&
-              obj.familiarity >= this.filterFam1 &&
-              obj.familiarity <= this.filterFam2
-            );
+            let k = false;
+            let kk = this.requireLevel.trim().split(" ");
+            for (let i = 0; i < kk.length; i++) {
+              if (obj.require.trim().split(" ").includes(kk[i])) k = true;
+            }
+            if (this.requireLevel.trim() != "-1" && !k) return false;
+            if (!obj.level.includes(this.filterLevel)) return false;
+            return true;
           });
       }
     },
@@ -4909,7 +6453,7 @@ export default {
     },
 
     toStudy() {
-      this.studyWordList = this.getStudyWordList(2);
+      this.studyWordList = this.initSList;
       this.isStudying = true;
       this.initReciter = false;
       this.isTesting = false;
@@ -4924,7 +6468,7 @@ export default {
     toAddBatchWord() {
       this.newWord = "";
       this.prFilterLevel = "";
-      this.addBatchWord = true;
+      this.addBatchWord = !this.addBatchWord;
     },
 
     toLastWord() {
@@ -4959,8 +6503,7 @@ export default {
           !this.isAnswered) ||
         (this.isStudying &&
           !this.showSpell &&
-          !this.showCloze &&
-          (this.showDic || this.showRead))
+          (this.showCloze || this.showDic || this.showRead))
       ) {
         this.$nextTick(() => {
           document.getElementsByClassName("autoFocus")[0].focus();
@@ -4968,19 +6511,90 @@ export default {
         });
       }
     },
-
-    isTest() {
-      if (this.isInstruction) return;
+    getWrong() {
+      this.wrongNum = this.wrongNum + 1;
+      let tempList;
+      if (!this.isUser2)
+        tempList = this.studyWordList.filter((item, i) => {
+          return item.familiarity == 0 && this.tested[i] == 1;
+        });
+      else
+        tempList = this.studyWordList.filter((item, i) => {
+          return item.user2.split(",")[0] == "0" && this.tested[i] == 1;
+        });
+      if (tempList.length == 0) {
+        this.roundDone = true;
+        const isConfirm = window.confirm(
+          "本轮无错题！共已完成 " + this.testRound + " 组测试。测试下一组单词？"
+        );
+        if (isConfirm) {
+          this.toNextGroup();
+        } else this.close();
+        return;
+      }
+      this.studyWordList = tempList;
+      this.isReview = true;
+      this.tested = [];
+      this.testDone = [];
       this.initReciter = false;
-      this.isTesting = true;
       this.isStudying = false;
       this.isAnswered = false;
       this.answerWord = "";
       this.isCorrect = false;
+      this.wordIndex = 1;
       if (this.showSelectT) {
         this.clzGenerateOptions();
-      } else if (this.inputByLetters) {
+      }
+    },
+
+    toNextGroup() {
+      if (this.testLength - this.groupNumber * this.testRound <= 0) {
+        alert("已无未测试单词，点击'确定'结束测试。");
+        this.close();
+        return;
+      }
+      this.wrongNum = 0;
+      this.roundDone = false;
+      this.testRound = this.testRound + 1;
+      this.studyWordList = this.testAllList.slice(
+        this.groupNumber * (this.testRound - 1),
+        this.groupNumber * this.testRound
+      );
+      this.toShuffle(1);
+      this.isTest(1);
+    },
+
+    isTest(x) {
+      if (this.isInstruction) return;
+      this.wrongNum = 0;
+      this.roundDone = false;
+      this.tested = [];
+      this.testDone = [];
+      this.initReciter = false;
+      this.isStudying = false;
+      this.isAnswered = false;
+      this.answerWord = "";
+      this.isCorrect = false;
+      this.isReview = false;
+      this.isTesting = true;
+      if (x == 1) {
+        this.wordIndex = 2;
+        this.wordIndex = 1;
+      } else {
+        this.wordIndex = this.wordIndex + 1;
+        this.wordIndex = this.wordIndex - 1;
+      }
+      if (this.showSelectT) {
+        this.clzGenerateOptions();
+      }
+      if (this.inputByLetters) {
         this.splitInput();
+      }
+
+      if (!this.showQuickTest1 && this.autoRead) {
+        setTimeout(() => {
+          this.readTestWord();
+        }, 200);
       }
     },
 
@@ -5003,20 +6617,35 @@ export default {
     processWord(word) {
       const letters = word.split("");
       this.originalLetters = [...letters];
+      const nonSpaceIndexes = [];
+      letters.forEach((char, index) => {
+        if (char !== " ") {
+          nonSpaceIndexes.push(index);
+        }
+      });
+      const nonSpaceCount = nonSpaceIndexes.length;
+      if (nonSpaceCount === 0) {
+        this.processedLetters = letters.map((char) => ({
+          char,
+          isBlank: false,
+          isAnswered: false,
+          isCorrect: false,
+        }));
+        this.userLetterAnswers = Array(letters.length).fill("");
+        return;
+      }
 
-      const letterCount = letters.length;
       const blankCount = Math.max(
         1,
         Math.min(
-          letterCount - 1,
-          Math.round((letterCount * this.percentage) / 100)
+          nonSpaceCount - 1,
+          Math.round((nonSpaceCount * this.percentage) / 100)
         )
       );
-
-      this.selectRandomLetterBlanks(letterCount, blankCount);
-
+      this.selectRandomLetterBlanks(nonSpaceIndexes, blankCount);
       this.processedLetters = letters.map((char, index) => {
-        const isBlank = this.blankLetterIndices.includes(index);
+        const isBlank =
+          char === " " ? false : this.blankLetterIndices.includes(index);
         return {
           char,
           isBlank,
@@ -5049,13 +6678,20 @@ export default {
       this.blankIndices = shuffled.slice(0, actualCount);
     },
 
-    selectRandomLetterBlanks(totalLetters, count) {
-      const indices = Array.from({ length: totalLetters }, (_, i) => i);
-      const shuffled = indices.sort(() => 0.5 - Math.random());
-      this.blankLetterIndices = shuffled.slice(0, count);
+    selectRandomLetterBlanks(availableIndexes, blankCount) {
+      this.blankLetterIndices = [];
+      const tempIndexes = [...availableIndexes];
+      while (
+        this.blankLetterIndices.length < blankCount &&
+        tempIndexes.length > 0
+      ) {
+        const randomIdx = Math.floor(Math.random() * tempIndexes.length);
+        const selectedIndex = tempIndexes.splice(randomIdx, 1)[0];
+        this.blankLetterIndices.push(selectedIndex);
+      }
     },
 
-    handleLetterInput(index) {
+    handleLetterInput(index, event) {
       const originalCase = this.originalLetters[index];
       let userInput = this.userLetterAnswers[index] || "";
 
@@ -5067,6 +6703,21 @@ export default {
       setTimeout(() => {
         this.checkLetterAnswer(index);
       }, 10);
+      this.$nextTick(() => {
+        const allInputs = this.$el.querySelectorAll(
+          ".cloze-word .letter-input"
+        );
+        const inputsArray = Array.from(allInputs);
+        const currentInputIndex = inputsArray.indexOf(event.target);
+        if (
+          currentInputIndex > -1 &&
+          currentInputIndex < inputsArray.length - 1
+        ) {
+          const nextInput = inputsArray[currentInputIndex + 1];
+          nextInput.focus();
+          nextInput.select();
+        }
+      });
     },
 
     checkLetterAnswer(index) {
@@ -5124,10 +6775,17 @@ export default {
 
     addToSpelling(item) {
       if (item && item.trim() !== "") {
-        if (this.newWord.trim() == item.trim()) {
-          this.readContent = this.newWord;
-          this.readPart(0);
-        } else this.newWord = item.trim();
+        this.cleanUp();
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio = null;
+        }
+        const audioPath =
+          this.urla.split("/api/")[0] +
+          "/static/ipa/" +
+          item.trim().toLowerCase() +
+          ".mp3";
+        this.currentAudioPlay(audioPath);
       }
       if (this.isCorrect) return;
 
@@ -5271,7 +6929,7 @@ export default {
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition1 = new SpeechRecognition();
-      // configure parameters
+      // config
       this.recognition1.continuous = true;
       this.recognition1.interimResults = true;
       this.recognition1.lang = this.langInOriginLine;
@@ -5595,6 +7253,9 @@ export default {
           : `${result.RecognitionStatus}`;
     },
 
+    closeInstruction() {
+      this.isInstruction = false;
+    },
     highlightWord(text, type) {
       if (!text) {
         return "";
@@ -5774,6 +7435,7 @@ export default {
                 }
 
                 if (this.isWordReciter) {
+                  const date = Date.now();
                   this.addNewWord.word = this.newWord;
                   this.addNewWord.partOfSpeech = translatedElement.textContent;
                   this.addNewWord.number = 20002;
@@ -5787,12 +7449,16 @@ export default {
                   this.addNewWord.level = "";
                   this.addNewWord.wordNote = "";
                   this.addNewWord.familiarity = 0;
-                  this.addNewWord.date = "";
+                  this.addNewWord.date = date;
                   this.addNewWord.require =
-                    Number(window.localStorage.getItem("require")) || 0;
-                  this.addNewWord.temp1 = 0;
-                  this.addNewWord.temp2 = 0;
-                  this.addNewWord.temp3 = 0;
+                    window.localStorage.getItem("require") || "0";
+                  this.addNewWord.favorite = 0;
+                  this.addNewWord.user2 = "0,0," + date;
+                  this.addNewWord.temp3 = "0,0";
+                  if (this.addBatchWord && !this.fromBuildIn) {
+                    this.fromOnline = true;
+                    this.getPromise();
+                  }
                 }
               } else {
                 this.translatedText = translatedElement.textContent;
@@ -5813,11 +7479,20 @@ export default {
                 return;
               }
             }
+
+            if (this.addBatchWord && !this.fromBuildIn) {
+              this.fromOnline = true;
+              this.getPromise();
+            }
             return;
           }
         })
         .catch(() => {
           if (type == 2) {
+            if (this.addBatchWord && !this.fromBuildIn) {
+              this.fromOnline = true;
+              this.getPromise();
+            }
             if (onTest == 1) {
               this.openAlert(1, this.$t("repeater.alert005"));
               return;
@@ -6010,6 +7685,7 @@ export default {
           this.openAlert(1, this.translatedText);
           return;
         }
+        const date = Date.now();
         this.addNewWord.word = this.newWord;
         this.addNewWord.partOfSpeech = this.translatedText;
         this.addNewWord.number = 20002;
@@ -6023,16 +7699,20 @@ export default {
         this.addNewWord.level = "";
         this.addNewWord.wordNote = "";
         this.addNewWord.familiarity = 0;
-        this.addNewWord.date = "";
-        this.addNewWord.require =
-          Number(window.localStorage.getItem("require")) || 0;
-        this.addNewWord.temp1 = 0;
-        this.addNewWord.temp2 = 0;
-        this.addNewWord.temp3 = 0;
+        this.addNewWord.date = date;
+        this.addNewWord.require = window.localStorage.getItem("require") || "0";
+        this.addNewWord.favorite = 0;
+        this.addNewWord.user2 = "0,0," + date;
+        this.addNewWord.temp3 = "0,0";
       } catch (error) {
         this.translatedText = "";
         this.openAlert(1, this.$t("repeater.alert007"));
         this.inSubProcess = false;
+      } finally {
+        if (this.addBatchWord && !this.fromBuildIn) {
+          this.fromOnline = true;
+          this.getPromise();
+        }
       }
     },
 
@@ -6069,10 +7749,10 @@ export default {
               wordNote: "-",
               familiarity: 0,
               date: date,
-              require: 0,
-              temp1: 0,
-              temp2: 0,
-              temp3: 0,
+              require: "0",
+              favorite: 0,
+              user2: "0,0," + date,
+              temp3: "0,0",
             };
           })
           .filter((item) => item !== null);
@@ -6086,7 +7766,7 @@ export default {
       const date = Date.now();
       try {
         var content = await api.fetch(
-          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt"
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt"
         );
         const lines = content.content.split(/\r?\n/);
         const wordList = lines
@@ -6109,12 +7789,16 @@ export default {
                 wordNote: "-",
                 familiarity: 0,
                 date: date,
-                require: 0,
-                temp1: 0,
-                temp2: 0,
-                temp3: 0,
+                require: "0",
+                favorite: 0,
+                user2: "0,0," + date,
+                temp3: "0,0",
               };
             } else if (parts.length == 18) {
+              let result = [...new Set(String(parts[14]).split(" "))].join(" ");
+              if (parts[17] == 0) parts[17] = "0,0";
+              const date = Date.now();
+              if (parts[13] == 0) parts[13] = date;
               return {
                 number: parts[0],
                 word: parts[1],
@@ -6130,9 +7814,12 @@ export default {
                 wordNote: parts[11],
                 familiarity: parts[12],
                 date: parts[13],
-                require: parts[14],
-                temp1: parts[15],
-                temp2: parts[16],
+                require: result,
+                favorite: parts[15],
+                user2:
+                  Number(parts[16]) == 0 || parts[16] == "0,0,0"
+                    ? "0,0" + date
+                    : parts[16],
                 temp3: parts[17],
               };
             } else {
@@ -6143,7 +7830,7 @@ export default {
           .filter((item) => item !== null);
         this.wordList = wordList;
       } catch (e) {
-        alert("找不到生词表PDJ-wordlist.txt，将在添加生词时新建。");
+        alert("找不到生词表PDJ-WordList.txt，将在添加生词时新建。");
       }
     },
 
@@ -6270,8 +7957,7 @@ export default {
 
     checkLocalStorageSpace() {
       try {
-        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x")); // generate about 200KB's data, to test remaining space.
-        localStorage.removeItem("__checkSpace");
+        localStorage.setItem("__checkSpace", new Array(512 * 512).join("x"));
         return true;
       } catch (e) {
         return false;
@@ -6328,11 +8014,51 @@ export default {
     },
 
     saveToWordList() {
-      if (this.addBatchWord) {
+      if (this.addBatchWord && this.fromBuildIn) {
         this.wordList.push(...this.batchNewList);
         this.addBatchWord = false;
         this.prFilterLevel = "";
+        alert("批量添加成功!");
+      } else if (this.addBatchWord && !this.fromBuildIn) {
+        this.allSet = false;
+        this.addSelfBatch();
       } else this.saveToWordList1();
+    },
+
+    async addSelfBatch() {
+      let selfList = this.batchAddSelf.split(/\r?\n/);
+      for (let i = 0; i < selfList.length; ++i) {
+        window.localStorage.setItem("require", this.batchRequire);
+        if (selfList[i] !== "" && this.newWord !== selfList[i]) {
+          this.newWord = selfList[i];
+          await new Promise((resolve) => {
+            this.wordDataResolver = resolve;
+            this.wordDataTimeoutTimer = setTimeout(() => {
+              resolve();
+              this.wordDataResolver = null;
+            }, 5000);
+          });
+          this.saveToWordList1();
+        }
+        if (this.fromOnline) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          this.fromOnline = false;
+        }
+      }
+      this.newWord = "";
+      alert("批量添加成功!");
+      this.allSet = true;
+    },
+
+    getPromise() {
+      if (this.wordDataResolver) {
+        this.wordDataResolver();
+        this.wordDataResolver = null;
+        if (this.wordDataTimeoutTimer) {
+          clearTimeout(this.wordDataTimeoutTimer);
+          this.wordDataTimeoutTimer = null;
+        }
+      }
     },
 
     async saveToWordList1() {
@@ -6352,9 +8078,9 @@ export default {
         this.listWord.wordNote = this.addNewWord.wordNote;
         this.listWord.date = date;
         this.listWord.require = this.addNewWord.require;
-        this.listWord.temp1 = 0;
-        this.listWord.temp2 = 0;
-        this.listWord.temp3 = 0;
+        this.listWord.favorite = 0;
+        this.listWord.user2 = "0,0," + date;
+        this.listWord.temp3 = "0,0";
         this.studyWordList = this.getStudyWordList(1);
       } else if (this.insertWord) {
         if (this.listWord && this.insertWord) {
@@ -6381,9 +8107,9 @@ export default {
           familiarity: 0,
           date: date,
           require: this.addNewWord.require,
-          temp1: 0,
-          temp2: 0,
-          temp3: 0,
+          favorite: 0,
+          user2: "0,0," + date,
+          temp3: "0,0",
         };
 
         const index = this.wordList.findIndex(
@@ -6395,7 +8121,7 @@ export default {
         }
         this.studyWordList = this.getStudyWordList(2, 1);
       } else {
-        if (this.listWord && this.addWord) {
+        if (this.listWord && this.addWord && !this.toEditWord) {
           const index = this.wordList.findIndex(
             (item) => item === this.listWord
           );
@@ -6419,14 +8145,22 @@ export default {
           familiarity: 0,
           date: date,
           require: this.addNewWord.require,
-          temp1: 0,
-          temp2: 0,
-          temp3: 0,
+          favorite: 0,
+          user2: "0,0," + date,
+          temp3: "0,0",
         };
-        this.wordList.push(newW);
+        if (this.listWord && this.addWord && this.toEditWord) {
+          const index = this.wordList.findIndex(
+            (item) => item === this.listWord
+          );
+          if (index !== -1) {
+            this.wordList[index] = newW;
+          }
+          this.toEditWord = false;
+        } else this.wordList.push(newW);
         this.studyWordList = this.getStudyWordList(1);
       }
-      if (this.addWord) {
+      if (this.addWord && !this.addBatchWord) {
         this.addWord = false;
         this.initReciter = true;
         setTimeout(() => {
@@ -6457,52 +8191,45 @@ export default {
             item.wordNote != "" ? item.wordNote : "-",
             item.familiarity || 0,
             item.date || 0,
-            item.require || 0,
-            item.temp1 || 0,
-            item.temp2 || 0,
-            item.temp3 || 0,
+            item.require || "0",
+            item.favorite || 0,
+            item.user2 || "0,0,0",
+            item.temp3 || "0,0",
           ];
           return parts.join("||");
         });
 
         const textContent = lines.join("\n");
         await api.post(
-          "/files/!PDJ/user-" + this.user.username + "/PDJ-wordlist.txt",
+          "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt",
           textContent,
           true
         );
-        // //下面以后删掉！！
-        // const lines1 = this.wordList.map((item) => {
-        //   const parts1 = [
-        //     item.number || 20002,
-        //     item.word != "" ? item.word : "-",
-        //     item.pronunciation != "" ? item.pronunciation : "-",
-        //     item.phoneticSplit != "" ? item.phoneticSplit : "-",
-        //     item.syllable != "" ? item.syllable : "-",
-        //     item.roots != "" ? item.roots : "-",
-        //     item.partOfSpeech != "" ? item.partOfSpeech : "-",
-        //     item.collocation != "" ? item.collocation : "-",
-        //     item.exampleSentence != "" ? item.exampleSentence : "-",
-        //     item.exampleTranslation != "" ? item.exampleTranslation : "-",
-        //     item.level || "0",
-        //   ];
-        //   return parts1.join("||");
-        // });
-
-        // const textContent1 = lines1.join("\n");
-        // await api.post(
-        //   "/files/!PDJ/user-" + this.user.username + "/dictionary01.txt",
-        //   textContent1,
-        //   true
-        // );
-        // //上面以后删掉！！
       } catch (error) {
         alert(
-          "failed to save newWord to /!PDJ/user-" +
+          "向服务器保存文件失败：/!PDJ/user-" +
             this.user.username +
-            "/PDJ-wordlist.txt",
+            "/PDJ-WordList.txt",
           error
         );
+      }
+    },
+    resetAll() {
+      const isConfirm = window.confirm(
+        "所有单词熟悉度将重置为0，检测日期重置为当前日期，并取消所有收藏状态。确定吗？"
+      );
+      if (!isConfirm) return;
+      const date = Date.now();
+      for (let i = 0; i < this.wordList.length; i++) {
+        if (!this.isUser2) {
+          this.wordList[i].familiarity = 0;
+          this.wordList[i].favorite = 0;
+          this.wordList[i].date = date;
+          this.wordList[i].temp3 = "0," + this.wordList[i].temp3.split(",")[1];
+        } else {
+          this.wordList[i].user2 = "0,0," + date;
+          this.wordList[i].temp3 = this.wordList[i].temp3.split(",")[0] + ",0";
+        }
       }
     },
 
@@ -6526,15 +8253,16 @@ export default {
     },
 
     switchShowList() {
-      if (this.initReciter) return;
+      if (this.initReciter || this.isTesting) return;
       this.cleanUp();
+      this.tested = [];
+      this.testDone = [];
       this.showNewWordList = !this.showNewWordList;
-      this.studyWordList[this.wordIndex - 1].temp3 = 0;
     },
 
     toDetail(index) {
-      this.studyWordList[this.wordIndex - 1].temp3 = 0;
-      this.studyWordList[index].temp3 = 0;
+      this.tested[this.wordIndex - 1] = 0;
+      this.tested[index] = 0;
       this.wordIndex = index + 1;
       this.showNewWordList = !this.showNewWordList;
     },
@@ -6553,7 +8281,7 @@ export default {
         if (this.readCount != 0) {
           this.timeOutId2 = setTimeout(() => {
             this.handleRead();
-          }, 8000);
+          }, 18000);
           this.audio.onended = () => {
             this.handleRead();
           };
@@ -6568,14 +8296,14 @@ export default {
       } else {
         let ttsFullUrlO = this.TTSurlO + text;
         this.audio.src = ttsFullUrlO;
-        this.audio.playbackRate = this.curSpeed();
+        this.audio.playbackRate = this.speedOfOrigin;
         this.audio.play().catch(() => {
           this.openAlert(1, this.$t("repeater.alert008"));
         });
         if (this.readCount != 0) {
           this.timeOutId2 = setTimeout(() => {
             this.handleRead();
-          }, 8000);
+          }, 18000);
           this.audio.onended = () => {
             this.handleRead();
           };
@@ -6718,7 +8446,7 @@ export default {
                 }
               }
               localforage
-                .setItem(this.ttsName, blob)
+                .setItem(this.TTSurl + text, blob)
                 .then(() => {})
                 .catch(() => {});
 
@@ -6728,7 +8456,7 @@ export default {
               if (this.readCount != 0) {
                 this.timeOutId2 = setTimeout(() => {
                   this.handleRead();
-                }, 8000);
+                }, 18000);
                 this.audio.onended = () => {
                   this.handleRead();
                 };
@@ -6804,7 +8532,7 @@ export default {
 
         if (this.TTSurlO.split(",")[2]) v = this.TTSurlO.split(",")[2].trim();
         else v = "";
-      }
+      } //....................................................................................................
 
       const endpoint = `https://${r}.tts.speech.microsoft.com/cognitiveservices/v1`;
       const accessToken = this.gT(s, r);
@@ -6839,17 +8567,17 @@ export default {
               }
 
               localforage
-                .setItem(this.ttsName, blob)
+                .setItem(this.TTSurlO + text, blob)
                 .then(() => {})
                 .catch(() => {});
 
               this.audio.src = URL.createObjectURL(blob);
-              this.audio.playbackRate = this.curSpeed();
+              this.audio.playbackRate = this.speedOfOrigin;
               this.audio.play();
               if (this.readCount != 0) {
                 this.timeOutId2 = setTimeout(() => {
                   this.handleRead();
-                }, 8000);
+                }, 18000);
                 this.audio.onended = () => {
                   this.handleRead();
                 };
@@ -6925,7 +8653,7 @@ export default {
       if (this.readCount != 0) {
         this.timeOutId2 = setTimeout(() => {
           this.handleRead();
-        }, 8000);
+        }, 18000);
         this.utterThis.onend = () => {
           this.handleRead();
         };
@@ -6939,7 +8667,7 @@ export default {
         this.langInOriginLine = "en-US";
       }
       this.utterThis.lang = this.langInOriginLine;
-      this.utterThis.rate = this.curSpeed();
+      this.utterThis.rate = this.speedOfOrigin;
       let voices = window.speechSynthesis.getVoices();
       let formattedLang =
         this.utterThis.lang.substring(0, 3) +
@@ -6951,7 +8679,7 @@ export default {
       if (this.readCount != 0) {
         this.timeOutId2 = setTimeout(() => {
           this.handleRead();
-        }, 8000);
+        }, 18000);
         this.utterThis.onend = () => {
           this.handleRead();
         };
@@ -7004,7 +8732,7 @@ export default {
       } else {
         clearTimeout(this.clickTimer);
         this.clickTimer = null;
-        //double click
+        //double click.................................................
         this.cleanUp();
       }
     },
@@ -7106,29 +8834,6 @@ export default {
       }
     },
 
-    curSpeed() {
-      var cSpeed = this.currentSpeed.replaceAll(",", " ");
-      var nowSpeed;
-      cSpeed = cSpeed.replaceAll("   ", " ");
-      cSpeed = cSpeed.replaceAll("  ", " ");
-      if (cSpeed.split(" ")[0]) {
-        if (this.onTempSpeed) {
-          this.normalSpeed = Number(cSpeed.split(" ")[0]);
-          nowSpeed = this.tempSpeed;
-        } else {
-          nowSpeed = Number(cSpeed.split(" ")[0]);
-        }
-      } else {
-        if (this.onTempSpeed) {
-          this.normalSpeed = 1;
-          nowSpeed = this.tempSpeed;
-        } else {
-          nowSpeed = 1;
-        }
-      }
-      return nowSpeed;
-    },
-
     async updatePreview() {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
 
@@ -7148,16 +8853,15 @@ export default {
 
     blurActiveInput() {
       const activeEl = document.activeElement;
-      // 判断激活的元素是输入框，且属于当前组件的输入框
       if (activeEl.tagName === "INPUT") {
         activeEl.blur();
       }
     },
 
     key(event) {
-      if (this.isSetting) return;
+      if (this.isSetting || this.isInstruction || this.showReadAll) return;
       if (event.which === 39 || event.key === "Enter" || event.keyCode === 13) {
-        if (this.editWord) return;
+        if (this.editWord || this.addWord) return;
         if (
           (event.key === "Enter" || event.keyCode === 13) &&
           (this.showDic || this.showRead || this.showSpell || this.showCloze)
@@ -7213,6 +8917,14 @@ export default {
     },
     close() {
       this.cleanUp();
+      if (this.toMedia) {
+        this.toMedia = false;
+        return;
+      }
+      if (this.showNewWordList) {
+        this.showNewWordList = !this.showNewWordList;
+        return;
+      }
       if (this.addBatchWord) {
         this.addBatchWord = false;
         this.prFilterLevel = "";
@@ -7235,7 +8947,7 @@ export default {
         return;
       }
       if (this.isInstruction) {
-        this.isInstruction = false;
+        this.closeInstruction();
         return;
       }
       if (this.showFav) {
@@ -7256,6 +8968,7 @@ export default {
       }
       if (this.addWord) {
         this.addWord = false;
+        this.toEditWord = false;
         this.initReciter = true;
         this.switchShow();
         return;
@@ -7585,6 +9298,9 @@ input[type="text"] {
 }
 
 .clz-test-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: 100vh;
   background-color: white;
   padding: 6px;
@@ -8263,6 +9979,9 @@ input:disabled {
   }
 
   .settingBoxContainer {
+    width: 100%;
+  }
+  .clz-test-container {
     width: 100%;
   }
 

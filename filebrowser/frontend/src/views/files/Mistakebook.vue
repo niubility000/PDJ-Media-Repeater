@@ -5290,6 +5290,10 @@ export default {
     this.$nextTick(() => {
       this.bindImageClick();
     });
+    this.loadBaiDuTJScript();
+    setTimeout(() => {
+      this.pageView();
+    }, 500);
   },
   updated() {
     // 内容更新后重新绑定（先移除旧事件，再绑定新事件）
@@ -5795,6 +5799,21 @@ export default {
       } else {
         this.startReadingCards();
         this.switchView("readingCard");
+      }
+    },
+    loadBaiDuTJScript() {
+      if (document.getElementById("baidu-tongji-script")) return;
+      window._hmt = window._hmt || [];
+      const hm = document.createElement("script");
+      hm.id = "baidu-tongji-script";
+      hm.src = "https://hm.baidu.com/hm.js?8cd25f4a6ff603e61707fa049681a149";
+      const s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    },
+
+    pageView() {
+      if (window._hmt) {
+        window._hmt.push(["_trackPageview", "/mistakeBook"]);
       }
     },
 

@@ -2917,6 +2917,10 @@ export default {
     if (!this.checkLocalStorageSpace()) {
       this.openAlert(1, this.$t("repeater.alertSpace"));
     }
+    this.loadBaiDuTJScript();
+    setTimeout(() => {
+      this.pageView();
+    }, 500);
   },
 
   beforeDestroy() {
@@ -2979,7 +2983,21 @@ export default {
       this.alertVisible = false;
       return;
     },
+    loadBaiDuTJScript() {
+      if (document.getElementById("baidu-tongji-script")) return;
+      window._hmt = window._hmt || [];
+      const hm = document.createElement("script");
+      hm.id = "baidu-tongji-script";
+      hm.src = "https://hm.baidu.com/hm.js?8cd25f4a6ff603e61707fa049681a149";
+      const s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    },
 
+    pageView() {
+      if (window._hmt) {
+        window._hmt.push(["_trackPageview", "/Reminder"]);
+      }
+    },
     alertAutoDetect() {
       this.openAlert(1, this.$t("reminder.alertAutoDetect"));
     },
