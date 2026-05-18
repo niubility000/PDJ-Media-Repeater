@@ -36,6 +36,7 @@ export default {
   data() {
     return {
       scale: 1,
+      rotation: 0,
       lastX: null,
       lastY: null,
       inDrag: false,
@@ -79,6 +80,7 @@ export default {
       }
 
       this.scale = 1;
+      this.rotation = 0;
       this.setZoom();
       this.setCenter();
     },
@@ -263,7 +265,12 @@ export default {
     setZoom() {
       this.scale = this.scale < this.minScale ? this.minScale : this.scale;
       this.scale = this.scale > this.maxScale ? this.maxScale : this.scale;
-      this.$refs.imgex.style.transform = `scale(${this.scale})`;
+      this.$refs.imgex.style.transform = `scale(${this.scale}) rotate(${this.rotation}deg)`;
+    },
+    rotate() {
+      this.rotation = (this.rotation + 90) % 360;
+      this.setZoom();
+      this.setCenter();
     },
     pxStringToNumber(style) {
       return +style.replace("px", "");

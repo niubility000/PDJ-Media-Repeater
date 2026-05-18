@@ -173,6 +173,10 @@ body.rtl #listing {
   color: var(--item-selected) !important;
 }
 
+#listing .item.last-opened {
+  background-color: #f0f0f0 !important;
+}
+
 #listing.list .item div:first-of-type {
   width: 3em;
 }

@@ -7,6 +7,7 @@ import i18n from "@/i18n";
 import Vue from "@/utils/vue";
 import { recaptcha, loginPage } from "@/utils/constants";
 import { login, validateLogin } from "@/utils/auth";
+import { initOfflineCache } from "@/utils/offline-cache";
 import App from "@/App.vue";
 
 cssVars();
@@ -14,6 +15,9 @@ cssVars();
 sync(store, router);
 
 async function start() {
+  // 初始化离线缓存
+  initOfflineCache();
+  
   try {
     if (loginPage) {
       await validateLogin();

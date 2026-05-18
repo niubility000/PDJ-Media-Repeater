@@ -1,9 +1,6 @@
 <template>
   <div>
-    <div
-      v-if="!isReminder && !isMistakeBook && !isWordReciter"
-      style="margin-top: 3em"
-    >
+    <div style="margin-top: 3em">
       <div v-if="progress" class="progress">
         <div v-bind:style="{ width: this.progress + '%' }"></div>
       </div>
@@ -15,24 +12,12 @@
       <prompts></prompts>
       <upload-files></upload-files>
     </div>
-    <div v-if="isReminder">
-      <reminder></reminder>
-    </div>
-    <div v-if="isMistakeBook">
-      <mistakebook></mistakebook>
-    </div>
-    <div v-if="isWordReciter">
-      <wordreciter></wordreciter>
-    </div>
   </div>
 </template>
 
 <script>
 import { mapState, mapGetters } from "vuex";
 import Sidebar from "@/components/Sidebar.vue";
-import Reminder from "@/views/files/Reminder.vue";
-import Wordreciter from "@/views/files/Wordreciter.vue";
-import Mistakebook from "@/views/files/Mistakebook.vue";
 import Prompts from "@/components/prompts/Prompts.vue";
 import Shell from "@/components/Shell.vue";
 import UploadFiles from "../components/prompts/UploadFiles.vue";
@@ -42,9 +27,6 @@ export default {
   name: "layout",
   components: {
     Sidebar,
-    Reminder,
-    Wordreciter,
-    Mistakebook,
     Prompts,
     Shell,
     UploadFiles,
@@ -53,13 +35,6 @@ export default {
     ...mapGetters(["isLogged", "progress", "currentPrompt"]),
     ...mapState(["user"]),
     isExecEnabled: () => enableExec,
-  },
-  data: function () {
-    return {
-      isReminder: Number(window.localStorage.getItem("isReminder")) == 1,
-      isWordReciter: Number(window.localStorage.getItem("isWordReciter")) == 1,
-      isMistakeBook: Number(window.localStorage.getItem("isMistakeBook")) == 1,
-    };
   },
   watch: {
     $route: function () {

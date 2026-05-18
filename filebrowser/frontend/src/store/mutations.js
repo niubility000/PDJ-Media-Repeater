@@ -5,6 +5,34 @@ const mutations = {
   closeHovers: (state) => {
     state.prompts.pop();
   },
+  saveScrollPosition: (state, { path, scrollTop }) => {
+    if (!state.scrollPositions) {
+      state.scrollPositions = {};
+    }
+    state.scrollPositions[path] = scrollTop;
+  },
+  getScrollPosition: (state, path) => {
+    return state.scrollPositions?.[path] || 0;
+  },
+  clearScrollPosition: (state, path) => {
+    if (state.scrollPositions) {
+      delete state.scrollPositions[path];
+    }
+  },
+  setLastOpenedIndex: (state, index) => {
+    state.lastOpenedIndex = index;
+  },
+  clearLastOpenedIndex: (state) => {
+    state.lastOpenedIndex = null;
+  },
+  setParentPathIndex: (state, { index, path }) => {
+    state.parentPathIndex = index;
+    state.parentPath = path;
+  },
+  clearParentPathIndex: (state) => {
+    state.parentPathIndex = null;
+    state.parentPath = null;
+  },
   toggleShell: (state) => {
     state.show = null;
     state.showShell = !state.showShell;

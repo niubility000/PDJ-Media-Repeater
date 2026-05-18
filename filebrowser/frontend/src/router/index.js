@@ -2,6 +2,9 @@ import Vue from "vue";
 import Router from "vue-router";
 import Login from "@/views/Login.vue";
 import Layout from "@/views/Layout.vue";
+import Wordreciter from "@/views/files/Wordreciter.vue";
+import MistakeBook from "@/views/files/Mistakebook.vue";
+import Reminder from "@/views/files/Reminder.vue";
 import Files from "@/views/Files.vue";
 import Share from "@/views/Share.vue";
 import Users from "@/views/settings/Users.vue";
@@ -44,9 +47,23 @@ const router = new Router({
         if (store.getters.isLogged) {
           return next({ path: "/files" });
         }
-
         next();
       },
+    },
+    {
+      path: "/files-WordReciter",
+      name: "WordReciter",
+      component: Wordreciter,
+    },
+    {
+      path: "/files-Reminder",
+      name: "reminder",
+      component: Reminder,
+    },
+    {
+      path: "/files-MistakeBook",
+      name: "mistakeBook",
+      component: MistakeBook,
     },
     {
       path: "/*",
@@ -189,6 +206,34 @@ router.beforeEach((to, from, next) => {
   }
 
   next();
+});
+
+router.afterEach((to, from) => {
+  const listing = document.getElementById("listing");
+  if (listing && from.path.startsWith("/files/")) {
+    store.commit("saveScrollPosition", {
+      path: from.path,
+      scrollTop: listing.scrollTop,
+    });
+  }
+  if (to.path.startsWith("/files/")) {
+    const toIsDir = to.path.endsWith("/");
+    const fromIsDir = from.path.endsWith("/");
+    if (toIsDir) {
+      if (fromIsDir && from.path.startsWith(to.path) && from.path.length > to.path.length) {
+        if (store.state.parentPath === to.path) {
+          store.commit("setLastOpenedIndex", store.state.parentPathIndex);
+        }
+      } else if (!fromIsDir) {
+        store.commit("setLastOpenedIndex", store.state.lastOpenedIndex);
+      } else if (to.path.startsWith(from.path) && to.path.length > from.path.length) {
+        store.commit("clearLastOpenedIndex");
+      } else {
+        store.commit("clearLastOpenedIndex");
+        store.commit("clearParentPathIndex");
+      }
+    }
+  }
 });
 
 export default router;

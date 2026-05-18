@@ -1,5 +1,18 @@
 <template>
   <div>
+    <div
+      v-if="msg.length !== 0"
+      style="
+        position: fixed;
+        z-index: 5889;
+        top: 1.5em;
+        left: 50%;
+        transform: translateX(-50%);
+        color: blue;
+      "
+    >
+      {{ msg }}
+    </div>
     <header-bar
       style="padding: 0.5em; height: 4em; overflow-y: hidden; overflow-x: auto"
     >
@@ -33,18 +46,14 @@
             showQuestionTypeSummaryModal
               ? "保存题型总结"
               : isEditing
-              ? "更新错题"
-              : "保存错题"
+              ? "更新题目"
+              : "保存题目"
           }}
         </button>
       </span>
       <button
         class="action"
-        v-if="
-          currentView == 'list' ||
-          currentView == 'home' ||
-          currentView == 'questionTypeSummary'
-        "
+        v-if="currentView == 'list' || currentView == 'questionTypeSummary'"
         @click="switchView('add')"
       >
         <i style="color: blue; font-size: 2em" class="material-icons"
@@ -52,7 +61,7 @@
         >
       </button>
       <button
-        v-if="!autoSync"
+        v-if="!allowSync"
         class="action"
         @click="readFromServer(1)"
         :title="从服务器同步错题本内容"
@@ -62,7 +71,7 @@
       </button>
 
       <button
-        v-if="!autoSync"
+        v-if="!allowSync"
         class="action"
         @click="saveToServer(1)"
         :title="错题本内容同步到服务器"
@@ -78,7 +87,6 @@
           >table_bar</i
         >
       </button>
-
       <button
         class="action"
         style="background-color: white"
@@ -90,15 +98,33 @@
     </header-bar>
 
     <!-- 主内容区域 -->
+    <div v-if="currentView == 'home'">
+      <button
+        class="home-btn"
+        @click="showHelp"
+        style="
+          background-color: transparent;
+          right: 0;
+          position: fixed;
+          bottom: 1em;
+        "
+      >
+        <i style="color: blue; font-size: 1.5em" class="material-icons">help</i>
+      </button>
+    </div>
     <div class="main-content">
       <!-- 首页视图 -->
-      <div v-if="currentView === 'home'" style="margin-top: 18vh">
+      <div v-if="currentView === 'home'" style="margin-top: 16vh">
         <div class="home-view">
+          <button class="home-btn" @click="switchView('add')">添加题目</button>
+        </div>
+
+        <div class="home-view">
+          <button class="home-btn" @click="startTest">题卡测验</button>
           <button class="home-btn" @click="switchView('list')">错题列表</button>
           <button class="home-btn" @click="switchView('cardList')">
-            题卡复习
+            题卡列表
           </button>
-          <button class="home-btn" @click="startTest">题卡测验</button>
         </div>
         <div class="home-view">
           <button class="home-btn" @click="switchView('task')">任务列表</button>
@@ -140,19 +166,30 @@
           正在传输中......
         </span>
       </div>
-      <div v-if="currentView === 'test'" class="test-view">
+      <div
+        v-if="currentView === 'test'"
+        class="test-view"
+        :style="{
+          height: isMobile ? 'calc(100vh - 5.8em)' : 'calc(100vh - 4.2em)',
+        }"
+      >
         <div class="test-header">
-          <h3>题卡测验</h3>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <h3>
+              题卡测验：{{ testFilterForm.user }}
+              {{ testFilterForm.subject }}
+            </h3>
+            <span class="filter-header" @click="toggleTestFilter">
+              <span class="filter-arrow" :class="{ up: showTestFilterPanel }"
+                >↓</span
+              >
+            </span>
+          </div>
           <div class="test-controls">
             <div class="test-progress">
               进度：{{ currentTestIndex + 1 }} /
               {{ filteredTestMistaker.length }}
             </div>
-            <!-- 新增筛选按钮 -->
-            <button @click="toggleTestFilter" class="filter-test-btn">
-              <i class="material-icons">filter_list</i>
-              筛选
-            </button>
           </div>
         </div>
 
@@ -161,136 +198,232 @@
           <div class="filter-form">
             <div class="filter-row">
               <div class="filter-item">
-                <label>用户：</label>
+                用户：
                 <input
                   v-model="testFilterForm.user"
                   @change="applyTestFilter"
                   type="text"
                   placeholder="筛选用户"
                 />
+                <!-- 用户候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueUsers?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueUsers"
+                    :key="`user-${item}`"
+                    @click="append2('user', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
 
               <div class="filter-item">
-                <label>科目：</label>
+                科目：
                 <input
                   v-model="testFilterForm.subject"
                   @change="applyTestFilter"
                   type="text"
                   placeholder="筛选科目"
                 />
+                <!-- 科目候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueSubjects?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueSubjects"
+                    :key="`subject-${item}`"
+                    @click="append2('subject', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
               <div class="filter-item">
-                <label>关键字：</label>
+                关键字：
                 <input
                   v-model="testFilterForm.keyword"
                   @change="applyTestFilter"
                   type="text"
-                  placeholder="搜索题目、答案、易错点等"
+                  placeholder="搜索题目、答案等"
                 />
               </div>
             </div>
 
             <div class="filter-row">
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.excludeTodayTested"
-                    @change="applyTestFilter"
-                    type="checkbox"
-                  />
-                  排除今日已测试题卡
-                </label>
+                <input
+                  v-model="testFilterForm.excludeTodayTested"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                排除今日已测试题卡
               </div>
 
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.lastWrong"
-                    @change="applyTestFilter"
-                    type="checkbox"
-                  />
-                  仅包含最后一次做错的题卡
-                </label>
+                <input v-model="testFilterForm.fav" type="checkbox" />
+                仅包含收藏的题卡
+              </div>
+              <div class="filter-checkbox">
+                <input
+                  v-model="testFilterForm.specialIL"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                仅包含掌握程度为
+                <input
+                  v-model.lazy="testFilterForm.importantLevel"
+                  @change="applyTestFilter"
+                  type="number"
+                  min="0"
+                  style="width: 3em"
+                />
+                的题卡
               </div>
 
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.lessThan"
-                    @change="applyTestFilter"
-                    type="checkbox"
-                  />
-                  仅包含测试次数少于
-                  <input
-                    v-model.lazy="testTimes"
-                    @change="applyTestFilter"
-                    type="number"
-                    min="1"
-                    style="width: 3em"
-                  />
-                  次的题卡
-                </label>
+                <input
+                  v-model="testFilterForm.lastWrong"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                仅包含最后一次做错的题卡
               </div>
 
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.excludeFiveCorrect"
-                    @change="applyTestFilter"
-                    type="checkbox"
-                  />
-                  排除最后连续
-                  <input
-                    v-model.lazy="correctDays"
-                    @change="applyTestFilter"
-                    type="number"
-                    min="1"
-                    style="width: 3em"
-                  />
-                  次测试正确的题卡
-                </label>
+                <input
+                  v-model="testFilterForm.lessThan"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                仅包含测试次数少于
+                <input
+                  v-model.lazy="testTimes"
+                  @change="applyTestFilter"
+                  type="number"
+                  min="1"
+                  style="width: 3em"
+                />
+                次的题卡
+              </div>
+
+              <div class="filter-checkbox">
+                <input
+                  v-model="testFilterForm.excludeFiveCorrect"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                排除最后连续
+                <input
+                  v-model.lazy="correctDays"
+                  @change="applyTestFilter"
+                  type="number"
+                  min="1"
+                  style="width: 3em"
+                />
+                次测试正确的题卡
               </div>
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.allowInterval"
-                    @change="applyTestFilter"
-                    type="checkbox"
-                  />
-                  测试间隔天数:
-                  <input
-                    v-model.lazy="testInterval"
-                    @change="applyTestFilter"
-                    placeholder="各次测试间隔天数，以空格来分隔。"
-                    type="text"
-                  />
-                </label>
+                <input
+                  v-model="testFilterForm.allowInterval"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                测试间隔天数:
+                <input
+                  v-model.lazy="testInterval"
+                  @change="applyTestFilter"
+                  placeholder="各次测试间隔天数，以空格来分隔。"
+                  type="text"
+                />
               </div>
+            </div>
+            <div
+              class="filter-actions"
+              style="display: flex; justify-content: right"
+            >
+              <button @click="resetTestFilter" class="reset-btn">重置</button>
             </div>
           </div>
         </div>
 
-        <div class="test-content" style="flex-grow: 1">
+        <div
+          class="test-content"
+          v-if="filteredTestMistaker.length !== 0"
+          style="flex-grow: 1; overflow-y: auto"
+        >
           <!-- 当前题目显示 -->
           <div class="current-question">
             <div
               class="question-header"
               style="display: flex; justify-content: space-between"
             >
-              <span style="margin: 0">
-                题目 {{ currentTestIndex + 1 }} （ 题号：{{
-                  filteredTestMistaker[currentTestIndex]?.id
-                }}
-                ）
+              <span style="margin: 0; cursor: pointer" @click="copytoTextArea">
+                {{ addToday }}
               </span>
-              <span
-                style="margin: 0"
-                @click="
-                  editCheatSheet(filteredTestMistaker[currentTestIndex]?.user)
-                "
-              >
-                CheatSheet
-              </span>
+              <div style="display: flex; align-items: center">
+                <button
+                  style="background: transparent; color: black"
+                  v-if="
+                    !String(
+                      filteredTestMistaker[currentTestIndex].reviewDate
+                    ).split(',')[1] ||
+                    Number(
+                      String(
+                        filteredTestMistaker[currentTestIndex].reviewDate
+                      ).split(',')[1]
+                    ) == 0
+                  "
+                  class="read-btn"
+                  @click="switchFav(filteredTestMistaker[currentTestIndex])"
+                >
+                  <i class="material-icons">star_border</i>
+                </button>
+                <button
+                  style="background: transparent; color: black"
+                  v-if="
+                    String(
+                      filteredTestMistaker[currentTestIndex].reviewDate
+                    ).split(',')[1] &&
+                    Number(
+                      String(
+                        filteredTestMistaker[currentTestIndex].reviewDate
+                      ).split(',')[1]
+                    ) == 1
+                  "
+                  class="read-btn"
+                  @click="switchFav(filteredTestMistaker[currentTestIndex])"
+                >
+                  <i class="material-icons" style="color: blue">star</i>
+                </button>
+                <div>
+                  <div class="error-importance">
+                    <!-- 掌握程度（9级） -->
+                    <div class="section-content">
+                      <label>掌握程度：</label>
+                      <span
+                        >{{
+                          filteredTestMistaker[currentTestIndex]
+                            ?.importantLevel
+                        }}级</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <span
+                  style="margin: 0; cursor: pointer"
+                  @click="
+                    editCheatSheet(
+                      filteredTestMistaker[currentTestIndex]?.user,
+                      filteredTestMistaker[currentTestIndex]?.subject
+                    )
+                  "
+                >
+                  CS
+                </span>
+              </div>
             </div>
 
             <!-- 题目显示 -->
@@ -299,11 +432,19 @@
               @dblclick="openQuestionEditor(currentTestIndex)"
             >
               <strong>
-                {{ filteredTestMistaker[currentTestIndex]?.user }} -
-                {{ filteredTestMistaker[currentTestIndex]?.subject }} -
-                {{ filteredTestMistaker[currentTestIndex]?.subClass }} -
-                {{ filteredTestMistaker[currentTestIndex]?.questionType }}：
+                题目{{ currentTestIndex + 1 }} ( 题号：{{
+                  filteredTestMistaker[currentTestIndex]?.id
+                }}) {{ filteredTestMistaker[currentTestIndex]?.user }}-{{
+                  filteredTestMistaker[currentTestIndex]?.subject
+                }}-{{ filteredTestMistaker[currentTestIndex]?.subClass }}-{{
+                  filteredTestMistaker[currentTestIndex]?.questionType
+                }}:
               </strong>
+              <button class="action" @click="showAlert">
+                <i style="color: blue; font-size: 1.2em" class="material-icons"
+                  >help</i
+                >
+              </button>
               <div
                 v-if="filteredTestMistaker[currentTestIndex]?.question"
                 v-html="filteredTestMistaker[currentTestIndex]?.question"
@@ -312,9 +453,21 @@
             </div>
 
             <!-- 答案显示区域 -->
-            <div v-if="showAnswer" class="answer-section">
-              <div class="answer-content">
-                <strong>答案：</strong>
+            <div
+              v-if="showAnswer"
+              @dblclick="openQuestionEditor(currentTestIndex, 1)"
+              class="answer-section"
+              style="background: beige"
+            >
+              <div>
+                <strong>答案与解析：</strong>
+                <button class="action" @click="showAlert1">
+                  <i
+                    style="color: blue; font-size: 1.2em"
+                    class="material-icons"
+                    >help</i
+                  >
+                </button>
                 <div
                   v-if="filteredTestMistaker[currentTestIndex].answer"
                   v-html="filteredTestMistaker[currentTestIndex].answer"
@@ -325,18 +478,65 @@
             <div v-if="showAnswer" class="result-feedback">
               <!-- 易错点 -->
               <div class="section-content">
-                <div class="section-content">
-                  <textarea
-                    style="width: calc(100% - 8px)"
-                    v-model.lazy="
-                      filteredTestMistaker[currentTestIndex].correctIdea
-                    "
-                    rows="2"
-                    placeholder="编辑易错点"
-                  ></textarea>
-                </div>
+                <textarea
+                  style="width: 100%"
+                  v-model.lazy="
+                    filteredTestMistaker[currentTestIndex].correctIdea
+                  "
+                  rows="5"
+                  placeholder="易错点：可用于记录每次测验中所犯错误。(点击上方日期可自动添加当前日期)"
+                ></textarea>
               </div>
             </div>
+
+            <div v-if="showAnswer" style="margin: 16px 0">
+              <strong style="color: green">题型总结：</strong>
+              <div
+                v-html="
+                  finalQuestionTypeSummary.find(
+                    (i) =>
+                      i.subject ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].subject?.trim() &&
+                      i.subClass ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].subClass?.trim() &&
+                      i.questionType ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].questionType?.trim()
+                  )?.questionTypeSummary || ''
+                "
+                ref="htmlContainer"
+              ></div>
+              <div class="small-imgs-wrap">
+                <img
+                  v-for="(url, idx) in finalQuestionTypeSummary.find(
+                    (i) =>
+                      i.subject ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].subject?.trim() &&
+                      i.subClass ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].subClass?.trim() &&
+                      i.questionType ===
+                        filteredTestMistaker[
+                          currentTestIndex
+                        ].questionType?.trim()
+                  )?.questionTypeImgUrls || []"
+                  :key="idx"
+                  :src="url"
+                  alt="原题"
+                  class="small-img"
+                  @click="openImageViewer(url)"
+                />
+              </div>
+            </div>
+
             <!-- 题目详细信息（可折叠） -->
             <div v-if="testResult !== null" class="question-details">
               <div class="details-header" @click="toggleSection('testDetails')">
@@ -354,7 +554,7 @@
                   v-if="filteredTestMistaker[currentTestIndex].correctIdea"
                   class="detail-item"
                 >
-                  <strong>易错点：</strong>
+                  <strong>易错点</strong>
                   <span>{{
                     filteredTestMistaker[currentTestIndex].correctIdea
                   }}</span>
@@ -408,7 +608,7 @@
           </div>
         </div>
         <!-- 导航按钮 -->
-        <div class="test-navigation">
+        <div v-if="filteredTestMistaker.length !== 0" class="test-navigation">
           <div>
             <button @click="finishTest" class="check-answer-btn">
               结束测试
@@ -459,7 +659,7 @@
                 border-radius: 4px;
               "
             >
-              ▶ 展开全部
+              ▶
             </span>
             <span
               v-if="isAllSubjectSummaryExpanded && finalSubjectSummary.length"
@@ -471,7 +671,7 @@
                 border-radius: 4px;
               "
             >
-              ▼ 收起全部
+              ▼
             </span>
 
             <button @click="openAddSubjectSummaryModal" class="add-task-btn">
@@ -647,10 +847,17 @@
         </div>
       </div>
 
-      <!-- 题卡复习视图 -->
+      <!-- 题卡列表视图 -->
       <div v-if="currentView === 'cardList'" class="card-list-view">
         <div class="card-list-header">
-          <h3>题卡复习 （{{ questionCards.length }}）</h3>
+          <div style="display: flex; align-items: center">
+            <h3>题卡列表({{ questionCards.length }})&nbsp;</h3>
+            <span class="filter-header" @click="toggleTestFilter">
+              <span class="filter-arrow" :class="{ up: showTestFilterPanel }"
+                >↓</span
+              >
+            </span>
+          </div>
           <div style="display: flex; gap: 10px; align-items: center">
             <!-- 新增：展开全部/收起全部按钮 -->
             <span
@@ -663,7 +870,7 @@
                 border-radius: 4px;
               "
             >
-              ▶ 展开全部
+              ▶
             </span>
             <span
               v-if="isAllCardGroupsExpanded"
@@ -675,30 +882,23 @@
                 border-radius: 4px;
               "
             >
-              ▼ 收起全部
+              ▼
             </span>
-
-            <!-- 新增筛选按钮 -->
-            <button @click="toggleTestFilter" class="filter-test-btn">
-              <i class="material-icons">filter_list</i>
-              筛选
-            </button>
-            <!-- 新增：朗读按钮 -->
             <button
               @click="switchView('readingCard')"
               class="reading-btn"
               :disabled="questionCards.length === 0"
             >
               <i class="material-icons"></i>
-              朗读题卡
+              朗读
             </button>
             <button
               @click="printQuestionCards"
               class="print-cards-btn"
               :disabled="questionCards.length === 0"
             >
-              <i class="material-icons">print</i>
-              打印题卡
+              <i class="material-icons"></i>
+              打印
             </button>
           </div>
         </div>
@@ -708,79 +908,122 @@
           <div class="filter-form">
             <div class="filter-row">
               <div class="filter-item">
-                <label>用户：</label>
+                用户：
                 <input
                   v-model="testFilterForm.user"
                   type="text"
                   placeholder="筛选用户"
                 />
+                <!-- 用户候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueUsers?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueUsers"
+                    :key="`user-${item}`"
+                    @click="append2('user', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
 
               <div class="filter-item">
-                <label>科目：</label>
+                科目：
                 <input
                   v-model="testFilterForm.subject"
                   type="text"
                   placeholder="筛选科目"
                 />
+                <!-- 科目候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueSubjects?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueSubjects"
+                    :key="`subject-${item}`"
+                    @click="append2('subject', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
               <div class="filter-item">
-                <label>关键字：</label>
+                关键字：
                 <input
                   v-model="testFilterForm.keyword"
                   type="text"
-                  placeholder="搜索题目、答案、易错点等"
+                  placeholder="搜索题目、答案等"
                 />
               </div>
             </div>
 
             <div class="filter-row">
               <div class="filter-checkbox">
-                <label>
-                  <input v-model="testFilterForm.lastWrong" type="checkbox" />
-                  仅包含最后一次做错的题卡
-                </label>
+                <input v-model="testFilterForm.fav" type="checkbox" />
+                仅包含收藏的题卡
               </div>
               <div class="filter-checkbox">
-                <label>
-                  <input v-model="testFilterForm.lessThan" type="checkbox" />
-                  仅包含测试次数少于
-                  <input
-                    v-model.lazy="testTimes"
-                    type="number"
-                    min="1"
-                    style="width: 3em"
-                  />
-                  次的题卡
-                </label>
+                <input
+                  v-model="testFilterForm.specialIL"
+                  @change="applyTestFilter"
+                  type="checkbox"
+                />
+                仅包含掌握程度为
+                <input
+                  v-model.lazy="testFilterForm.importantLevel"
+                  @change="applyTestFilter"
+                  type="number"
+                  min="0"
+                  style="width: 3em"
+                />
+                的题卡
               </div>
 
               <div class="filter-checkbox">
-                <label>
-                  <input
-                    v-model="testFilterForm.excludeFiveCorrect"
-                    type="checkbox"
-                  />
-                  排除最后连续
-                  <input
-                    v-model.lazy="correctDays"
-                    type="number"
-                    style="width: 3em"
-                  />
-                  次测试正确的题卡
-                </label>
+                <input v-model="testFilterForm.lastWrong" type="checkbox" />
+                仅包含最后一次做错的题卡
               </div>
               <div class="filter-checkbox">
-                <label>
-                  排除题号
-                  <input
-                    v-model.lazy="excludedID"
-                    type="text"
-                    placeholder="用空格分割，如5 12"
-                    style="width: 10em"
-                  />
-                </label>
+                <input v-model="testFilterForm.lessThan" type="checkbox" />
+                仅包含测试次数少于
+                <input
+                  v-model.lazy="testTimes"
+                  type="number"
+                  min="1"
+                  style="width: 3em"
+                />
+                次的题卡
               </div>
+
+              <div class="filter-checkbox">
+                <input
+                  v-model="testFilterForm.excludeFiveCorrect"
+                  type="checkbox"
+                />
+                排除最后连续
+                <input
+                  v-model.lazy="correctDays"
+                  type="number"
+                  style="width: 3em"
+                />
+                次测试正确的题卡
+              </div>
+              <div class="filter-checkbox">
+                排除题号
+                <input
+                  v-model.lazy="excludedID"
+                  type="text"
+                  placeholder="用空格分割，如5 12"
+                  style="width: 10em"
+                />
+              </div>
+            </div>
+            <div
+              class="filter-actions"
+              style="display: flex; justify-content: right"
+            >
+              <button @click="resetTestFilter" class="reset-btn">重置</button>
             </div>
           </div>
         </div>
@@ -818,9 +1061,6 @@
                       >（共 {{ group.cards.length }} 题）</span
                     >
                   </span>
-                  <span @click.stop="editCheatSheet(group.user)">
-                    CheatSheet
-                  </span>
                 </div>
               </div>
 
@@ -829,26 +1069,63 @@
                 <table class="card-table">
                   <thead>
                     <tr>
-                      <th style="width: 6%">序号</th>
-                      <th style="width: 6%">题号</th>
-                      <th style="width: 8%">历史测试</th>
-                      <th style="width: 30%">题目</th>
-                      <th style="width: 30%">答案</th>
-                      <th style="width: 20%">易错点</th>
+                      <th style="width: 3%">题号</th>
+                      <th style="width: 7%">历史测试</th>
+                      <th style="width: 45%">题目</th>
+                      <th style="width: 45%">答案与解析</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr
-                      v-for="(item, index) in group.cards"
+                      v-for="item in group.cards"
                       :key="item.id"
                       :class="{
                         expanded: item.isExpanded,
                       }"
                       @click="toggleCardExpand(item.id)"
                     >
-                      <td class="text-center">{{ index + 1 }}</td>
-                      <td class="text-center">{{ item.id }}</td>
-
+                      <td class="text-center">
+                        {{ item.id }}
+                        <button
+                          class="read-btn"
+                          style="background-color: transparent"
+                          @click="editError(item, 1)"
+                        >
+                          <i
+                            style="color: blue; font-size: 1.2em"
+                            class="material-icons"
+                            >edit</i
+                          >
+                        </button>
+                        <button
+                          style="background: transparent; color: black"
+                          v-if="
+                            !String(item.reviewDate).split(',')[1] ||
+                            Number(String(item.reviewDate).split(',')[1]) == 0
+                          "
+                          class="read-btn"
+                          @click.stop="switchFav(item, 1)"
+                        >
+                          <i class="material-icons" style="font-size: 1em"
+                            >star_border</i
+                          >
+                        </button>
+                        <button
+                          style="background: transparent; color: black"
+                          v-if="
+                            String(item.reviewDate).split(',')[1] &&
+                            Number(String(item.reviewDate).split(',')[1]) == 1
+                          "
+                          class="read-btn"
+                          @click.stop="switchFav(item, 1)"
+                        >
+                          <i
+                            class="material-icons"
+                            style="font-size: 1em; color: blue"
+                            >star</i
+                          >
+                        </button>
+                      </td>
                       <td class="text-center history-test">
                         <div
                           v-if="item.reviewResult && item.reviewResult.length"
@@ -862,7 +1139,7 @@
                               result === 1 ? '正确' : '错误'
                             }`"
                           >
-                            {{ result === 1 ? "✓" : "✗" }}
+                            {{ result === 1 ? "对" : "错" }}
                           </span>
                         </div>
                         <div v-else class="no-test">暂无测试</div>
@@ -879,17 +1156,22 @@
                           :style="{
                             visibility: item.isExpanded ? 'visible' : 'hidden',
                           }"
-                          v-html="renderAnswerContent(item)"
-                          @click="handleCardImageClick($event)"
-                        ></div>
-                      </td>
-                      <td class="idea-content">
-                        <div
-                          :style="{
-                            visibility: item.isExpanded ? 'visible' : 'hidden',
-                          }"
                         >
-                          {{ item.correctIdea || "无" }}
+                          <div
+                            v-html="renderAnswerContent(item)"
+                            @click="handleCardImageClick($event)"
+                          ></div>
+                          <hr
+                            style="
+                              border: none;
+                              border-top: 1px solid black;
+                              height: 0;
+                            "
+                          />
+                          <div style="color: blue">易错点：</div>
+                          <div>
+                            {{ item.correctIdea || "无" }}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -899,9 +1181,7 @@
             </div>
           </div>
 
-          <div v-else class="empty-tip">
-            暂无题卡数据，请先添加包含题目的错题
-          </div>
+          <div v-else class="empty-tip">暂无题卡数据，请先添加题卡。</div>
         </div>
       </div>
 
@@ -1059,7 +1339,7 @@
       <!-- 添加错题视图 -->
       <div v-if="currentView === 'add'" class="add-view">
         <h3 v-if="isEditing">
-          {{ showQuestionTypeSummaryModal ? "编辑题型总结" : "编辑错题" }}
+          {{ showQuestionTypeSummaryModal ? "编辑题型总结" : "编辑题目" }}
           <span
             v-show="!showQuestionTypeSummaryModal"
             style="font-size: 0.8em; margin-left: 10px; color: #666"
@@ -1073,7 +1353,7 @@
           </span>
         </h3>
         <h3 v-if="!isEditing" style="align-items: center">
-          {{ showQuestionTypeSummaryModal ? "添加题型总结" : "添加错题" }}
+          {{ showQuestionTypeSummaryModal ? "添加题型总结" : "添加题目" }}
           <span
             v-show="!showQuestionTypeSummaryModal"
             style="font-size: 0.8em; margin-left: 10px; color: #666"
@@ -1092,7 +1372,11 @@
           <div class="form-section basic-info-section">
             <div style="display: flex; gap: 10px">
               <!-- 将原来的用户输入框修改为支持多值 -->
-              <div class="form-group" style="width: 50%">
+              <div
+                v-if="!showQuestionTypeSummaryModal"
+                class="form-group"
+                style="width: 50%"
+              >
                 <label>用户：<span class="required">*</span></label>
                 <input
                   v-model="form.user"
@@ -1132,7 +1416,7 @@
                     class="candidate-item"
                     v-for="item in uniqueSubjects"
                     :key="`subject-${item}`"
-                    @click="fillCandidate('subject', item)"
+                    @click="appendCandidate('subject', item)"
                   >
                     {{ item }}
                   </span>
@@ -1158,7 +1442,7 @@
                     class="candidate-item"
                     v-for="item in uniqueSubClasses"
                     :key="`subClass-${item}`"
-                    @click="fillCandidate('subClass', item)"
+                    @click="appendCandidate('subClass', item)"
                   >
                     {{ item }}
                   </span>
@@ -1180,12 +1464,28 @@
                     class="candidate-item"
                     v-for="item in uniqueQuestionTypes"
                     :key="`questionType-${item}`"
-                    @click="fillCandidate('questionType', item)"
+                    @click="appendCandidate('questionType', item)"
                   >
                     {{ item }}
                   </span>
                 </div>
               </div>
+            </div>
+            <div
+              v-if="!isEditing"
+              style="text-align: right; padding-bottom: 1em"
+            >
+              <span
+                style="
+                  background: springgreen;
+                  cursor: pointer;
+                  padding: 3px;
+                  border-radius: 2em;
+                "
+                @click="mergeItem"
+              >
+                在最新的已有题目中添加
+              </span>
             </div>
           </div>
         </div>
@@ -1210,7 +1510,7 @@
                     style="height: 300px"
                     :editor="editor2"
                     mode="simple"
-                    v-model="form.questionTypeSummary"
+                    v-model.lazy="form.questionTypeSummary"
                     :defaultConfig="editorConfig2"
                     @onChange="onChange"
                     @onCreated="onCreated2"
@@ -1274,7 +1574,7 @@
                   class="section-header"
                   @click="toggleSection('mistakeItem')"
                 >
-                  <label>错题与分析</label>
+                  <label>错题记录</label>
                   <span
                     class="collapse-arrow"
                     :class="{ rotated: !sections.mistakeItem }"
@@ -1284,7 +1584,6 @@
                 </div>
 
                 <div class="section-content" v-if="sections.mistakeItem">
-                  <label>原题：</label>
                   <div style="border: 1px solid #ccc">
                     <!-- 工具栏 -->
                     <Toolbar
@@ -1306,7 +1605,7 @@
                   </div>
 
                   <div>
-                    原题截图：
+                    错题截图：
                     <span>
                       <input
                         type="file"
@@ -1364,119 +1663,6 @@
                     </p>
                   </div>
                 </div>
-
-                <!-- 错题解析 -->
-                <div class="section-content" v-if="sections.mistakeItem">
-                  <label
-                    >错题解析：
-
-                    <a href="https://www.doubao.com/chat/" target="_blank">
-                      问AI
-                    </a>
-                  </label>
-                  <div style="border: 1px solid #ccc">
-                    <!-- 工具栏 -->
-                    <Toolbar
-                      style="border-bottom: 1px solid #ccc"
-                      :editor="editor3"
-                      mode="simple"
-                      :defaultConfig="toolbarConfig"
-                    />
-                    <!-- 编辑器 -->
-                    <Editor
-                      style="height: 300px"
-                      :editor="editor3"
-                      mode="simple"
-                      v-model="form.errorReason"
-                      :defaultConfig="editorConfig3"
-                      @onChange="onChange"
-                      @onCreated="onCreated3"
-                    />
-                  </div>
-                  <!-- 新增：错题解析图片上传 -->
-                  <div>
-                    错题解析图片：
-                    <span>
-                      <input
-                        type="file"
-                        style="display: none"
-                        accept="image/*"
-                        @change="previewImg('errorReason', $event)"
-                        multiple
-                        ref="errorReason"
-                      />
-                      <button class="action" @click="uploadFile(4)">
-                        <i
-                          style="color: blue; font-size: 1.2em"
-                          class="material-icons"
-                          >attachment</i
-                        >
-                      </button>
-                    </span>
-                  </div>
-
-                  <!-- 多图预览 + 删除按钮 -->
-                  <div
-                    v-if="form.errorReasonImgUrls?.length"
-                    class="imgs-preview"
-                  >
-                    <div
-                      class="img-preview-item"
-                      v-for="(url, index) in form.errorReasonImgUrls"
-                      :key="`errorReason-${index}`"
-                    >
-                      <img
-                        :src="url"
-                        alt="错题分析图片预览"
-                        @click="toCropOriginalImage(3, url, index)"
-                      />
-                      <span
-                        class="img-delete-btn"
-                        @click="deleteImg('errorReason', index)"
-                        >×</span
-                      >
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 标签（多值，空格分割） -->
-                <div class="section-content" v-if="sections.mistakeItem">
-                  <label>标签：</label>
-                  <input
-                    v-model="form.errorType"
-                    type="text"
-                    placeholder="请输入标签（多值用空格分割）"
-                  />
-                  <!-- 标签候选列表（拆分多值后去重） -->
-                  <div class="candidate-list" v-if="uniqueErrorTypes?.length">
-                    <span class="candidate-label">已有：</span>
-                    <span
-                      class="candidate-item"
-                      v-for="item in uniqueErrorTypes"
-                      :key="`errorType-${item}`"
-                      @click="appendCandidate('errorType', item)"
-                    >
-                      {{ item }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- 难度（七星评分） -->
-                <div class="section-content" v-if="sections.mistakeItem">
-                  <label>难度：</label>
-                  <div class="star-rating" @click.stop>
-                    <span
-                      class="star"
-                      v-for="star in 7"
-                      :key="`add-star-${star}`"
-                      :class="{ active: star <= form.importantLevel }"
-                      @click="setImportantLevel('form', star)"
-                    >
-                      ★
-                    </span>
-                    <span class="rating-text">{{ form.importantLevel }}级</span>
-                  </div>
-                </div>
               </div>
 
               <!-- 题卡 -->
@@ -1485,7 +1671,7 @@
                   class="section-header"
                   @click="toggleSection('questionCard')"
                 >
-                  <label>题卡</label>
+                  <label>题卡题目</label>
                   <span
                     class="collapse-arrow"
                     :class="{ rotated: !sections.questionCard }"
@@ -1495,7 +1681,6 @@
                 </div>
 
                 <div class="section-content" v-if="sections.questionCard">
-                  <label>题目： </label>
                   <div style="border: 1px solid #ccc">
                     <!-- 工具栏 -->
                     <Toolbar
@@ -1516,9 +1701,24 @@
                     />
                   </div>
                 </div>
+              </div>
 
-                <div class="section-content" v-if="sections.questionCard">
-                  <label>答案： </label>
+              <div class="form-group collapsible-section">
+                <div
+                  class="section-header"
+                  @click="toggleSection('answerAnalysis')"
+                >
+                  <label>答案解析</label>
+                  <span
+                    class="collapse-arrow"
+                    :class="{ rotated: !sections.answerAnalysis }"
+                  >
+                    ▼
+                  </span>
+                </div>
+
+                <div class="section-content" v-if="sections.answerAnalysis">
+                  <label>答案与解析：</label>
                   <div style="border: 1px solid #ccc">
                     <!-- 工具栏 -->
                     <Toolbar
@@ -1539,20 +1739,40 @@
                     />
                   </div>
                 </div>
-
-                <!-- 易错点 -->
-                <div class="section-content" v-if="sections.questionCard">
+                <div class="section-content" v-if="sections.answerAnalysis">
                   <label>易错点：</label>
-
                   <div class="section-content">
                     <textarea
-                      v-model="form.correctIdea"
-                      rows="3"
-                      placeholder="填写易错点，将出现在题卡打印中。"
+                      style="width: 100%"
+                      v-model.lazy="form.correctIdea"
+                      rows="5"
                     ></textarea>
                   </div>
                 </div>
+
+                <!-- 标签（多值，空格分割） -->
+                <div class="section-content" v-if="sections.answerAnalysis">
+                  <label>标签：</label>
+                  <input
+                    v-model="form.errorType"
+                    type="text"
+                    placeholder="请输入标签（多值用空格分割）"
+                  />
+                  <!-- 标签候选列表（拆分多值后去重） -->
+                  <div class="candidate-list" v-if="uniqueErrorTypes?.length">
+                    <span class="candidate-label">已有：</span>
+                    <span
+                      class="candidate-item"
+                      v-for="item in uniqueErrorTypes"
+                      :key="`errorType-${item}`"
+                      @click="appendCandidate('errorType', item)"
+                    >
+                      {{ item }}
+                    </span>
+                  </div>
+                </div>
               </div>
+
               <div class="form-group collapsible-section">
                 <div
                   class="section-header"
@@ -1636,9 +1856,46 @@
               <div class="form-group collapsible-section">
                 <div
                   class="section-header"
+                  @click="toggleSection('cheatsheet')"
+                >
+                  <label>CheatSheet - {{ form.user }} {{ form.subject }}</label>
+                  <span
+                    class="collapse-arrow"
+                    :class="{ rotated: !sections.cheatsheet }"
+                  >
+                    ▼
+                  </span>
+                </div>
+
+                <div class="section-content" v-if="sections.cheatsheet">
+                  <div style="border: 1px solid #ccc">
+                    <!-- 工具栏 -->
+                    <Toolbar
+                      style="border-bottom: 1px solid #ccc"
+                      :editor="editor1"
+                      mode="simple"
+                      :defaultConfig="toolbarConfig"
+                    />
+                    <!-- 编辑器 -->
+                    <Editor
+                      style="height: 188px"
+                      :editor="editor1"
+                      mode="simple"
+                      v-model.lazy="form.cheatSheet"
+                      :defaultConfig="editorConfig1"
+                      @onChange="onChange"
+                      @onCreated="onCreated1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group collapsible-section">
+                <div
+                  class="section-header"
                   @click="toggleSection('improveMethod')"
                 >
-                  <label>日积月累</label>
+                  <label>日积月累任务</label>
                   <span
                     class="collapse-arrow"
                     :class="{ rotated: !sections.improveMethod }"
@@ -1651,7 +1908,7 @@
                     :disabled="!(form.subject?.trim() && form.subClass?.trim())"
                     v-model="form.improveMethod"
                     rows="3"
-                    placeholder="添加日常日积月累任务以提高此考点掌握程度。如：每周默写语文课后生词；每日背诵10个英语单词；每日练习一篇完型填空；平日积累语文写作好词好句等。"
+                    placeholder="添加日积月累任务以提高此考点掌握程度。如：每周默写语文课后生词；每日背诵10个英语单词；每日练习一篇完型填空；平日积累语文写作好词好句等。"
                   ></textarea>
                 </div>
               </div>
@@ -1745,7 +2002,7 @@
                       class="candidate-item"
                       v-for="item in uniqueTraps"
                       :key="`trap-${item}`"
-                      @click="fillCandidate('trap', item)"
+                      @click="appendCandidate('trap', item)"
                     >
                       {{ item }}
                     </span>
@@ -1754,11 +2011,7 @@
                   <!-- 备用详解编辑框（当备用不为空时显示） -->
                   <div class="form-group" v-if="form.trap">
                     <label>备用详解：</label>
-                    <textarea
-                      v-model="form.trapDetail"
-                      rows="3"
-                      placeholder="请输入此备用的具体表现、识别方法和应对策略"
-                    ></textarea>
+                    <textarea v-model="form.trapDetail" rows="3"></textarea>
                   </div>
                 </div>
               </div>
@@ -1812,7 +2065,6 @@
           </div>
 
           <div
-            v-if="isReadingCard"
             class="reading-content-wrapper"
             :class="{ 'waiting-for-click': isWaitingForClick }"
           >
@@ -1834,20 +2086,41 @@
           朗读题目后自动暂停，点击后继续。
         </p>
         <div class="reading-controls-container">
-          <div v-if="isReadingCard" class="reading-controls">
-            <button @click="pauseResumeReading" class="control-btn">
-              {{ speechState.isPaused ? "继续" : "暂停" }}
-            </button>
+          <div class="reading-controls">
+            <button @click="lastCurrentCard" class="control-btn">上一题</button>
           </div>
-
           <button @click="toggleReadingCards" class="primary-btn">
             {{ isReadingCard ? "停止朗读" : "开始朗读" }}
           </button>
 
           <!-- 朗读控制按钮 -->
-          <div v-if="isReadingCard" class="reading-controls">
-            <button @click="skipCurrentCard" class="control-btn">跳过</button>
+          <div class="reading-controls">
+            <button @click="skipCurrentCard" class="control-btn">下一题</button>
           </div>
+        </div>
+        <div style="margin-top: 1em">
+          <button
+            v-if="
+              !String(currentReadingCard.reviewDate).split(',')[1] ||
+              Number(String(currentReadingCard.reviewDate).split(',')[1]) == 0
+            "
+            style="background: transparent; color: black"
+            class="read-btn"
+            @click.stop="switchFav(currentReadingCard, 1)"
+          >
+            <i class="material-icons">star_border</i>
+          </button>
+          <button
+            v-if="
+              String(currentReadingCard.reviewDate).split(',')[1] &&
+              Number(String(currentReadingCard.reviewDate).split(',')[1]) == 1
+            "
+            style="background: transparent; color: black"
+            class="read-btn"
+            @click.stop="switchFav(currentReadingCard, 1)"
+          >
+            <i class="material-icons" style="color: blue">star</i>
+          </button>
         </div>
       </div>
 
@@ -1856,9 +2129,20 @@
         v-if="currentView === 'list'"
         class="list-view"
         @click="stopReading()"
+        style="
+          white-space: pre-wrap; /* 关键：保留换行 + 自动换行 */
+          word-wrap: break-word;
+        "
       >
         <div class="list-view-header">
-          <h3 style="margin: 0">错题列表</h3>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <h3 style="margin: 0">错题列表</h3>
+
+            （{{ showMistaker.length }}）
+            <span class="filter-header" @click="toggleFilter">
+              <span class="filter-arrow" :class="{ up: isFilterOpen }">↓</span>
+            </span>
+          </div>
           <div class="view-mode-controls">
             <span
               v-if="!isAllExpanded && listViewMode === 'group'"
@@ -1884,53 +2168,87 @@
                 <i class="material-icons">account_tree</i>
               </button>
             </div>
-
-            <!-- 现有筛选控制按钮保持不变 -->
-            <div style="display: flex; align-items: center; gap: 10px">
-              <div class="filter-header" @click="toggleFilter">
-                <span class="filter-arrow" :class="{ up: isFilterOpen }"
-                  >↓</span
-                >
-              </div>
+            <div>
+              <button
+                @click="printCurrentTreeList"
+                class="print-btn1"
+                :disabled="currentTreeMistaker.length === 0"
+              >
+                <i class="material-icons">print</i>
+              </button>
             </div>
           </div>
         </div>
 
         <!-- 筛选区域保持不变 -->
-        <div class="filter-section" v-if="isFilterOpen">
+        <div class="test-filter-panel" v-if="isFilterOpen">
           <div class="filter-form">
             <div class="filter-row">
               <div>
                 <input v-model="reverseList" type="checkbox" />
-                <label>题号倒序排列</label>
+                题号倒序排列
               </div>
               <div class="filter-item">
-                <label>关键字：</label>
+                用户：
+                <input
+                  v-model.lazy="filterForm.user"
+                  type="text"
+                  placeholder="请输入用户名"
+                />
+                <!-- 用户候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueUsers?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueUsers"
+                    :key="`user-${item}`"
+                    @click="append1('user', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
+              </div>
+              <div class="filter-item">
+                科目：
+                <input
+                  v-model.lazy="filterForm.subject"
+                  type="text"
+                  placeholder="请输入科目"
+                />
+                <!-- 科目候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueSubjects?.length">
+                  <span class="candidate-label">已有：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueSubjects"
+                    :key="`subject-${item}`"
+                    @click="append1('subject', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
+              </div>
+              <div class="filter-item">
+                关键字：
                 <input
                   v-model="filterForm.keyword"
                   type="text"
                   placeholder="多个关键字用空格分开"
                 />
               </div>
-              <div class="filter-item">
-                <label>题号：</label>
-                <input
-                  v-model.number="filterForm.id"
-                  type="number"
-                  placeholder="请输入题号"
-                  min="1"
-                />
+            </div>
+            <div class="filter-row">
+              <div class="filter-checkbox">
+                <input v-model="filterForm.hasCards" type="checkbox" />
+                显示包含有题卡的题目(即显示所有题目)
               </div>
-              <div class="filter-item">
-                <label>用户：</label>
-                <input
-                  v-model="filterForm.user"
-                  type="text"
-                  placeholder="请输入用户名"
-                />
+              <div class="filter-checkbox">
+                <input v-model="filterForm.fav" type="checkbox" />
+                仅包含收藏的错题
               </div>
+
               <div class="filter-item">
-                <label>添加日期：</label>
+                添加日期：
                 <input
                   v-model="filterForm.startDate"
                   type="date"
@@ -1945,78 +2263,21 @@
                   placeholder="结束日期"
                 />
               </div>
-            </div>
-            <div class="filter-row">
               <div class="filter-item">
-                <label>科目：</label>
+                题号：
                 <input
-                  v-model="filterForm.subject"
-                  type="text"
-                  placeholder="请输入科目"
-                />
-              </div>
-              <div class="filter-item">
-                <label>考点：</label>
-                <input
-                  v-model="filterForm.subClass"
-                  type="text"
-                  placeholder="输入关键词筛选（如：函数）"
-                />
-              </div>
-              <div class="filter-item">
-                <label>标签：</label>
-                <input
-                  v-model="filterForm.errorType"
-                  type="text"
-                  placeholder="输入关键词筛选（如：计算错误）"
+                  v-model.number="filterForm.id"
+                  type="number"
+                  placeholder="请输入题号"
+                  min="1"
                 />
               </div>
             </div>
-            <div class="filter-row">
-              <div class="filter-item">
-                <label>错题解析：</label>
-                <input
-                  v-model="filterForm.errorReason"
-                  type="text"
-                  placeholder="输入关键词筛选（如：马虎）"
-                />
-              </div>
-              <div class="filter-item">
-                <label>难度：</label>
-                <div class="range-input">
-                  <input
-                    v-model.number="filterForm.importantLevelStart"
-                    type="number"
-                    placeholder="最低"
-                    min="1"
-                    max="7"
-                    class="range-start"
-                  />
-                  <span class="range-sep">至</span>
-                  <input
-                    v-model.number="filterForm.importantLevelEnd"
-                    type="number"
-                    placeholder="最高"
-                    min="1"
-                    max="7"
-                    class="range-end"
-                  />
-                </div>
-              </div>
-              <!--
-              <div class="filter-item">
-                <label>是否填写举一反三：</label>
-                <select v-model="filterForm.hasSimilar">
-                  <option value="">全部</option>
-                  <option value="yes">是</option>
-                  <option value="no">否</option>
-                </select>
-              </div>
-              -->
-              <div class="filter-actions">
-                <button @click="handleFilter" class="filter-btn">筛选</button>
-                <button @click="resetFilter" class="reset-btn">重置</button>
-              </div>
+            <div
+              class="filter-actions"
+              style="display: flex; justify-content: right"
+            >
+              <button @click="resetFilter" class="reset-btn">重置</button>
             </div>
           </div>
         </div>
@@ -2190,9 +2451,11 @@
                     <span class="error-id">题号：{{ item.id }}</span>
                     <span>
                       <strong>{{ item.user }}</strong
-                      >&nbsp;-&nbsp;{{ item.subject }}
+                      >&nbsp;-&nbsp;{{ item.subject }}&nbsp;-&nbsp;{{
+                        item.subClass
+                      }}&nbsp;-&nbsp;{{ item.questionType }}
                     </span>
-                    <span class="error-date">{{
+                    <span v-if="!isMobile" class="error-date">{{
                       formatDateWithWeek(item.addDate)
                     }}</span>
                   </div>
@@ -2200,42 +2463,86 @@
                   <div class="error-content">
                     <div>
                       <div
-                        style="display: flex; justify-content: space-between"
+                        style="
+                          display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                        "
                       >
-                        <strong>原题：</strong>
-                        <div v-if="!isMobile" class="error-footer">
-                          <div class="error-importance">
-                            <div class="star-rating" @click.stop>
-                              <span
-                                class="star"
-                                v-for="star in 7"
-                                :key="`list-star-${item.id}-${star}`"
-                                :class="{ active: star <= item.importantLevel }"
-                                @click="
-                                  setImportantLevel('list', star, item.id)
-                                "
-                              >
-                                ★
-                              </span>
-                            </div>
-                          </div>
-                          <div class="error-actions">
-                            <button class="read-btn" @click="editError(item)">
-                              编辑
-                            </button>
-                            <button
-                              class="read-btn"
-                              @click="deleteError(item.id)"
-                            >
-                              删除
-                            </button>
-                            <button
-                              class="read-btn"
-                              @click.stop="startReading(index)"
-                            >
-                              朗读
-                            </button>
-                          </div>
+                        <strong>错题记录：</strong>
+                        <div v-if="!isMobile" class="error-actions">
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              align-items: center;
+                              justify-content: center;
+                              gap: 2px;
+                            "
+                            v-if="
+                              !String(item.reviewDate).split(',')[1] ||
+                              Number(String(item.reviewDate).split(',')[1]) == 0
+                            "
+                            class="read-btn"
+                            @click="switchFav(item)"
+                          >
+                            <i
+                              class="material-icons"
+                              style="
+                                font-size: 1.2em;
+                                color: blue;
+                                vertical-align: middle;
+                              "
+                              >star_border</i
+                            >收藏
+                          </button>
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              align-items: center;
+                              justify-content: center;
+                              gap: 2px;
+                            "
+                            v-if="
+                              String(item.reviewDate).split(',')[1] &&
+                              Number(String(item.reviewDate).split(',')[1]) == 1
+                            "
+                            class="read-btn"
+                            @click="switchFav(item)"
+                          >
+                            <i
+                              class="material-icons"
+                              style="
+                                font-size: 1.2em;
+                                color: blue;
+                                vertical-align: middle;
+                              "
+                              >star</i
+                            >收藏
+                          </button>
+                          <button class="read-btn" @click="editError(item, 2)">
+                            编辑
+                          </button>
+                          <button
+                            class="read-btn"
+                            @click="deleteError(item.id)"
+                          >
+                            删除
+                          </button>
+                          <button
+                            class="read-btn"
+                            @click.stop="startReading(index)"
+                          >
+                            朗读
+                          </button>
+                          <button
+                            class="action"
+                            @click="editCheatSheet(item.user, item.subject)"
+                            style="background-color: transparent; color: blue"
+                          >
+                            CS
+                          </button>
                         </div>
                       </div>
                       <div
@@ -2282,14 +2589,6 @@
                       </div>
                     </div>
 
-                    <p v-if="item.subClass && item.subClass.trim()">
-                      <strong>考点：</strong>{{ item.subClass }}
-                    </p>
-
-                    <div v-if="item.questionType && item.questionType.trim()">
-                      <strong>题型：</strong>{{ item.questionType }}
-                    </div>
-
                     <!-- 标签 -->
                     <p v-if="item.errorType && item.errorType.trim()">
                       <strong>标签：</strong>{{ item.errorType }}
@@ -2308,14 +2607,15 @@
                       v-if="item.answer && item.answer.trim()"
                       style="margin: 16px 0"
                     >
-                      <strong>答案：</strong>
+                      <strong>答案与解析：</strong>
                       <div v-html="item.answer" ref="htmlContainer"></div>
                     </div>
 
                     <!-- 易错点 -->
-                    <p v-if="item.correctIdea && item.correctIdea.trim()">
-                      <strong>易错点：</strong>{{ item.correctIdea }}
-                    </p>
+                    <div v-if="item.correctIdea && item.correctIdea.trim()">
+                      <strong>易错点</strong>
+                      <div style="padding: 1em 0">{{ item.correctIdea }}</div>
+                    </div>
 
                     <!-- 备用 -->
                     <p v-if="item.trap && item.trap.trim()">
@@ -2327,6 +2627,41 @@
                         | 详解：{{ item.trapDetail }}
                       </span>
                     </p>
+
+                    <div style="margin: 16px 0">
+                      <strong
+                        @click="switchQ(index)"
+                        style="cursor: pointer; color: green"
+                        >题型总结：</strong
+                      >
+                      <div
+                        v-if="showQ[index] == 1"
+                        v-html="
+                          finalQuestionTypeSummary.find(
+                            (i) =>
+                              i.subject === item.subject?.trim() &&
+                              i.subClass === item.subClass?.trim() &&
+                              i.questionType === item.questionType?.trim()
+                          )?.questionTypeSummary || '无'
+                        "
+                        ref="htmlContainer"
+                      ></div>
+                      <div class="small-imgs-wrap" v-if="showQ[index] == 1">
+                        <img
+                          v-for="(url, idx) in finalQuestionTypeSummary.find(
+                            (i) =>
+                              i.subject === item.subject?.trim() &&
+                              i.subClass === item.subClass?.trim() &&
+                              i.questionType === item.questionType?.trim()
+                          )?.questionTypeImgUrls || []"
+                          :key="idx"
+                          :src="url"
+                          alt="原题"
+                          class="small-img"
+                          @click="openImageViewer(url)"
+                        />
+                      </div>
+                    </div>
 
                     <!-- 完善方法 -->
                     <p v-if="item.improveMethod && item.improveMethod.trim()">
@@ -2384,45 +2719,92 @@
               <span class="error-id">题号：{{ item.id }}</span>
               <span>
                 <strong>{{ item.user }}</strong
-                >&nbsp;-&nbsp;{{ item.subject }}
+                >&nbsp;-&nbsp;{{ item.subject }}&nbsp;-&nbsp;{{
+                  item.subClass
+                }}&nbsp;-&nbsp;{{ item.questionType }}
               </span>
-              <span class="error-date">{{
+              <span v-if="!isMobile" class="error-date">{{
                 formatDateWithWeek(item.addDate)
               }}</span>
             </div>
 
             <div class="error-content">
               <div>
-                <div style="display: flex; justify-content: space-between">
-                  <strong>原题：</strong>
-                  <div v-if="!isMobile" class="error-footer">
-                    <div class="error-importance">
-                      <div class="star-rating" @click.stop>
-                        <span
-                          class="star"
-                          v-for="star in 7"
-                          :key="`list-star-${item.id}-${star}`"
-                          :class="{ active: star <= item.importantLevel }"
-                          @click="setImportantLevel('list', star, item.id)"
-                        >
-                          ★
-                        </span>
-                      </div>
-                    </div>
-                    <div class="error-actions">
-                      <button class="read-btn" @click="editError(item)">
-                        编辑
-                      </button>
-                      <button class="read-btn" @click="deleteError(item.id)">
-                        删除
-                      </button>
-                      <button
-                        class="read-btn"
-                        @click.stop="startReading(index)"
-                      >
-                        朗读
-                      </button>
-                    </div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  "
+                >
+                  <strong>错题记录：</strong>
+                  <div v-if="!isMobile" class="error-actions">
+                    <button
+                      style="
+                        background: transparent;
+                        color: black;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 2px;
+                      "
+                      v-if="
+                        !String(item.reviewDate).split(',')[1] ||
+                        Number(String(item.reviewDate).split(',')[1]) == 0
+                      "
+                      class="read-btn"
+                      @click="switchFav(item)"
+                    >
+                      <i
+                        class="material-icons"
+                        style="
+                          font-size: 1.2em;
+                          color: blue;
+                          vertical-align: middle;
+                        "
+                        >star_border</i
+                      >收藏
+                    </button>
+                    <button
+                      style="
+                        background: transparent;
+                        color: black;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 2px;
+                      "
+                      v-if="
+                        String(item.reviewDate).split(',')[1] &&
+                        Number(String(item.reviewDate).split(',')[1]) == 1
+                      "
+                      class="read-btn"
+                      @click="switchFav(item)"
+                    >
+                      <i
+                        class="material-icons"
+                        style="
+                          font-size: 1.2em;
+                          color: blue;
+                          vertical-align: middle;
+                        "
+                        >star</i
+                      >收藏
+                    </button>
+                    <button class="read-btn" @click="editError(item, 2)">
+                      编辑
+                    </button>
+                    <button class="read-btn" @click="deleteError(item.id)">
+                      删除
+                    </button>
+                    <button class="read-btn" @click.stop="startReading(index)">
+                      朗读
+                    </button>
+                    <button
+                      class="action"
+                      @click="editCheatSheet(item.user, item.subject)"
+                      style="background-color: white; color: blue"
+                    >
+                      CS
+                    </button>
                   </div>
                 </div>
                 <div
@@ -2467,14 +2849,6 @@
                     @click="openImageViewer(url)"
                   />
                 </div>
-              </div>
-
-              <p v-if="item.subClass && item.subClass.trim()">
-                <strong>考点：</strong>{{ item.subClass }}
-              </p>
-
-              <div v-if="item.questionType && item.questionType.trim()">
-                <strong>题型：</strong>{{ item.questionType }}
               </div>
 
               <!-- 标签 -->
@@ -2541,38 +2915,108 @@
                 v-if="item.answer && item.answer.trim()"
                 style="margin: 16px 0"
               >
-                <strong>答案：</strong>
+                <strong>答案与解析：</strong>
                 <div v-html="item.answer" ref="htmlContainer"></div>
               </div>
 
               <!-- 易错点 -->
-              <p v-if="item.correctIdea && item.correctIdea.trim()">
-                <strong>易错点：</strong>{{ item.correctIdea }}
-              </p>
-            </div>
-            <div v-if="isMobile" class="error-footer">
-              <div class="error-importance">
-                <div class="star-rating" @click.stop>
-                  <span
-                    class="star"
-                    v-for="star in 7"
-                    :key="`list-star-${item.id}-${star}`"
-                    :class="{ active: star <= item.importantLevel }"
-                    @click="setImportantLevel('list', star, item.id)"
-                  >
-                    ★
-                  </span>
+              <div v-if="item.correctIdea && item.correctIdea.trim()">
+                <strong>易错点</strong>
+                <div style="padding: 1em 0">{{ item.correctIdea }}</div>
+              </div>
+
+              <div style="margin: 16px 0">
+                <strong
+                  @click="switchQ(index)"
+                  style="cursor: pointer; color: green"
+                  >题型总结：</strong
+                >
+                <div
+                  v-if="showQ[index] == 1"
+                  v-html="
+                    finalQuestionTypeSummary.find(
+                      (i) =>
+                        i.subject === item.subject?.trim() &&
+                        i.subClass === item.subClass?.trim() &&
+                        i.questionType === item.questionType?.trim()
+                    )?.questionTypeSummary || '无'
+                  "
+                  ref="htmlContainer"
+                ></div>
+                <div class="small-imgs-wrap" v-if="showQ[index] == 1">
+                  <img
+                    v-for="(url, idx) in finalQuestionTypeSummary.find(
+                      (i) =>
+                        i.subject === item.subject?.trim() &&
+                        i.subClass === item.subClass?.trim() &&
+                        i.questionType === item.questionType?.trim()
+                    )?.questionTypeImgUrls || []"
+                    :key="idx"
+                    :src="url"
+                    alt="原题"
+                    class="small-img"
+                    @click="openImageViewer(url)"
+                  />
                 </div>
               </div>
-              <div class="error-actions">
-                <button class="read-btn" @click="editError(item)">编辑</button>
-                <button class="read-btn" @click="deleteError(item.id)">
-                  删除
-                </button>
-                <button class="read-btn" @click.stop="startReading(index)">
-                  朗读
-                </button>
-              </div>
+            </div>
+            <div v-if="isMobile" class="error-actions">
+              <button
+                style="
+                  background: transparent;
+                  color: black;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 2px;
+                "
+                v-if="
+                  !String(item.reviewDate).split(',')[1] ||
+                  Number(String(item.reviewDate).split(',')[1]) == 0
+                "
+                class="read-btn"
+                @click="switchFav(item)"
+              >
+                <i
+                  class="material-icons"
+                  style="font-size: 1.2em; color: blue; vertical-align: middle"
+                  >star_border</i
+                >收藏
+              </button>
+              <button
+                style="
+                  background: transparent;
+                  color: black;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 2px;
+                "
+                v-if="
+                  String(item.reviewDate).split(',')[1] &&
+                  Number(String(item.reviewDate).split(',')[1]) == 1
+                "
+                class="read-btn"
+                @click="switchFav(item)"
+              >
+                <i
+                  class="material-icons"
+                  style="font-size: 1.2em; color: blue; vertical-align: middle"
+                  >star</i
+                >收藏
+              </button>
+              <button class="read-btn" @click="editError(item, 2)">编辑</button>
+              <button class="read-btn" @click="deleteError(item.id)">
+                删除
+              </button>
+              <button class="read-btn" @click.stop="startReading(index)">
+                朗读
+              </button>
+              <button
+                class="action"
+                @click="editCheatSheet(item.user, item.subject)"
+                style="background-color: white; color: blue"
+              >
+                CS
+              </button>
             </div>
           </div>
         </div>
@@ -2725,49 +3169,94 @@
                               style="
                                 display: flex;
                                 justify-content: space-between;
+                                align-items: center;
                               "
                             >
-                              <strong>原题：</strong>
-                              <div v-if="!isMobile" class="error-footer">
-                                <div class="error-importance">
-                                  <div class="star-rating" @click.stop>
-                                    <span
-                                      class="star"
-                                      v-for="star in 7"
-                                      :key="`list-star-${item.id}-${star}`"
-                                      :class="{
-                                        active: star <= item.importantLevel,
-                                      }"
-                                      @click="
-                                        setImportantLevel('list', star, item.id)
-                                      "
-                                    >
-                                      ★
-                                    </span>
-                                  </div>
-                                </div>
-                                <div class="error-actions">
-                                  <button
-                                    class="read-btn"
-                                    @click="editError(item)"
-                                  >
-                                    编辑
-                                  </button>
-                                  <button
-                                    class="read-btn"
-                                    @click="deleteError(item.id)"
-                                  >
-                                    删除
-                                  </button>
-                                  <button
-                                    class="read-btn"
-                                    @click.stop="
-                                      startReading(getGlobalIndex(item.id))
+                              <strong>错题记录：</strong>
+                              <div v-if="!isMobile" class="error-actions">
+                                <button
+                                  style="
+                                    background: transparent;
+                                    color: black;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 2px;
+                                  "
+                                  v-if="
+                                    !String(item.reviewDate).split(',')[1] ||
+                                    Number(
+                                      String(item.reviewDate).split(',')[1]
+                                    ) == 0
+                                  "
+                                  class="read-btn"
+                                  @click="switchFav(item)"
+                                >
+                                  <i
+                                    class="material-icons"
+                                    style="
+                                      font-size: 1.2em;
+                                      color: blue;
+                                      vertical-align: middle;
                                     "
-                                  >
-                                    朗读
-                                  </button>
-                                </div>
+                                    >star_border</i
+                                  >收藏
+                                </button>
+                                <button
+                                  style="
+                                    background: transparent;
+                                    color: black;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 2px;
+                                  "
+                                  v-if="
+                                    String(item.reviewDate).split(',')[1] &&
+                                    Number(
+                                      String(item.reviewDate).split(',')[1]
+                                    ) == 1
+                                  "
+                                  class="read-btn"
+                                  @click="switchFav(item)"
+                                >
+                                  <i
+                                    class="material-icons"
+                                    style="
+                                      font-size: 1.2em;
+                                      color: blue;
+                                      vertical-align: middle;
+                                    "
+                                    >star</i
+                                  >收藏
+                                </button>
+                                <button
+                                  class="read-btn"
+                                  @click="editError(item, 2)"
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  class="read-btn"
+                                  @click="deleteError(item.id)"
+                                >
+                                  删除
+                                </button>
+                                <button
+                                  class="read-btn"
+                                  @click.stop="
+                                    startReading(getGlobalIndex(item.id))
+                                  "
+                                >
+                                  朗读
+                                </button>
+                                <button
+                                  class="action"
+                                  @click="
+                                    editCheatSheet(item.user, item.subject)
+                                  "
+                                  style="background-color: white; color: blue"
+                                >
+                                  CS
+                                </button>
                               </div>
                             </div>
                             <div
@@ -2869,51 +3358,134 @@
                             v-if="item.answer && item.answer.trim()"
                             style="margin: 16px 0"
                           >
-                            <strong>答案：</strong>
+                            <strong>答案与解析：</strong>
                             <div v-html="item.answer" ref="htmlContainer"></div>
                           </div>
 
                           <!-- 易错点 -->
-                          <p v-if="item.correctIdea && item.correctIdea.trim()">
-                            <strong>易错点：</strong>{{ item.correctIdea }}
-                          </p>
-                        </div>
-
-                        <div v-if="isMobile" class="error-footer">
-                          <div class="error-importance">
-                            <div class="star-rating" @click.stop>
-                              <span
-                                class="star"
-                                v-for="star in 7"
-                                :key="`list-star-${item.id}-${star}`"
-                                :class="{ active: star <= item.importantLevel }"
-                                @click="
-                                  setImportantLevel('list', star, item.id)
-                                "
-                              >
-                                ★
-                              </span>
+                          <div
+                            v-if="item.correctIdea && item.correctIdea.trim()"
+                          >
+                            <strong>易错点</strong>
+                            <div style="padding: 1em 0">
+                              {{ item.correctIdea }}
                             </div>
                           </div>
-                          <div class="error-actions">
-                            <button class="read-btn" @click="editError(item)">
-                              编辑
-                            </button>
-                            <button
-                              class="read-btn"
-                              @click="deleteError(item.id)"
+
+                          <div style="margin: 16px 0">
+                            <strong
+                              @click="switchQ(index)"
+                              style="cursor: pointer; color: green"
+                              >题型总结：</strong
                             >
-                              删除
-                            </button>
-                            <button
-                              class="read-btn"
-                              @click.stop="
-                                startReading(getGlobalIndex(item.id))
+                            <div
+                              v-if="showQ[index] == 1"
+                              v-html="
+                                finalQuestionTypeSummary.find(
+                                  (i) =>
+                                    i.subject === item.subject?.trim() &&
+                                    i.subClass === item.subClass?.trim() &&
+                                    i.questionType === item.questionType?.trim()
+                                )?.questionTypeSummary || '无'
                               "
+                              ref="htmlContainer"
+                            ></div>
+                            <div
+                              class="small-imgs-wrap"
+                              v-if="showQ[index] == 1"
                             >
-                              朗读
-                            </button>
+                              <img
+                                v-for="(
+                                  url, idx
+                                ) in finalQuestionTypeSummary.find(
+                                  (i) =>
+                                    i.subject === item.subject?.trim() &&
+                                    i.subClass === item.subClass?.trim() &&
+                                    i.questionType === item.questionType?.trim()
+                                )?.questionTypeImgUrls || []"
+                                :key="idx"
+                                :src="url"
+                                alt="原题"
+                                class="small-img"
+                                @click="openImageViewer(url)"
+                              />
+                            </div>
                           </div>
+                        </div>
+
+                        <div v-if="isMobile" class="error-actions">
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              align-items: center;
+                              justify-content: center;
+                              gap: 2px;
+                            "
+                            v-if="
+                              !String(item.reviewDate).split(',')[1] ||
+                              Number(String(item.reviewDate).split(',')[1]) == 0
+                            "
+                            class="read-btn"
+                            @click="switchFav(item)"
+                          >
+                            <i
+                              class="material-icons"
+                              style="
+                                font-size: 1.2em;
+                                color: blue;
+                                vertical-align: middle;
+                              "
+                              >star_border</i
+                            >收藏
+                          </button>
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              align-items: center;
+                              justify-content: center;
+                              gap: 2px;
+                            "
+                            v-if="
+                              String(item.reviewDate).split(',')[1] &&
+                              Number(String(item.reviewDate).split(',')[1]) == 1
+                            "
+                            class="read-btn"
+                            @click="switchFav(item)"
+                          >
+                            <i
+                              class="material-icons"
+                              style="
+                                font-size: 1.2em;
+                                color: blue;
+                                vertical-align: middle;
+                              "
+                              >star</i
+                            >收藏
+                          </button>
+                          <button class="read-btn" @click="editError(item, 2)">
+                            编辑
+                          </button>
+                          <button
+                            class="read-btn"
+                            @click="deleteError(item.id)"
+                          >
+                            删除
+                          </button>
+                          <button
+                            class="read-btn"
+                            @click.stop="startReading(getGlobalIndex(item.id))"
+                          >
+                            朗读
+                          </button>
+                          <button
+                            class="action"
+                            @click="editCheatSheet(item.user, item.subject)"
+                            style="background-color: white; color: blue"
+                          >
+                            CS
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2925,10 +3497,10 @@
         </div>
 
         <div v-else class="empty-tip">
-          {{ mistaker.length === 0 ? "暂无错题数据，请添加错题" : "" }}
+          {{ mistaker.length === 0 ? "暂无题目数据，请添加题目" : "" }}
         </div>
       </div>
-      <!-- 日常任务视图 -->
+      <!-- 日积月累任务视图 -->
       <div v-if="currentView === 'task'" class="task-view">
         <div
           style="
@@ -2938,7 +3510,7 @@
             margin-top: 10px;
           "
         >
-          <h3 style="margin: 0">日常日积月累任务列表</h3>
+          <h3 style="margin: 0">日积月累任务列表</h3>
           <button @click="openAddTaskModal" class="add-task-btn">
             添加任务
           </button>
@@ -3016,7 +3588,7 @@
             </div>
           </div>
         </div>
-        <div v-else class="empty-tip">暂无日常日积月累任务。</div>
+        <div v-else class="empty-tip">暂无日积月累任务。</div>
       </div>
 
       <!-- 任务编辑弹窗 -->
@@ -3070,7 +3642,7 @@
               <textarea
                 v-model="taskForm.improveMethod"
                 rows="4"
-                placeholder="请输入日常日积月累任务内容"
+                placeholder="请输入日积月累任务内容"
               ></textarea>
             </div>
 
@@ -3098,7 +3670,16 @@
             margin: 10px 0px 10px 16px;
           "
         >
-          <h3 style="margin: 0">题型总结</h3>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <h3 style="margin: 0">题型总结</h3>
+            <div class="filter-header" @click="toggleQuestionTypeSummaryFilter">
+              <span
+                class="filter-arrow"
+                :class="{ up: isQuestionTypeSummaryFilterOpen }"
+                >↓</span
+              >
+            </div>
+          </div>
           <div style="display: flex; align-items: center; gap: 10px">
             <!-- 新增：全部展开/收起按钮 -->
             <span
@@ -3114,7 +3695,7 @@
                 border-radius: 4px;
               "
             >
-              ▶ 展开全部
+              ▶
             </span>
             <span
               v-if="
@@ -3129,16 +3710,8 @@
                 border-radius: 4px;
               "
             >
-              ▼ 收起全部
+              ▼
             </span>
-
-            <div class="filter-header" @click="toggleQuestionTypeSummaryFilter">
-              <span
-                class="filter-arrow"
-                :class="{ up: isQuestionTypeSummaryFilterOpen }"
-                >↓</span
-              >
-            </div>
           </div>
         </div>
 
@@ -3147,46 +3720,14 @@
           <div class="filter-form">
             <div class="filter-row">
               <div class="filter-item">
-                <label>关键字：</label>
+                关键字：
                 <input
-                  v-model="questionTypeSummaryFilterForm.keyword"
+                  v-model.lazy="questionTypeSummaryFilterForm.keyword"
                   type="text"
-                  placeholder="多个关键字用空格分开"
+                  placeholder="多个关键字(包含用户，科目等)用空格分开"
                 />
               </div>
-              <div class="filter-item">
-                <label>难度：</label>
-                <div class="range-input">
-                  <input
-                    v-model.number="
-                      questionTypeSummaryFilterForm.importantLevelStart
-                    "
-                    type="number"
-                    placeholder="最低"
-                    min="1"
-                    max="7"
-                    class="range-start"
-                  />
-                  <span class="range-sep">至</span>
-                  <input
-                    v-model.number="
-                      questionTypeSummaryFilterForm.importantLevelEnd
-                    "
-                    type="number"
-                    placeholder="最高"
-                    min="1"
-                    max="7"
-                    class="range-end"
-                  />
-                </div>
-              </div>
               <div class="filter-actions">
-                <button
-                  @click="handleQuestionTypeSummaryFilter"
-                  class="filter-btn"
-                >
-                  筛选
-                </button>
                 <button
                   @click="resetQuestionTypeSummaryFilter"
                   class="reset-btn"
@@ -3240,25 +3781,6 @@
                   <div style="display: flex; justify-content: space-between">
                     <strong>总结要点：</strong>
                     <div v-if="!isMobile" class="error-importance">
-                      <div class="star-rating" @click.stop>
-                        <span
-                          class="star"
-                          v-for="star in 7"
-                          :key="`list-star-${questionType}-${star}`"
-                          :class="{
-                            active: star <= summaryData.importantLevel,
-                          }"
-                          @click="
-                            setImportantLevel(
-                              'questionType',
-                              star,
-                              questionType
-                            )
-                          "
-                        >
-                          ★
-                        </span>
-                      </div>
                       <div class="error-actions">
                         <button
                           class="read-btn"
@@ -3305,19 +3827,6 @@
                 </div>
 
                 <div v-if="isMobile" class="error-importance">
-                  <div class="star-rating" @click.stop>
-                    <span
-                      class="star"
-                      v-for="star in 7"
-                      :key="`list-star-${questionType}-${star}`"
-                      :class="{ active: star <= summaryData.importantLevel }"
-                      @click="
-                        setImportantLevel('questionType', star, questionType)
-                      "
-                    >
-                      ★
-                    </span>
-                  </div>
                   <div class="error-actions">
                     <button
                       class="read-btn"
@@ -3352,7 +3861,7 @@
           {{
             questionTypeMapFiltered.length === 0
               ? Object.keys(questionTypeMap).length === 0
-                ? "暂无题型总结数据，请在添加错题时填写题型总结"
+                ? "暂无题型总结数据，可在添加题目时填写题型总结"
                 : "未找到符合条件的题型总结"
               : ""
           }}
@@ -3391,7 +3900,7 @@
         </div>
 
         <div v-else class="empty-tip">
-          暂无备用总结数据，请在添加错题时填写备用和备用详解
+          暂无备用总结数据，请在添加题目时填写备用和备用详解
         </div>
       </div>
 
@@ -3407,9 +3916,16 @@
         >
           <h3 style="margin: 0">CheatSheet</h3>
           <div style="display: flex; align-items: center; gap: 10px">
+            <button
+              @click="editCheatSheet(form?.user, form?.subject)"
+              class="print-cards-btn"
+            >
+              <i class="material-icons">add_circle</i>
+              添加
+            </button>
             <button @click="openPrintCheatSheetModal" class="print-cards-btn">
               <i class="material-icons">print</i>
-              打印CheatSheet
+              打印
             </button>
             <!-- 新增：全部展开/收起按钮 -->
             <span
@@ -3422,7 +3938,7 @@
                 border-radius: 4px;
               "
             >
-              ▶ 展开全部
+              ▶
             </span>
             <span
               v-if="isAllCheatSheetExpanded && groupedCheatSheets.length"
@@ -3434,7 +3950,7 @@
                 border-radius: 4px;
               "
             >
-              ▼ 收起全部
+              ▼
             </span>
           </div>
         </div>
@@ -3451,9 +3967,7 @@
               @click="toggleCheatSheetGroup(group.key)"
             >
               <div class="header-content">
-                <h4>
-                  {{ group.user }} - {{ formatDateWithWeek(group.latestDate) }}
-                </h4>
+                <h4>{{ group.user }} - {{ group.subject }}</h4>
               </div>
               <span
                 class="collapse-icon"
@@ -3522,7 +4036,7 @@
         </div>
 
         <div v-else class="empty-tip">
-          暂无CheatSheet数据！可在此记录各科速记要点、公式、关键知识点等。
+          暂无CheatSheet数据！可在此记录各科思维导图、速记要点、公式等。
         </div>
       </div>
 
@@ -3548,28 +4062,15 @@
                 align-items: center;
               "
             >
-              <span>用户和日期：<span class="required">*</span></span>
+              <span
+                >{{ cheatSheetForm.user }} - {{ cheatSheetForm.subject }}</span
+              >
               <span class="modal-actions">
                 <button @click="closeCheatSheetModal" class="cancel-btn">
                   取消
                 </button>
                 <button @click="saveCheatSheet" class="cancel-btn">保存</button>
               </span>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center">
-              <input
-                v-model="cheatSheetForm.user"
-                type="text"
-                style="flex: 1"
-                placeholder="请输入用户"
-                required
-              />
-              <input
-                v-model="cheatSheetForm.addDate"
-                type="date"
-                style="flex: 1"
-                required
-              />
             </div>
 
             <div style="border: 1px solid #ccc">
@@ -3597,16 +4098,8 @@
     </div>
 
     <!-- 设置弹窗（新增读取/保存错题本功能） -->
-    <div class="modal" v-if="showSettingModal">
-      <div
-        class="modal-content"
-        style="
-          max-width: 800px;
-          height: 88%;
-          padding-top: 24px;
-          overflow-y: auto;
-        "
-      >
+    <div class="settingBoxContainer" v-if="showSettingModal" style="top: 4.2em">
+      <div class="settingBox" @touchmove.stop.passive>
         <div style="display: flex; justify-content: space-between">
           <span style="font-weight: 600">系统设置</span>
           <span class="close-btn" @click="showSettingModal = false">×</span>
@@ -3619,11 +4112,17 @@
               type="checkbox"
               class="completion-checkbox"
             />
-            开启服务器自动同步功能
+            在非离线APP模式下开启服务器自动同步功能
           </h5>
           <div>
             为了方便用户备份错题本，所有文字和图片数据都保存在同一个.json文件中。因此，该文件可能较大。开启此项后，任何对错题本的修改都会自动上传到服务器(不会进行提示)，可能会消耗大量流量。在移动网络，请勿开次此项，可点击导航栏的上传图标进行手动同步。注：无论是否开启此项，每次登录或刷新浏览器后都会自动从服务器校验错题本更新时间。若有不同，将提示是否进行下载。(此设置仅对当前浏览器有效)
           </div>
+
+          <br />
+          <br />
+          <h5>清空题卡测试记录</h5>
+          <button @click="clearRecords" class="data-btn save-btn">确定</button>
+
           <br />
           <br />
 
@@ -3642,7 +4141,7 @@
           <!-- 读取错题本 -->
           <div class="setting-item">
             <label>从本地读取错题本备份：</label>
-            <div class="upload-wrap">
+            <div class="upload-wrap" style="text-align: center">
               <input
                 type="file"
                 accept=".json"
@@ -3670,8 +4169,8 @@
           >
             清空当前错题本所有数据
           </button>
-          <p class="setting-tip" style="color: #e74c3c">
-            警告：此操作将永久删除所有错题、题型总结、综合汇总和任务数据等，不可恢复！请在清空前做好备份。并且，若已开启服务器自动同步功能，将会同步清空服务器上的错题本内容！
+          <p class="setting-tip">
+            警告：此操作将永久删除所有数据，不可恢复！请在清空前做好备份。并且，若已开启服务器自动同步功能，将会同步清空服务器上的错题本内容！
           </p>
         </div>
       </div>
@@ -3719,7 +4218,8 @@
         <button @click="copyResult" class="copy-btn" :disabled="!resultText">
           复制结果
         </button>
-        <button @click="clearAll" class="clear-btn">退出</button>
+        <button @click="clearAll" class="clear-btn">清空</button>
+        <button @click="showPinYinTool = false" class="clear-btn">退出</button>
       </div>
 
       <!-- 复制成功提示 -->
@@ -3744,7 +4244,7 @@
             margin-bottom: 10px;
           "
         >
-          <h3>编辑题目</h3>
+          <h3>{{ editAnswer ? "编辑答案与解析" : "编辑题目" }}</h3>
           <span
             class="close-btn"
             @click="closeQuestionEditor"
@@ -3759,6 +4259,7 @@
             display: flex;
             flex-direction: column;
             border: 1px solid #ccc;
+            height: 81%;
           "
         >
           <!-- 工具栏 -->
@@ -3813,7 +4314,7 @@
         "
       >
         <div style="display: flex; justify-content: space-between">
-          <span> CheatSheet {{ form.user }} {{ form.addDate }} </span>
+          <span> CheatSheet {{ form.user }} {{ form.subject }} </span>
           <span>
             <button
               @click="showCSModal = false"
@@ -3833,6 +4334,23 @@
             border: 1px solid #ccc;
           "
         >
+          <div style="display: flex; gap: 10px; align-items: center">
+            <input
+              v-model="form.user"
+              type="text"
+              style="flex: 1"
+              placeholder="请输入用户"
+              required
+            />
+            <input
+              v-model="form.subject"
+              type="text"
+              style="flex: 1"
+              placeholder="请输入科目"
+              required
+            />
+          </div>
+
           <!-- 工具栏 -->
           <Toolbar
             style="border-bottom: 1px solid #ccc"
@@ -3981,8 +4499,13 @@ export default {
   },
   data() {
     return {
-      showPrintCheatSheetModal: false, // 控制打印模态框显示
-      selectedCheatSheetIds: [], // 选中的CheatSheet项ID
+      showQ: [],
+      onOffline: Number(window.localStorage.getItem("isOffline")) == 1,
+      editAnswer: false,
+      msg: "",
+      addToday: new Date().toLocaleDateString("sv-SE"),
+      showPrintCheatSheetModal: false,
+      selectedCheatSheetIds: [],
       printCheatSheetData: [],
       cheatSheetExpanded: {},
       isAllCheatSheetExpanded: true,
@@ -3991,69 +4514,71 @@ export default {
       editingCheatSheetItemIndex: -1,
       cheatSheetForm: {
         user: "",
-        addDate: "",
+        subject: "",
         cheatSheet: "",
       },
       editorCheatSheet: null,
       processing: false,
-      subjectSummaryExpanded: {}, // 控制综合汇总项的展开状态
-      isAllSubjectSummaryExpanded: true, // 控制全部展开/收起状态
+      subjectSummaryExpanded: {},
+      isAllSubjectSummaryExpanded: true,
       showQuestionEditor: false,
       editingQuestionContent: "",
       currentEditingTestIndex: -1,
-      editorQuestion: null, // 新增编辑器实例
+      editorQuestion: null,
       excludedID: "",
       correctDays: 5,
       testTimes: 3,
-      testInterval: "0 1 3 7 15 30 60",
-      isWaitingForClick: false, // 是否在等待点击继续
-      continueClickListener: null, // 点击继续的事件监听器
+      testInterval: "0 7 14 30 50 80 120 180",
+      isWaitingForClick: false,
+      continueClickListener: null,
       autoPauseAfterReading: false,
       currentUtterance: null,
       speechState: {
         isPaused: false,
         isSpeaking: false,
       },
-      isReadingCard: false, // 是否正在朗读题卡
-      currentReadingCardIndex: -1, // 当前朗读的题卡索引
-      currentReadingCardText: "", // 当前朗读的文本内容
+      isReadingCard: false,
+      currentReadingCardIndex: 0,
+      currentReadingCardText: "",
       isAllCardGroupsExpanded: false,
       expandedCardGroups: new Set(),
       expandedCardIds: new Set(),
       inputText: "",
       resultText: "",
       options: {
-        withTone: true, // 是否显示声调
+        withTone: true,
       },
       showToast: false,
       showPinYinTool: false,
       filteredTestMistaker: [],
       showTestFilterPanel: false,
       testFilterForm: {
-        keyword: "", // 关键字筛选
-        user: "", // 用户筛选
-        subject: "", // 科目筛选
+        keyword: "",
+        user: "",
+        subject: "",
         lastWrong: false,
-        excludeTodayTested: true, // 排除今日已测试
-        excludeFiveCorrect: true, // 排除5次正确
+        excludeTodayTested: true,
+        excludeFiveCorrect: true,
         lessThan: false,
         allowInterval: true,
+        fav: false,
+        specialIL: false,
+        importantLevel: 0,
       },
-      currentTestIndex: 0, // 当前测试题目的索引
-      showAnswer: false, // 是否显示答案
-      testResult: null, // 当前题目的测试结果（正确/错误）
-      isTesting: false, // 是否正在测试中
-      listViewMode: "flat", // 'tree' 树形导航模式, 'flat' 平铺模式, 'group' 分组模式
-      // 新增：树形导航相关状态
-      selectedTreePath: "", // 当前选中的树节点路径
-      expandedTreeNodes: new Set(), // 展开的树节点
+      currentTestIndex: 0,
+      showAnswer: false,
+      testResult: null,
+      isTesting: false,
+      listViewMode: "flat",
+      selectedTreePath: "",
+      expandedTreeNodes: new Set(),
       imageListeners: [],
       serverModifiedTime: 0,
       lastModifiedTime: 0,
       fromPage: "",
-      selectedSimilarIds: [], // 选中的举一反三题目ID
-      showPaperPreview: false, // 显示试卷预览
-      selectedSimilarItems: [], // 选中的题目数据
+      selectedSimilarIds: [],
+      showPaperPreview: false,
+      selectedSimilarItems: [],
       reverseList: true,
       cons: true,
       onOff: false,
@@ -4064,9 +4589,9 @@ export default {
       tItem: null,
       isQuestionTypeSummaryFilterOpen: false,
       questionTypeSummaryFilterForm: {
-        keyword: "", // 关键字（多值，用空格分割）
-        importantLevelStart: "", // 难度最低值
-        importantLevelEnd: "", // 难度最高值
+        keyword: "",
+        importantLevelStart: 0,
+        importantLevelEnd: 8,
       },
       questionTypeSummaryCollapsed: {},
       isQuestionTypeSummaryAllExpanded: true,
@@ -4088,11 +4613,13 @@ export default {
       sections: {
         mistakeItem: false,
         questionCard: false,
-        questionTypeSum: false, // 题型总结
-        improveMethod: false, // 日积月累
-        similar: false, // 举一反三
-        trap: false, // 备用
-        testDetails: false, // 新增：测试详情折叠状态
+        questionTypeSum: false,
+        improveMethod: false,
+        similar: false,
+        trap: false,
+        testDetails: false,
+        cheatsheet: false,
+        answerAnalysis: false,
       },
       subjectClicked: "",
       lightboxImgsFinal: null,
@@ -4115,14 +4642,11 @@ export default {
         ],
         insertKeys: {
           index: 0,
-          keys: ["myMenu", "fontSize"],
+          keys: ["myMenu", "divider", "fontSize"],
         },
       },
       editorConfig1: {
         placeholder: "请输入此科目的学习要点、重点难点、学习方法等...",
-        // autoFocus: false,
-
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4144,9 +4668,8 @@ export default {
       },
       editorConfig2: {
         placeholder:
-          "若该题型有大量简单题目(如语文-字词-会写字)，可在此归纳总结，以免频繁添加为错题。也可在此总结题型易错点...（此输入框支持直接粘贴图片）",
+          "用于填写考前需快速回顾的易错点等...（此输入框支持直接粘贴图片）",
         autoFocus: true,
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4169,9 +4692,6 @@ export default {
       editorConfig3: {
         placeholder:
           "请输入错题解析（写明做题时为什么错？以后怎样避免？出题人想考什么？希望考生犯什么错？并总结：正确思路(思考路线入手点：从已知条件向后推、从所求向前推）；解题方法（如求极值有几种方法、求三角形面积有几种方法等，本题用的是哪种方法，如何才能想到用这种方法）；一题多解等等......最后用彩色加粗标明本题'注意点'，并给别人复述正确思路。错题分析越透彻，学习越轻松！",
-        // autoFocus: false,
-
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4192,11 +4712,8 @@ export default {
         },
       },
       editorConfig4: {
-        placeholder:
-          "请输入原题文字描述(不含答案)，也支持上传或粘贴原题图片(请尽量使用文字描述，图片可能会影响题卡打印的排版)...",
+        placeholder: "晴粘贴错题图片，或输入错题文字描述...",
         // autoFocus: false,
-
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4219,7 +4736,6 @@ export default {
       editorConfig5: {
         placeholder: "同类新题，可用于生成新试卷：文字描述（可选）",
         // autoFocus: false,
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4240,10 +4756,9 @@ export default {
         },
       },
       editorConfig6: {
-        placeholder: "答案区，请尽量使用文字描述，图片可能会影响题卡打印的排版",
+        placeholder:
+          "答案与解析，请尽量使用文字描述，图片可能会影响题卡打印的排版",
         // autoFocus: false,
-
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4264,10 +4779,7 @@ export default {
         },
       },
       editorConfig: {
-        placeholder: "请输入题目（不含答案）",
-        // autoFocus: false,
-
-        // 所有的菜单配置，都要在 MENU_CONF 属性下
+        placeholder: "请输入错题的原题题目或新的题目（不含答案）",
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -4344,15 +4856,15 @@ export default {
       finalCheatSheet: [],
       isEditingCheatSheet: false,
       showSubjectSummaryModal: false,
-      showQuestionTypeSummaryModal: false, // 新增：控制题型总结显示
+      showQuestionTypeSummaryModal: false,
       questionTypeImgUrls: [],
       isSplitting: false,
       cropAsNewImage: true,
       angle: 90,
       selectedDate: "",
       fromPic: 0,
-      imgSrc: "", // 原始图片 URL
-      cropper: null, // Cropper 实例
+      imgSrc: "",
+      cropper: null,
       tempIndex: 0,
       isReading: false,
       currentReadingIndex: -1,
@@ -4361,74 +4873,70 @@ export default {
       tempSubject: "",
       tempSubClass: "",
       tempQuestiontype: "",
-      // 当前视图：home(首页)/add(添加)/list(列表)/task(任务)
       currentView: "home",
-      // 是否处于编辑状态
       isEditing: false,
-      // 当前编辑的错题ID
       editingId: null,
-      // 错题数组
       mistaker: [],
-      // 筛选后的错题数组
       filteredMistaker: [],
-      // 日常日积月累任务列表
       taskList: [],
-      // 设置弹窗显示状态
       showSettingModal: false,
-      // 图片查看器相关状态
-      showImageViewer: false, // 图片查看器显示状态
-      // 添加错题表单数据（修改图片为数组）
+      showImageViewer: false,
       form: {
         addDate: "",
         user: "",
         subject: "",
         subClass: "",
-        originalText: "", // 原题文字描述
-        originalImgUrls: [], // 原题照片URL数组（多图）
+        originalText: "",
+        originalImgUrls: [],
         question: "",
         answer: "",
-        questionTypeImgUrls: [], // 新增：题型总结图片数组
+        questionTypeImgUrls: [],
         errorReasonImgUrls: [],
-        questionType: "", // 新增：题型
-        questionTypeSummary: "", // 新增：题型总结
-        subjectSummary: "", // 新增：综合汇总
-        subjectImgUrls: [], // 新增：综合汇总图片数组
-        trap: "", // 新增：备用
-        trapDetail: "", // 新增：备用详解
+        questionType: "",
+        questionTypeSummary: "",
+        subjectSummary: "",
+        subjectImgUrls: [],
+        trap: "",
+        trapDetail: "",
         errorType: "",
         errorReason: "",
         correctIdea: "",
         improveMethod: "",
         similarText: "",
-        similarImgUrls: [], // 举一反三照片URL数组（多图）
-        importantLevel: 4, // 难度（1-7级，默认4级）
+        similarImgUrls: [],
+        importantLevel: 0,
       },
-      // 筛选表单数据
       filterForm: {
-        id: "", // 题号
-        user: "", // 用户
-        startDate: "", // 添加日期开始
-        endDate: "", // 添加日期结束
-        subject: "", // 科目
-        subClass: "", // 考点
-        errorType: "", // 标签
-        errorReason: "", // 错题解析关键词
-        hasSimilar: "", // 是否有举一反三：''(全部)/yes(是)/no(否)
-        importantLevelStart: "", // 难度最低值
-        importantLevelEnd: "", // 难度最高值
+        id: "",
+        user: "",
+        startDate: "",
+        endDate: "",
+        subject: "",
+        subClass: "",
+        errorType: "",
+        errorReason: "",
+        hasSimilar: "",
         keyword: "",
+        fav: false,
+        hasCards: false,
       },
     };
   },
   computed: {
     ...mapState(["user"]),
+    allowSync() {
+      return this.autoSync && !this.onOffline;
+    },
     showMistaker() {
-      const list =
+      let list =
         this.filteredMistaker.length > 0
           ? this.filteredMistaker
           : this.mistaker;
+      if (!this.filterForm.hasCards)
+        list = list.filter(
+          (item) => item?.question.replace(/<[^>]*>/g, "").trim().length == 0
+        );
       if (!this.reverseList) return list;
-      // 按题号降序排列（由大到小）
       else return list.slice().sort((a, b) => b.id - a.id);
     },
     filteredSimilarItems() {
@@ -4452,8 +4960,6 @@ export default {
     },
     questionTypeMapFiltered() {
       let result = { ...this.questionTypeMap };
-
-      // 关键字筛选
       const keywordStr = this.questionTypeSummaryFilterForm.keyword
         .trim()
         .toLowerCase();
@@ -4462,14 +4968,9 @@ export default {
         if (keywords.length > 0) {
           Object.keys(result).forEach((key) => {
             const item = result[key];
-            const searchText = [
-              key, // 题型名称（包含用户-科目-考点-题型）
-              item.summary || "", // 总结内容
-            ]
+            const searchText = [key, item.summary || ""]
               .join(" ")
               .toLowerCase();
-
-            // 检查是否包含所有关键字（AND 逻辑）
             const hasAllKeywords = keywords.every((keyword) =>
               searchText.includes(keyword)
             );
@@ -4479,15 +4980,13 @@ export default {
           });
         }
       }
-
-      // 难度范围筛选
       const startLevel = this.questionTypeSummaryFilterForm.importantLevelStart;
       const endLevel = this.questionTypeSummaryFilterForm.importantLevelEnd;
 
       if (startLevel || endLevel) {
         Object.keys(result).forEach((key) => {
           const item = result[key];
-          const level = item.importantLevel || 4;
+          const level = item.importantLevel || 0;
 
           if (startLevel && !endLevel) {
             if (level < startLevel) delete result[key];
@@ -4498,16 +4997,11 @@ export default {
           }
         });
       }
-
-      // 将对象转换为数组并按照 dIndex 排序
       const sortedEntries = Object.entries(result)
         .map(([key, value]) => {
-          // 找到对应的 finalQuestionTypeSummary 项获取 dIndex
           const summaryItem = this.finalQuestionTypeSummary.find(
             (item) =>
-              item.user?.trim() +
-                "►" +
-                item.subject?.trim() +
+              item.subject?.trim() +
                 "►" +
                 item.subClass?.trim() +
                 "►" +
@@ -4519,11 +5013,11 @@ export default {
             key,
             value: {
               ...value,
-              dIndex: summaryItem?.dIndex || 0, // 如果没有 dIndex 则默认为 0
+              dIndex: summaryItem?.dIndex || 0,
             },
           };
         })
-        .sort((a, b) => b.value.dIndex - a.value.dIndex); // 从大到小排序
+        .sort((a, b) => b.value.dIndex - a.value.dIndex);
 
       return sortedEntries;
     },
@@ -4559,7 +5053,6 @@ export default {
 
     questionCards() {
       let result = this.mistaker.filter((item) => item.question?.trim());
-      // 关键字筛选
       if (this.testFilterForm.keyword.trim()) {
         const keyword = this.testFilterForm.keyword.trim().toLowerCase();
         result = result.filter((item) => {
@@ -4576,45 +5069,56 @@ export default {
           return searchText.includes(keyword);
         });
       }
-
-      // 用户筛选
       if (this.testFilterForm.user.trim()) {
         const user = this.testFilterForm.user.trim().toLowerCase();
         result = result.filter((item) =>
           item.user.toLowerCase().includes(user)
         );
       }
-
-      // 科目筛选
       if (this.testFilterForm.subject.trim()) {
         const subject = this.testFilterForm.subject.trim().toLowerCase();
         result = result.filter((item) =>
           item.subject.toLowerCase().includes(subject)
         );
       }
-
-      // 最后一次为错的题卡
       if (this.testFilterForm.lastWrong) {
         result = result.filter((item) => {
-          // 确保 reviewResult 存在且是数组
           if (!item.reviewResult || item.reviewResult.length === 0) {
             return false;
           }
-
-          // 获取最后一个元素并检查是否为 0
           const lastResult = item.reviewResult[item.reviewResult.length - 1];
           return lastResult === 0;
         });
       }
-      // 只包含测试次数少于n次的题卡
       if (this.testFilterForm.lessThan) {
         result = result.filter((item) => {
-          // 确保 reviewResult 存在且是数组
           if (!item.reviewResult || item.reviewResult.length < this.testTimes) {
             return true;
           } else return false;
         });
       }
+
+      if (this.testFilterForm.fav) {
+        result = result.filter((item) => {
+          const statusPart = String(item.reviewDate).split(",")[1];
+          if (statusPart && Number(statusPart) == 1) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
+
+      if (this.testFilterForm.specialIL) {
+        result = result.filter((item) => {
+          if (item.importantLevel == this.testFilterForm.importantLevel) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
+
       const excludeIdSet = new Set(
         this.excludedID
           ?.split(" ")
@@ -4626,37 +5130,27 @@ export default {
         return !excludeIdSet.has(targetId);
       });
 
-      // 排除最后n次正确
       if (this.testFilterForm.excludeFiveCorrect) {
         result = result.filter((item) => {
-          // 保留 reviewResult 不存在或不是数组的元素
           if (!item.reviewResult || !Array.isArray(item.reviewResult))
             return true;
-
-          // 从数组末尾开始统计连续的正确数（1）
           let continuousCorrectCount = 0;
-          // 倒序遍历 reviewResult 数组
           for (let i = item.reviewResult.length - 1; i >= 0; i--) {
-            // 遇到1则计数+1，遇到0则终止循环（连续正确被打断）
             if (item.reviewResult[i] === 1) {
               continuousCorrectCount++;
             } else {
               break;
             }
           }
-
-          // 只排除最后连续正确数 >= correctDays（5）的元素
           return continuousCorrectCount < this.correctDays;
         });
       }
 
       return result.map((item) => ({
         ...item,
-        isExpanded: this.expandedCardIds.has(item.id), // 这里会自动响应式更新
+        isExpanded: this.expandedCardIds.has(item.id),
       }));
     },
-
-    // 题型总结 - 只显示当前科目和考点的题型
     uniqueQuestionTypes() {
       if (
         !this.form.subject?.trim() ||
@@ -4701,25 +5195,18 @@ export default {
 
     isAllTreeNodesExpanded() {
       if (this.treeNavigationData.length === 0) return true;
-
-      // 计算理论上应该展开的节点总数
       let expectedCount = 0;
       this.treeNavigationData.forEach((subject) => {
-        expectedCount++; // 科目节点
-        expectedCount += subject.children.length; // 考点节点
+        expectedCount++;
+        expectedCount += subject.children.length;
       });
 
       return this.expandedTreeNodes.size >= expectedCount;
     },
-
-    // 检查是否所有节点都已收起
     isAllTreeNodesCollapsed() {
       return this.expandedTreeNodes.size === 0;
     },
-
-    // 标签列表 - 只显示当前科目、考点和题型的标签，始终包含三个默认值
     uniqueErrorTypes() {
-      // 三个初始默认值
       const defaultErrorTypes = [
         "低级错误",
         "陷阱",
@@ -4756,8 +5243,6 @@ export default {
           filteredErrorTypes.push(...errorTypeArr);
         }
       });
-
-      // 合并默认值和筛选值，去重
       const combinedTypes = [...defaultErrorTypes, ...filteredErrorTypes];
       return [...new Set(combinedTypes)];
     },
@@ -4765,7 +5250,6 @@ export default {
     isMobile() {
       return window.innerWidth < 736;
     },
-    // 提取不重复的用户列表
     uniqueUsers() {
       const userFromMistaker = [
         ...new Set(
@@ -4773,20 +5257,10 @@ export default {
         ),
       ];
 
-      const userFromSummary = [
-        ...new Set(
-          this.finalQuestionTypeSummary
-            .map((item) => item.user?.trim())
-            .filter(Boolean)
-        ),
-      ];
-      return [...new Set([...userFromMistaker, ...userFromSummary])];
+      return [...new Set([...userFromMistaker])];
     },
     // 提取不重复的科目列表
     uniqueSubjects() {
-      if (!this.form.user?.trim()) {
-        return [];
-      }
       const subjectsFromMistaker = [
         ...new Set(
           this.mistaker.map((item) => item.subject?.trim()).filter(Boolean)
@@ -4810,8 +5284,6 @@ export default {
       this.finalQuestionTypeSummary.forEach((item) => {
         if (item.questionType?.trim() && item.questionTypeSummary) {
           const type =
-            item.user?.trim() +
-            "►" +
             item.subject?.trim() +
             "►" +
             item.subClass?.trim() +
@@ -5051,15 +5523,13 @@ export default {
 
     groupedCheatSheets() {
       const groups = {};
-
       this.finalCheatSheet.forEach((item) => {
-        const key = `${item.user}-${item.addDate}`;
+        const key = `${item.user}-${item.subject}`;
         if (!groups[key]) {
           groups[key] = {
             key: key,
             user: item.user,
-            addDate: item.addDate,
-            latestDate: item.addDate,
+            subject: item.subject,
             items: [],
           };
         }
@@ -5067,14 +5537,10 @@ export default {
       });
 
       // 转换为数组并按日期降序排序
-      return Object.values(groups)
-        .sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate))
-        .map((group) => ({
-          ...group,
-          items: group.items.sort(
-            (a, b) => new Date(b.addDate) - new Date(a.addDate)
-          ),
-        }));
+      return Object.values(groups).map((group) => ({
+        ...group,
+        items: group.items,
+      }));
     },
 
     todayDate() {
@@ -5113,7 +5579,6 @@ export default {
         const foundSummary = this.finalQuestionTypeSummary.find(
           (item) =>
             item.questionType === this.form.questionType?.trim() &&
-            item.user === this.form.user?.trim() &&
             item.subject === this.form.subject?.trim() &&
             item.subClass === this.form.subClass?.trim()
         );
@@ -5133,19 +5598,97 @@ export default {
     autoSync() {
       window.localStorage.setItem("autoSync", this.autoSync);
     },
+
+    testFilterForm: {
+      handler(newVal) {
+        this.applyTestFilter();
+        this.currentTestIndex = 0;
+        this.showAnswer = false;
+        this.testResult = null;
+        if (this.filterForm.user !== newVal.user)
+          this.filterForm.user = newVal.user;
+        if (this.filterForm.subject !== newVal.subject)
+          this.filterForm.subject = newVal.subject;
+        if (this.filterForm.keyword !== newVal.keyword)
+          this.filterForm.keyword = newVal.keyword;
+        this.saveTestFilterForm(newVal);
+      },
+      deep: true, // 开启深度监听（必须）
+      immediate: false, // 是否一进页面就立即执行一次
+    },
+    filterForm: {
+      handler(newVal) {
+        if (this.testFilterForm.user !== newVal.user)
+          this.testFilterForm.user = newVal.user;
+        if (this.testFilterForm.subject !== newVal.subject)
+          this.testFilterForm.subject = newVal.subject;
+        if (this.testFilterForm.keyword !== newVal.keyword)
+          this.testFilterForm.keyword = newVal.keyword;
+        this.handleFilter();
+        this.saveFilterForm(newVal);
+      },
+      deep: true, // 开启深度监听（必须）
+      immediate: false, // 是否一进页面就立即执行一次
+    },
+
+    questionTypeSummaryFilterForm: {
+      handler() {
+        this.handleQuestionTypeSummaryFilter();
+      },
+      deep: true, // 开启深度监听（必须）
+      immediate: false, // 是否一进页面就立即执行一次
+    },
+
     currentView(newView) {
       if (newView != "add") {
         this.isEditing = false;
         this.editingId = null;
       }
+      if (newView == "list") {
+        this.handleFilter();
+      }
+      if (newView == "readingCard") {
+        const card = this.currentReadingCard;
+        if (!card) return;
+
+        // 构建朗读文本 - 先只朗读题目
+        let textToRead = `题号：${card.id}。。。。。。。。`;
+        textToRead += `题型：${card.questionType}。。。。。。。`;
+
+        // 题目文本（去除HTML标签）.......................................................................................
+        if (card.question) {
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = card.question;
+          const questionText = tempDiv.textContent || tempDiv.innerText || "";
+          textToRead += `题目：${questionText}。。。。。。。`;
+        }
+
+        // 更新当前朗读文本
+        this.currentReadingCardText = textToRead
+          ?.split("。。。。。。。。")[1]
+          .replaceAll("。。。。。。。", "\n");
+      }
     },
+
     "form.subject": {
       handler(newSubject, oldSubject) {
         // 只有当科目实际发生变化时才执行检查
+        this.editCheatSheet1(this.form?.user, this.form?.subject);
         if (newSubject?.trim() !== oldSubject?.trim()) {
           this.$nextTick(() => {
             this.checkAndClearFields1();
           });
+        }
+      },
+      deep: true,
+      immediate: false,
+    },
+
+    "form.user": {
+      handler(newUser, oldUser) {
+        // 只有当科目实际发生变化时才执行检查
+        if (newUser?.trim() !== oldUser?.trim()) {
+          this.editCheatSheet1(this.form?.user, this.form?.subject);
         }
       },
       deep: true,
@@ -5167,9 +5710,16 @@ export default {
 
     autofill: {
       handler() {
-        if (this.autofill[0]) this.form.questionTypeSummary = this.autofill[0];
-        if (this.autofill[1]?.length != 0)
+        if (this.autofill[0]) {
+          this.form.questionTypeSummary = this.autofill[0];
+        } else {
+          this.form.questionTypeSummary = "";
+        }
+        if (this.autofill[1]?.length != 0) {
           this.form.questionTypeImgUrls = this.autofill[1];
+        } else {
+          this.form.questionTypeImgUrls = [];
+        }
       },
       deep: true,
       immediate: false,
@@ -5280,6 +5830,14 @@ export default {
   },
 
   mounted() {
+    if (/iPhone/.test(navigator.userAgent)) {
+      document.addEventListener("touchstart", this.onTouchStart, {
+        passive: false,
+      });
+      document.addEventListener("touchmove", this.onTouchMove, {
+        passive: false,
+      });
+    }
     this.$window = window;
     this.onOff = true; // 标志位,保证存盘。
     this.readFromForage();
@@ -5291,7 +5849,10 @@ export default {
       this.bindImageClick();
     });
     this.loadBaiDuTJScript();
+    this.filterForm = this.loadFilterForm();
+    this.testFilterForm = this.loadTestFilterForm();
     setTimeout(() => {
+      this.handleFilter();
       this.pageView();
     }, 500);
   },
@@ -5304,6 +5865,8 @@ export default {
   },
 
   beforeDestroy() {
+    document.removeEventListener("touchstart", this.onTouchStart);
+    document.removeEventListener("touchmove", this.onTouchMove);
     this.stopReadingCards();
     this.stopReading();
     this.unbindImageClick();
@@ -5324,6 +5887,16 @@ export default {
     }
   },
   methods: {
+    onTouchStart(e) {
+      this.startY = e.touches[0].clientY;
+    },
+    onTouchMove(e) {
+      const currentY = e.touches[0].clientY;
+      if (window.scrollY <= 0 && currentY > this.startY) {
+        e.preventDefault();
+      }
+    },
+
     splitUsers(userStr) {
       if (!userStr) return [];
       return userStr.trim().split(/\s+/).filter(Boolean);
@@ -5333,6 +5906,30 @@ export default {
     getFirstUser(userStr) {
       const users = this.splitUsers(userStr);
       return users.length > 0 ? users[0] : "";
+    },
+
+    getText1() {
+      if (this.currentView == "readingCard") {
+        const card = this.currentReadingCard;
+        if (!card) return;
+
+        // 构建朗读文本 - 先只朗读题目
+        let textToRead = `题号：${card.id}。。。。。。。。`;
+        textToRead += `题型：${card.questionType}。。。。。。。`;
+
+        // 题目文本（去除HTML标签）
+        if (card.question) {
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = card.question;
+          const questionText = tempDiv.textContent || tempDiv.innerText || "";
+          textToRead += `题目：${questionText}。。。。。。。`;
+        }
+
+        // 更新当前朗读文本
+        this.currentReadingCardText = textToRead
+          ?.split("。。。。。。。。")[1]
+          .replaceAll("。。。。。。。", "\n");
+      }
     },
 
     // 获取其他用户（用于生成新题）
@@ -5583,7 +6180,7 @@ export default {
               <th width="11%">记录</th>
               <th width="7%">题号</th>
               <th width="32%">题目</th>
-              <th width="30%">答案</th>
+              <th width="30%">答案与解析</th>
               <th width="20%">易错点</th>
             </tr>
           </thead>
@@ -5637,7 +6234,12 @@ export default {
 
       return content;
     },
-
+    showAlert() {
+      alert("可双击编辑。若原题中有很多小题，可添加每次测试时错误的小题。");
+    },
+    showAlert1() {
+      alert("可双击编辑。可添加每次测试时的错误解析。");
+    },
     toggleCardGroup(groupKey) {
       // 创建新的 Set 实例以确保响应式更新
       const newSet = new Set(this.expandedCardGroups);
@@ -5671,7 +6273,6 @@ export default {
 
     applyTestFilter() {
       let result = this.mistaker.filter((item) => item.question?.trim());
-
       const today = new Date().toLocaleDateString("sv-SE");
       const today1 = new Date();
       today1.setHours(0, 0, 0, 0); // 把时分秒毫秒都置为0，得到今天0点
@@ -5696,14 +6297,16 @@ export default {
       // 今日测试到期题卡筛选
       if (this.testFilterForm.allowInterval) {
         result = result.filter((item) => {
-          const a = item.reviewDate;
+          if (item.reviewDate == 0) item.reviewDate = "0,0";
+          item.reviewDate = String(item.reviewDate || "0,0");
+          const a = Number(item.reviewDate.split(",")[0]);
           const aDate = new Date(a);
           aDate.setHours(0, 0, 0, 0);
           const aTimestamp = aDate.getTime();
           const timeDiff = todayTimestamp - aTimestamp;
           const dayDiff = Math.floor(Math.abs(timeDiff) / 86400000); // 取绝对值后向下取整
           if (!item.reviewResult) item.reviewResult = [];
-          if (!this.testInterval) this.testInterval = "0 1 3 7 15 30 60";
+          if (!this.testInterval) this.testInterval = "0 7 14 30 50 80 120 180";
           if (
             item.reviewResult &&
             this.testInterval?.split(" ")[item.reviewResult?.length] &&
@@ -5733,29 +6336,46 @@ export default {
       // 排除今日已测试
       if (this.testFilterForm.excludeTodayTested) {
         result = result.filter((item) => {
-          if (!item.reviewDate || item.reviewDate == 0) return true;
-          const testDate = new Date(item.reviewDate).toLocaleDateString(
-            "sv-SE"
-          );
+          if (item.reviewDate == 0) item.reviewDate = "0,0";
+          if (!item.reviewDate || Number(item.reviewDate.split(",")[0]) == 0)
+            return true;
+          const testDate = new Date(
+            Number(item.reviewDate.split(",")[0])
+          ).toLocaleDateString("sv-SE");
           return testDate !== today;
         });
       }
 
-      // 最后一次为错的题卡
+      if (this.testFilterForm.fav) {
+        result = result.filter((item) => {
+          const statusPart = String(item.reviewDate).split(",")[1];
+          if (statusPart && Number(statusPart) == 1) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
+
+      if (this.testFilterForm.specialIL) {
+        result = result.filter((item) => {
+          if (item.importantLevel == this.testFilterForm.importantLevel) {
+            return true;
+          } else {
+            return false;
+          }
+        });
+      }
       if (this.testFilterForm.lastWrong) {
         result = result.filter((item) => {
-          // 确保 reviewResult 存在且是数组
           if (!item.reviewResult || item.reviewResult.length === 0) {
             return false;
           }
-
-          // 获取最后一个元素并检查是否为 0
           const lastResult = item.reviewResult[item.reviewResult.length - 1];
           return lastResult === 0;
         });
       }
 
-      // 只包括测试次数少于n次的题目
       if (this.testFilterForm.lessThan) {
         result = result.filter((item) => {
           if (!item.reviewResult || item.reviewResult?.length < this.testTimes)
@@ -5797,6 +6417,9 @@ export default {
       if (this.isReadingCard) {
         this.stopReadingCards();
       } else {
+        if (this.currentReadingCardIndex < 0) this.currentReadingCardIndex = 0;
+        if (this.currentReadingCardIndex >= this.questionCards.length)
+          this.currentReadingCardIndex = this.questionCards.length - 1;
         this.startReadingCards();
         this.switchView("readingCard");
       }
@@ -5823,11 +6446,9 @@ export default {
         alert("没有可朗读的题卡！");
         return;
       }
-
       this.isReadingCard = true;
       this.speechState.isPaused = false;
       this.speechState.isSpeaking = true;
-      this.currentReadingCardIndex = 0;
       this.readCurrentCard();
     },
 
@@ -5862,7 +6483,7 @@ export default {
       this.currentReadingCardText = textToRead
         ?.split("。。。。。。。。")[1]
         .replaceAll("。。。。。。。", "\n");
-
+      textToRead = textToRead.replace(/<[^>]*>/g, "");
       const utterance = new SpeechSynthesisUtterance(textToRead);
       utterance.lang = "zh-CN";
       utterance.rate = 0.9;
@@ -5915,6 +6536,13 @@ export default {
       window.speechSynthesis.speak(utterance);
     },
 
+    copytoTextArea() {
+      this.filteredTestMistaker[this.currentTestIndex].correctIdea =
+        this.addToday +
+        ":\n\n" +
+        this.filteredTestMistaker[this.currentTestIndex].correctIdea;
+    },
+
     // 新增：朗读答案部分的方法
     readAnswerPart() {
       const card = this.currentReadingCard;
@@ -5928,12 +6556,12 @@ export default {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = card.answer;
         const answerText = tempDiv.textContent || tempDiv.innerText || "";
-        answerTextToRead += `答案：${answerText}。。。。。。。`;
+        answerTextToRead += `答案与解析：${answerText}。。。。。。。`;
       }
 
       // 易错点
       if (card.correctIdea) {
-        answerTextToRead += `易错点：${card.correctIdea}`;
+        answerTextToRead += `易错点${card.correctIdea}`;
       }
 
       // 如果没有答案内容，直接进入下一题
@@ -5945,7 +6573,7 @@ export default {
       // 更新当前朗读文本
       this.currentReadingCardText +=
         "\n" + answerTextToRead.replace("。。。。。。。", "\n");
-
+      answerTextToRead = answerTextToRead.replace(/<[^>]*>/g, "");
       const utterance = new SpeechSynthesisUtterance(answerTextToRead);
       utterance.lang = "zh-CN";
       utterance.rate = 0.9;
@@ -5983,7 +6611,7 @@ export default {
       };
 
       utterance.onerror = (event) => {
-        console.log("朗读答案部分出错:", event);
+        console.log("朗读答案与解析部分出错:", event);
         this.speechState.isSpeaking = false;
         this.speechState.isPaused = false;
         this.isWaitingForClick = false;
@@ -5992,7 +6620,6 @@ export default {
           this.stopReadingCards();
         }
       };
-
       window.speechSynthesis.speak(utterance);
     },
 
@@ -6009,7 +6636,6 @@ export default {
       }, 1000);
     },
 
-    // 新增：添加继续点击监听器
     addContinueClickListener(type) {
       this.continueClickListener = () => {
         if (this.isWaitingForClick && this.isReadingCard) {
@@ -6018,8 +6644,12 @@ export default {
       };
       document.addEventListener("click", this.continueClickListener);
     },
+    showHelp() {
+      alert(
+        "使用说明：本错题本支持记录错题，支持添加需反复记忆的题卡，并支持添加答案和解析。同时还可对科目（CheatSheet）和题型进行知识总结，并可添加需定期完成的日积月累任务，还能存储各类综合汇总资料。可按需使用。"
+      );
+    },
 
-    // 新增：移除继续点击监听器
     removeContinueClickListener() {
       if (this.continueClickListener) {
         document.removeEventListener("click", this.continueClickListener);
@@ -6045,22 +6675,44 @@ export default {
     stopReadingCards() {
       this.isWaitingForClick = false;
       this.removeContinueClickListener();
-
       if (this.currentUtterance) {
         this.currentUtterance.onerror = null;
         this.currentUtterance.onend = null;
         this.currentUtterance = null;
       }
-
       window.speechSynthesis.cancel();
       this.isReadingCard = false;
-      this.currentReadingCardIndex = -1;
-      this.currentReadingCardText = "";
       this.speechState.isPaused = false;
       this.speechState.isSpeaking = false;
     },
 
-    // 跳过当前题卡
+    lastCurrentCard() {
+      if (this.isReadingCard) {
+        // 先移除当前utterance的事件监听器，避免触发onerror
+        if (this.currentUtterance) {
+          this.currentUtterance.onerror = null;
+          this.currentUtterance.onend = null;
+        }
+
+        window.speechSynthesis.cancel();
+        this.speechState.isSpeaking = false;
+        this.speechState.isPaused = false;
+
+        this.currentReadingCardIndex--;
+        if (this.currentReadingCardIndex > -1) {
+          console.log("跳过到上一题");
+          this.readCurrentCard();
+        } else {
+          this.stopReadingCards();
+          alert("题卡朗读完成！");
+        }
+      } else if (this.currentReadingCardIndex > 1) {
+        this.currentReadingCardIndex--;
+        this.getText1();
+      }
+    },
+
+    // 下一题卡
     skipCurrentCard() {
       if (this.isReadingCard) {
         // 先移除当前utterance的事件监听器，避免触发onerror
@@ -6081,24 +6733,11 @@ export default {
           this.stopReadingCards();
           alert("题卡朗读完成！");
         }
+      } else if (this.currentReadingCardIndex < this.questionCards.length - 1) {
+        this.currentReadingCardIndex++;
+        this.getText1();
       }
     },
-
-    // 暂停/继续朗读
-    pauseResumeReading() {
-      if (this.isReadingCard) {
-        if (this.speechState.isPaused) {
-          window.speechSynthesis.resume();
-          this.speechState.isPaused = false;
-          this.speechState.isSpeaking = true;
-        } else {
-          window.speechSynthesis.pause();
-          this.speechState.isPaused = true;
-          this.speechState.isSpeaking = false;
-        }
-      }
-    },
-
     openPrintCheatSheetModal() {
       this.showPrintCheatSheetModal = true;
       // 初始化选中状态
@@ -6112,13 +6751,11 @@ export default {
       this.printCheatSheetData = [];
       this.groupedCheatSheets.forEach((group) => {
         group.items.forEach((item) => {
-          const uniqueId = `${group.key}-${item.addDate || "no-date"}`;
+          const uniqueId = `${group.key}-${item.subject || "no-subject"}`;
           this.printCheatSheetData.push({
             ...item,
             uniqueId: uniqueId,
-            groupInfo: `${group.user} - ${this.formatDateWithWeek(
-              group.latestDate
-            )}`,
+            groupInfo: `${group.user} - ${group.subject}`,
           });
         });
       });
@@ -6136,7 +6773,10 @@ export default {
         );
       }
     },
-
+    switchQ(index) {
+      let value = this.showQ[index] == 1 ? 0 : 1;
+      this.$set(this.showQ, index, value); // ✅ Vue 能监听
+    },
     // 在 methods 中添加以下方法
     handleCheckboxClick(uniqueId, event) {
       // 阻止事件冒泡到父元素
@@ -6180,7 +6820,73 @@ export default {
       this.generateCheatSheetPrintContent(selectedItems);
     },
 
-    // 生成打印内容
+    saveFilterForm(form) {
+      localStorage.setItem(
+        this.user.username + "filterForm",
+        JSON.stringify(form)
+      );
+    },
+    saveTestFilterForm(form) {
+      localStorage.setItem(
+        this.user.username + "testFilterForm",
+        JSON.stringify(form)
+      );
+    },
+
+    loadTestFilterForm() {
+      const defaultForm = {
+        keyword: "",
+        user: "",
+        subject: "",
+        lastWrong: false,
+        excludeTodayTested: true,
+        excludeFiveCorrect: true,
+        lessThan: false,
+        allowInterval: true,
+        fav: false,
+        specialIL: false,
+        importantLevel: 0,
+      };
+
+      try {
+        const saved = localStorage.getItem(
+          this.user.username + "testFilterForm"
+        );
+        if (saved) {
+          return { ...defaultForm, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.error("读取筛选条件失败", e);
+      }
+      return defaultForm;
+    },
+
+    loadFilterForm() {
+      let defaultForm = {
+        id: "",
+        user: "",
+        startDate: "",
+        endDate: "",
+        subject: "",
+        subClass: "",
+        errorType: "",
+        errorReason: "",
+        hasSimilar: "",
+        keyword: "",
+        fav: false,
+        hasCards: false,
+      };
+
+      try {
+        const saved = localStorage.getItem(this.user.username + "filterForm");
+        if (saved) {
+          return { ...defaultForm, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.error("读取筛选条件失败", e);
+      }
+      return defaultForm;
+    },
     generateCheatSheetPrintContent(selectedItems) {
       const printWindow = window.open("", "_blank");
 
@@ -6274,8 +6980,6 @@ export default {
               box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             }
           }
-          
-          /* 保持v-html的基本样式 */
           .cheatsheet-content strong {
             font-weight: bold;
           }
@@ -6425,9 +7129,9 @@ export default {
       if (this.serverModifiedTime > this.lastModifiedTime) {
         if (
           confirm(
-            "服务器上的错题本有更新，是否下载？移动网络请注意流量！文件大小：" +
+            "服务器上的错题本与缓存中的错题本内容有差别，是否下载？移动网络请注意流量！文件大小：" +
               size +
-              "MB"
+              "MB，点击'取消'将继续使用缓存中的错题本。"
           )
         ) {
           this.readFromServer();
@@ -6476,14 +7180,7 @@ export default {
     },
 
     toggleTestFilter() {
-      // 如果当前是打开状态，只是关闭面板，不重置筛选
-      if (this.showTestFilterPanel) {
-        this.showTestFilterPanel = false;
-      } else {
-        // 如果当前是关闭状态，打开面板
-        this.showTestFilterPanel = true;
-      }
-      // 移除原来的重置逻辑
+      this.showTestFilterPanel = !this.showTestFilterPanel;
     },
 
     // 重置测试筛选
@@ -6497,9 +7194,10 @@ export default {
         excludeFiveCorrect: true,
         lessThan: false,
         allowInterval: false,
+        fav: false,
+        specialIL: false,
+        importantLevel: 0,
       };
-      // 移除关闭面板的逻辑，让用户可以选择是否关闭
-      // this.showTestFilterPanel = false;
     },
 
     // 修改开始测试方法，应用筛选
@@ -6513,6 +7211,7 @@ export default {
       this.currentView = "test";
       if (testPool.length === 0) {
         setTimeout(() => {
+          this.showTestFilterPanel = true;
           alert("今日无待测试题卡！可改变筛选条件重新选择题卡。");
         }, 100);
       }
@@ -6552,6 +7251,35 @@ export default {
       // 如果是科目或考点节点，同时选中该节点
       if (nodeType !== "questionType") {
         this.selectedTreePath = nodePath;
+      }
+    },
+
+    mergeItem() {
+      if (
+        this.form.user.trim() &&
+        this.form.subject.trim() &&
+        this.form.questionType.trim() &&
+        this.form.subClass.trim()
+      ) {
+        const mergedItem = this.mistaker.find(
+          (item) =>
+            item.user == this.form.user.trim() &&
+            item.subject == this.form.subject.trim() &&
+            item.questionType == this.form.questionType.trim() &&
+            item.subClass == this.form.subClass.trim()
+        );
+        if (mergedItem) {
+          this.cancelNow();
+          setTimeout(() => {
+            this.editError(mergedItem, 5);
+          }, 100);
+        } else {
+          alert("未找到可以汇总合并的已有题型！");
+          return;
+        }
+      } else {
+        alert("请先填写完整用户、科目、考点、题型");
+        return;
       }
     },
 
@@ -6625,25 +7353,22 @@ export default {
 
     // 新增：处理题型总结筛选
     handleQuestionTypeSummaryFilter() {
-      // 难度输入验证
+      // 掌握程度输入验证
       const start = this.questionTypeSummaryFilterForm.importantLevelStart;
       const end = this.questionTypeSummaryFilterForm.importantLevelEnd;
 
       if (
-        (start && (start < 1 || start > 7)) ||
-        (end && (end < 1 || end > 7))
+        (start && (start < 0 || start > 8)) ||
+        (end && (end < 0 || end > 8))
       ) {
-        alert("难度只能输入1-7之间的数字！");
+        alert("掌握程度只能输入0-8之间的数字！");
         return;
       }
 
       if (start && end && start > end) {
-        alert("难度最低值不能大于最高值！");
+        alert("掌握程度最低值不能大于最高值！");
         return;
       }
-
-      // 筛选后隐藏筛选条件
-      this.isQuestionTypeSummaryFilterOpen = false;
 
       // 计算属性会自动更新，这里不需要额外操作
       if (
@@ -6658,10 +7383,9 @@ export default {
     resetQuestionTypeSummaryFilter() {
       this.questionTypeSummaryFilterForm = {
         keyword: "",
-        importantLevelStart: "",
-        importantLevelEnd: "",
+        importantLevelStart: 0,
+        importantLevelEnd: 8,
       };
-      this.isQuestionTypeSummaryFilterOpen = false;
     },
     openAddTaskModal() {
       this.isEditingTask = false;
@@ -6720,25 +7444,37 @@ export default {
       this.showSubjectSummaryModal = true;
     },
 
-    editCheatSheet(b) {
+    editCheatSheet(b, c) {
       let cs = this.finalCheatSheet.find((item) => {
-        if (
-          item.user == b &&
-          item.addDate == new Date().toLocaleDateString("sv-SE")
-        )
-          return true;
+        if (item.user == b && item.subject == c) return true;
         else return false;
       });
       if (cs) {
-        this.form.addDate = cs.addDate;
+        this.form.subject = cs.subject;
         this.form.user = cs.user;
         this.form.cheatSheet = cs.cheatSheet;
       } else {
-        this.form.addDate = new Date().toLocaleDateString("sv-SE");
+        this.form.subject = c;
         this.form.user = b;
         this.form.cheatSheet = "";
       }
-      this.showCSModal = true;
+      if (this.currentView !== "add") this.showCSModal = true;
+    },
+
+    editCheatSheet1(b, c) {
+      let cs = this.finalCheatSheet.find((item) => {
+        if (item.user == b && item.subject == c) return true;
+        else return false;
+      });
+      if (cs) {
+        this.form.subject = cs.subject;
+        this.form.user = cs.user;
+        this.form.cheatSheet = cs.cheatSheet;
+      } else {
+        this.form.subject = c;
+        this.form.user = b;
+        this.form.cheatSheet = "";
+      }
     },
 
     editSubjectSummary(index) {
@@ -6808,7 +7544,7 @@ export default {
         textToRead += "暂无总结内容。";
       }
 
-      // 创建语音合成实例
+      textToRead = textToRead.replace(/<[^>]*>/g, "");
       const utterance = new SpeechSynthesisUtterance(textToRead);
       // 设置语音属性
       utterance.lang = "zh-CN";
@@ -6980,8 +7716,6 @@ export default {
       this.closeTaskModal();
       alert(this.isEditingTask ? "任务更新成功！" : "任务添加成功！");
     },
-
-    // 删除任务
     deleteTask(index) {
       if (confirm("确定要删除这个任务吗？此操作不可恢复！")) {
         this.taskList.splice(index, 1);
@@ -6990,21 +7724,17 @@ export default {
     },
     toggleTaskCompletion(task) {
       if (task.completedToday) {
-        // 如果勾选，添加今日日期到完成历史（去重）
         if (!task.completionHistory) {
           task.completionHistory = [];
         }
 
         if (!task.completionHistory?.includes(this.todayDate)) {
           task.completionHistory.push(this.todayDate);
-          // 按日期排序
           task.completionHistory.sort((a, b) => new Date(b) - new Date(a));
         }
         task.completedToday = false;
       }
     },
-
-    // 切换单个综合汇总项的展开状态
     toggleSubjectSummary(index) {
       this.$set(
         this.subjectSummaryExpanded,
@@ -7013,28 +7743,21 @@ export default {
       );
     },
 
-    // 检查单个综合汇总项是否展开
     isSubjectSummaryExpanded(index) {
-      return this.subjectSummaryExpanded[index] !== false; // 默认为展开
+      return this.subjectSummaryExpanded[index] !== false;
     },
-
-    // 全部展开
     expandAllSubjectSummaries() {
       this.finalSubjectSummary.forEach((_, index) => {
         this.$set(this.subjectSummaryExpanded, index, true);
       });
       this.isAllSubjectSummaryExpanded = true;
     },
-
-    // 全部收起
     collapseAllSubjectSummaries() {
       this.finalSubjectSummary.forEach((_, index) => {
         this.$set(this.subjectSummaryExpanded, index, false);
       });
       this.isAllSubjectSummaryExpanded = false;
     },
-
-    // 切换全部展开/收起
     toggleSubjectSummaryExpandAll() {
       if (this.isAllSubjectSummaryExpanded) {
         this.collapseAllSubjectSummaries();
@@ -7055,8 +7778,11 @@ export default {
       else if (this.showQuestionTypeSummaryModal) {
         this.updateQList();
         this.switchView("questionTypeSummary");
-      } else if (this.isEditing) this.updateError();
-      else this.saveError();
+      } else if (this.isEditing) {
+        this.updateError();
+      } else {
+        this.saveError();
+      }
     },
     cancelNow() {
       if (this.showSubjectSummaryModal) this.closeSubjectSummaryModal();
@@ -7067,6 +7793,8 @@ export default {
         else {
           if (this.fromPage == "1") this.switchView("printPaper");
           else if (this.fromPage == "2") this.switchView("test");
+          else if (this.fromPage == "4") this.switchView("cardList");
+          else if (this.fromPage == "5") this.switchView("home");
           else this.switchView("list");
         }
       } else if (this.showQuestionTypeSummaryModal) {
@@ -7074,9 +7802,8 @@ export default {
       } else this.switchView("home");
       this.fromPage = "";
     },
-    // 初始化 Cropper
     onCreated(editor) {
-      this.editor = Object.seal(editor); // 【注意】一定要用 Object.seal() 否则会报错
+      this.editor = Object.seal(editor);
     },
     onCreated1(editor) {
       this.editor1 = Object.seal(editor);
@@ -7111,7 +7838,7 @@ export default {
             (item) =>
               item.subject === this.form.subject.trim() &&
               item.subClass === this.form.subClass.trim() &&
-              item.questionType === this.form.questionType.trim() // 新增
+              item.questionType === this.form.questionType.trim()
           )?.improveMethod || "";
       } else {
         this.form.improveMethod = "";
@@ -7121,18 +7848,18 @@ export default {
     getEditorText() {
       const editor = this.editor;
       if (editor == null) return;
-      // console.log(editor.getText()); // 执行 editor API
+      // console.log(editor.getText()); // 执行 editor API..
     },
     initCropper() {
       if (this.$refs.image && this.imgSrc) {
         this.cropper = new Cropper(this.$refs.image, {
-          aspectRatio: 0, // 裁剪框宽高比
-          viewMode: 0, // 视图模式
-          dragMode: "move", // 拖拽模式
-          autoCropArea: 0.58, // 自动裁剪区域
-          background: false, // 是否显示背景
-          responsive: true, // 响应式
-          restore: true, // 恢复裁剪区域
+          aspectRatio: 0,
+          viewMode: 0,
+          dragMode: "move",
+          autoCropArea: 0.58,
+          background: false,
+          responsive: true,
+          restore: true,
           checkCrossOrigin: true,
         });
         setTimeout(() => {
@@ -7157,12 +7884,8 @@ export default {
 
     toggleExpandAll() {
       this.isAllExpanded = !this.isAllExpanded;
-
-      // 遍历所有分组并设置展开/收起状态
       this.groupedMistaker.forEach((subjectGroup) => {
         const subjectKey = subjectGroup.subject;
-
-        // 设置科目分组状态
         this.$set(
           this.collapsedStates.subject,
           subjectKey,
@@ -7171,8 +7894,6 @@ export default {
 
         subjectGroup.subClasses.forEach((subClassGroup) => {
           const subClassKey = `${subjectGroup.subject}-${subClassGroup.subClass}`;
-
-          // 设置考点分组状态
           this.$set(
             this.collapsedStates.subClass,
             subClassKey,
@@ -7181,8 +7902,6 @@ export default {
 
           subClassGroup.questionTypes.forEach((questionTypeGroup) => {
             const questionTypeKey = `${subjectGroup.subject}-${subClassGroup.subClass}-${questionTypeGroup.questionType}`;
-
-            // 设置题型分组状态
             this.$set(
               this.collapsedStates.questionType,
               questionTypeKey,
@@ -7195,24 +7914,22 @@ export default {
     editQuestionType(id) {
       this.isEditing = true;
       this.showQuestionTypeSummaryModal = true;
-      const user = id?.split("►")[0];
-      const subject = id?.split("►")[1];
-      const subClass = id?.split("►")[2];
-      const questionType = id?.split("►")[3];
+      const subject = id?.split("►")[0];
+      const subClass = id?.split("►")[1];
+      const questionType = id?.split("►")[2];
       this.tItem = this.finalQuestionTypeSummary.find(
         (item) =>
-          item.user === user &&
           item.subject === subject &&
           item.subClass === subClass &&
           item.questionType === questionType
       );
       this.form = {
-        user: user,
+        user: "all",
         subject: subject,
-        subClass: subClass,
+        subClass: subClass || "",
         questionType: questionType || "",
-        questionTypeSummary: this.tItem?.questionTypeSummary || "", // 新增
-        questionTypeImgUrls: this.tItem?.questionTypeImgUrls || [], // 新增
+        questionTypeSummary: this.tItem?.questionTypeSummary || "",
+        questionTypeImgUrls: this.tItem?.questionTypeImgUrls || [],
       };
       this.switchView("add");
     },
@@ -7221,13 +7938,11 @@ export default {
       if (!confirm("确定要删除此项题型总结吗？此操作不可恢复！")) {
         return;
       }
-      const user = id?.split("►")[0];
-      const subject = id?.split("►")[1];
-      const subClass = id?.split("►")[2];
-      const questionType = id?.split("►")[3];
+      const subject = id?.split("►")[0];
+      const subClass = id?.split("►")[1];
+      const questionType = id?.split("►")[2];
       const tItem = this.finalQuestionTypeSummary.find(
         (item) =>
-          item.user === user &&
           item.subject === subject &&
           item.subClass === subClass &&
           item.questionType === questionType
@@ -7251,23 +7966,16 @@ export default {
 
     toggleCollapse(type, key) {
       const currentState = this.collapsedStates[type][key];
-      // 先切换当前层级的折叠状态
       this.$set(this.collapsedStates[type], key, !currentState);
-
-      // 如果当前是展开状态（即将折叠），则处理下级层级的折叠
       if (!currentState) {
         if (type === "subject") {
-          // 点击科目时，折叠其下所有考点和题型
           const subjectGroup = this.groupedMistaker.find(
             (group) => group.subject === key
           );
           if (subjectGroup) {
-            // 折叠所有考点
             subjectGroup.subClasses.forEach((subClassGroup) => {
               const subClassKey = `${key}-${subClassGroup.subClass}`;
               this.$set(this.collapsedStates.subClass, subClassKey, true);
-
-              // 折叠该考点下的所有题型
               subClassGroup.questionTypes.forEach((questionTypeGroup) => {
                 const questionTypeKey = `${subClassKey}-${questionTypeGroup.questionType}`;
                 this.$set(
@@ -7279,8 +7987,6 @@ export default {
             });
           }
         } else if (type === "subClass") {
-          // 点击考点时，折叠其下所有题型
-          // 解析科目和考点名称
           const [subject, subClass] = key.split("-");
           const subjectGroup = this.groupedMistaker.find(
             (group) => group.subject === subject
@@ -7290,7 +7996,6 @@ export default {
               (sc) => sc.subClass === subClass
             );
             if (subClassGroup) {
-              // 折叠该考点下的所有题型
               subClassGroup.questionTypes.forEach((questionTypeGroup) => {
                 const questionTypeKey = `${key}-${questionTypeGroup.questionType}`;
                 this.$set(
@@ -7304,40 +8009,56 @@ export default {
         }
       }
     },
-
-    // 检查答案
     checkAnswer() {
       this.showAnswer = true;
     },
 
-    // 记录答题结果
+    clearRecords() {
+      if (
+        !confirm(
+          "所有题卡掌握程度将重置为0，测试时的正确错误记录也将清空。确定吗？"
+        )
+      ) {
+        return;
+      }
+      for (let i = 0; i < this.mistaker.length; i++) {
+        let currentQuestion = this.mistaker[i];
+        currentQuestion.reviewDate = "0,0";
+        currentQuestion.reviewResult = [];
+        currentQuestion.importantLevel = 0;
+      }
+    },
     recordAnswer(isCorrect) {
       const currentQuestion = this.filteredTestMistaker[this.currentTestIndex];
-
-      // 确保有reviewDate属性
       if (
         !Object.prototype.hasOwnProperty.call(currentQuestion, "reviewDate")
       ) {
-        currentQuestion.reviewDate = 0;
+        currentQuestion.reviewDate = "0,0";
       }
-
-      // 确保有reviewResult属性
       if (
         !Object.prototype.hasOwnProperty.call(currentQuestion, "reviewResult")
       ) {
         currentQuestion.reviewResult = [];
       }
-
-      // 记录当前测试时间
-      currentQuestion.reviewDate = Date.now();
-
-      // 记录答题结果：1表示正确，0表示错误
+      this.showAnswer = true;
+      currentQuestion.reviewDate = Date.now() + ",0";
       currentQuestion.reviewResult.push(isCorrect ? 1 : 0);
-
+      if (currentQuestion.importantLevel < 8 && isCorrect) {
+        currentQuestion.importantLevel = currentQuestion.importantLevel + 1;
+        this.showMsg(1, currentQuestion.importantLevel);
+      } else if (!isCorrect) {
+        currentQuestion.importantLevel = 0;
+        this.showMsg(0, 0);
+      }
       this.testResult = isCorrect;
     },
-
-    // 下一题
+    showMsg(x, y) {
+      if (x == 0) this.msg = "当前题卡掌握程度已降至 0 级！";
+      else this.msg = "当前题卡掌握程度已升至 " + y + "级！";
+      setTimeout(() => {
+        this.msg = "";
+      }, 3000);
+    },
     nextQuestion() {
       this.showAnswer = false;
       this.testResult = null;
@@ -7348,8 +8069,6 @@ export default {
         this.finishTest();
       }
     },
-
-    // 完成测试
     finishTest() {
       alert("测试结束！");
       this.isTesting = false;
@@ -7363,8 +8082,6 @@ export default {
     openSubjectSummaryModal() {
       this.showSubjectSummaryModal = true;
     },
-
-    // 关闭综合汇总弹窗
     closeSubjectSummaryModal() {
       this.showSubjectSummaryModal = false;
       this.isEditingSubjectSummary = false;
@@ -7384,8 +8101,6 @@ export default {
       this.cropper.crop();
       this.getCroppedImage();
     },
-
-    // 获取裁剪后的图片
     getCroppedImage() {
       if (!this.cropper) return;
 
@@ -7402,7 +8117,6 @@ export default {
         } else if (this.fromPic === 3) {
           this.form.errorReasonImgUrls.push(dataUrl);
         } else if (this.fromPic === 4) {
-          // 新增科目图片
           this.form.subjectImgUrls.push(dataUrl);
         } else {
           this.form.originalImgUrls.push(dataUrl);
@@ -7415,7 +8129,6 @@ export default {
         } else if (this.fromPic === 3) {
           this.form.errorReasonImgUrls[this.tempIndex] = dataUrl;
         } else if (this.fromPic === 4) {
-          // 新增科目图片
           this.form.subjectImgUrls[this.tempIndex] = dataUrl;
         } else {
           this.form.originalImgUrls[this.tempIndex] = dataUrl;
@@ -7429,15 +8142,11 @@ export default {
         this.cropper.reset();
       }
     },
-
-    // 旋转图片
     rotate(degrees) {
       if (this.cropper) {
         this.cropper.rotate(degrees);
       }
     },
-
-    // 缩放图片
     scale(scaleX, scaleY) {
       if (this.cropper) {
         this.cropper.scale(scaleX, scaleY || scaleX);
@@ -7445,23 +8154,32 @@ export default {
     },
 
     logout() {
+      if (this.currentView == "readingCard") {
+        this.stopReadingCards();
+        this.stopReading();
+        this.switchView("cardList");
+        return;
+      }
       if (this.currentView != "home") {
         this.resetForm();
+        this.stopReadingCards();
+        this.stopReading();
+        this.isFilterOpen = false;
+        this.showTestFilterPanel = false;
+        this.isQuestionTypeSummaryFilterOpen = false;
         this.switchView("home");
         this.fromPage = "";
         this.selectedDate = "";
         return;
       }
+      this.editAnswer = false;
       this.isEditingSubjectSummary = false;
       this.isEditing = false;
       this.isEditingTask = false;
       auth.logout();
     },
-    // 新增：拆分图片为多道错题
     async splitImagesToNewQuestions() {
       if (this.isSplitting) return;
-
-      // 验证必填字段
       if (!this.form.user?.trim() || !this.form.subject?.trim()) {
         alert("用户名、科目为必填项！");
         return;
@@ -7477,14 +8195,11 @@ export default {
           this.mistaker.length > 0
             ? Math.max(...this.mistaker.map((item) => item.id))
             : 0;
-
-        // 保存当前表单的基础数据
         const baseData = {
           addDate: this.form.addDate,
           user: this.form.user?.trim() || "",
           subject: this.form.subject?.trim() || "",
         };
-        // 依次为每张图片创建错题
         for (let i = 0; i < this.form.originalImgUrls.length; i++) {
           const newId = currentMaxId + i + 1;
           console.log(`正在处理第 ${i + 1} 张图片，新ID：`, newId);
@@ -7514,42 +8229,28 @@ export default {
             similarText: i === 0 ? this.form.similarText?.trim() || "" : "",
             similarImgUrls:
               i === 0 ? [...(this.form.similarImgUrls || [])] : [],
-            importantLevel: i === 0 ? this.form.importantLevel || 4 : 4,
+            importantLevel: i === 0 ? this.form.importantLevel || 0 : 0,
           };
-
           console.log(`第 ${i + 1} 道错题数据：`, newError);
-
-          // 验证数据完整性
           if (!newError.user || !newError.subject) {
             throw new Error(`第 ${i + 1} 道错题缺少必要字段：用户或科目`);
           }
-
-          // 添加到错题数组
           this.mistaker.push(newError);
           console.log(`第 ${i + 1} 道错题添加成功`);
-
-          // 如果第一题选择了加入日常任务，则添加任务
-          // 短暂延迟
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
 
         console.log("拆分完成，总错题数：", this.mistaker.length);
         alert(`成功拆分为 ${this.form.originalImgUrls.length} 道错题！`);
-
-        // 重置表单并返回首页
         this.resetForm();
         this.switchView("home");
       } catch (error) {
         console.error("拆分图片失败详情：", error);
-
-        // 提供更具体的错误信息
         if (error.message.includes("缺少必要字段")) {
           alert(`拆分失败：${error.message}`);
         } else {
           alert(`拆分失败，请重试！错误详情：${error.message}`);
         }
-
-        // 回滚操作：移除可能已添加的部分数据
         const originalLength =
           this.mistaker.length - this.form.originalImgUrls.length;
         this.mistaker = this.mistaker.slice(0, Math.max(0, originalLength));
@@ -7561,13 +8262,11 @@ export default {
 
     editSimilarItem(item) {
       this.fromPage = "1";
-      this.editError(item); // 复用错题列表的编辑功能
+      this.editError(item);
     },
 
-    // 删除举一反三题目
     deleteSimilarItem(id) {
-      this.deleteError(id); // 复用错题列表的删除功能
-      // 从选中的题目中移除（如果被选中）
+      this.deleteError(id);
       const index = this.selectedSimilarIds.indexOf(id);
       if (index > -1) {
         this.selectedSimilarIds.splice(index, 1);
@@ -7590,7 +8289,6 @@ export default {
     },
 
     startReading(index) {
-      // 如果正在朗读则先停止
       if (this.isReading) {
         this.stopReading();
       }
@@ -7600,9 +8298,7 @@ export default {
       this.readItem(index);
     },
 
-    // 朗读指定索引的错题
     readItem(index) {
-      // 检查索引是否有效
       if (index < 0 || index >= this.showMistaker.length) {
         this.isReading = false;
         this.currentReadingIndex = -1;
@@ -7610,46 +8306,35 @@ export default {
       }
 
       const item = this.showMistaker[index];
-      // 构建要朗读的文本内容
       let textToRead = `题号${item.id}。`;
       textToRead += `用户${item.user}，科目${item.subject}。`;
-      if (item.originalText) textToRead += `原题：${item.originalText}。`;
+      if (item.originalText) textToRead += `错题记录：${item.originalText}。`;
       if (item.errorType) textToRead += `标签：${item.errorType}。`;
       if (item.question) textToRead += `题目：${item.question}。`;
-      if (item.answer) textToRead += `答案：${item.answer}。`;
+      if (item.answer) textToRead += `答案与解析：${item.answer}。`;
       if (item.errorReason) textToRead += `错题解析：${item.errorReason}。`;
       if (item.improveMethod)
         textToRead += `本题型提高方法：${item.improveMethod}。`;
       if (item.similarText) textToRead += `举一反三：${item.similarText}。`;
-      if (item.correctIdea) textToRead += `易错点：${item.correctIdea}。`;
-      // 创建语音合成实例
+      if (item.correctIdea) textToRead += `易错点${item.correctIdea}。`;
+      textToRead = textToRead.replace(/<[^>]*>/g, "");
       const utterance = new SpeechSynthesisUtterance(textToRead);
-      // 设置语音属性
       utterance.lang = "zh-CN";
-      utterance.rate = 0.9; // 语速稍慢便于听清楚
-
-      // 朗读结束时触发
+      utterance.rate = 0.9;
       utterance.onend = () => {
-        // 自动朗读下一题
         this.currentReadingIndex++;
         this.readItem(this.currentReadingIndex);
       };
-
-      // 朗读出错时停止
       utterance.onerror = () => {
         this.isReading = false;
         this.currentReadingIndex = -1;
       };
-
-      // 开始朗读
       window.speechSynthesis.speak(utterance);
     },
 
     toggleFilter() {
       this.isFilterOpen = !this.isFilterOpen;
     },
-
-    // 修改 updateError 方法
     updateError() {
       const users = this.splitUsers(this.form.user);
       if (
@@ -7664,13 +8349,11 @@ export default {
 
       this.updateTList();
       this.updateQList();
-
-      // 找到要更新的错题索引
+      this.updateCList();
       const index = this.mistaker.findIndex(
         (item) => item.id === this.editingId
       );
       if (index !== -1) {
-        // 更新原错题为第一个用户
         const firstUser = this.getFirstUser(this.form.user);
         let formData = { ...this.form };
         delete formData.questionTypeSummary;
@@ -7681,8 +8364,6 @@ export default {
           id: this.editingId,
           user: firstUser,
         });
-
-        // 为其他用户创建新错题
         const otherUsers = this.getOtherUsers(this.form.user);
         if (otherUsers.length > 0) {
           const maxId =
@@ -7700,21 +8381,28 @@ export default {
             this.mistaker.push(newError);
           });
         }
-
+        this.tempUser = this.form.user.trim();
+        this.tempSubject = this.form.subject.trim();
+        this.tempQuestiontype = this.form.questionType.trim();
+        this.tempSubClass = this.form.subClass.trim();
         this.isEditing = false;
         alert(
-          `成功更新错题！，${
+          `成功更新错题！${
             otherUsers.length > 0
               ? `并为其他 ${otherUsers.length} 个用户创建了新题`
               : ""
           }`
         );
-
         if (this.fromPage == "1") this.switchView("printPaper");
         else if (this.fromPage == "2") this.switchView("test");
-        else this.switchView("list");
-
-        // 重置表单
+        else if (this.fromPage == "4") this.switchView("cardList");
+        else if (this.fromPage == "5") {
+          this.switchView("home");
+          setTimeout(() => {
+            this.isEditing = false;
+            this.switchView("add");
+          }, 100);
+        } else this.switchView("list");
         this.resetForm();
         this.fromPage = "";
       }
@@ -7729,7 +8417,6 @@ export default {
       );
       if (tl) {
         if (!this.form.improveMethod?.trim()) {
-          // 如果为空，则删除该任务
           const index = this.taskList.findIndex(
             (item) =>
               item.subject === this.form.subject.trim() &&
@@ -7737,12 +8424,11 @@ export default {
               item.questionType === this.form.questionType.trim()
           );
           if (index > -1) {
-            // splice(起始索引, 删除数量)
             this.taskList.splice(index, 1);
           }
           return;
         }
-        tl.improveMethod = this.form.improveMethod?.trim(); // 新增
+        tl.improveMethod = this.form.improveMethod?.trim();
       } else if (
         this.form.subClass.trim() &&
         this.form.subject?.trim() &&
@@ -7753,7 +8439,7 @@ export default {
           subject: this.form.subject?.trim(),
           subClass: this.form.subClass?.trim(),
           questionType: this.form.questionType?.trim(),
-          improveMethod: this.form.improveMethod?.trim(), // 新增
+          improveMethod: this.form.improveMethod?.trim(),
           completedToday: false,
           completionHistory: [],
         };
@@ -7773,8 +8459,8 @@ export default {
       } else {
         const newSubjectSummary = {
           title: this.form.title || "",
-          subjectSummary: this.form.subjectSummary?.trim() || "", // 新增
-          subjectImgUrls: [...this.form.subjectImgUrls] || [], // 新增
+          subjectSummary: this.form.subjectSummary?.trim() || "",
+          subjectImgUrls: [...this.form.subjectImgUrls] || [],
         };
         this.finalSubjectSummary.push(newSubjectSummary);
       }
@@ -7783,27 +8469,73 @@ export default {
     },
 
     updateCList() {
-      const cs = this.finalCheatSheet.find(
-        (item) =>
-          item.user === this.form.user && item.addDate == this.form.addDate
-      );
-      if (cs) {
-        cs.cheatSheet = this.form.cheatSheet;
+      // 获取原始用户名，并去除首尾空格
+      const userInput = this.form.user?.trim() || "";
+
+      // 如果用户名包含空格，则分割成多个用户名
+      if (userInput.includes(" ")) {
+        const userList = userInput
+          .split(/\s+/)
+          .filter((user) => user.length > 0);
+
+        // 为每个用户名执行保存操作
+        userList.forEach((singleUser) => {
+          const cs = this.finalCheatSheet.find(
+            (item) =>
+              item.user === singleUser && item.subject == this.form.subject
+          );
+
+          if (cs) {
+            cs.cheatSheet = this.form.cheatSheet;
+          } else {
+            const newItem = {
+              subject: this.form.subject?.trim() || "",
+              user: singleUser,
+              cheatSheet: this.form.cheatSheet || "",
+            };
+            this.finalCheatSheet.push(newItem);
+          }
+        });
       } else {
-        const newItem = {
-          addDate: this.form.addDate || 0,
-          user: this.form.user?.trim() || "", // 新增
-          cheatSheet: this.form.cheatSheet || "", // 新增
-        };
-        this.finalCheatSheet.push(newItem);
+        // 原始逻辑：处理单个用户名
+        const cs = this.finalCheatSheet.find(
+          (item) => item.user === userInput && item.subject == this.form.subject
+        );
+
+        if (cs) {
+          cs.cheatSheet = this.form.cheatSheet;
+        } else {
+          const newItem = {
+            subject: this.form.subject?.trim() || "",
+            user: userInput,
+            cheatSheet: this.form.cheatSheet || "",
+          };
+          this.finalCheatSheet.push(newItem);
+        }
       }
-      alert("CheatSheet已保存！");
+
       this.showCSModal = false;
     },
 
     updateQList() {
+      // 检查必填项
       if (
-        !this.form.user?.trim() ||
+        this.form.questionTypeSummary?.replace(/<[^>]*>/g, "").trim() == "" &&
+        this.form.questionTypeImgUrls?.length == 0
+      ) {
+        const index = this.finalQuestionTypeSummary.findIndex(
+          (i) =>
+            i.subject === this.form.subject?.trim() &&
+            i.subClass === this.form.subClass?.trim() &&
+            i.questionType === this.form.questionType?.trim()
+        );
+        if (index > -1) {
+          this.finalQuestionTypeSummary.splice(index, 1);
+        }
+        return;
+      }
+
+      if (
         !this.form.subject?.trim() ||
         !this.form.subClass?.trim() ||
         !this.form.questionType?.trim()
@@ -7811,13 +8543,30 @@ export default {
         alert("用户名、科目、考点、题型为必填项，用以归纳汇总！");
         return;
       }
+
+      // 分割用户名，支持多个空格分隔
+      const userArray = this.form.user
+        .trim()
+        .split(/\s+/) // 正则表达式，匹配一个或多个空格
+        .filter((user) => user.trim()); // 过滤掉分割后可能存在的空字符串
+
+      if (userArray.length === 0) {
+        alert("用户名不能为空！");
+        return;
+      }
+
+      // 处理编辑状态下的删除逻辑
       if (this.isEditing && this.showQuestionTypeSummaryModal) {
-        if (
-          this.tItem.user !== this.form.user.trim() ||
-          this.tItem.subject !== this.form.subject.trim() ||
-          this.tItem.subClass !== this.form.subClass.trim() ||
-          this.tItem.questionType !== this.form.questionType.trim()
-        ) {
+        // 检查原tItem是否在新的用户列表中
+        const isTItemInNewUsers = userArray.some(
+          () =>
+            this.form.subject?.trim() === this.tItem.subject &&
+            this.form.subClass?.trim() === this.tItem.subClass &&
+            this.form.questionType?.trim() === this.tItem.questionType
+        );
+
+        // 如果原tItem不在新的用户列表中，则删除
+        if (!isTItemInNewUsers) {
           const index = this.finalQuestionTypeSummary.findIndex(
             (item) => item === this.tItem
           );
@@ -7827,69 +8576,62 @@ export default {
         }
       }
 
-      let qs = this.finalQuestionTypeSummary.find(
-        (item) =>
-          item.user === this.form.user.trim() &&
-          item.subject === this.form.subject.trim() &&
-          item.subClass === this.form.subClass.trim() &&
-          item.questionType === this.form.questionType.trim()
-      );
-      if (qs) {
-        qs.dIndex = Date.now();
-        qs.questionTypeSummary = this.form.questionTypeSummary?.trim() || ""; // 新增
-        qs.questionTypeImgUrls = [...(this.form.questionTypeImgUrls || [])]; // 新增
-      } else if (
-        this.form.subClass.trim() &&
-        this.form.questionType.trim() &&
-        this.form.user.trim()
-      ) {
-        const newA = {
-          dIndex: Date.now(),
-          user: this.form.user.trim(),
-          subject: this.form.subject.trim(),
-          subClass: this.form.subClass.trim(),
-          questionType: this.form.questionType.trim(),
-          questionTypeSummary: this.form.questionTypeSummary.trim(), // 新增
-          questionTypeImgUrls: [...this.form.questionTypeImgUrls], // 新增
-          importantLevel: 4,
-        };
-        this.finalQuestionTypeSummary.push(newA);
-      }
+      // 为每个用户创建/更新记录
+      userArray.forEach(() => {
+        let qs = this.finalQuestionTypeSummary.find(
+          (item) =>
+            item.subject === this.form.subject.trim() &&
+            item.subClass === this.form.subClass.trim() &&
+            item.questionType === this.form.questionType.trim()
+        );
+
+        if (qs) {
+          qs.dIndex = Date.now();
+          qs.questionTypeSummary = this.form.questionTypeSummary?.trim() || "";
+          qs.questionTypeImgUrls = [...(this.form.questionTypeImgUrls || [])];
+        } else {
+          const newA = {
+            dIndex: Date.now(),
+            subject: this.form.subject.trim(),
+            subClass: this.form.subClass.trim(),
+            questionType: this.form.questionType.trim(),
+            questionTypeSummary: this.form.questionTypeSummary?.trim() || "",
+            questionTypeImgUrls: [...(this.form.questionTypeImgUrls || [])],
+            importantLevel: 0,
+          };
+          this.finalQuestionTypeSummary.push(newA);
+        }
+      });
+
+      // 处理视图切换
       if (this.isEditing) this.switchView("questionTypeSummary");
       else this.switchView("home");
+
       if (this.isEditing) {
         this.isEditing = false;
-        return;
       }
     },
 
-    // 切换视图
     switchView(view) {
       if (view !== "readingCard" && this.isReadingCard) this.stopReadingCards();
       if (this.currentView == "questionTypeSummary" && view == "add")
         this.showQuestionTypeSummaryModal = true;
       else this.showQuestionTypeSummaryModal = false;
       this.currentView = view;
-      // 切换到添加视图时重置表单
       if (view === "add") {
         if (!this.isEditing) {
           this.selectedDate = new Date().toLocaleDateString("sv-SE");
           this.resetForm();
         }
       }
-      // 切换到列表视图时重置筛选
       if (view === "list") {
         this.isAllExpanded = true;
         this.toggleExpandAll();
-        this.resetFilter();
       }
     },
-    // 显示设置弹窗
     showSetting() {
       this.showSettingModal = true;
     },
-
-    // 多图预览处理（支持多选文件）
     previewImg(type, e) {
       const files = e.target.files;
       if (!files || files.length === 0) return;
@@ -7911,7 +8653,6 @@ export default {
           } else if (type === "errorReason") {
             this.form.errorReasonImgUrls.push(ev.target.result);
           } else if (type === "subject") {
-            // 新增科目图片处理
             this.form.subjectImgUrls.push(ev.target.result);
           }
         };
@@ -7921,38 +8662,47 @@ export default {
       e.target.value = "";
     },
 
+    switchFav(item, x) {
+      const datePart = String(item.reviewDate).split(",")[0];
+      const statusPart = String(item.reviewDate).split(",")[1];
+
+      if (!statusPart || Number(statusPart) == 0) {
+        this.$set(item, "reviewDate", datePart + ",1");
+      } else {
+        this.$set(item, "reviewDate", datePart + ",0");
+      }
+
+      if (x == 1) {
+        this.editingId = item.id;
+        const index = this.mistaker.findIndex(
+          (item) => item.id === this.editingId
+        );
+        if (index !== -1) this.mistaker[index].reviewDate = item.reviewDate;
+      }
+    },
+
     selectAllSimilar() {
       this.selectedSimilarIds = this.filteredSimilarItems.map(
         (item) => item.id
       );
     },
-
-    // 全不选
     deselectAllSimilar() {
       this.selectedSimilarIds = [];
     },
-
-    // 生成试卷
     generatePaper() {
       if (this.selectedSimilarIds.length === 0) {
         alert("请至少选择一道题目！");
         return;
       }
-
-      // 获取选中的题目数据
       this.selectedSimilarItems = this.mistaker.filter((item) =>
         this.selectedSimilarIds.includes(item.id)
       );
 
       this.showPaperPreview = true;
     },
-
-    // 关闭试卷预览
     closePaperPreview() {
       this.showPaperPreview = false;
     },
-
-    // 打印试卷
     printPaper() {
       const printWindow = window.open("", "_blank");
       const paperContent = document.getElementById("paperContent").innerHTML;
@@ -8069,8 +8819,6 @@ export default {
 
       printWindow.document.write(printContent);
       printWindow.document.close();
-
-      // 等待内容加载完成后打印
       printWindow.onload = function () {
         printWindow.print();
         printWindow.onafterprint = function () {
@@ -8079,13 +8827,11 @@ export default {
       };
     },
     handleCardImageClick(event) {
-      // 检查点击的是否是图片元素
       if (event.target.tagName === "IMG") {
-        event.stopPropagation(); // 阻止事件冒泡
+        event.stopPropagation();
         this.openImageViewer(event.target.src);
       }
     },
-    // 删除单张预览图片
     deleteImg(type, index) {
       if (type === "original") {
         this.form.originalImgUrls.splice(index, 1);
@@ -8096,12 +8842,9 @@ export default {
       } else if (type === "errorReason") {
         this.form.errorReasonImgUrls.splice(index, 1);
       } else if (type === "subject") {
-        // 新增科目图片删除
         this.form.subjectImgUrls.splice(index, 1);
       }
     },
-
-    // 重置添加错题表单（图片数组重置为空）
     resetForm() {
       this.form = {
         addDate: this.selectedDate,
@@ -8109,78 +8852,38 @@ export default {
         subject: this.tempSubject,
         subClass: this.tempSubClass,
         originalText: "",
-        originalImgUrls: [], // 重置为空数组
+        originalImgUrls: [],
         question: "",
         answer: "",
-        questionTypeImgUrls: [], // 新增
-        errorReasonImgUrls: [], // 新增
+        questionTypeImgUrls: [],
+        errorReasonImgUrls: [],
         errorType: "",
         errorReason: "",
         questionType: this.tempQuestiontype,
         questionTypeSummary: "",
-        trap: "", // 新增：备用
-        trapDetail: "", // 新增：备用详解
+        trap: "",
+        trapDetail: "",
         correctIdea: "",
         improveMethod: "",
         similarText: "",
-        similarImgUrls: [], // 重置为空数组
-        importantLevel: 4,
+        similarImgUrls: [],
+        importantLevel: 0,
       };
     },
-    // 点击候选值填充到输入框（覆盖，用于单值字段）
-    fillCandidate(field, value) {
+    appendCandidate(field, value) {
       this.form[field] = value;
     },
-    // 点击候选值追加到多值输入框（空格分隔，去重）
-    appendCandidate(field, value) {
-      if (!this.form[field]) {
-        this.form[field] = value;
-      } else {
-        const currentVals = this.form[field]
-          .trim()
-          ?.split(/\s+/)
-          .filter(Boolean);
-        if (!currentVals.includes(value)) {
-          this.form[field] = [...currentVals, value].join(" ");
-        }
-      }
+    append1(field, value) {
+      this.filterForm[field] = value;
     },
+
+    append2(field, value) {
+      this.testFilterForm[field] = value;
+    },
+
     closeCrop() {
       this.imgSrc = "";
     },
-
-    // 设置难度（区分添加页/列表页）
-    setImportantLevel(type, level, id) {
-      if (type === "form") {
-        this.form.importantLevel = level;
-      } else if (type === "list" && id) {
-        const targetItem = this.mistaker.find((item) => item.id === id);
-        if (targetItem) {
-          targetItem.importantLevel = level;
-          if (this.filteredMistaker.length > 0) {
-            const filteredItem = this.filteredMistaker.find(
-              (item) => item.id === id
-            );
-            if (filteredItem) {
-              filteredItem.importantLevel = level;
-            }
-          }
-        }
-      } else if (type === "questionType") {
-        const user = id?.split("►")[0];
-        const subject = id?.split("►")[1];
-        const subClass = id?.split("►")[2];
-        const questionType = id?.split("►")[3];
-        this.finalQuestionTypeSummary.find(
-          (item) =>
-            item.user === user &&
-            item.subject === subject &&
-            item.subClass === subClass &&
-            item.questionType === questionType
-        ).importantLevel = level;
-      }
-    },
-    // 保存错题（多图数组保存）
     saveError() {
       const users = this.splitUsers(this.form.user);
       if (
@@ -8196,13 +8899,11 @@ export default {
       try {
         this.updateTList();
         this.updateQList();
-
+        this.updateCList();
         const maxId =
           this.mistaker.length > 0
             ? Math.max(...this.mistaker.map((item) => item.id))
             : 0;
-
-        // 为每个用户创建错题
         users.forEach((user, index) => {
           const newId = maxId + index + 1;
           const newError = {
@@ -8218,7 +8919,7 @@ export default {
             originalImgUrls: [...this.form.originalImgUrls],
             question: this.form.question.trim(),
             answer: this.form.answer.trim(),
-            reviewDate: 0,
+            reviewDate: "0,0",
             reviewResult: [],
             errorType: this.form.errorType.trim(),
             errorReason: this.form.errorReason.trim(),
@@ -8229,8 +8930,16 @@ export default {
             similarImgUrls: [...this.form.similarImgUrls],
             importantLevel: this.form.importantLevel,
           };
-
-          this.mistaker.push(newError);
+          if (
+            !(
+              newError.originalText?.replace(/<[^>]*>/g, "").trim() == "" &&
+              newError.originalImgUrls?.length == 0 &&
+              newError.question?.replace(/<[^>]*>/g, "").trim() == "" &&
+              newError.answer?.replace(/<[^>]*>/g, "").trim() == "" &&
+              newError.correctIdea?.replace(/<[^>]*>/g, "").trim() == ""
+            )
+          )
+            this.mistaker.push(newError);
         });
 
         this.tempUser = this.form.user.trim();
@@ -8239,7 +8948,7 @@ export default {
         this.tempSubClass = this.form.subClass.trim();
 
         this.switchView("home");
-        if (users.length == 1) alert(`保存错题成功！`);
+        if (users.length == 1) alert(`保存成功！`);
         else alert(`成功为 ${users.length} 个用户保存错题！`);
         setTimeout(() => {
           this.isEditing = false;
@@ -8250,7 +8959,44 @@ export default {
         alert("保存错题失败，请检查输入内容！");
       }
     },
-    editError(item) {
+    expandCard() {
+      this.sections = {
+        mistakeItem: false,
+        questionCard: true,
+        questionTypeSum: false,
+        improveMethod: false,
+        similar: false,
+        trap: false,
+        testDetails: false,
+        cheatsheet: false,
+        answerAnalysis: false,
+      };
+    },
+    expandMistaker() {
+      this.sections = {
+        mistakeItem: true,
+        questionCard: false,
+        questionTypeSum: false,
+        improveMethod: false,
+        similar: false,
+        trap: false,
+        testDetails: false,
+        cheatsheet: false,
+        answerAnalysis: false,
+      };
+    },
+
+    editError(item, x) {
+      if (x == 1) {
+        this.fromPage = 4;
+        this.expandCard();
+      }
+      if (x == 5) {
+        this.fromPage = 5;
+      }
+      if (x == 2) {
+        this.expandMistaker();
+      }
       this.isEditing = true;
       this.editingId = item.id;
       this.selectedDate = item.addDate;
@@ -8269,22 +9015,20 @@ export default {
         questionTypeSummary:
           this.finalQuestionTypeSummary.find(
             (i) =>
-              i.user === item.user?.trim() &&
               i.subject === item.subject?.trim() &&
               i.subClass === item.subClass?.trim() &&
               i.questionType === item.questionType?.trim()
-          )?.questionTypeSummary || "", // 新增
+          )?.questionTypeSummary || "",
         questionTypeImgUrls:
           this.finalQuestionTypeSummary.find(
             (i) =>
-              i.user === item.user?.trim() &&
               i.subject === item.subject?.trim() &&
               i.subClass === item.subClass?.trim() &&
               i.questionType === item.questionType?.trim()
-          )?.questionTypeImgUrls || [], // 新增
+          )?.questionTypeImgUrls || [],
         trap: item.trap || "",
         trapDetail: item.trapDetail || "",
-        reviewDate: item.reviewDate || 0,
+        reviewDate: item.reviewDate || "0,0",
         reviewResult: item.reviewResult || [],
         errorReason: item.errorReason,
         errorReasonImgUrls: [...(item.errorReasonImgUrls || [])],
@@ -8296,8 +9040,6 @@ export default {
       };
       this.switchView("add");
     },
-
-    // 删除错题
     deleteError(id) {
       if (
         !confirm(
@@ -8308,13 +9050,10 @@ export default {
       }
 
       try {
-        // 从错题列表中删除
         const index = this.mistaker.findIndex((item) => item.id === id);
         if (index !== -1) {
           this.mistaker.splice(index, 1);
         }
-
-        // 从筛选列表中删除
         const filterIndex = this.filteredMistaker.findIndex(
           (item) => item.id === id
         );
@@ -8328,73 +9067,138 @@ export default {
         alert("删除错题失败，请重试！");
       }
     },
-
-    // 处理筛选
     handleFilter() {
-      // 难度输入验证
-      const start = this.filterForm.importantLevelStart;
-      const end = this.filterForm.importantLevelEnd;
-
-      if (
-        (start && (start < 1 || start > 7)) ||
-        (end && (end < 1 || end > 7))
-      ) {
-        alert("难度只能输入1-7之间的数字！");
-        return;
-      }
-
-      if (start && end && start > end) {
-        alert("难度最低值不能大于最高值！");
-        return;
-      }
       this.filteredMistaker = [];
       this.filterErrors();
-      if (this.filteredMistaker.length === 0 && this.mistaker.length > 0) {
-        alert("未找到符合条件的错题！");
-      }
-
-      // 筛选后隐藏筛选条件
-      this.isFilterOpen = false;
+      setTimeout(() => {
+        if (
+          this.filteredMistaker.length === 0 &&
+          this.mistaker.length > 0 &&
+          this.currentView !== "home"
+        ) {
+          // this.filteredTestMistaker = [];
+          alert("未找到符合条件的错题！");
+        }
+      }, 1000);
     },
 
-    openQuestionEditor(index) {
-      this.currentEditingTestIndex = index;
-      this.editingQuestionContent =
-        this.filteredTestMistaker[index]?.question || "";
-      this.showQuestionEditor = true;
+    printCurrentTreeList() {
+      if (this.currentTreeMistaker.length === 0) {
+        alert("当前列表为空，无法打印。");
+        return;
+      }
 
-      // 确保编辑器正确初始化
+      // 1. 构建打印内容HTML
+      let printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>错题本打印 - ${this.currentTreeTitle}</title>
+      <style>
+        body { font-family: SimSun, serif; line-height: 1.6; padding: 20px; }
+        h1 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .question { border: 1px solid #eee; margin-bottom: 20px; padding: 15px; }
+        .meta { color: #666; font-size: 0.9em; margin-bottom: 10px; }
+        .meta span { margin-right: 15px; }
+        .q-title { font-weight: bold; color: #c00; }
+        .answer { background-color: #f9f9f9; padding: 10px; margin-top: 10px; }
+        .correct-idea { color: #090; font-style: italic; margin-top: 10px; }
+        @media print {
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${this.currentTreeTitle} (共 ${this.currentTreeMistaker.length} 题)</h1>
+  `;
+
+      // 2. 遍历当前错题列表，格式化每一项
+      this.currentTreeMistaker.forEach((item, index) => {
+        printContent += `
+      <div class="question">
+        <div class="meta">
+          <span>序号: ${index + 1}</span>
+          <span>题号: ${item.id}</span>
+          <span>用户: ${item.user}</span>
+          <span>科目: ${item.subject}</span>
+          <span>日期: ${this.formatDateWithWeek(item.addDate)}</span>
+        </div>
+        <div class="q-title">题目 ${index + 1}：</div>
+        <div class="question-content">${
+          item.question || item.originalText || "（无题目）"
+        }</div>
+        <div class="answer">
+          <strong>答案与解析：</strong>
+          <div>${item.answer || "（无答案）"}</div>
+        </div>
+        ${
+          item.correctIdea
+            ? `<div class="correct-idea"><strong>易错点：</strong>${item.correctIdea}</div>`
+            : ""
+        }
+      </div>
+    `;
+      });
+
+      printContent += `
+      <div class="no-print" style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #999;">
+        由 PDJ错题本 生成
+      </div>
+    </body>
+    </html>
+  `;
+
+      // 3. 打开新窗口并打印
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      // 等待内容加载完毕后触发打印
+      setTimeout(() => {
+        printWindow.print();
+        // 打印后可选择关闭窗口，但可能因浏览器策略被阻止
+        // printWindow.close();
+      }, 250);
+    },
+
+    openQuestionEditor(index, x) {
+      this.currentEditingTestIndex = index;
+      if (x == 1) {
+        this.editingQuestionContent =
+          this.filteredTestMistaker[index]?.answer || "";
+        this.editAnswer = true;
+      } else
+        this.editingQuestionContent =
+          this.filteredTestMistaker[index]?.question || "";
+      this.showQuestionEditor = true;
       this.$nextTick(() => {
         if (this.editorQuestion) {
           this.editorQuestion.destroy();
         }
       });
     },
-
-    // 保存题目编辑
     saveQuestionEditor() {
       if (this.currentEditingTestIndex !== -1) {
         const currentQuestion =
           this.filteredTestMistaker[this.currentEditingTestIndex];
-
-        // 更新当前测试题目的question
-        currentQuestion.question = this.editingQuestionContent;
-
-        // 同时更新原始mistaker中的数据
+        if (this.editAnswer)
+          currentQuestion.answer = this.editingQuestionContent;
+        else currentQuestion.question = this.editingQuestionContent;
         const originalQuestion = this.mistaker.find(
           (item) => item.id === currentQuestion.id
         );
         if (originalQuestion) {
-          originalQuestion.question = this.editingQuestionContent;
+          if (this.editAnswer)
+            originalQuestion.answer = this.editingQuestionContent;
+          else originalQuestion.question = this.editingQuestionContent;
         }
 
         this.closeQuestionEditor();
         alert("题目更新成功！");
       }
     },
-
-    // 关闭题目编辑器
     closeQuestionEditor() {
+      this.editAnswer = false;
       this.showQuestionEditor = false;
       this.currentEditingTestIndex = -1;
       this.editingQuestionContent = "";
@@ -8404,32 +9208,22 @@ export default {
         this.editorQuestion = null;
       }
     },
-
-    // 题目编辑器创建回调
     onCreatedQuestionEditor(editor) {
       this.editorQuestion = Object.seal(editor);
     },
-
-    // 筛选错题
     filterErrors() {
       try {
         let result = [...this.mistaker];
-
-        // 1. 题号筛选
         if (this.filterForm.id && this.filterForm.id > 0) {
           const targetId = Number(this.filterForm.id);
           result = result.filter((item) => item.id === targetId);
         }
-
-        // 2. 用户筛选
         const userKeyword = this.filterForm.user.trim().toLowerCase();
         if (userKeyword) {
           result = result.filter((item) =>
             item.user.toLowerCase().includes(userKeyword)
           );
         }
-
-        // 3. 添加日期范围筛选
         if (this.filterForm.startDate || this.filterForm.endDate) {
           result = result.filter((item) => {
             const itemDateArr = item.addDate?.split("-");
@@ -8449,16 +9243,12 @@ export default {
             );
           });
         }
-
-        // 4. 科目筛选
         const subjectKeyword = this.filterForm.subject.trim().toLowerCase();
         if (subjectKeyword) {
           result = result.filter((item) =>
             item.subject.toLowerCase().includes(subjectKeyword)
           );
         }
-
-        // 5. 考点筛选
         const subClassKeyword = this.filterForm.subClass.trim().toLowerCase();
         if (subClassKeyword) {
           result = result.filter((item) => {
@@ -8466,8 +9256,6 @@ export default {
             return item.subClass.toLowerCase().includes(subClassKeyword);
           });
         }
-
-        // 6. 标签筛选
         const errorTypeKeyword = this.filterForm.errorType.trim().toLowerCase();
         if (errorTypeKeyword) {
           result = result.filter((item) => {
@@ -8481,8 +9269,6 @@ export default {
             );
           });
         }
-
-        // 7. 错题解析筛选
         const reasonKeyword = this.filterForm.errorReason.trim().toLowerCase();
         if (reasonKeyword) {
           result = result.filter((item) => {
@@ -8496,8 +9282,6 @@ export default {
             );
           });
         }
-
-        // 8. 是否填写举一反三筛选
         if (this.filterForm.hasSimilar) {
           if (this.filterForm.hasSimilar === "yes") {
             result = result.filter(
@@ -8514,31 +9298,23 @@ export default {
           }
         }
 
-        // 9. 难度范围筛选
-        const startLevel = this.filterForm.importantLevelStart;
-        const endLevel = this.filterForm.importantLevelEnd;
-
-        if (startLevel || endLevel) {
+        if (this.filterForm.fav) {
           result = result.filter((item) => {
-            const level = item.importantLevel;
-            if (startLevel && !endLevel) {
-              return level >= startLevel;
-            } else if (!startLevel && endLevel) {
-              return level <= endLevel;
+            const statusPart = String(item.reviewDate).split(",")[1];
+            if (statusPart && Number(statusPart) == 1) {
+              return true;
             } else {
-              return level >= startLevel && level <= endLevel;
+              return false;
             }
           });
         }
 
         const keywordStr = this.filterForm.keyword.trim().toLowerCase();
         if (keywordStr) {
-          // 将关键字字符串按空格分割成数组，并过滤空值
           const keywords = keywordStr?.split(/\s+/).filter(Boolean);
 
           if (keywords.length > 0) {
             result = result.filter((item) => {
-              // 构建要搜索的文本内容（包含多个字段）
               const searchText = [
                 item.originalText || "",
                 item.question || "",
@@ -8555,8 +9331,6 @@ export default {
               ]
                 .join(" ")
                 .toLowerCase();
-
-              // 检查是否包含所有关键字（AND 逻辑）
               return keywords.every((keyword) => searchText.includes(keyword));
             });
           }
@@ -8598,7 +9372,7 @@ export default {
       this.editingCheatSheetIndex = this.finalCheatSheet.findIndex(
         (cs) =>
           cs.user === item.user &&
-          cs.addDate === item.addDate &&
+          cs.subject === item.subject &&
           cs.cheatSheet === item.cheatSheet
       );
       this.cheatSheetForm = { ...item };
@@ -8612,7 +9386,7 @@ export default {
       const index = this.finalCheatSheet.findIndex(
         (cs) =>
           cs.user === item.user &&
-          cs.addDate === item.addDate &&
+          cs.subject === item.subject &&
           cs.cheatSheet === item.cheatSheet
       );
 
@@ -8623,24 +9397,25 @@ export default {
     },
 
     saveCheatSheet() {
-      if (!this.cheatSheetForm.user?.trim() || !this.cheatSheetForm.addDate) {
-        alert("用户和日期为必填项！");
+      if (
+        !this.cheatSheetForm.user?.trim() ||
+        !this.cheatSheetForm.subject?.trim()
+      ) {
+        alert("用户和科目为必填项！");
         return;
       }
 
       let newCheatSheets = [...this.finalCheatSheet];
 
       if (this.isEditingCheatSheet && this.editingCheatSheetIndex !== -1) {
-        // 替换指定位置的元素
         newCheatSheets[this.editingCheatSheetIndex] = {
           ...this.cheatSheetForm,
         };
       } else if (this.isEditingCheatSheet) {
-        // 通过内容查找并替换
         const index = newCheatSheets.findIndex(
           (cs) =>
             cs.user === this.cheatSheetForm.user &&
-            cs.addDate === this.cheatSheetForm.addDate
+            cs.subject === this.cheatSheetForm.subject
         );
         if (index !== -1) {
           newCheatSheets[index] = { ...this.cheatSheetForm };
@@ -8650,8 +9425,6 @@ export default {
       } else {
         newCheatSheets.push({ ...this.cheatSheetForm });
       }
-
-      // 完全替换数组以触发响应式更新
       this.finalCheatSheet = newCheatSheets;
 
       this.closeCheatSheetModal();
@@ -8668,8 +9441,6 @@ export default {
     onCreatedCheatSheet(editor) {
       this.editorCheatSheet = Object.seal(editor);
     },
-
-    // 重置筛选条件
     resetFilter() {
       this.filterForm = {
         id: "",
@@ -8681,13 +9452,12 @@ export default {
         errorType: "",
         errorReason: "",
         hasSimilar: "",
-        importantLevelStart: "",
-        importantLevelEnd: "",
         keyword: "",
+        fav: false,
+        hasCards: false,
       };
       this.reverseList = true;
       this.filteredMistaker = [];
-      this.isFilterOpen = false;
     },
 
     confirmClearData() {
@@ -8698,7 +9468,6 @@ export default {
       ) {
         return;
       }
-      // 二次确认
       if (
         !confirm("再次确认：您确定要清空此浏览器中当前错题本的所有数据吗？")
       ) {
@@ -8707,29 +9476,20 @@ export default {
 
       this.clearAllData();
     },
-
-    // 清空所有数据
     clearAllData() {
       try {
-        // 清空所有数据数组
         this.mistaker = [];
         this.finalQuestionTypeSummary = [];
         this.finalSubjectSummary = [];
         this.finalCheatSheet = [];
         this.taskList = [];
-        this.testInterval = "0 1 3 7 15 30 60";
+        this.testInterval = "0 7 14 30 50 80 120 180";
         this.correctDays = 5;
         this.testTimes = 3;
         this.excludedID = "";
         this.filteredMistaker = [];
-
-        // 重置表单
         this.resetForm();
-
-        // 关闭设置弹窗
         this.showSettingModal = false;
-
-        // 切换到首页
         this.switchView("home");
 
         alert("所有数据已成功清空！");
@@ -8738,8 +9498,6 @@ export default {
         alert("清空数据失败，请重试！");
       }
     },
-
-    // 保存错题本（多图数组导出）
     saveErrorBook() {
       try {
         const exportData = {
@@ -8757,7 +9515,6 @@ export default {
             ":::" +
             this.testTimes,
         };
-
         const jsonStr = JSON.stringify(exportData, null, 2);
         const blob = new Blob([jsonStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -8825,7 +9582,7 @@ export default {
           this.lastModifiedTime
         );
         this.processing = false;
-        if (!this.autoSync)
+        if (!this.allowSync)
           alert(
             "错题本已成功同步到服务器，位于/!PDJ/user-" +
               this.user.username +
@@ -8855,7 +9612,7 @@ export default {
           this.testTimes,
       };
       const jsonStr = JSON.stringify(exportData, null, 2);
-      if (this.autoSync && !this.onOff) {
+      if (this.allowSync && !this.onOff) {
         this.saveToServer();
       }
       this.onOff = false;
@@ -8871,13 +9628,10 @@ export default {
       }
 
       try {
-        // 配置拼音转换参数
         const pinyinOptions = {
           tone: "num",
           separator: " ",
         };
-
-        // 执行转换
         let result = pinyin(this.inputText, pinyinOptions);
         this.resultText = result;
       } catch (error) {
@@ -8885,21 +9639,14 @@ export default {
         this.resultText = "转换失败，请检查输入内容！";
       }
     },
-
-    /**
-     * 复制结果到剪贴板
-     */
     copyResult() {
       try {
-        // 创建临时文本框
         const tempInput = document.createElement("input");
         tempInput.value = this.resultText;
         document.body.appendChild(tempInput);
         tempInput.select();
         document.execCommand("copy");
         document.body.removeChild(tempInput);
-
-        // 显示复制成功提示
         this.showToast = true;
         setTimeout(() => {
           this.showToast = false;
@@ -8910,14 +9657,9 @@ export default {
       }
       this.showPinYinTool = false;
     },
-
-    /**
-     * 清空所有内容
-     */
     clearAll() {
       this.inputText = "";
       this.resultText = "";
-      this.showPinYinTool = false;
     },
 
     readErrorBook(e) {
@@ -8964,7 +9706,7 @@ export default {
           this.mistaker = importData.mistaker || [];
           this.taskList = importData.taskList || [];
           this.testInterval =
-            importData.settings?.split(":::")[0] || "0 1 3 7 15 30 60";
+            importData.settings?.split(":::")[0] || "0 7 14 30 50 80 120 180";
           this.correctDays = Number(importData.settings?.split(":::")[1]) || 5;
           this.excludedID = importData.settings?.split(":::")[2] || "";
           this.testTimes = Number(importData.settings?.split(":::")[3]) || 3;
@@ -8991,32 +9733,27 @@ export default {
           )
         )
           return;
-        else this.processing = true;
       }
-      this.onOff = true; // 标志位，表示正在从服务器读取数据
+      this.processing = true;
+      this.onOff = true;
       try {
         const content = await api.fetch(
           "/files/!PDJ/user-" + this.user.username + "/mistakebook.json"
         );
-        // 2. 处理接口返回的内容（关键：判断content格式）
         let importData;
         if (typeof content.content === "string") {
-          // 情况1：接口返回JSON字符串（最常见），需解析
           importData = JSON.parse(content.content || "{}");
         } else if (
           typeof content.content === "object" &&
           content.content !== null
         ) {
-          // 情况2：api.fetch已自动解析为JSON对象，直接使用
           importData = content.content;
         } else {
           throw new Error("服务器返回数据格式异常");
         }
-        // 3. 复用原有的数据验证逻辑（完全保留）
         if (!Array.isArray(importData.mistaker)) {
           throw new Error("数据格式错误，缺少错题/任务列表/科目详情列表");
         }
-        // 二次验证错题数据结构
         const isValidMistaker = importData.mistaker.every((item) => {
           if (typeof item !== "object" || item === null) return false;
           return (
@@ -9038,7 +9775,7 @@ export default {
         this.mistaker = importData.mistaker || [];
         this.taskList = importData.taskList || [];
         this.testInterval =
-          importData.settings?.split(":::")[0] || "0 1 3 7 15 30 60";
+          importData.settings?.split(":::")[0] || "0 7 14 30 50 80 120 180";
         this.correctDays = Number(importData.settings?.split(":::")[1]) || 5;
         this.excludedID = importData.settings?.split(":::")[2] || "";
         this.testTimes = Number(importData.settings?.split(":::")[3]) || 3;
@@ -9065,13 +9802,9 @@ export default {
         console.error("从localforage读取数据失败:", error);
         importData = {};
       }
-
-      // 现在这里的数据是真实的
       if (!Array.isArray(importData.mistaker)) {
         throw new Error("数据格式错误！");
       }
-
-      // 二次验证错题数据结构
       const isValidMistaker = importData.mistaker.every((item) => {
         if (typeof item !== "object" || item === null) return false;
         return (
@@ -9087,24 +9820,20 @@ export default {
           "错题数据格式错误，缺少核心字段（题号/日期/用户/科目）"
         );
       }
-      // 6. 赋值并重置状态（保留原有逻辑）
       this.finalQuestionTypeSummary = importData.finalQuestionTypeSummary || [];
       this.finalSubjectSummary = importData.finalSubjectSummary || [];
       this.finalCheatSheet = importData.finalCheatSheet || [];
       this.mistaker = importData.mistaker || [];
       this.taskList = importData.taskList || [];
       this.testInterval =
-        importData.settings?.split(":::")[0] || "0 1 3 7 15 30 60";
+        importData.settings?.split(":::")[0] || "0 7 14 30 50 80 120 180";
       this.correctDays = Number(importData.settings?.split(":::")[1]) || 5;
       this.excludedID = importData.settings?.split(":::")[2] || "";
       this.testTimes = Number(importData.settings?.split(":::")[3]) || 3;
-      this.resetFilter();
     },
     openImageViewer(url) {
-      // 先关闭可能存在的实例
       if (this.showImageViewer) {
         this.closeImageViewer();
-        // 添加短暂延迟确保完全关闭
         setTimeout(() => {
           this.openImage(url);
         }, 100);
@@ -9116,7 +9845,6 @@ export default {
     openImage(url) {
       try {
         this.lightboxImgsFinal = url;
-        // 使用 $nextTick 确保 DOM 更新
         this.$nextTick(() => {
           this.showImageViewer = true;
         });
@@ -9125,7 +9853,6 @@ export default {
       }
     },
 
-    // 安全的关闭方法
     closeImageViewer() {
       this.showImageViewer = false;
     },
@@ -9134,12 +9861,37 @@ export default {
 </script>
 
 <style scoped>
-/* 全局容器 */
 .filter-header {
   display: flex;
   align-items: center;
   cursor: pointer;
   border-radius: 6px;
+}
+
+.settingBoxContainer {
+  display: flex;
+  position: fixed;
+  width: 65%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: 0.2em;
+  justify-content: center;
+  align-items: center;
+  z-index: 1010;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.settingBox {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 1em;
+  border-radius: 10px;
+  overflow-y: auto;
+  background: #999;
 }
 
 .filter-arrow {
@@ -9155,6 +9907,8 @@ export default {
 .main-content {
   width: 100%;
   padding-top: 3px;
+  white-space: pre-wrap; /* 关键：保留换行 + 自动换行 */
+  word-wrap: break-word;
 }
 
 .home-view {
@@ -9286,20 +10040,6 @@ export default {
   cursor: pointer;
 }
 
-.save-btn {
-  padding: 8px 16px;
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.save-btn:hover {
-  background-color: #219653;
-}
-
 .candidate-list {
   margin-top: 4px;
   padding: 6px 8px;
@@ -9394,7 +10134,7 @@ export default {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .filter-item {
@@ -9569,14 +10309,14 @@ export default {
   right: 10px;
   font-size: 32px;
   cursor: pointer;
-  color: #999;
+  color: #333;
   background: none;
   border: none;
   padding: 5px;
 }
 
 .close-btn:hover {
-  color: #333;
+  color: #111;
 }
 
 .image-content .close-btn {
@@ -9589,7 +10329,7 @@ export default {
 .data-manage-section {
   margin: 20px 0;
   padding: 16px;
-  background-color: #f8f9fa;
+  background-color: #999;
   border-radius: 6px;
 }
 
@@ -9609,7 +10349,8 @@ export default {
 .setting-item label {
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: white;
+  width: 100%;
 }
 
 .data-btn {
@@ -9622,7 +10363,7 @@ export default {
 
 .setting-tip {
   font-size: 12px;
-  color: #999;
+  color: #333;
   margin: 4px 0 0 0;
 }
 
@@ -9895,6 +10636,10 @@ img {
 @media (max-width: 738px) {
   img {
     height: 76vh;
+  }
+
+  .settingBoxContainer {
+    width: 100%;
   }
 }
 
@@ -10390,6 +11135,21 @@ img {
   background-color: #2980b9;
 }
 
+.print-btn1 {
+  padding: 8px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.print-btn1:hover {
+  background-color: #e0e0e0;
+}
+
 .generate-btn {
   background-color: #27ae60;
 }
@@ -10630,7 +11390,6 @@ img {
 .view-mode-controls {
   display: flex;
   align-items: center;
-  gap: 15px;
 }
 
 .view-mode-buttons {
@@ -10829,10 +11588,8 @@ img {
 }
 
 .test-view {
-  height: calc(92vh - 4.2em);
   display: flex;
   flex-direction: column;
-  padding: 10px;
   max-width: 1000px;
   margin: 0 auto;
 }
@@ -10841,7 +11598,6 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
   border-bottom: 1px solid #eee;
 }
 
@@ -11126,7 +11882,7 @@ img {
   right: 0;
   margin: 20px auto;
   padding: 20px;
-  width: 300px;
+  width: 50%;
   font-family: "Microsoft Yahei", sans-serif;
   border-radius: 8px;
   background-color: #dbd4d4;
@@ -11336,7 +12092,6 @@ img {
 
 .answer-content {
   width: 30%;
-  max-height: 1200px;
   overflow-y: auto;
 }
 
@@ -11435,12 +12190,6 @@ img {
 .no-test {
   color: #999;
   font-size: 12px;
-}
-
-.card-table th:nth-child(3),
-.card-table td:nth-child(3) {
-  width: 120px;
-  min-width: 120px;
 }
 
 .reading-btn {
@@ -11584,16 +12333,16 @@ img {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 1rem;
   box-sizing: border-box;
   background-color: #f8f9fa;
 }
 
 .reading-main-content {
-  width: 95%;
-  height: 50vh;
+  width: 100%;
+  height: 60vh;
   background: white;
-  padding: 2.5rem;
+  padding: 0.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
@@ -11615,13 +12364,10 @@ img {
   font-size: 1.6rem;
   line-height: 1.8;
   color: #2d3748;
-  padding: 1.5rem;
+  padding: 0.5rem;
   background-color: #fef7fb;
   border-radius: 8px;
-  min-height: 30vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 50vh;
   margin-bottom: 1rem;
   white-space: pre-line;
 }
@@ -11723,13 +12469,6 @@ img {
   .test-filter-panel .filter-item {
     min-width: 100%;
   }
-
-  .card-table th:nth-child(3),
-  .card-table td:nth-child(3) {
-    width: 100px;
-    min-width: 100px;
-  }
-
   .test-result-icon {
     width: 18px;
     height: 18px;
@@ -11748,7 +12487,6 @@ img {
   }
 
   .reading-text-content {
-    max-height: 80px;
     font-size: 13px;
   }
 
@@ -11893,6 +12631,7 @@ img {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .save-btn:hover {
@@ -12172,6 +12911,31 @@ img {
 .cheatsheet-text-preview {
   pointer-events: auto;
   user-select: text;
+}
+
+@media print {
+  .question-item {
+    /* 关键：允许题目内容跨页断开 */
+    page-break-inside: auto; /* 默认值，可省略，但显式写出更清晰 */
+    /* 确保布局是流动的，不会因固定高度导致异常 */
+    /* min-height: unset; */ /* 如果原有样式有固定高度，可能需要重置 */
+  }
+  .question-content img {
+    /* 如果图片很大，也允许跨页断开，但可能会被分割 */
+    max-width: 100% !important;
+    page-break-inside: auto;
+  }
+  /* 可以添加一些边距控制，使分页处更美观 */
+  h1,
+  h2,
+  h3,
+  h4 {
+    page-break-after: avoid;
+  }
+  p,
+  li {
+    page-break-inside: avoid; /* 通常希望段落、列表项保持完整 */
+  }
 }
 </style>
 

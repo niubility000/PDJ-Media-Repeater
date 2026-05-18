@@ -336,7 +336,7 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) {
 		UserHomeBasePath: settings.DefaultUsersHomeBasePath,
 		Defaults: settings.UserDefaults{
 			Scope:       ".",
-			Locale:      "en",
+			Locale:      "zh-cn",
 			SingleClick: false,
 			Perm: users.Permissions{
 				Admin:    false,

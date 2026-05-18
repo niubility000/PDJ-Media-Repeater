@@ -12,11 +12,17 @@
       <title>{{ name }}</title>
       <action
         :disabled="loading"
+        v-if="req.type === 'image'"
+        icon="rotate_right"
+        :label="$t('buttons.rotate')"
+        @action="rotateImage"
+      />
+      <action
+        :disabled="loading"
         v-if="isResizeEnabled && req.type === 'image'"
         :icon="fullSize ? 'photo_size_select_large' : 'hd'"
         @action="toggleSize"
       />
-
       <template #actions>
         <action
           :disabled="loading"
@@ -66,6 +72,7 @@
         >
           <ExtendedImage
             v-if="req.type == 'image'"
+            ref="extendedImage"
             class="switchAnimation"
             :key="raw"
             :src="raw"
@@ -180,6 +187,7 @@ import url from "@/utils/url";
 import throttle from "lodash.throttle";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
+import localforage from "localforage";
 import ExtendedImage from "@/components/files/ExtendedImage.vue";
 
 import "animate.css";
@@ -194,6 +202,7 @@ export default {
   },
   data: function () {
     return {
+      mediaRaw: "",
       previousLink: "",
       nextLink: "",
       listing: null,
@@ -231,7 +240,7 @@ export default {
       if (this.req.type === "image" && !this.fullSize) {
         return api.getPreviewURL(this.req, "big");
       }
-
+      if (this.mediaRaw !== "") return this.mediaRaw;
       return api.getDownloadURL(this.req, true);
     },
     showMore() {
@@ -252,16 +261,42 @@ export default {
       this.updatePreview();
       this.toggleNavigation();
     },
+    req: {
+      handler() {
+        this.getRawUrl();
+      },
+      deep: true, // 必须放在这里！
+      immediate: true,
+    },
   },
   async mounted() {
     window.addEventListener("keydown", this.key);
     this.listing = this.oldReq.items;
     this.updatePreview();
+    this.toggleNavigation();
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.key);
   },
   methods: {
+    async getRawUrl() {
+      let a = "";
+      if (this.req.type == "video") a = this.req.name.replace(".srt", ".mp4");
+      if (this.req.type == "audio") a = this.req.name.replace(".srt", ".mp3");
+      // 3. 本地存储读取
+      let vmm = this;
+      if (a != "") {
+        await localforage
+          .getItem(a)
+          .then(function (value) {
+            vmm.mediaRaw = URL.createObjectURL(value);
+          })
+          .catch(function () {});
+      } else {
+        this.mediaRaw = "";
+      }
+    },
+
     startDrag(event) {
       event.preventDefault();
       this.startTime = new Date().getTime();
@@ -427,9 +462,14 @@ export default {
     toggleSize() {
       this.fullSize = !this.fullSize;
     },
+    rotateImage() {
+      if (this.$refs.extendedImage) {
+        this.$refs.extendedImage.rotate();
+        this.toggleNavigation();
+      }
+    },
     toggleNavigation: throttle(function () {
       this.showNav = true;
-
       if (this.navTimeout) {
         clearTimeout(this.navTimeout);
       }

@@ -244,8 +244,8 @@ export default {
     return {
       createMode: false,
       error: "",
-      username: window.localStorage.getItem("line1") || "",
-      password: window.localStorage.getItem("line2") || "",
+      username: window.localStorage.getItem("line1") || "demo",
+      password: window.localStorage.getItem("line2") || "repeater",
       recaptcha: recaptcha,
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,

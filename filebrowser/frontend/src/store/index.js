@@ -24,6 +24,10 @@ const state = {
   showShell: false,
   showSubConvertor: false,
   showWordReciter: false,
+  scrollPositions: {},
+  lastOpenedIndex: null,
+  parentPathIndex: null,
+  parentPath: null,
 
 };
 

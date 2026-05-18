@@ -41,10 +41,19 @@ export async function fetchURL(url, opts, auth = true) {
         ...rest,
       });
   } catch {
-    const error = new Error("000 No connection");
-    error.status = 0;
-
-    throw error;
+    const onOffline = Number(window.localStorage.getItem("isOffline")) == 1;
+    if (onOffline) {
+      return {
+        json: () => Promise.resolve({}),
+        text: () => Promise.resolve(""),
+        ok: false,
+        status: 0,
+      };
+    } else {
+      const error = new Error("No connection");
+      error.status = 0;
+      throw error;
+    }
   }
 
   if (auth && res.headers.get("X-Renew-Token") === "true") {

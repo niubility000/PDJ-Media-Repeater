@@ -2407,7 +2407,11 @@ export default {
         this.tokenFromServer.charAt(3)
       );
     },
-
+    fetchPath() {
+      return (
+        "/files/!PDJ/user-" + this.user.username + "/ToDoList-attachments/"
+      );
+    },
     weekRange() {
       let wr = "";
       if (this.isSun) wr = wr + "0,";
@@ -3105,12 +3109,12 @@ export default {
         }, 1000);
       } else {
         try {
-          if (this.allowOffline) window.localStorage.removeItem("isOffline");
+          // if (this.allowOffline) window.localStorage.removeItem("isOffline");
           PDJserverContent = await api.fetch(
             "/files/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt"
           );
           this.tokenFromServer = PDJserverContent.url;
-          if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+          // if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
           window.localStorage.setItem(this.user.username, this.user.username);
           window.localStorage.setItem(
@@ -3166,11 +3170,11 @@ export default {
 
     async compareContent() {
       try {
-        if (this.allowOffline) window.localStorage.removeItem("isOffline");
+        // if (this.allowOffline) window.localStorage.removeItem("isOffline");
         let PDJserverContent = await api.fetch(
           "/files/!PDJ/user-" + this.user.username + "/PDJ-ToDoList.txt"
         );
-        if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+        // if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
         let PDJcontent = PDJserverContent.content;
         if (
           PDJcontent !== "" &&
@@ -3186,7 +3190,7 @@ export default {
         }
       } catch (e) {
         console.log("disconnected");
-        if (this.allowOffline) window.localStorage.setItem("isOffline", 1);
+        if (this.allowOffline) return;
         if (!this.contentChange) return;
         this.saveNow();
       }
@@ -4542,15 +4546,7 @@ export default {
         if (files[0].size > 314572800) {
           id = id + "noCacheAllowed";
           let tempName = id + "-" + files[0].name;
-          let path = this.$route.path.endsWith("/")
-            ? this.$route.path +
-              "!PDJ/user-" +
-              this.user.username +
-              "/ToDoList-attachments/"
-            : this.$route.path +
-              "/!PDJ/user-" +
-              this.user.username +
-              "/ToDoList-attachments/";
+          let path = this.fetchPath;
           if (x == 1) {
             this.frontAttach = this.frontAttach + ":::" + tempName;
           } else {
@@ -4561,15 +4557,7 @@ export default {
         } else {
           var keyName = id + "-" + files[0].name;
           let vmm = this;
-          let path = this.$route.path.endsWith("/")
-            ? this.$route.path +
-              "!PDJ/user-" +
-              this.user.username +
-              "/ToDoList-attachments/"
-            : this.$route.path +
-              "/!PDJ/user-" +
-              this.user.username +
-              "/ToDoList-attachments/";
+          let path = this.fetchPath;
           var keyValue;
           localforage.setItem(keyName, files[0], function () {
             window.localStorage.setItem("hasCachedAttach", 1);
@@ -4595,15 +4583,7 @@ export default {
 
         var keyName1 = id1 + "-" + "voiceAttachment.mp3";
         let vmm = this;
-        let path1 = this.$route.path.endsWith("/")
-          ? this.$route.path +
-            "!PDJ/user-" +
-            this.user.username +
-            "/ToDoList-attachments/"
-          : this.$route.path +
-            "/!PDJ/user-" +
-            this.user.username +
-            "/ToDoList-attachments/";
+        let path1 = this.fetchPath;
         var keyValue1;
         localforage.setItem(keyName1, this.audioBlob, function () {
           window.localStorage.setItem("hasCachedAttach", 1);
@@ -4657,15 +4637,7 @@ export default {
           .replace(/^:::|:::$/g, "")
           .split(":::");
         var keyValue;
-        let path = this.$route.path.endsWith("/")
-          ? this.$route.path +
-            "!PDJ/user-" +
-            this.user.username +
-            "/ToDoList-attachments/"
-          : this.$route.path +
-            "/!PDJ/user-" +
-            this.user.username +
-            "/ToDoList-attachments/";
+        let path = this.fetchPath;
         for await (const keyName of arrUnsaved) {
           keyValue = await localforage.getItem(keyName);
           try {
@@ -4720,15 +4692,7 @@ export default {
     },
 
     async deleteFile(x) {
-      let path = this.$route.path.endsWith("/")
-        ? this.$route.path +
-          "!PDJ/user-" +
-          this.user.username +
-          "/ToDoList-attachments/"
-        : this.$route.path +
-          "/!PDJ/user-" +
-          this.user.username +
-          "/ToDoList-attachments/";
+      let path = this.fetchPath;
       var fullPath = path + x;
       try {
         this.unDeleted = this.unDeleted + ":::" + x;

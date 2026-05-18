@@ -12,19 +12,25 @@
         @action="save()"
       />
     </header-bar>
-    <form id="editor" style="font-size: 1em; font-family: auto" ></form>
+    <mavon-editor
+      v-model="content"
+      :editable="req.type !== 'textImmutable'"
+      :toolbars="toolbars"
+      :language="'zh-cn'"
+      :tabSize="4"
+      :boxShadow="false"
+      :defaultOpen="'md'"
+      @save="save()"
+    />
   </div>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import { files as api } from "@/api";
-import { theme } from "@/utils/constants";
+import { mavonEditor } from "mavon-editor";
+import "mavon-editor/dist/css/index.css";
 import buttons from "@/utils/buttons";
-
-import { version as ace_version } from "ace-builds";
-import ace from "ace-builds/src-min-noconflict/ace.js";
-import modelist from "ace-builds/src-min-noconflict/ext-modelist.js";
 
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
@@ -34,42 +40,44 @@ export default {
   components: {
     HeaderBar,
     Action,
+    mavonEditor,
   },
   data: function () {
-    return {};
+    return {
+      content: "",
+      originalContent: "",
+      toolbars: {
+        bold: true,
+        italic: true,
+        header: true,
+        underline: true,
+        strikethrough: true,
+        mark: true,
+        superscript: true,
+        subscript: true,
+        quote: true,
+        ol: true,
+        ul: true,
+        link: true,
+        code: true,
+        table: true,
+        undo: true,
+        redo: true,
+        subfield: true,
+        preview: true,
+      },
+    };
   },
   computed: {
     ...mapState(["req", "user"]),
   },
   created() {
+    this.content = this.req.content || "";
+    this.originalContent = this.req.content || "";
     window.addEventListener("keydown", this.keyEvent);
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.keyEvent);
-    this.editor.destroy();
-  },
-  mounted: function () {
-    const fileContent = this.req.content || "";
-
-    ace.config.set(
-      "basePath",
-      `https://cdn.jsdelivr.net/npm/ace-builds@${ace_version}/src-min-noconflict/`
-    );
-
-    this.editor = ace.edit("editor", {
-      value: fileContent,
-      showPrintMargin: false,
-      readOnly: this.req.type === "textImmutable",
-      theme: "ace/theme/chrome",
-      mode: modelist.getModeForPath(this.req.name).mode,
-      wrap: true,
-    });
-
-    if (theme == "dark") {
-      this.editor.setTheme("ace/theme/twilight");
-    }
-
-    this.editor.focus();
   },
   methods: {
     keyEvent(event) {
@@ -93,25 +101,36 @@ export default {
       buttons.loading("save");
 
       try {
-        await api.put(this.$route.path, this.editor.getValue());
-        this.editor.session.getUndoManager().markClean();
+        await api.put(this.$route.path, this.content);
+        this.originalContent = this.content;
         buttons.success(button);
       } catch (e) {
         buttons.done(button);
-        this.editor.session.getUndoManager().markClean();
         console.log(e);
       }
     },
     close() {
-      if (!this.editor.session.getUndoManager().isClean()) {
-        this.$store.commit("showHover", "discardEditorChanges");
-        return;
+      if (this.content !== this.originalContent) {
+        if (!confirm("有未保存的修改，是否放弃？")) {
+          return;
+        }
       }
 
       this.$store.commit("updateRequest", {});
-
       history.back();
     },
   },
 };
 </script>
+
+<style>
+#editor-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-note-wrapper {
+  flex: 1;
+}
+</style>

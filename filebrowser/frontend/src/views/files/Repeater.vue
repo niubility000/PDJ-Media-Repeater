@@ -534,7 +534,7 @@
                       >close</i
                     >
                   </button>
-                  <h1>句子打印</h1>
+                  <span style="font-size: 1.38em">句子打印</span>
                 </header>
 
                 <div class="prContent">
@@ -1801,24 +1801,58 @@
           </p>
 
           <div>
-            <p style="color: white; margin-bottom: 0">
-              <input type="radio" value="No" v-model="isPrivate" />
-              {{ $t("repeater.publicConfig") }}
+            <p style="color: white; margin-bottom: 0; line-height: 1.6">
+              <span style="margin: 0 0 0 1em; color: blue">{{
+                $t("repeater.chooseConfig")
+              }}</span>
+              <span
+                v-for="(option, idx) in availableRequireOptions"
+                :key="idx"
+                @click="preset = option"
+                style="
+                  cursor: pointer;
+                  background-color: #4a5568;
+                  color: white;
+                  padding: 0.25em 0.75em;
+                  border-radius: 1em;
+                  font-size: 0.9em;
+                "
+                :style="{
+                  backgroundColor: preset == option ? 'green' : '#4a5568',
+                }"
+              >
+                {{ option }}
+              </span>
+              &nbsp;&nbsp;
+              <button
+                v-if="preset !== 'General'"
+                class="action"
+                name="buttons"
+                style="height: 0.5em"
+                @click="delPreset"
+              >
+                <i
+                  style="color: red; padding: 0; font-size: 1em"
+                  class="material-icons"
+                  >delete</i
+                >
+              </button>
             </p>
-            <p v-if="!hasPrivate" style="color: white; margin-top: 0">
+            <p style="color: blue; margin: 0.5em 0 0 1em">
               {{ $t("repeater.addPrivate") }}
-              <button class="action" @click="addPrivate">
+              <input type="text" v-model.lazy="newPreset" />
+              <button class="action" @click="addPreset">
                 <i style="color: blue; font-size: 1.2em" class="material-icons"
                   >verified</i
                 >
               </button>
             </p>
-            <p v-if="hasPrivate" style="color: white">
-              <input type="radio" value="Yes" v-model="isPrivate" />
-              {{ $t("repeater.privateConfig") }}
-            </p>
           </div>
-
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
+          <p style="color: white">
+            <input type="checkbox" v-model="isUser2" />
+            {{ $t("repeater.isUser2") }}
+          </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <div :style="{ width: isMobile ? '100%' : '70%' }">
             <p>
@@ -2626,6 +2660,15 @@
                   class="input input--repeater"
                   type="text"
                   v-model.lazy="translatorUrl"
+                />
+              </p>
+              <p style="margin-top: 0">
+                {{ $t("repeater.require") }}
+                <input
+                  style="flex-grow: 1; text-align: left; width: 100%"
+                  class="input input--repeater"
+                  type="text"
+                  v-model.lazy="requireLevel"
                 />
               </p>
             </span>
@@ -4324,6 +4367,12 @@ export default {
   },
   data: function () {
     return {
+      noNewWordFile: false,
+      isUser2: false,
+      arrPreset: "General",
+      preset: "General",
+      newPreset: "",
+      requireLevel: "0",
       cIndex: 0,
       fontSizeVar: 16,
       prArticlePreviewData: [],
@@ -4630,8 +4679,6 @@ export default {
       fetchCount: 0,
       today: new Date().toLocaleDateString("af").replaceAll("/", "-"),
       isSwitching: false,
-      isPrivate: "Yes",
-      hasPrivate: true,
       defaultWaveSurfer: true,
       transUrl: "https://fanyi.baidu.com/#auto/auto/",
       ctrlPressed: false,
@@ -5140,6 +5187,11 @@ export default {
       } else return "translate_standard";
     },
 
+    availableRequireOptions() {
+      const allRequires = this.arrPreset.split(",");
+      return [...new Set(allRequires)];
+    },
+
     newWordList() {
       var wordList = [];
       var origin = "";
@@ -5433,11 +5485,20 @@ export default {
       }
     },
 
+    isUser2() {
+      this.calcFav();
+    },
+
     srtSubtitlesO: {
       handler(newVal) {
-        this.favList = newVal.filter((item) => {
-          return item?.content?.includes("[star];");
-        });
+        if (!this.isUser2)
+          this.favList = newVal.filter((item) => {
+            return item?.content?.includes("[star];");
+          });
+        else
+          this.favList = newVal.filter((item) => {
+            return item?.content?.includes("[star2];");
+          });
       },
       deep: true,
       immediate: true,
@@ -5589,6 +5650,13 @@ export default {
       this.save();
     },
 
+    requireLevel: function () {
+      if (this.requireLevel.trim() == "") {
+        this.requireLevel = "0";
+      }
+      this.save();
+    },
+
     readOriginByTTS: function () {
       this.save();
     },
@@ -5642,6 +5710,14 @@ export default {
 
     showEditNew: function () {
       if (!this.showEditNew) this.newWord = "";
+      if (this.showEditNew) {
+        if (this.noNewWordFile) {
+          this.noNewWordFile = false;
+          alert(
+            "未在服务器上找到生词表文件!PDJ/user-{{this.user.username}}/PDJ-WordList.txt，将在保存生词时新建。或请刷新后重试。"
+          );
+        }
+      }
     },
 
     fakeAudio: function () {
@@ -5758,12 +5834,14 @@ export default {
     minPxPerSec(newValue) {
       if (this.wavesurfer) this.wavesurfer.zoom(newValue);
     },
-    hasPrivate: function () {
-      if (!this.hasPrivate) this.isPrivate = "No";
-    },
-
-    isPrivate: function () {
-      if (this.isSetting) this.readyStatus();
+    preset: function () {
+      window.localStorage.setItem("preset" + this.mediaName, this.preset);
+      if (this.isSetting) {
+        let favContent = window.localStorage.getItem(this.favFileName);
+        this.setPara(
+          favContent.split(this.preset + "private")[1].split("\n\n")[0]
+        );
+      }
     },
 
     maxCacheNum: function () {
@@ -6573,7 +6651,7 @@ export default {
     },
 
     prCreateHTMLTable() {
-      const rowsPerPage = 30;
+      const rowsPerPage = this.prSelectedSentences.length;
       const totalSheets = Math.ceil(
         this.prSelectedSentences.length / rowsPerPage
       );
@@ -6598,7 +6676,7 @@ export default {
         }
         .prPage {
             page-break-after: always;
-            margin-bottom: 16px;
+            margin-bottom: 32px;
         }
         .prPage:last-child {
             page-break-after: auto;
@@ -6614,6 +6692,10 @@ export default {
             text-align: left;
             height: 32px;
         }
+        tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+}
         th {
             background-color: #f0f0f0;
             font-weight: bold;
@@ -6644,8 +6726,8 @@ export default {
                 margin: 0;
             }
             @page {
-              margin-top: 12mm; /* 上页边距（mm单位更适合打印） */
-              margin-bottom: 12mm; /* 下页边距 */
+              margin-top: 16mm; /* 上页边距（mm单位更适合打印） */
+              margin-bottom: 16mm; /* 下页边距 */
             }
         }
     </style>
@@ -7596,7 +7678,7 @@ export default {
 
     async callAzureSpeechService(audioBlob) {
       this.getTranscribeKey();
-      // send Blob data to server...............................................................................................
+      // send Blob data..........
       const response = await fetch(
         `https://${this.sR}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${this.langTranscribe}`,
         {
@@ -8606,7 +8688,7 @@ export default {
           .filter((item) => item !== null);
         this.wordList = wordList;
       } catch (e) {
-        alert("找不到生词表PDJ-WordList.txt，将在添加生词时新建。");
+        this.noNewWordFile = true;
       }
     },
 
@@ -9271,6 +9353,15 @@ export default {
           PDJserverContent = await api.fetch("/files" + this.favFileName);
           if (this.onOffline) window.localStorage.setItem("isOffline", 1);
           PDJcontent = PDJserverContent.content;
+          if (!PDJcontent.startsWith("presetConfig")) {
+            let presetConfig =
+              "presetConfig##" + JSON.stringify(this.arrPreset) + "####";
+            PDJcontent = presetConfig + PDJcontent;
+          }
+          PDJcontent = PDJcontent.replace(
+            "publiccustomConfig::",
+            "GeneralprivatecustomConfig::"
+          );
           this.notSaveFav = true;
           window.localStorage.setItem("server" + this.favFileName, PDJcontent);
           window.localStorage.setItem(this.favFileName, PDJcontent);
@@ -9288,15 +9379,14 @@ export default {
       }
 
       if (PDJcontent !== "") {
-        if (PDJcontent.includes(this.reqF.name + "privatecustomConfig::")) {
-          this.hasPrivate = true;
-        } else this.hasPrivate = false;
-
-        if (this.isPrivate == "Yes" && this.hasPrivate) {
-          this.setPara(
-            PDJcontent.split(this.reqF.name + "private")[1].split("\n\n")[0]
-          );
-        } else this.setPara(PDJcontent.split("\n\n")[0]);
+        const presetConfig = PDJcontent.split("####")[0];
+        let arr = presetConfig.split("##");
+        this.preset =
+          window.localStorage.getItem("preset" + this.mediaName) || "General";
+        this.arrPreset = JSON.parse(arr[1]);
+        this.setPara(
+          PDJcontent.split(this.preset + "private")[1].split("\n\n")[0]
+        );
         this.reviseData = JSON.parse(PDJcontent.split("\n\n\n\n")[1]);
         this.calcFav();
         if (!this.hasSpeechSynthesis) {
@@ -9390,6 +9480,8 @@ export default {
         this.typingSound = JSON.parse(PDJcontent.split("::")[50]);
       if (PDJcontent.split("::")[51])
         this.isFromLocal = Number(JSON.parse(PDJcontent.split("::")[51]));
+      if (PDJcontent.split("::")[52])
+        this.requireLevel = JSON.parse(PDJcontent.split("::")[52]);
     },
 
     autoSet() {
@@ -9608,19 +9700,54 @@ export default {
       }
     },
 
-    addPrivate() {
-      let customConfig = this.getConfig();
+    delPreset() {
+      this.arrPreset = this.arrPreset
+        .split(",")
+        .filter((x) => x !== this.preset)
+        .join(",");
       let favContent = window.localStorage.getItem(this.favFileName);
-      let allConfig = favContent.split("\n\n\n\n")[0];
+      let presetConfig =
+        "presetConfig##" + JSON.stringify(this.arrPreset) + "####";
       favContent = favContent.replace(
-        allConfig,
-        allConfig + "\n\n" + this.reqF.name + "private" + customConfig
+        favContent.split("####")[0] + "####",
+        presetConfig
+      );
+      let allConfig = favContent
+        .split(this.preset + "private")[1]
+        .split("\n\n")[0];
+      favContent = favContent.replace(
+        "\n\n" + this.preset + "private" + allConfig,
+        ""
       );
       this.tempFavContent = favContent;
+      window.localStorage.setItem(this.favFileName, this.tempFavContent);
       this.saveNow();
-      setTimeout(() => {
-        this.isPrivate = "Yes";
-      }, 50);
+      this.preset = "General";
+    },
+
+    addPreset() {
+      let customConfig = this.getConfig();
+      let favContent = window.localStorage.getItem(this.favFileName);
+      let presetConfig =
+        "presetConfig##" +
+        JSON.stringify(this.arrPreset + "," + this.newPreset) +
+        "####";
+      favContent = favContent.replace(
+        favContent.split("####")[0] + "####",
+        presetConfig
+      );
+      let allConfig = favContent.split("\n\n\n\n")[0];
+
+      favContent = favContent.replace(
+        allConfig,
+        allConfig + "\n\n" + this.newPreset + "private" + customConfig
+      );
+      this.tempFavContent = favContent;
+      window.localStorage.setItem(this.favFileName, this.tempFavContent);
+      this.saveNow();
+      this.arrPreset = this.arrPreset + "," + this.newPreset;
+      this.preset = this.newPreset;
+      this.newPreset = "";
     },
 
     showTransPage() {
@@ -9704,10 +9831,21 @@ export default {
 
     calcFav() {
       this.isFav = false;
-      if (
-        this.srtSubtitles[this.sentenceIndex - 1]?.content?.includes("[star];")
-      )
-        this.isFav = true;
+      if (!this.isUser2) {
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1]?.content?.includes(
+            "[star];"
+          )
+        )
+          this.isFav = true;
+      } else {
+        if (
+          this.srtSubtitles[this.sentenceIndex - 1]?.content?.includes(
+            "[star2];"
+          )
+        )
+          this.isFav = true;
+      }
     },
 
     async revisionPlay(name, startIndex, oRawPath, index) {
@@ -9877,8 +10015,10 @@ export default {
 
     saveWordToSRT(x) {
       let newphrase = "";
-      if (x == 1) newphrase = "[star];";
-      else
+      if (x == 1) {
+        if (!this.isUser2) newphrase = "[star];";
+        else newphrase = "[star2];";
+      } else
         newphrase = "{[" + this.newWord + "::" + this.newTranslation + "]}; ";
       this.cleanUp1();
       this.cleanUp2();
@@ -9927,7 +10067,7 @@ export default {
           partOfSpeech: this.newTranslation,
           wordNote: this.wordNotes,
           date: date,
-          require: this.listWord.require + " 0",
+          require: this.listWord.require + " " + this.requireLevel,
         });
       } else if (this.dictionaryWord) {
         let ex1 = "";
@@ -9971,7 +10111,7 @@ export default {
           wordNote: this.wordNotes,
           familiarity: 0,
           date: date,
-          require: "0",
+          require: this.requireLevel,
           favorite: 0,
           user2: "0,0," + date,
           temp3: "0,0",
@@ -10020,7 +10160,7 @@ export default {
           wordNote: this.wordNotes,
           familiarity: 0,
           date: date,
-          require: 0,
+          require: this.requireLevel,
           favorite: 0,
           user2: "0,0," + date,
           temp3: "0,0",
@@ -12307,10 +12447,14 @@ export default {
       if (!this.isReadyToPlay && !(this.isFavOnPlay && this.isPlayFullFavList))
         return;
       let customConfig = this.getConfig();
-
+      let presetConfig =
+        "presetConfig##" + JSON.stringify(this.arrPreset) + "####";
       let favContent =
-        "public" + customConfig + "\n\n\n\n" + JSON.stringify(this.reviseData);
-      this.hasPrivate = false;
+        presetConfig +
+        "Generalprivate" +
+        customConfig +
+        "\n\n\n\n" +
+        JSON.stringify(this.reviseData);
       this.tempFavContent = favContent;
       this.hasConfirmed = true;
       this.saveNow();
@@ -12421,6 +12565,8 @@ export default {
         JSON.stringify(this.typingSound) +
         "::" +
         JSON.stringify(this.isFromLocal) +
+        "::" +
+        JSON.stringify(this.requireLevel) +
         "::"
       );
     },
@@ -12436,22 +12582,19 @@ export default {
       let customConfig = this.getConfig();
 
       let favContent = window.localStorage.getItem(this.favFileName);
-      var allConfig = favContent?.split("\n\n\n\n")[0];
+      var allConfig = favContent?.split("\n\n\n\n")[0]?.split("####")[1];
       let oldConfig = "";
-      if (this.isPrivate == "Yes" && this.hasPrivate && allConfig) {
-        oldConfig = allConfig
-          .split(this.reqF.name + "privatecustomConfig::")[1]
-          .split("\n\n")[0];
-        allConfig = allConfig?.replace(
-          this.reqF.name + "privatecustomConfig::" + oldConfig,
-          this.reqF.name + "private" + customConfig
-        );
-      } else {
-        oldConfig = allConfig?.split("\n\n")[0];
-        allConfig = allConfig?.replace(oldConfig, "public" + customConfig);
-      }
-
-      favContent = allConfig + "\n\n\n\n" + JSON.stringify(this.reviseData);
+      oldConfig = allConfig
+        .split(this.preset + "privatecustomConfig::")[1]
+        .split("\n\n")[0];
+      allConfig = allConfig?.replace(
+        this.preset + "privatecustomConfig::" + oldConfig,
+        this.preset + "private" + customConfig
+      );
+      let presetConfig =
+        "presetConfig##" + JSON.stringify(this.arrPreset) + "####";
+      favContent =
+        presetConfig + allConfig + "\n\n\n\n" + JSON.stringify(this.reviseData);
       this.tempFavContent = favContent;
       this.saveNow();
     },
@@ -13111,12 +13254,22 @@ export default {
         newContent = delWord[0] + part2;
       } else {
         if (this.isFavOnPlay) {
-          newContent = textSubtitles[oldIndex - 1].replaceAll("[star];", "");
-        } else
-          newContent = textSubtitles[this.sentenceIndex - 1].replaceAll(
-            "[star];",
-            ""
-          );
+          if (!this.isUser2)
+            newContent = textSubtitles[oldIndex - 1].replaceAll("[star];", "");
+          else
+            newContent = textSubtitles[oldIndex - 1].replaceAll("[star2];", "");
+        } else {
+          if (!this.isUser2)
+            newContent = textSubtitles[this.sentenceIndex - 1].replaceAll(
+              "[star];",
+              ""
+            );
+          else
+            newContent = textSubtitles[this.sentenceIndex - 1].replaceAll(
+              "[star2];",
+              ""
+            );
+        }
       }
       if (this.isFavOnPlay && x == 1)
         formatContent = formatContent.replace(
@@ -14127,7 +14280,7 @@ export default {
           }, 1);
         }
       } else if (event.which === 27) {
-        // esc .......................
+        // esc
         this.close();
       }
     },
@@ -15119,7 +15272,7 @@ input:disabled {
 .prHeader {
   background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
   color: white;
-  padding: 20px 30px;
+  padding: 20px 0px;
   justify-content: left !important;
 }
 

@@ -385,35 +385,21 @@ export default {
   },
   watch: {
     req: function () {
-      if (
-        window.sessionStorage.getItem("listFrozen") !== "true" &&
-        window.sessionStorage.getItem("modified") !== "true"
-      ) {
-        // Reset the show value
+      if (this.req && this.req.items) {
         this.showLimit = this.req.numDirs + this.req.numFiles;
 
-        // Ensures that the listing is displayed
         Vue.nextTick(() => {
-          // How much every listing item affects the window height
           this.setItemWeight();
-
-          // Fill and fit the window with listing items
           this.fillWindow(true);
-          if (window.sessionStorage.getItem(this.$route.path)) {
-            document.getElementById("listing").scrollTop = JSON.parse(
-              window.sessionStorage.getItem(this.$route.path)
-            )[0];
-            if (!this.isMobile)
-              this.addSelected(
-                JSON.parse(window.sessionStorage.getItem(this.$route.path))[1]
-              );
-            window.sessionStorage.removeItem(this.$route.path);
+          
+          const savedScrollTop = this.$store.state.scrollPositions?.[this.$route.path];
+          if (savedScrollTop !== undefined && savedScrollTop > 0) {
+            const listing = document.getElementById("listing");
+            if (listing) {
+              listing.scrollTop = savedScrollTop;
+            }
           }
         });
-      }
-      if (this.req.isDir) {
-        window.sessionStorage.setItem("listFrozen", "false");
-        window.sessionStorage.setItem("modified", "false");
       }
       setTimeout(() => {
         this.$store.commit("resetSelected");
@@ -884,36 +870,30 @@ export default {
       }
     },
     setItemWeight() {
-      // Listing element is not displayed
       if (this.$refs.listing == null) return;
 
       let itemQuantity = this.req.numDirs + this.req.numFiles;
+      if (!itemQuantity || itemQuantity <= 0) return;
       if (itemQuantity > this.showLimit) itemQuantity = this.showLimit;
 
-      // How much every listing item affects the window height
       this.itemWeight = this.$refs.listing.scrollHeight / itemQuantity;
     },
     fillWindow(fit = false) {
       const totalItems = this.req.numDirs + this.req.numFiles;
 
-      // More items are displayed than the total
+      if (!totalItems || totalItems <= 0 || !this.itemWeight || this.itemWeight <= 0) return;
+
       if (this.showLimit >= totalItems && !fit) return;
 
       const windowHeight = window.innerHeight;
 
-      // Quantity of items needed to fill 2x of the window height
-      const showQuantity = window.sessionStorage.getItem(this.$route.path)
-        ? Math.ceil(
-            (JSON.parse(window.sessionStorage.getItem(this.$route.path))[0] +
-              windowHeight * 2) /
-              this.itemWeight
-          )
+      const savedScrollTop = this.$store.state.scrollPositions?.[this.$route.path];
+      const showQuantity = savedScrollTop
+        ? Math.ceil((savedScrollTop + windowHeight * 2) / this.itemWeight)
         : Math.ceil((windowHeight + windowHeight * 2) / this.itemWeight);
 
-      // Less items to display than current
       if (this.showLimit > showQuantity && !fit) return;
 
-      // Set the number of displayed items
       this.showLimit = showQuantity > totalItems ? totalItems : showQuantity;
     },
   },

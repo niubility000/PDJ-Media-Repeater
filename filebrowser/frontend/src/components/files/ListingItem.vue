@@ -1,6 +1,7 @@
 <template>
   <div
     class="item"
+    :class="{ 'last-opened': isLastOpened }"
     role="button"
     tabindex="0"
     :draggable="isDraggable"
@@ -68,13 +69,22 @@ export default {
     "path",
   ],
   computed: {
-    ...mapState(["user", "selected", "req", "jwt", "multiple"]),
+    ...mapState(["user", "selected", "req", "jwt", "multiple", "lastOpenedIndex", "parentPathIndex", "parentPath"]),
     ...mapGetters(["selectedCount"]),
     singleClick() {
       return this.readOnly == undefined && this.user.singleClick;
     },
     isSelected() {
       return this.selected.indexOf(this.index) !== -1;
+    },
+    isLastOpened() {
+      if (this.lastOpenedIndex === this.index) {
+        return true;
+      }
+      if (this.parentPathIndex === this.index && this.parentPath === this.$route.path) {
+        return true;
+      }
+      return false;
     },
     isDraggable() {
       return this.readOnly == undefined && this.user.perm.rename;
@@ -277,10 +287,16 @@ export default {
       this.addSelected(this.index);
     },
     open: function () {
-      window.sessionStorage.setItem(
-        this.$route.path,
-        JSON.stringify([document.getElementById("listing").scrollTop, this.index])
-      );
+      if (this.isDir) {
+        this.$store.commit("setParentPathIndex", {
+          index: this.index,
+          path: this.$route.path
+        });
+        this.$store.commit("clearLastOpenedIndex");
+      } else {
+        this.$store.commit("setLastOpenedIndex", this.index);
+        this.$store.commit("clearParentPathIndex");
+      }
       this.$router.push({ path: this.url });
     },
   },
