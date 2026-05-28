@@ -1,6 +1,13 @@
 <template>
   <header>
-    <img v-if="showLogo !== undefined" :src="logoURL" />
+    <button
+      v-if="showLogo !== undefined"
+      class="action"
+      @click="logout"
+      style="background-color: white"
+    >
+      <i style="padding-left: 0" class="material-icons">close</i>
+    </button>
     <action
       v-if="showMenu !== undefined"
       class="menu-button"
@@ -32,8 +39,7 @@
 </template>
 
 <script>
-import { logoURL } from "@/utils/constants";
-
+import * as auth from "@/utils/auth";
 import Action from "@/components/header/Action.vue";
 import { mapGetters } from "vuex";
 
@@ -44,14 +50,13 @@ export default {
     Action,
   },
   data: function () {
-    return {
-      logoURL,
-    };
+    return {};
   },
   methods: {
     openSidebar() {
       this.$store.commit("showHover", "sidebar");
     },
+    logout: auth.logout,
   },
   computed: {
     ...mapGetters(["currentPromptName"]),

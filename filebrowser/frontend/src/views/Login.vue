@@ -2,12 +2,9 @@
   <div @touchmove.prevent id="login" :class="{ recaptcha: recaptcha }">
     <form>
       <img :src="logoURL" alt="File Browser" />
-      <h1 v-if="!isReminder && !isWordReciter && !isMistakeBook">
-        {{ $t("repeater.repeater") }}
+      <h1>
+        {{ $t("repeater.dayDayUp") }}
       </h1>
-      <h1 v-if="isReminder">{{ $t("reminder.reminder") }}</h1>
-      <h1 v-if="isWordReciter">{{ $t("reminder.wordreciter") }}</h1>
-      <h1 v-if="isMistakeBook">{{ $t("reminder.mistakebook") }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
       <div
         style="
@@ -244,8 +241,8 @@ export default {
     return {
       createMode: false,
       error: "",
-      username: window.localStorage.getItem("line1") || "",
-      password: window.localStorage.getItem("line2") || "",
+      username: window.localStorage.getItem("line1") || "demo",
+      password: window.localStorage.getItem("line2") || "repeater",
       recaptcha: recaptcha,
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,

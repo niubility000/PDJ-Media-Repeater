@@ -110,12 +110,15 @@
             and watch it with your favorite video player!
           </video>
 
-          <object
+          <iframe
             class="switchAnimation pdf"
             :key="raw"
-            v-if="req.extension.toLowerCase() == '.pdf'"
-            :data="raw"
-          ></object>
+            v-if="req.extension.toLowerCase() === '.pdf'"
+            :src="raw"
+            width="100%"
+            height="800"
+            frameborder="0"
+          ></iframe>
 
           <div
             v-if="req.type == 'blob' && req.extension.toLowerCase() !== '.pdf'"

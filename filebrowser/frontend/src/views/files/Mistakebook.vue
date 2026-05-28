@@ -13,6 +13,31 @@
     >
       {{ msg }}
     </div>
+    <div v-if="editHaveNow !== 0" class="pinyin-converter">
+      <div class="converter-header">
+        <h2>{{ msg0 }}</h2>
+      </div>
+      <p>
+        {{ msg1 }}
+        <input v-model="oldV" type="text" />
+      </p>
+      <p>
+        替换为：
+        <input v-model="newV" type="text" />
+      </p>
+
+      <!-- 操作按钮 -->
+      <div class="btn-section" style="justify-content: right">
+        <button @click="editHaveDo(editHaveNow)" class="convert-btn">
+          确定
+        </button>
+        <button @click="editHaveNow = 0" class="clear-btn">取消</button>
+      </div>
+
+      <!-- 复制成功提示 -->
+      <div class="copy-toast" v-if="showToast">复制成功！</div>
+    </div>
+
     <header-bar
       style="padding: 0.5em; height: 4em; overflow-y: hidden; overflow-x: auto"
     >
@@ -23,21 +48,15 @@
         style="background-color: white"
       >
         <i
+          style="padding-left: 0"
           :style="{ color: currentView != 'home' ? 'red' : 'blue' }"
           class="material-icons"
           >close</i
         >
       </button>
 
-      <span
-        style="
-          flex-grow: 1;
-          white-space: nowrap;
-          padding: 0 0.5em;
-          height: 16px;
-        "
-      >
-        PDJ错题本
+      <span style="flex-grow: 1; white-space: nowrap; padding: 0; height: 16px">
+        PDJ错题本({{ mistaker.length }}题)
       </span>
       <span style="display: flex; gap: 6px">
         <button v-if="currentView == 'add'" @click="cancelNow">取消</button>
@@ -246,8 +265,20 @@
                   v-model="testFilterForm.keyword"
                   @change="applyTestFilter"
                   type="text"
-                  placeholder="搜索题目、答案等"
+                  placeholder="搜索考点、题型、题目、答案等"
                 />
+                <!-- 题型候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueQuestionType?.length">
+                  <span class="candidate-label">如：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueQuestionType"
+                    :key="`questionType-${item}`"
+                    @click="append2('keyword', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -451,7 +482,24 @@
                 class="question-text"
               ></div>
             </div>
-
+            <!-- 易错点 -->
+            <div class="section-content">
+              <Toolbar
+                style="border-bottom: 1px solid #ccc"
+                :editor="editor7"
+                mode="simple"
+                :defaultConfig="toolbarConfig"
+              />
+              <Editor
+                style="height: 300px"
+                :editor="editor7"
+                mode="simple"
+                v-model="filteredTestMistaker[currentTestIndex].correctIdea"
+                :defaultConfig="editorConfig7"
+                @onChange="onChange"
+                @onCreated="onCreated7"
+              />
+            </div>
             <!-- 答案显示区域 -->
             <div
               v-if="showAnswer"
@@ -473,19 +521,6 @@
                   v-html="filteredTestMistaker[currentTestIndex].answer"
                   class="answer-text"
                 ></div>
-              </div>
-            </div>
-            <div v-if="showAnswer" class="result-feedback">
-              <!-- 易错点 -->
-              <div class="section-content">
-                <textarea
-                  style="width: 100%"
-                  v-model.lazy="
-                    filteredTestMistaker[currentTestIndex].correctIdea
-                  "
-                  rows="5"
-                  placeholder="易错点：可用于记录每次测验中所犯错误。(点击上方日期可自动添加当前日期)"
-                ></textarea>
               </div>
             </div>
 
@@ -751,7 +786,7 @@
         </div>
 
         <div v-else class="empty-tip">
-          暂无综合汇总数据！可在此记录各科思维导图，要点总结，存疑等。
+          暂无综合汇总数据！可在此记录各类学习信息。
         </div>
       </div>
 
@@ -953,8 +988,20 @@
                 <input
                   v-model="testFilterForm.keyword"
                   type="text"
-                  placeholder="搜索题目、答案等"
+                  placeholder="搜索考点、题型、题目、答案等"
                 />
+                <!-- 题型候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueQuestionType?.length">
+                  <span class="candidate-label">如：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueQuestionType"
+                    :key="`questionType-${item}`"
+                    @click="append2('keyword', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1085,46 +1132,69 @@
                       @click="toggleCardExpand(item.id)"
                     >
                       <td class="text-center">
-                        {{ item.id }}
-                        <button
-                          class="read-btn"
-                          style="background-color: transparent"
-                          @click="editError(item, 1)"
-                        >
-                          <i
-                            style="color: blue; font-size: 1.2em"
-                            class="material-icons"
-                            >edit</i
-                          >
-                        </button>
-                        <button
-                          style="background: transparent; color: black"
-                          v-if="
-                            !String(item.reviewDate).split(',')[1] ||
-                            Number(String(item.reviewDate).split(',')[1]) == 0
+                        <div
+                          style="
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 4px;
                           "
-                          class="read-btn"
-                          @click.stop="switchFav(item, 1)"
                         >
-                          <i class="material-icons" style="font-size: 1em"
-                            >star_border</i
+                          <span>{{ item.id }}</span>
+                          <button
+                            class="read-btn"
+                            style="
+                              background-color: transparent;
+                              margin: 0;
+                              padding: 2px;
+                            "
+                            @click="editError(item, 1)"
                           >
-                        </button>
-                        <button
-                          style="background: transparent; color: black"
-                          v-if="
-                            String(item.reviewDate).split(',')[1] &&
-                            Number(String(item.reviewDate).split(',')[1]) == 1
-                          "
-                          class="read-btn"
-                          @click.stop="switchFav(item, 1)"
-                        >
-                          <i
-                            class="material-icons"
-                            style="font-size: 1em; color: blue"
-                            >star</i
+                            <i
+                              style="color: blue; font-size: 1.2em"
+                              class="material-icons"
+                              >edit</i
+                            >
+                          </button>
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              margin: 0;
+                              padding: 2px;
+                            "
+                            v-if="
+                              !String(item.reviewDate).split(',')[1] ||
+                              Number(String(item.reviewDate).split(',')[1]) == 0
+                            "
+                            class="read-btn"
+                            @click.stop="switchFav(item, 1)"
                           >
-                        </button>
+                            <i class="material-icons" style="font-size: 1em"
+                              >star_border</i
+                            >
+                          </button>
+                          <button
+                            style="
+                              background: transparent;
+                              color: black;
+                              margin: 0;
+                              padding: 2px;
+                            "
+                            v-if="
+                              String(item.reviewDate).split(',')[1] &&
+                              Number(String(item.reviewDate).split(',')[1]) == 1
+                            "
+                            class="read-btn"
+                            @click.stop="switchFav(item, 1)"
+                          >
+                            <i
+                              class="material-icons"
+                              style="font-size: 1em; color: blue"
+                              >star</i
+                            >
+                          </button>
+                        </div>
                       </td>
                       <td class="text-center history-test">
                         <div
@@ -1147,20 +1217,18 @@
 
                       <td class="answer-content">
                         <div
-                          v-html="renderQuestionContent(item)"
+                          v-html="item.question"
                           @click="handleCardImageClick($event)"
                         ></div>
                       </td>
                       <td class="answer-content">
                         <div
+                          @click="handleCardImageClick($event)"
                           :style="{
                             visibility: item.isExpanded ? 'visible' : 'hidden',
                           }"
                         >
-                          <div
-                            v-html="renderAnswerContent(item)"
-                            @click="handleCardImageClick($event)"
-                          ></div>
+                          <div v-html="item.answer"></div>
                           <hr
                             style="
                               border: none;
@@ -1169,9 +1237,7 @@
                             "
                           />
                           <div style="color: blue">易错点：</div>
-                          <div>
-                            {{ item.correctIdea || "无" }}
-                          </div>
+                          <div v-html="item.correctIdea || '无'"></div>
                         </div>
                       </td>
                     </tr>
@@ -1386,7 +1452,12 @@
                 />
                 <!-- 用户候选列表（去重） -->
                 <div class="candidate-list" v-if="uniqueUsers?.length">
-                  <span class="candidate-label">已有：</span>
+                  <span
+                    @click="editHave(1)"
+                    class="candidate-label"
+                    style="cursor: pointer; color: blue"
+                    >已有：</span
+                  >
                   <span
                     class="candidate-item"
                     v-for="item in uniqueUsers"
@@ -1411,7 +1482,12 @@
 
                 <!-- 科目候选列表（去重） -->
                 <div class="candidate-list" v-if="uniqueSubjects?.length">
-                  <span class="candidate-label">已有：</span>
+                  <span
+                    @click="editHave(2)"
+                    class="candidate-label"
+                    style="cursor: pointer; color: blue"
+                    >已有：</span
+                  >
                   <span
                     class="candidate-item"
                     v-for="item in uniqueSubjects"
@@ -1437,7 +1513,12 @@
                 />
 
                 <div class="candidate-list" v-if="uniqueSubClasses?.length">
-                  <span class="candidate-label">已有：</span>
+                  <span
+                    @click="editHave(3)"
+                    class="candidate-label"
+                    style="cursor: pointer; color: blue"
+                    >已有：</span
+                  >
                   <span
                     class="candidate-item"
                     v-for="item in uniqueSubClasses"
@@ -1459,7 +1540,12 @@
                 />
                 <!-- 题型候选列表（去重） -->
                 <div class="candidate-list" v-if="uniqueQuestionTypes?.length">
-                  <span class="candidate-label">已有：</span>
+                  <span
+                    @click="editHave(4)"
+                    class="candidate-label"
+                    style="cursor: pointer; color: blue"
+                    >已有：</span
+                  >
                   <span
                     class="candidate-item"
                     v-for="item in uniqueQuestionTypes"
@@ -1663,6 +1749,28 @@
                     </p>
                   </div>
                 </div>
+
+                <!-- 标签（多值，空格分割） -->
+                <div class="section-content" v-if="sections.mistakeItem">
+                  <label>标签：</label>
+                  <input
+                    v-model="form.errorType"
+                    type="text"
+                    placeholder="请输入标签（多值用空格分割）"
+                  />
+                  <!-- 标签候选列表（拆分多值后去重） -->
+                  <div class="candidate-list" v-if="uniqueErrorTypes?.length">
+                    <span class="candidate-label">已有：</span>
+                    <span
+                      class="candidate-item"
+                      v-for="item in uniqueErrorTypes"
+                      :key="`errorType-${item}`"
+                      @click="appendCandidate('errorType', item)"
+                    >
+                      {{ item }}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <!-- 题卡 -->
@@ -1742,33 +1850,21 @@
                 <div class="section-content" v-if="sections.answerAnalysis">
                   <label>易错点：</label>
                   <div class="section-content">
-                    <textarea
-                      style="width: 100%"
-                      v-model.lazy="form.correctIdea"
-                      rows="5"
-                    ></textarea>
-                  </div>
-                </div>
-
-                <!-- 标签（多值，空格分割） -->
-                <div class="section-content" v-if="sections.answerAnalysis">
-                  <label>标签：</label>
-                  <input
-                    v-model="form.errorType"
-                    type="text"
-                    placeholder="请输入标签（多值用空格分割）"
-                  />
-                  <!-- 标签候选列表（拆分多值后去重） -->
-                  <div class="candidate-list" v-if="uniqueErrorTypes?.length">
-                    <span class="candidate-label">已有：</span>
-                    <span
-                      class="candidate-item"
-                      v-for="item in uniqueErrorTypes"
-                      :key="`errorType-${item}`"
-                      @click="appendCandidate('errorType', item)"
-                    >
-                      {{ item }}
-                    </span>
+                    <Toolbar
+                      style="border-bottom: 1px solid #ccc"
+                      :editor="editor7"
+                      mode="simple"
+                      :defaultConfig="toolbarConfig"
+                    />
+                    <Editor
+                      style="height: 300px"
+                      :editor="editor7"
+                      mode="simple"
+                      v-model="form.correctIdea"
+                      :defaultConfig="editorConfig7"
+                      @onChange="onChange"
+                      @onCreated="onCreated7"
+                    />
                   </div>
                 </div>
               </div>
@@ -2128,6 +2224,7 @@
       <div
         v-if="currentView === 'list'"
         class="list-view"
+        ref="listViewRef"
         @click="stopReading()"
         style="
           white-space: pre-wrap; /* 关键：保留换行 + 自动换行 */
@@ -2235,6 +2332,18 @@
                   type="text"
                   placeholder="多个关键字用空格分开"
                 />
+                <!-- 题型候选列表（去重） -->
+                <div class="candidate-list" v-if="uniqueQuestionType?.length">
+                  <span class="candidate-label">如：</span>
+                  <span
+                    class="candidate-item"
+                    v-for="item in uniqueQuestionType"
+                    :key="`questionType-${item}`"
+                    @click="append1('keyword', item)"
+                  >
+                    {{ item }}
+                  </span>
+                </div>
               </div>
             </div>
             <div class="filter-row">
@@ -2246,7 +2355,19 @@
                 <input v-model="filterForm.fav" type="checkbox" />
                 仅包含收藏的错题
               </div>
-
+              <div class="filter-checkbox">
+                <input v-model="filterForm.lessThan" type="checkbox" />
+                仅包含复习次数少于
+                <input
+                  v-model.lazy="filterForm.testTimes1"
+                  type="number"
+                  min="1"
+                  style="width: 3em"
+                />
+                次的题目
+              </div>
+            </div>
+            <div class="filter-row">
               <div class="filter-item">
                 添加日期：
                 <input
@@ -2266,7 +2387,7 @@
               <div class="filter-item">
                 题号：
                 <input
-                  v-model.number="filterForm.id"
+                  v-model.number.lazy="filterForm.id"
                   type="number"
                   placeholder="请输入题号"
                   min="1"
@@ -2469,7 +2590,7 @@
                           align-items: center;
                         "
                       >
-                        <strong>错题记录：</strong>
+                        <strong style="color: blue">错题记录：</strong>
                         <div v-if="!isMobile" class="error-actions">
                           <button
                             style="
@@ -2489,7 +2610,7 @@
                             <i
                               class="material-icons"
                               style="
-                                font-size: 1.2em;
+                                font-size: 1.88em;
                                 color: blue;
                                 vertical-align: middle;
                               "
@@ -2514,13 +2635,20 @@
                             <i
                               class="material-icons"
                               style="
-                                font-size: 1.2em;
+                                font-size: 1.88em;
                                 color: blue;
                                 vertical-align: middle;
                               "
                               >star</i
                             >收藏
                           </button>
+                          <span
+                            class="read-btn"
+                            @click="addReview(item.id)"
+                            style="background-color: blue"
+                          >
+                            已复习{{ (item.reviewResult1 || []).length }}次
+                          </span>
                           <button class="read-btn" @click="editError(item, 2)">
                             编辑
                           </button>
@@ -2535,13 +2663,6 @@
                             @click.stop="startReading(index)"
                           >
                             朗读
-                          </button>
-                          <button
-                            class="action"
-                            @click="editCheatSheet(item.user, item.subject)"
-                            style="background-color: transparent; color: blue"
-                          >
-                            CS
                           </button>
                         </div>
                       </div>
@@ -2571,8 +2692,17 @@
                       v-if="item.errorReason && item.errorReason.trim()"
                       style="margin: 16px 0"
                     >
-                      <strong>错题解析：</strong>
-                      <div v-html="item.errorReason" ref="htmlContainer"></div>
+                      <strong style="color: blue">错题解析：</strong>
+                      <div
+                        v-html="item.errorReason"
+                        ref="htmlContainer"
+                        style="
+                          min-height: 60px;
+                          padding: 8px;
+                          background: lightyellow;
+                          border: 1px solid lightblue;
+                        "
+                      ></div>
                       <!-- 新增：错题解析图片预览 -->
                       <div
                         v-if="item.errorReasonImgUrls?.length"
@@ -2591,15 +2721,74 @@
 
                     <!-- 标签 -->
                     <p v-if="item.errorType && item.errorType.trim()">
-                      <strong>标签：</strong>{{ item.errorType }}
+                      <strong style="color: blue">标签：</strong
+                      >{{ item.errorType }}
                     </p>
                     <!-- 题目 -->
                     <div
                       v-if="item.question && item.question.trim()"
                       style="margin: 16px 0"
                     >
-                      <strong>题卡题目：</strong>
-                      <div v-html="item.question" ref="htmlContainer"></div>
+                      <strong style="color: blue">题卡题目：</strong>
+                      <div
+                        v-html="item.question"
+                        ref="htmlContainer"
+                        style="
+                          min-height: 60px;
+                          padding: 8px;
+                          background: lightyellow;
+                          border: 1px solid lightblue;
+                        "
+                      ></div>
+                    </div>
+                    <!-- 可编辑易错点 -->
+                    <div>
+                      <strong style="color: blue">易错点：</strong>
+                      <button
+                        class="read-btn"
+                        @click="toggleCorrectIdeaEdit(item.id)"
+                      >
+                        {{ editingCorrectIdeaIds[item.id] ? "完成" : "编辑" }}
+                      </button>
+                      <div class="section-content">
+                        <!-- 预览模式：v-html 渲染 -->
+                        <div
+                          v-if="!editingCorrectIdeaIds[item.id]"
+                          v-html="
+                            !(
+                              item?.correctIdea.replace(/<[^>]*>/g, '').trim()
+                                .length == 0 &&
+                              !/(img|video|audio)/i.test(item.correctIdea || '')
+                            )
+                              ? item.correctIdea
+                              : '<span style=&quot;color: #999;&quot;>暂无内容。用于记录每次复习和测验中仍犯的错误。</span>'
+                          "
+                          style="
+                            min-height: 60px;
+                            padding: 8px;
+                            background: lightyellow;
+                            border: 1px solid lightblue;
+                          "
+                        ></div>
+                        <!-- 编辑模式：富文本编辑器 -->
+                        <template v-else>
+                          <Toolbar
+                            style="border-bottom: 1px solid #ccc"
+                            :editor="editors[item.id]"
+                            mode="simple"
+                            :defaultConfig="toolbarConfig"
+                          />
+                          <Editor
+                            style="height: 300px"
+                            :editor="editors[item.id]"
+                            mode="simple"
+                            v-model="item.correctIdea"
+                            :defaultConfig="editorConfig5"
+                            @onChange="onErrorItemChange(item.id)"
+                            @onCreated="onCreatedErrorItem(item.id, $event)"
+                          />
+                        </template>
+                      </div>
                     </div>
 
                     <!-- 答案 -->
@@ -2607,19 +2796,22 @@
                       v-if="item.answer && item.answer.trim()"
                       style="margin: 16px 0"
                     >
-                      <strong>答案与解析：</strong>
-                      <div v-html="item.answer" ref="htmlContainer"></div>
-                    </div>
-
-                    <!-- 易错点 -->
-                    <div v-if="item.correctIdea && item.correctIdea.trim()">
-                      <strong>易错点</strong>
-                      <div style="padding: 1em 0">{{ item.correctIdea }}</div>
+                      <strong style="color: blue">答案与解析：</strong>
+                      <div
+                        v-html="item.answer"
+                        ref="htmlContainer"
+                        style="
+                          min-height: 60px;
+                          padding: 8px;
+                          background: lightyellow;
+                          border: 1px solid lightblue;
+                        "
+                      ></div>
                     </div>
 
                     <!-- 备用 -->
                     <p v-if="item.trap && item.trap.trim()">
-                      <strong>备用：</strong>{{ item.trap }}
+                      <strong style="color: blue">备用：</strong>{{ item.trap }}
                       <span
                         v-if="item.trapDetail && item.trapDetail.trim()"
                         style="color: #666; margin-left: 10px"
@@ -2629,11 +2821,10 @@
                     </p>
 
                     <div style="margin: 16px 0">
-                      <strong
-                        @click="switchQ(index)"
-                        style="cursor: pointer; color: green"
-                        >题型总结：</strong
-                      >
+                      <strong style="color: green">题型总结：</strong>
+                      <button class="read-btn" @click="switchQ(index)">
+                        {{ showQ[index] == 1 ? "关闭" : "查看" }}
+                      </button>
                       <div
                         v-if="showQ[index] == 1"
                         v-html="
@@ -2665,7 +2856,8 @@
 
                     <!-- 完善方法 -->
                     <p v-if="item.improveMethod && item.improveMethod.trim()">
-                      <strong>日积月累：</strong>{{ item.improveMethod }}
+                      <strong style="color: blue">日积月累：</strong
+                      >{{ item.improveMethod }}
                     </p>
                     <!-- 举一反三 -->
                     <div
@@ -2674,7 +2866,7 @@
                         (item.similarImgUrls && item.similarImgUrls.length > 0)
                       "
                     >
-                      <strong>举一反三：</strong>
+                      <strong style="color: blue">举一反三：</strong>
                       <div v-html="item.similarText" ref="htmlContainer"></div>
                       <br />
                       <template
@@ -2737,7 +2929,7 @@
                     align-items: center;
                   "
                 >
-                  <strong>错题记录：</strong>
+                  <strong style="color: blue">错题记录：</strong>
                   <div v-if="!isMobile" class="error-actions">
                     <button
                       style="
@@ -2757,7 +2949,7 @@
                       <i
                         class="material-icons"
                         style="
-                          font-size: 1.2em;
+                          font-size: 1.88em;
                           color: blue;
                           vertical-align: middle;
                         "
@@ -2782,13 +2974,20 @@
                       <i
                         class="material-icons"
                         style="
-                          font-size: 1.2em;
+                          font-size: 1.88em;
                           color: blue;
                           vertical-align: middle;
                         "
                         >star</i
                       >收藏
                     </button>
+                    <span
+                      class="read-btn"
+                      @click="addReview(item.id)"
+                      style="background-color: blue"
+                    >
+                      已复习{{ (item.reviewResult1 || []).length }}次
+                    </span>
                     <button class="read-btn" @click="editError(item, 2)">
                       编辑
                     </button>
@@ -2798,19 +2997,18 @@
                     <button class="read-btn" @click.stop="startReading(index)">
                       朗读
                     </button>
-                    <button
-                      class="action"
-                      @click="editCheatSheet(item.user, item.subject)"
-                      style="background-color: white; color: blue"
-                    >
-                      CS
-                    </button>
                   </div>
                 </div>
                 <div
                   v-if="item.originalText"
                   v-html="item.originalText"
                   ref="htmlContainer"
+                  style="
+                    min-height: 60px;
+                    padding: 8px;
+                    background: lightyellow;
+                    border: 1px solid lightblue;
+                  "
                 ></div>
                 <br />
                 <div
@@ -2833,8 +3031,17 @@
                 v-if="item.errorReason && item.errorReason.trim()"
                 style="margin: 16px 0"
               >
-                <strong>错题解析：</strong>
-                <div v-html="item.errorReason" ref="htmlContainer"></div>
+                <strong style="color: blue">错题解析：</strong>
+                <div
+                  v-html="item.errorReason"
+                  ref="htmlContainer"
+                  style="
+                    min-height: 60px;
+                    padding: 8px;
+                    background: lightyellow;
+                    border: 1px solid lightblue;
+                  "
+                ></div>
                 <!-- 新增：错题解析图片预览 -->
                 <div
                   v-if="item.errorReasonImgUrls?.length"
@@ -2853,12 +3060,12 @@
 
               <!-- 标签 -->
               <p v-if="item.errorType && item.errorType.trim()">
-                <strong>标签：</strong>{{ item.errorType }}
+                <strong style="color: blue">标签：</strong>{{ item.errorType }}
               </p>
 
               <!-- 备用 -->
               <p v-if="item.trap && item.trap.trim()">
-                <strong>备用：</strong>{{ item.trap }}
+                <strong style="color: blue">备用：</strong>{{ item.trap }}
                 <span
                   v-if="item.trapDetail && item.trapDetail.trim()"
                   style="color: #666; margin-left: 10px"
@@ -2869,7 +3076,8 @@
 
               <!-- 完善方法 -->
               <p v-if="item.improveMethod && item.improveMethod.trim()">
-                <strong>日积月累：</strong>{{ item.improveMethod }}
+                <strong style="color: blue">日积月累：</strong
+                >{{ item.improveMethod }}
               </p>
               <!-- 修复：p标签不能嵌套div，改为div -->
               <div
@@ -2878,7 +3086,7 @@
                   (item.similarImgUrls && item.similarImgUrls.length > 0)
                 "
               >
-                <strong>举一反三：</strong>
+                <strong style="color: blue">举一反三：</strong>
                 <div v-html="item.similarText" ref="htmlContainer"></div>
                 <br />
                 <template
@@ -2906,31 +3114,90 @@
                 v-if="item.question && item.question.trim()"
                 style="margin: 16px 0"
               >
-                <strong>题卡题目：</strong>
-                <div v-html="item.question" ref="htmlContainer"></div>
+                <strong style="color: blue">题卡题目：</strong>
+                <div
+                  v-html="item.question"
+                  ref="htmlContainer"
+                  style="
+                    min-height: 60px;
+                    padding: 8px;
+                    background: lightyellow;
+                    border: 1px solid lightblue;
+                  "
+                ></div>
               </div>
-
+              <!-- 可编辑易错点 -->
+              <div>
+                <strong style="color: blue">易错点：</strong>
+                <button
+                  class="read-btn"
+                  @click="toggleCorrectIdeaEdit(item.id)"
+                >
+                  {{ editingCorrectIdeaIds[item.id] ? "完成" : "编辑" }}
+                </button>
+                <div class="section-content">
+                  <!-- 预览模式：v-html 渲染 -->
+                  <div
+                    v-if="!editingCorrectIdeaIds[item.id]"
+                    v-html="
+                      !(
+                        item?.correctIdea.replace(/<[^>]*>/g, '').trim()
+                          .length == 0 &&
+                        !/(img|video|audio)/i.test(item.correctIdea || '')
+                      )
+                        ? item.correctIdea
+                        : '<span style=&quot;color: #999;&quot;>暂无内容。用于记录每次复习和测验中仍犯的错误。</span>'
+                    "
+                    style="
+                      min-height: 60px;
+                      padding: 8px;
+                      background: lightyellow;
+                      border: 1px solid lightblue;
+                    "
+                  ></div>
+                  <!-- 编辑模式：富文本编辑器 -->
+                  <template v-else>
+                    <Toolbar
+                      style="border-bottom: 1px solid #ccc"
+                      :editor="editors[item.id]"
+                      mode="simple"
+                      :defaultConfig="toolbarConfig"
+                    />
+                    <Editor
+                      style="height: 300px"
+                      :editor="editors[item.id]"
+                      mode="simple"
+                      v-model="item.correctIdea"
+                      :defaultConfig="editorConfig5"
+                      @onChange="onErrorItemChange(item.id)"
+                      @onCreated="onCreatedErrorItem(item.id, $event)"
+                    />
+                  </template>
+                </div>
+              </div>
               <!-- 答案 -->
               <div
                 v-if="item.answer && item.answer.trim()"
                 style="margin: 16px 0"
               >
-                <strong>答案与解析：</strong>
-                <div v-html="item.answer" ref="htmlContainer"></div>
-              </div>
-
-              <!-- 易错点 -->
-              <div v-if="item.correctIdea && item.correctIdea.trim()">
-                <strong>易错点</strong>
-                <div style="padding: 1em 0">{{ item.correctIdea }}</div>
+                <strong style="color: blue">答案与解析：</strong>
+                <div
+                  v-html="item.answer"
+                  ref="htmlContainer"
+                  style="
+                    min-height: 60px;
+                    padding: 8px;
+                    background: lightyellow;
+                    border: 1px solid lightblue;
+                  "
+                ></div>
               </div>
 
               <div style="margin: 16px 0">
-                <strong
-                  @click="switchQ(index)"
-                  style="cursor: pointer; color: green"
-                  >题型总结：</strong
-                >
+                <strong style="color: green">题型总结：</strong>
+                <button class="read-btn" @click="switchQ(index)">
+                  {{ showQ[index] == 1 ? "关闭" : "查看" }}
+                </button>
                 <div
                   v-if="showQ[index] == 1"
                   v-html="
@@ -2978,7 +3245,7 @@
               >
                 <i
                   class="material-icons"
-                  style="font-size: 1.2em; color: blue; vertical-align: middle"
+                  style="font-size: 1.88em; color: blue; vertical-align: middle"
                   >star_border</i
                 >收藏
               </button>
@@ -2999,23 +3266,23 @@
               >
                 <i
                   class="material-icons"
-                  style="font-size: 1.2em; color: blue; vertical-align: middle"
+                  style="font-size: 1.88em; color: blue; vertical-align: middle"
                   >star</i
                 >收藏
               </button>
+              <span
+                class="read-btn"
+                @click="addReview(item.id)"
+                style="background-color: blue"
+              >
+                已复习{{ (item.reviewResult1 || []).length }}次
+              </span>
               <button class="read-btn" @click="editError(item, 2)">编辑</button>
               <button class="read-btn" @click="deleteError(item.id)">
                 删除
               </button>
               <button class="read-btn" @click.stop="startReading(index)">
                 朗读
-              </button>
-              <button
-                class="action"
-                @click="editCheatSheet(item.user, item.subject)"
-                style="background-color: white; color: blue"
-              >
-                CS
               </button>
             </div>
           </div>
@@ -3172,7 +3439,7 @@
                                 align-items: center;
                               "
                             >
-                              <strong>错题记录：</strong>
+                              <strong style="color: blue">错题记录：</strong>
                               <div v-if="!isMobile" class="error-actions">
                                 <button
                                   style="
@@ -3194,7 +3461,7 @@
                                   <i
                                     class="material-icons"
                                     style="
-                                      font-size: 1.2em;
+                                      font-size: 1.88em;
                                       color: blue;
                                       vertical-align: middle;
                                     "
@@ -3221,13 +3488,22 @@
                                   <i
                                     class="material-icons"
                                     style="
-                                      font-size: 1.2em;
+                                      font-size: 1.88em;
                                       color: blue;
                                       vertical-align: middle;
                                     "
                                     >star</i
                                   >收藏
                                 </button>
+                                <span
+                                  class="read-btn"
+                                  @click="addReview(item.id)"
+                                  style="background-color: blue"
+                                >
+                                  已复习{{
+                                    (item.reviewResult1 || []).length
+                                  }}次
+                                </span>
                                 <button
                                   class="read-btn"
                                   @click="editError(item, 2)"
@@ -3248,21 +3524,18 @@
                                 >
                                   朗读
                                 </button>
-                                <button
-                                  class="action"
-                                  @click="
-                                    editCheatSheet(item.user, item.subject)
-                                  "
-                                  style="background-color: white; color: blue"
-                                >
-                                  CS
-                                </button>
                               </div>
                             </div>
                             <div
                               v-if="item.originalText"
                               ref="htmlContainer"
                               v-html="item.originalText"
+                              style="
+                                min-height: 60px;
+                                padding: 8px;
+                                background: lightyellow;
+                                border: 1px solid lightblue;
+                              "
                             ></div>
                             <br />
                             <div
@@ -3282,7 +3555,8 @@
 
                           <!-- 标签 -->
                           <p v-if="item.errorType && item.errorType.trim()">
-                            <strong>标签：</strong>{{ item.errorType }}
+                            <strong style="color: blue">标签：</strong
+                            >{{ item.errorType }}
                           </p>
 
                           <!-- 错题解析 -->
@@ -3290,10 +3564,16 @@
                             v-if="item.errorReason && item.errorReason.trim()"
                             style="margin: 16px 0"
                           >
-                            <strong>错题解析：</strong>
+                            <strong style="color: blue">错题解析：</strong>
                             <div
                               v-html="item.errorReason"
                               ref="htmlContainer"
+                              style="
+                                min-height: 60px;
+                                padding: 8px;
+                                background: lightyellow;
+                                border: 1px solid lightblue;
+                              "
                             ></div>
                             <div
                               v-if="item.errorReasonImgUrls?.length"
@@ -3303,7 +3583,8 @@
 
                           <!-- 备用 -->
                           <p v-if="item.trap && item.trap.trim()">
-                            <strong>备用：</strong>{{ item.trap }}
+                            <strong style="color: blue">备用：</strong
+                            >{{ item.trap }}
                             <span
                               v-if="item.trapDetail && item.trapDetail.trim()"
                               style="color: #666; margin-left: 10px"
@@ -3318,7 +3599,7 @@
                               item.improveMethod && item.improveMethod.trim()
                             "
                           >
-                            <strong>本题型提高方法：</strong
+                            <strong style="color: blue">本题型提高方法：</strong
                             >{{ item.improveMethod }}
                           </p>
 
@@ -3330,7 +3611,7 @@
                                 item.similarImgUrls.length > 0)
                             "
                           >
-                            <strong>举一反三：</strong>
+                            <strong style="color: blue">举一反三：</strong>
                             <div
                               v-html="item.similarText"
                               ref="htmlContainer"
@@ -3346,38 +3627,97 @@
                             v-if="item.question && item.question.trim()"
                             style="margin: 16px 0"
                           >
-                            <strong>题卡题目：</strong>
+                            <strong style="color: blue">题卡题目：</strong>
                             <div
                               v-html="item.question"
                               ref="htmlContainer"
+                              style="
+                                min-height: 60px;
+                                padding: 8px;
+                                background: lightyellow;
+                                border: 1px solid lightblue;
+                              "
                             ></div>
                           </div>
-
+                          <!-- 可编辑易错点 -->
+                          <div>
+                            <strong style="color: blue">易错点：</strong>
+                            <button
+                              class="read-btn"
+                              @click="toggleCorrectIdeaEdit(item.id)"
+                            >
+                              {{
+                                editingCorrectIdeaIds[item.id] ? "完成" : "编辑"
+                              }}
+                            </button>
+                            <div class="section-content">
+                              <!-- 预览模式：v-html 渲染 -->
+                              <div
+                                v-if="!editingCorrectIdeaIds[item.id]"
+                                v-html="
+                                  !(
+                                    item?.correctIdea
+                                      .replace(/<[^>]*>/g, '')
+                                      .trim().length == 0 &&
+                                    !/(img|video|audio)/i.test(
+                                      item.correctIdea || ''
+                                    )
+                                  )
+                                    ? item.correctIdea
+                                    : '<span style=&quot;color: #999;&quot;>暂无内容。用于记录每次复习和测验中仍犯的错误。</span>'
+                                "
+                                style="
+                                  min-height: 60px;
+                                  padding: 8px;
+                                  background: lightyellow;
+                                  border: 1px solid lightblue;
+                                "
+                              ></div>
+                              <!-- 编辑模式：富文本编辑器 -->
+                              <template v-else>
+                                <Toolbar
+                                  style="border-bottom: 1px solid #ccc"
+                                  :editor="editors[item.id]"
+                                  mode="simple"
+                                  :defaultConfig="toolbarConfig"
+                                />
+                                <Editor
+                                  style="height: 300px"
+                                  :editor="editors[item.id]"
+                                  mode="simple"
+                                  v-model="item.correctIdea"
+                                  :defaultConfig="editorConfig5"
+                                  @onChange="onErrorItemChange(item.id)"
+                                  @onCreated="
+                                    onCreatedErrorItem(item.id, $event)
+                                  "
+                                />
+                              </template>
+                            </div>
+                          </div>
                           <!-- 答案 -->
                           <div
                             v-if="item.answer && item.answer.trim()"
                             style="margin: 16px 0"
                           >
-                            <strong>答案与解析：</strong>
-                            <div v-html="item.answer" ref="htmlContainer"></div>
-                          </div>
-
-                          <!-- 易错点 -->
-                          <div
-                            v-if="item.correctIdea && item.correctIdea.trim()"
-                          >
-                            <strong>易错点</strong>
-                            <div style="padding: 1em 0">
-                              {{ item.correctIdea }}
-                            </div>
+                            <strong style="color: blue">答案与解析：</strong>
+                            <div
+                              v-html="item.answer"
+                              ref="htmlContainer"
+                              style="
+                                min-height: 60px;
+                                padding: 8px;
+                                background: lightyellow;
+                                border: 1px solid lightblue;
+                              "
+                            ></div>
                           </div>
 
                           <div style="margin: 16px 0">
-                            <strong
-                              @click="switchQ(index)"
-                              style="cursor: pointer; color: green"
-                              >题型总结：</strong
-                            >
+                            <strong style="color: green">题型总结：</strong>
+                            <button class="read-btn" @click="switchQ(index)">
+                              {{ showQ[index] == 1 ? "关闭" : "查看" }}
+                            </button>
                             <div
                               v-if="showQ[index] == 1"
                               v-html="
@@ -3432,7 +3772,7 @@
                             <i
                               class="material-icons"
                               style="
-                                font-size: 1.2em;
+                                font-size: 1.88em;
                                 color: blue;
                                 vertical-align: middle;
                               "
@@ -3457,7 +3797,7 @@
                             <i
                               class="material-icons"
                               style="
-                                font-size: 1.2em;
+                                font-size: 1.88em;
                                 color: blue;
                                 vertical-align: middle;
                               "
@@ -4499,6 +4839,9 @@ export default {
   },
   data() {
     return {
+      oldV: "",
+      new: "",
+      editHaveNow: 0,
       showQ: [],
       onOffline: Number(window.localStorage.getItem("isOffline")) == 1,
       editAnswer: false,
@@ -4576,6 +4919,7 @@ export default {
       serverModifiedTime: 0,
       lastModifiedTime: 0,
       fromPage: "",
+      listScrollPosition: 0,
       selectedSimilarIds: [],
       showPaperPreview: false,
       selectedSimilarItems: [],
@@ -4629,6 +4973,9 @@ export default {
       editor3: null,
       editor4: null,
       editor5: null,
+      editor7: null,
+      editors: {}, // 存储多个编辑器实例，key 为 item.id
+      editingCorrectIdeaIds: {}, // 存储哪些项正在编辑 correctIdea，key 为 item.id
       editor6: null,
       toolbarConfig: {
         // toolbarKeys: [ /* 显示哪些菜单，如何排序、分组 */ ],
@@ -4639,6 +4986,16 @@ export default {
           "clearStyle",
           "blockquote",
           "codeBlock",
+          "header1",
+          "header2",
+          "header3",
+          "bulletedList",
+          "numberedList",
+          "todo",
+          "insertTable",
+          "insertLink",
+          "insertVideo",
+          "justifyRight",
         ],
         insertKeys: {
           index: 0,
@@ -4712,12 +5069,12 @@ export default {
         },
       },
       editorConfig4: {
-        placeholder: "晴粘贴错题图片，或输入错题文字描述...",
+        placeholder: "请粘贴错题图片，或输入错题文字描述...",
         // autoFocus: false,
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
-            base64LimitSize: 100 * 1024 * 1024, // 100M 以下插入 base64
+            base64LimitSize: 1000 * 1024 * 1024, // 100M 以下插入 base64
           },
           fontSize: {
             fontSizeList: [
@@ -4778,6 +5135,30 @@ export default {
           },
         },
       },
+
+      editorConfig7: {
+        placeholder: "易错点：可用于记录每次复习和测验中所犯错误。",
+        // autoFocus: false,
+        MENU_CONF: {
+          uploadImage: {
+            fieldName: "your-fileName",
+            base64LimitSize: 100 * 1024 * 1024, // 100M 以下插入 base64
+          },
+          fontSize: {
+            fontSizeList: [
+              "12px",
+              "14px",
+              "16px",
+              "18px",
+              "24px",
+              "30px",
+              "36px",
+              "48px",
+            ],
+          },
+        },
+      },
+
       editorConfig: {
         placeholder: "请输入错题的原题题目或新的题目（不含答案）",
         MENU_CONF: {
@@ -4918,7 +5299,9 @@ export default {
         hasSimilar: "",
         keyword: "",
         fav: false,
-        hasCards: false,
+        hasCards: true,
+        lessThan: true,
+        testTimes1: 1,
       },
     };
   },
@@ -4934,8 +5317,17 @@ export default {
           : this.mistaker;
       if (!this.filterForm.hasCards)
         list = list.filter(
-          (item) => item?.question.replace(/<[^>]*>/g, "").trim().length == 0
+          (item) =>
+            item?.question.replace(/<[^>]*>/g, "").trim().length == 0 &&
+            !/(img|video|audio)/i.test(item.question || "")
         );
+      if (this.filterForm.lessThan) {
+        list = list.filter(
+          (item) =>
+            (item?.reviewResult1 || []).length < this.filterForm.testTimes1
+        );
+      }
+
       if (!this.reverseList) return list;
       else return list.slice().sort((a, b) => b.id - a.id);
     },
@@ -5052,7 +5444,13 @@ export default {
     },
 
     questionCards() {
-      let result = this.mistaker.filter((item) => item.question?.trim());
+      let result = this.mistaker.filter(
+        (item) =>
+          !(
+            item.question?.replace(/<[^>]*>/g, "").trim() == "" &&
+            !/(img)/i.test(item.question || "")
+          )
+      );
       if (this.testFilterForm.keyword.trim()) {
         const keyword = this.testFilterForm.keyword.trim().toLowerCase();
         result = result.filter((item) => {
@@ -5208,11 +5606,15 @@ export default {
     },
     uniqueErrorTypes() {
       const defaultErrorTypes = [
-        "低级错误",
+        "马虎",
+        "审题失误",
         "陷阱",
+        "概念不清",
         "知识遗忘",
         "思路错误",
-        "易错点",
+        "易错",
+        "时间不足",
+        "存疑",
       ];
 
       if (
@@ -5259,7 +5661,6 @@ export default {
 
       return [...new Set([...userFromMistaker])];
     },
-    // 提取不重复的科目列表
     uniqueSubjects() {
       const subjectsFromMistaker = [
         ...new Set(
@@ -5277,8 +5678,26 @@ export default {
 
       return [...new Set([...subjectsFromMistaker, ...subjectsFromSummary])];
     },
+    uniqueQuestionType() {
+      const questionTypeFromMistaker = [
+        ...new Set(
+          this.mistaker.map((item) => item.questionType?.trim()).filter(Boolean)
+        ),
+      ];
 
-    // 按题型分组的数据
+      const questionTypeFromSummary = [
+        ...new Set(
+          this.finalQuestionTypeSummary
+            .map((item) => item.questionType.trim())
+            .filter(Boolean)
+        ),
+      ];
+
+      return [
+        ...new Set([...questionTypeFromMistaker, ...questionTypeFromSummary]),
+      ];
+    },
+
     questionTypeMap() {
       const map = {};
       this.finalQuestionTypeSummary.forEach((item) => {
@@ -5313,7 +5732,7 @@ export default {
     groupedMistaker() {
       if (!this.showMistaker.length) return [];
 
-      // 先按照科目->考点->题型排序
+      // 按照科目考点题型排序
       const sorted = [...this.showMistaker].sort((a, b) => {
         // 科目排序
         const subjectCompare = (a.subject || "未分类").localeCompare(
@@ -5383,6 +5802,21 @@ export default {
 
       return grouped;
     },
+    msg0() {
+      if (this.editHaveNow == 1) return "已有用户重命名";
+      else if (this.editHaveNow == 2) return "已有科目重命名";
+      else if (this.editHaveNow == 3) return "已有考点重命名";
+      else if (this.editHaveNow == 4) return "已有题型重命名";
+      else return "";
+    },
+    msg1() {
+      if (this.editHaveNow == 1) return "已有用户名：";
+      else if (this.editHaveNow == 2) return "已有科目名：";
+      else if (this.editHaveNow == 3) return "已有考点名：";
+      else if (this.editHaveNow == 4) return "已有题型名：";
+      else return "";
+    },
+
     uniqueTraps() {
       return [
         ...new Set(
@@ -5440,7 +5874,7 @@ export default {
         questionTypeNode.items.push(item);
       });
 
-      // 转换为树形结构数组
+      // 转换为树形............................................................................
       return Array.from(subjectMap.values()).map((subject) => ({
         ...subject,
         children: Array.from(subject.children.values()).map((subClass) => ({
@@ -5651,11 +6085,10 @@ export default {
         const card = this.currentReadingCard;
         if (!card) return;
 
-        // 构建朗读文本 - 先只朗读题目
+        // 构建朗读文本 - 先只朗读题目...
         let textToRead = `题号：${card.id}。。。。。。。。`;
         textToRead += `题型：${card.questionType}。。。。。。。`;
 
-        // 题目文本（去除HTML标签）.......................................................................................
         if (card.question) {
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = card.question;
@@ -5851,6 +6284,7 @@ export default {
     this.loadBaiDuTJScript();
     this.filterForm = this.loadFilterForm();
     this.testFilterForm = this.loadTestFilterForm();
+    window.localStorage.setItem("mistakebook_list_scroll", 0);
     setTimeout(() => {
       this.handleFilter();
       this.pageView();
@@ -5875,6 +6309,7 @@ export default {
       this.cropper.destroy();
     }
     if (this.editor) this.editor.destroy(); // 组件销毁时，及时销毁 editor ，重要！！！
+    if (this.editor7) this.editor7.destroy(); // 组件销毁时，及时销毁 editor ，重要！！！
     if (this.editor6) this.editor6.destroy(); // 组件销毁时，及时销毁 editor ，重要！！！
     if (this.editor5) this.editor5.destroy(); // 组件销毁时，及时销毁 editor ，重要！！！
     if (this.editor4) this.editor4.destroy(); // 组件销毁时，及时销毁 editor ，重要！！！
@@ -5885,6 +6320,7 @@ export default {
     if (this.editorQuestion) {
       this.editorQuestion.destroy();
     }
+    this.destroyAllErrorItemEditors(); // 销毁所有循环项编辑器
   },
   methods: {
     onTouchStart(e) {
@@ -6179,9 +6615,8 @@ export default {
             <tr>
               <th width="11%">记录</th>
               <th width="7%">题号</th>
-              <th width="32%">题目</th>
-              <th width="30%">答案与解析</th>
-              <th width="20%">易错点</th>
+              <th width="42%">题目</th>
+              <th width="40%">答案与解析</th>
             </tr>
           </thead>
           <tbody>
@@ -6218,9 +6653,10 @@ export default {
           <td class="text-center">${card.id}</td>
           <td class="question-content">${questionContent || "无题目内容"}</td>
           <td class="answer-content">
-            ${answerContent || "无"}
+            <div>
+            ${answerContent || ""} 
+            </div><div>${card.correctIdea || ""}</div>
            </td>
-           <td class="question-content">${card.correctIdea || ""}</td>
         </tr>
       `;
         });
@@ -6686,6 +7122,78 @@ export default {
       this.speechState.isSpeaking = false;
     },
 
+    editHaveDo(x) {
+      if (this.newV == "" || this.oldV == "") return;
+      if (x == 1) {
+        this.mistaker.forEach((item) => {
+          if (item.user === this.oldV) {
+            item.user = this.newV;
+          }
+        });
+        this.finalCheatSheet.forEach((item) => {
+          if (item.user === this.oldV) {
+            item.user = this.newV;
+          }
+        });
+      } else if (x == 2) {
+        this.mistaker.forEach((item) => {
+          if (item.subject === this.oldV) {
+            item.subject = this.newV;
+          }
+        });
+        this.finalCheatSheet.forEach((item) => {
+          if (item.subject === this.oldV) {
+            item.subject = this.newV;
+          }
+        });
+        this.finalQuestionTypeSummary.forEach((item) => {
+          if (item.subject === this.oldV) {
+            item.subject = this.newV;
+          }
+        });
+        this.taskList.forEach((item) => {
+          if (item.subject === this.oldV) {
+            item.subject = this.newV;
+          }
+        });
+      } else if (x == 3) {
+        this.mistaker.forEach((item) => {
+          if (item.subClass === this.oldV) {
+            item.subClass = this.newV;
+          }
+        });
+
+        this.finalQuestionTypeSummary.forEach((item) => {
+          if (item.subClass === this.oldV) {
+            item.subClass = this.newV;
+          }
+        });
+        this.taskList.forEach((item) => {
+          if (item.subClass === this.oldV) {
+            item.subClass = this.newV;
+          }
+        });
+      } else if (x == 4) {
+        this.mistaker.forEach((item) => {
+          if (item.questionType === this.oldV) {
+            item.questionType = this.newV;
+          }
+        });
+
+        this.finalQuestionTypeSummary.forEach((item) => {
+          if (item.questionType === this.oldV) {
+            item.questionType = this.newV;
+          }
+        });
+        this.taskList.forEach((item) => {
+          if (item.questionType === this.oldV) {
+            item.questionType = this.newV;
+          }
+        });
+      }
+      this.editHaveNow = 0;
+    },
+
     lastCurrentCard() {
       if (this.isReadingCard) {
         // 先移除当前utterance的事件监听器，避免触发onerror
@@ -6784,6 +7292,10 @@ export default {
       this.toggleCheatSheetSelection(uniqueId);
     },
 
+    editHave(x) {
+      this.editHaveNow = x;
+    },
+
     handleCheatSheetItemClick(uniqueId, event) {
       // 检查点击的是否是复选框或复选框标签
       if (
@@ -6874,7 +7386,9 @@ export default {
         hasSimilar: "",
         keyword: "",
         fav: false,
-        hasCards: false,
+        hasCards: true,
+        lessThan: false,
+        testTimes1: 1,
       };
 
       try {
@@ -7254,6 +7768,19 @@ export default {
       }
     },
 
+    addReview(x) {
+      let iR = this.mistaker.find((item) => item.id == x);
+      if (iR) {
+        // 不存在就用 $set 新增响应式属性
+        if (!iR.reviewResult1) {
+          this.$set(iR, "reviewResult1", []);
+        }
+        iR.reviewResult1.push(2);
+        const a = (iR?.reviewResult1 || []).length;
+        this.showMsg(2, a);
+      }
+    },
+
     mergeItem() {
       if (
         this.form.user.trim() &&
@@ -7528,13 +8055,14 @@ export default {
         return;
       }
 
-      const questionType = questionTypeKeys[index];
-      const summaryData = this.questionTypeMapFiltered[questionType];
+      const summaryItem = this.questionTypeMapFiltered[index];
+      const questionType = summaryItem ? summaryItem.key : "";
+      const summaryData = summaryItem ? summaryItem.value : null;
 
       // 构建要朗读的文本内容
       let textToRead = `题型：${questionType}。`;
 
-      if (summaryData.summary && summaryData.summary.trim()) {
+      if (summaryData && summaryData.summary && summaryData.summary.trim()) {
         // 去除HTML标签，只朗读文本内容
         const div = document.createElement("div");
         div.innerHTML = summaryData.summary;
@@ -7820,8 +8348,33 @@ export default {
     onCreated5(editor) {
       this.editor5 = Object.seal(editor);
     },
+    onCreated7(editor) {
+      this.editor7 = Object.seal(editor);
+    },
     onCreated6(editor) {
       this.editor6 = Object.seal(editor);
+    },
+    onCreatedErrorItem(id, editor) {
+      this.$set(this.editors, id, Object.seal(editor));
+    },
+    onErrorItemChange() {},
+    destroyAllErrorItemEditors() {
+      Object.keys(this.editors).forEach((key) => {
+        if (this.editors[key]) {
+          this.editors[key].destroy();
+        }
+      });
+      this.editors = {};
+    },
+    toggleCorrectIdeaEdit(id) {
+      this.$set(
+        this.editingCorrectIdeaIds,
+        id,
+        !this.editingCorrectIdeaIds[id]
+      );
+    },
+    isCorrectIdeaEditing(id) {
+      return !!this.editingCorrectIdeaIds[id];
     },
     onChange(editor) {
       if (editor == null) return;
@@ -8025,6 +8578,7 @@ export default {
         let currentQuestion = this.mistaker[i];
         currentQuestion.reviewDate = "0,0";
         currentQuestion.reviewResult = [];
+        currentQuestion.reviewResult1 = [];
         currentQuestion.importantLevel = 0;
       }
     },
@@ -8054,7 +8608,8 @@ export default {
     },
     showMsg(x, y) {
       if (x == 0) this.msg = "当前题卡掌握程度已降至 0 级！";
-      else this.msg = "当前题卡掌握程度已升至 " + y + "级！";
+      else if (x == 1) this.msg = "当前题卡掌握程度已升至 " + y + "级！";
+      else this.msg = "当前题目复习次数已升至 " + y + "级！";
       setTimeout(() => {
         this.msg = "";
       }, 3000);
@@ -8470,6 +9025,11 @@ export default {
 
     updateCList() {
       // 获取原始用户名，并去除首尾空格
+      if (
+        this.form.cheatSheet?.replace(/<[^>]*>/g, "").trim() == "" &&
+        !/(img|video|audio)/i.test(this.form.cheatSheet || "")
+      )
+        return;
       const userInput = this.form.user?.trim() || "";
 
       // 如果用户名包含空格，则分割成多个用户名
@@ -8517,10 +9077,77 @@ export default {
       this.showCSModal = false;
     },
 
+    async compressJsonImagesToWebp(jsonData, quality = 0.8) {
+      // 深拷贝原数据，避免修改原对象
+      const data = JSON.parse(JSON.stringify(jsonData));
+
+      // 匹配所有 base64 图片的正则
+      const base64ImageRegex =
+        /data:image\/(png|jpg|jpeg|gif);base64,[A-Za-z0-9+/=]+/g;
+
+      // 递归遍历 JSON 所有字段，替换图片
+      async function traverseAndReplace(obj) {
+        if (!obj || typeof obj !== "object") return obj;
+
+        for (const key in obj) {
+          const value = obj[key];
+
+          // 字符串类型，检查是否包含 base64 图片
+          if (typeof value === "string") {
+            // 匹配所有图片
+            const matches = value.match(base64ImageRegex) || [];
+
+            for (const base64 of matches) {
+              try {
+                // 压缩成 WebP
+                const webpBase64 = await base64ToWebp(base64, quality);
+                // 替换原 base64
+                obj[key] = obj[key].replace(base64, webpBase64);
+              } catch (e) {
+                console.warn("图片压缩失败:", e);
+              }
+            }
+          }
+          // 对象/数组递归处理
+          else if (typeof value === "object") {
+            await traverseAndReplace(value);
+          }
+        }
+        return obj;
+      }
+
+      // base64 转 WebP
+      function base64ToWebp(base64, quality) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            // 输出 WebP 格式 base64
+            const webpBase64 = canvas.toDataURL("image/webp", quality);
+            resolve(webpBase64);
+          };
+
+          img.onerror = reject;
+          img.src = base64;
+        });
+      }
+
+      return await traverseAndReplace(data);
+    },
+
     updateQList() {
       // 检查必填项
       if (
         this.form.questionTypeSummary?.replace(/<[^>]*>/g, "").trim() == "" &&
+        !/(img|video|audio)/i.test(this.form.questionTypeSummary || "") &&
         this.form.questionTypeImgUrls?.length == 0
       ) {
         const index = this.finalQuestionTypeSummary.findIndex(
@@ -8625,8 +9252,18 @@ export default {
         }
       }
       if (view === "list") {
+        this.editingCorrectIdeaIds = {};
         this.isAllExpanded = true;
-        this.toggleExpandAll();
+        //      this.toggleExpandAll();
+        // 恢复页面滚动位置
+        this.$nextTick(() => {
+          const savedScroll = window.localStorage.getItem(
+            "mistakebook_list_scroll"
+          );
+          if (savedScroll) {
+            window.scrollTo(0, Number(savedScroll));
+          }
+        });
       }
     },
     showSetting() {
@@ -8921,6 +9558,7 @@ export default {
             answer: this.form.answer.trim(),
             reviewDate: "0,0",
             reviewResult: [],
+            reviewResult1: [],
             errorType: this.form.errorType.trim(),
             errorReason: this.form.errorReason.trim(),
             errorReasonImgUrls: [...this.form.errorReasonImgUrls],
@@ -8932,11 +9570,15 @@ export default {
           };
           if (
             !(
-              newError.originalText?.replace(/<[^>]*>/g, "").trim() == "" &&
-              newError.originalImgUrls?.length == 0 &&
-              newError.question?.replace(/<[^>]*>/g, "").trim() == "" &&
-              newError.answer?.replace(/<[^>]*>/g, "").trim() == "" &&
-              newError.correctIdea?.replace(/<[^>]*>/g, "").trim() == ""
+              newError.originalText?.replace(/<[^>]*>/g, "").trim() === "" &&
+              !/(img|video|audio)/i.test(newError.originalText || "") &&
+              newError.originalImgUrls?.length === 0 &&
+              newError.question?.replace(/<[^>]*>/g, "").trim() === "" &&
+              !/(img|video|audio)/i.test(newError.question || "") &&
+              newError.answer?.replace(/<[^>]*>/g, "").trim() === "" &&
+              !/(img|video|audio)/i.test(newError.answer || "") &&
+              newError.correctIdea?.replace(/<[^>]*>/g, "").trim() === "" &&
+              !/(img|video|audio)/i.test(newError.correctIdea || "")
             )
           )
             this.mistaker.push(newError);
@@ -8996,6 +9638,11 @@ export default {
       }
       if (x == 2) {
         this.expandMistaker();
+        this.listScrollPosition = window.scrollY;
+        window.localStorage.setItem(
+          "mistakebook_list_scroll",
+          this.listScrollPosition.toString()
+        );
       }
       this.isEditing = true;
       this.editingId = item.id;
@@ -9030,6 +9677,7 @@ export default {
         trapDetail: item.trapDetail || "",
         reviewDate: item.reviewDate || "0,0",
         reviewResult: item.reviewResult || [],
+        reviewResult1: item.reviewResult1 || [],
         errorReason: item.errorReason,
         errorReasonImgUrls: [...(item.errorReasonImgUrls || [])],
         correctIdea: item.correctIdea,
@@ -9124,18 +9772,25 @@ export default {
           <span>日期: ${this.formatDateWithWeek(item.addDate)}</span>
         </div>
         <div class="q-title">题目 ${index + 1}：</div>
-        <div class="question-content">${
-          item.question || item.originalText || "（无题目）"
-        }</div>
-        <div class="answer">
-          <strong>答案与解析：</strong>
-          <div>${item.answer || "（无答案）"}</div>
+        <div v-if="!(item.originalText?.replace(/<[^>]*>/g, '').trim() === '' && !/(img)/i.test(item.originalText || ''))" class="question-content">
+          <strong>错题记录：</strong>
+          <div>
+            ${item.originalText}
+          </div>
+        </div>
+        <div v-if="!(item.question?.replace(/<[^>]*>/g, '').trim() === '' && !/(img)/i.test(item.question || ''))" class="question-content">
+          <strong>题卡题目：</strong>
+          <div>${item.question}</div>
         </div>
         ${
           item.correctIdea
-            ? `<div class="correct-idea"><strong>易错点：</strong>${item.correctIdea}</div>`
+            ? `<div class="question-content"><strong>易错点：</strong>${item.correctIdea}</div>`
             : ""
         }
+        <div v-if="!(item.answer?.replace(/<[^>]*>/g, '').trim() === '' && !/(img)/i.test(item.answer || ''))" class="question-content">
+          <strong>答案与解析：</strong>
+          <div>${item.answer}</div>
+        </div>
       </div>
     `;
       });
@@ -9156,8 +9811,6 @@ export default {
       // 等待内容加载完毕后触发打印
       setTimeout(() => {
         printWindow.print();
-        // 打印后可选择关闭窗口，但可能因浏览器策略被阻止
-        // printWindow.close();
       }, 250);
     },
 
@@ -9454,7 +10107,9 @@ export default {
         hasSimilar: "",
         keyword: "",
         fav: false,
-        hasCards: false,
+        hasCards: true,
+        lessThan: false,
+        testTimes1: 1,
       };
       this.reverseList = true;
       this.filteredMistaker = [];
@@ -9794,18 +10449,18 @@ export default {
     },
 
     async readFromForage() {
-      let importData = {};
+      let importData1 = {};
       try {
         const value = await localforage.getItem(this.forageName);
-        importData = JSON.parse(value || "{}");
+        importData1 = JSON.parse(value || "{}");
       } catch (error) {
         console.error("从localforage读取数据失败:", error);
-        importData = {};
+        importData1 = {};
       }
-      if (!Array.isArray(importData.mistaker)) {
+      if (!Array.isArray(importData1.mistaker)) {
         throw new Error("数据格式错误！");
       }
-      const isValidMistaker = importData.mistaker.every((item) => {
+      const isValidMistaker = importData1.mistaker.every((item) => {
         if (typeof item !== "object" || item === null) return false;
         return (
           Object.prototype.hasOwnProperty.call(item, "id") &&
@@ -9820,6 +10475,7 @@ export default {
           "错题数据格式错误，缺少核心字段（题号/日期/用户/科目）"
         );
       }
+      let importData = await this.compressJsonImagesToWebp(importData1);
       this.finalQuestionTypeSummary = importData.finalQuestionTypeSummary || [];
       this.finalSubjectSummary = importData.finalSubjectSummary || [];
       this.finalCheatSheet = importData.finalCheatSheet || [];
@@ -10049,6 +10705,8 @@ export default {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .candidate-label {
@@ -10212,6 +10870,9 @@ export default {
   border: 1px solid #eee;
   border-radius: 4px;
   margin: 6px 0;
+  /* 启用内容可见性优化，浏览器自动跳过屏幕外内容的渲染 */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
 }
 
 .task-item:has(.completion-checkbox:checked) {
@@ -10475,6 +11136,9 @@ export default {
   border: 1px solid #eee;
   border-radius: 6px;
   margin-bottom: 16px;
+  /* 启用内容可见性优化 */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
 }
 
 .summary-header {
@@ -12059,6 +12723,7 @@ img {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
 }
 
 .card-table th {
@@ -12108,6 +12773,12 @@ img {
 .card-table tbody tr.expanded {
   background-color: #f0f8ff;
   border-left: 3px solid #3498db;
+}
+
+/* 表格行内容可见性优化 */
+.card-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 60px;
 }
 
 .placeholder {
@@ -12436,11 +13107,6 @@ img {
 }
 
 @media (max-width: 768px) {
-  .candidate-list {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-
   .tree-nav-container {
     flex-direction: column;
   }
@@ -12701,6 +13367,9 @@ img {
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
   background-color: white;
+  /* 启用内容可见性优化 */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
 }
 
 .cheat-sheet-item:last-child {
@@ -12944,5 +13613,9 @@ img {
 <style>
 .vel-modal {
   background-color: rgba(0, 0, 0, 0.88) !important;
+}
+.error-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
 }
 </style>

@@ -5889,7 +5889,7 @@ export default {
       else currentVal = this.addNewWord.require || "";
       const values = currentVal.split(" ").filter((v) => v.trim() !== "");
 
-      // 如果点击的选项已存在，则移除它（实现点击切换）
+      // 如果点击的选项已存在，则移除它（实现点击切换）...........................................................................................................................
       if (values.includes(option)) {
         if (x == 2)
           this.requireLevel = values.filter((v) => v !== option).join(" ");
@@ -9101,11 +9101,15 @@ export default {
       const date = Date.now();
       try {
         let content = {};
-        if (this.onOffline) {
+        if (!xx && this.onOffline) {
           content.content = await localforage.getItem(
             this.user.username + "/PDJ-WordList.txt"
           );
-        } else if (!xx && window.localStorage.getItem("needUpdate") == "1") {
+        } else if (
+          !xx &&
+          window.localStorage.getItem("needUpdate") == "1" &&
+          !this.onOffline
+        ) {
           if (
             confirm(
               "浏览器缓存中的单词本与服务器上的单词本不一致！点击'确定'将使用缓存中的单词本并更新至服务器；点击'取消'将使用服务器中的版本，并更新至缓存中。"
@@ -9126,18 +9130,20 @@ export default {
             window.localStorage.setItem("needUpdate", "0");
           }
         } else {
-          content = await api.fetch(
-            "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt"
-          );
+          if (!xx && !this.onOffline)
+            content = await api.fetch(
+              "/files/!PDJ/user-" + this.user.username + "/PDJ-WordList.txt"
+            );
+          else {
+            if (xx) content.content = xx;
+            if (xx == 0) content.content = "";
+          }
           await localforage.setItem(
             this.user.username + "/PDJ-WordList.txt",
             content.content
           );
           window.localStorage.setItem("needUpdate", "0");
         }
-
-        if (xx) content.content = xx;
-        if (xx == 0) content.content = "";
         const lines = content.content.split(/\r?\n/);
         const wordList = lines
           .filter((line) => line.trim() !== "")
@@ -9575,7 +9581,7 @@ export default {
             (item) => item === this.listWord
           );
           if (index !== -1) {
-            this.wordList[index] = newW;
+            this.$set(this.wordList, index, newW);
           }
           this.toEditWord = false;
         } else this.wordList.push(newW);

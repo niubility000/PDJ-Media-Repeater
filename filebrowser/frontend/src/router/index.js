@@ -220,13 +220,20 @@ router.afterEach((to, from) => {
     const toIsDir = to.path.endsWith("/");
     const fromIsDir = from.path.endsWith("/");
     if (toIsDir) {
-      if (fromIsDir && from.path.startsWith(to.path) && from.path.length > to.path.length) {
+      if (
+        fromIsDir &&
+        from.path.startsWith(to.path) &&
+        from.path.length > to.path.length
+      ) {
         if (store.state.parentPath === to.path) {
           store.commit("setLastOpenedIndex", store.state.parentPathIndex);
         }
       } else if (!fromIsDir) {
         store.commit("setLastOpenedIndex", store.state.lastOpenedIndex);
-      } else if (to.path.startsWith(from.path) && to.path.length > from.path.length) {
+      } else if (
+        to.path.startsWith(from.path) &&
+        to.path.length > from.path.length
+      ) {
         store.commit("clearLastOpenedIndex");
       } else {
         store.commit("clearLastOpenedIndex");

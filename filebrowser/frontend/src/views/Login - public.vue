@@ -2,12 +2,9 @@
   <div @touchmove.prevent id="login" :class="{ recaptcha: recaptcha }">
     <form>
       <img :src="logoURL" alt="File Browser" />
-      <h1 v-if="!isReminder && !isWordReciter && !isMistakeBook">
-        {{ $t("repeater.repeater") }}
+      <h1>
+        {{ $t("repeater.dayDayUp") }}
       </h1>
-      <h1 v-if="isReminder">{{ $t("reminder.reminder") }}</h1>
-      <h1 v-if="isWordReciter">{{ $t("reminder.wordreciter") }}</h1>
-      <h1 v-if="isMistakeBook">{{ $t("reminder.mistakebook") }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
       <div
         style="

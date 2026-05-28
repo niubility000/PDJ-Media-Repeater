@@ -1554,7 +1554,7 @@
             v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(subtitle.sn, index, 1)"
+            @click="chooseSentence(index, index)"
           >
             <p
               style="cursor: pointer"
@@ -1562,6 +1562,47 @@
                 color: cIndex == index + 1 ? 'blue' : 'white',
               }"
             >
+              <button
+                v-if="
+                  (!isUser2 && subtitle.content.includes('[star];')) ||
+                  (isUser2 && subtitle.content.includes('[star2];'))
+                "
+                class="action"
+                name="buttons"
+                @click.stop="
+                  switchIsFav(
+                    index + 1,
+                    (!isUser2 && subtitle.content.includes('[star];')) ||
+                      (isUser2 && subtitle.content.includes('[star2];'))
+                  )
+                "
+                :title="$t('repeater.fav')"
+              >
+                <i
+                  style="color: yellow; padding: 0; font-size: 1.2em"
+                  class="material-icons"
+                  >star</i
+                >
+              </button>
+              <button
+                v-else
+                class="action"
+                name="buttons"
+                @click.stop="
+                  switchIsFav(
+                    index + 1,
+                    (!isUser2 && subtitle.content.includes('[star];')) ||
+                      (isUser2 && subtitle.content.includes('[star2];'))
+                  )
+                "
+                :title="$t('repeater.fav')"
+              >
+                <i
+                  style="color: springgreen; padding: 0; font-size: 1.2em"
+                  class="material-icons"
+                  >star_outline</i
+                >
+              </button>
               {{ index + 1 }}.
               <span
                 v-html="
@@ -1674,7 +1715,7 @@
             v-for="(newWord, index) in newWordList"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(newWord.num, index, 2)"
+            @click="chooseSentence(newWord.num, index)"
           >
             <p
               v-if="!newWord.showTrans && !withTrans"
@@ -1692,35 +1733,7 @@
               }}&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;{{
                 srtSubtitles[newWord.num].content.split("\r\n")[0]
               }}&nbsp;&nbsp; -
-              {{
-                srtSubtitles[newWord.num].content.split("\r\n")[1]
-              }}&nbsp;&nbsp;
-              <button
-                v-if="isFav"
-                class="action"
-                name="buttons"
-                @click="switchIsFav"
-                :title="$t('repeater.fav')"
-              >
-                <i
-                  style="color: yellow; padding: 0; font-size: 1.2em"
-                  class="material-icons"
-                  >star</i
-                >
-              </button>
-              <button
-                v-if="!isFav && isReadyToPlay"
-                class="action"
-                name="buttons"
-                @click="switchIsFav"
-                :title="$t('repeater.fav')"
-              >
-                <i
-                  style="color: springgreen; padding: 0; font-size: 1.2em"
-                  class="material-icons"
-                  >star_outline</i
-                >
-              </button>
+              {{ srtSubtitles[newWord.num].content.split("\r\n")[1] }}&nbsp;
               ]&nbsp;&nbsp;&nbsp;&nbsp;
               <button
                 class="action"
@@ -3977,7 +3990,7 @@
             v-if="isFav"
             class="action"
             name="buttons"
-            @click="switchIsFav"
+            @click="switchIsFav()"
             :title="$t('repeater.fav')"
           >
             <i
@@ -3994,7 +4007,7 @@
             v-if="!isFav && isReadyToPlay"
             class="action"
             name="buttons"
-            @click="switchIsFav"
+            @click="switchIsFav()"
             :title="$t('repeater.fav')"
           >
             <i
@@ -5992,7 +6005,7 @@ export default {
 
     sentenceIndex: function () {
       this.onLoop();
-      this.calcFav();
+      if (!this.showSubtitleList) this.calcFav();
       this.showEditNew = false;
       if (!this.isSingle && this.dubbingMode && this.isUtterTransLine) {
         if (this.utterThis) window.speechSynthesis.cancel();
@@ -10050,6 +10063,12 @@ export default {
       }
       if (this.note == undefined) this.note = "";
       this.note = this.note + newphrase;
+      if (x == 1) {
+        if (this.note.split(newphrase).length - 1 === 2)
+          this.note = this.note.replace(newphrase, "");
+        this.subFirstLine = this.subFirstLine.replace(newphrase, "");
+        this.subSecLine = this.subSecLine.replace(newphrase, "");
+      }
       this.srtSubtitles[this.sentenceIndex - 1].content.split("\r\n")[2] =
         this.note;
       this.onEdit = true;
@@ -10318,14 +10337,9 @@ export default {
       }
     },
 
-    chooseSentence(index, indexWordList, type) {
-      if (type == 1) {
-        this.sentenceIndex = index + 1;
-        this.sentenceIndex = index;
-      } else {
-        this.sentenceIndex = index;
-        this.sentenceIndex = index + 1;
-      }
+    chooseSentence(index, indexWordList) {
+      this.sentenceIndex = index;
+      this.sentenceIndex = index + 1;
       if (this.showNewWordList && !this.withTrans) {
         if (this.newWordList.length > 0)
           this.newWordList[indexWordList].showTrans = true;
@@ -10395,6 +10409,7 @@ export default {
           this.newWordList[this.indexOfNewWordList].showTrans = false;
         this.showNewWordList = false;
         this.withTrans = false;
+        this.newWord = "";
       }
       if (!this.isSingle && !this.showNewWordList && !this.showSubtitleList) {
         this.currentMedia.addEventListener("timeupdate", this.syncSub);
@@ -11199,9 +11214,56 @@ export default {
       return x;
     },
 
-    switchIsFav() {
-      if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
+    switchIsFav(x, y) {
+      // 立即更新 isFav 状态
+      if (x) {
+        this.sentenceIndex = x;
+        this.isFav = !y;
+        // 立即找到并更新对应的字幕对象，让模板中的 v-if 立即响应
+        const targetIndex = x ? x - 1 : this.sentenceIndex - 1;
+        if (targetIndex >= 0 && targetIndex < this.srtSubtitles.length) {
+          const subtitle = this.srtSubtitles[targetIndex];
+          if (this.isFav) {
+            // 添加收藏：立即在 content 中添加 [star]; 标记
+            if (!this.isUser2) {
+              if (!subtitle.content.includes("[star];")) {
+                if (subtitle.content.split("\r\n").length < 3) {
+                  subtitle.content += "\r\n[star];";
+                } else {
+                  const lines = subtitle.content.split("\r\n");
+                  if (!lines[2].includes("[star];")) {
+                    lines[2] = lines[2] + "[star];";
+                    subtitle.content = lines.join("\r\n");
+                  }
+                }
+              }
+            } else {
+              if (!subtitle.content.includes("[star2];")) {
+                if (subtitle.content.split("\r\n").length < 3) {
+                  subtitle.content += "\r\n[star2];";
+                } else {
+                  const lines = subtitle.content.split("\r\n");
+                  if (!lines[2].includes("[star2];")) {
+                    lines[2] = lines[2] + "[star2];";
+                    subtitle.content = lines.join("\r\n");
+                  }
+                }
+              }
+            }
+          } else {
+            // 移除收藏：立即从 content 中移除 [star]; 标记
+            if (!this.isUser2) {
+              subtitle.content = subtitle.content.replaceAll("[star];", "");
+            } else {
+              subtitle.content = subtitle.content.replaceAll("[star2];", "");
+            }
+          }
+        }
+      } else {
         this.isFav = !this.isFav;
+      }
+      // 然后调用原有的保存函数，让它们处理保存到文件等后续工作
+      if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         if (this.isFav) {
           //add a fav
           this.saveWordToSRT(1);
@@ -11421,7 +11483,6 @@ export default {
           this.downArrow = false;
         } else this.toBlur();
       }
-
       if (
         !(this.utterInProcess && this.isSystemTTS == "No") &&
         !this.readOriginByTTS &&
@@ -11437,9 +11498,11 @@ export default {
           if (this.timeOutId3) clearTimeout(this.timeOutId3);
           return;
         }
-
         this.timeOutId3 = setTimeout(() => {
-          if (this.newWord !== "") {
+          if (
+            this.newWord !== "" &&
+            !(this.showNewWordList && this.withTrans)
+          ) {
             return;
           }
           this.touches = 0;
@@ -14334,6 +14397,7 @@ export default {
       }
       if (this.showSubtitleList || this.showNewWordList || this.withTrans) {
         this.closeSubList();
+        this.newWord = "";
         return;
       }
       if (this.isEditSubandNotes) {
