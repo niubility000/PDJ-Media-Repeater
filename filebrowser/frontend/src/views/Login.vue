@@ -241,8 +241,8 @@ export default {
     return {
       createMode: false,
       error: "",
-      username: window.localStorage.getItem("line1") || "demo",
-      password: window.localStorage.getItem("line2") || "repeater",
+      username: window.localStorage.getItem("line1") || "",
+      password: window.localStorage.getItem("line2") || "",
       recaptcha: recaptcha,
       passwordConfirm: "",
       allowOffline: Number(window.localStorage.getItem("isOffline")) == 1,
@@ -308,7 +308,7 @@ export default {
     },
     showAlert() {
       alert(
-        "离线APP模式使用方法：可先将当前登录页加入浏览器书签(或收藏)，再正常登录，并浏览所有需要在离线状态下访问的资源，然后退出后改为离线登录。以后在断网时可直接从书签或 IP地址:端口 进入离线登陆页面。离线APP模式下，当无法连接服务器时，请勿使用浏览器刷新按钮，否则会强行从服务器更新内容，造成页面无法显示，在此情况下可关闭页面，重新从书签或 IP地址:端口 进入。"
+        "本套学习软件永久开源、免费，不定期更新。\n\n离线APP模式使用方法：可先将当前登录页加入浏览器书签(或收藏)，再正常登录，并浏览所有需要在离线状态下访问的资源，然后退出后改为离线登录。以后在断网时可直接从书签或 IP地址:端口 进入离线登陆页面。离线APP模式下，当无法连接服务器时，请勿使用浏览器刷新按钮，否则会强行从服务器更新内容，造成页面无法显示，在此情况下可关闭页面，重新从书签或 IP地址:端口 进入。"
       );
     },
     cleanUpNow() {

@@ -1554,7 +1554,7 @@
             v-for="(subtitle, index) in srtSubtitlesSearch"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(index, index)"
+            @click="chooseSentence(subtitle.sn, index, 1)"
           >
             <p
               style="cursor: pointer"
@@ -1715,7 +1715,7 @@
             v-for="(newWord, index) in newWordList"
             :key="index"
             :id="index + 1"
-            @click="chooseSentence(newWord.num, index)"
+            @click="chooseSentence(newWord.num, index, 2)"
           >
             <p
               v-if="!newWord.showTrans && !withTrans"
@@ -10337,9 +10337,25 @@ export default {
       }
     },
 
-    chooseSentence(index, indexWordList) {
-      this.sentenceIndex = index;
-      this.sentenceIndex = index + 1;
+    chooseSentence(index, indexWordList, type) {
+      if (type == 1 && !this.isFavOnPlay) {
+        this.sentenceIndex = index + 1;
+        this.sentenceIndex = index;
+      } else if (type == 1 && this.isFavOnPlay && this.rOldWord !== "") {
+        let targetSn = this.srtSubtitlesSearch[indexWordList].sn;
+        let fIndex = this.srtSubtitles.findIndex(
+          (item) => item.sn === targetSn
+        );
+
+        this.sentenceIndex = fIndex;
+        this.sentenceIndex = fIndex + 1;
+      } else if (type == 1 && this.isFavOnPlay) {
+        this.sentenceIndex = indexWordList;
+        this.sentenceIndex = indexWordList + 1;
+      } else {
+        this.sentenceIndex = index;
+        this.sentenceIndex = index + 1;
+      }
       if (this.showNewWordList && !this.withTrans) {
         if (this.newWordList.length > 0)
           this.newWordList[indexWordList].showTrans = true;
@@ -11215,16 +11231,13 @@ export default {
     },
 
     switchIsFav(x, y) {
-      // 立即更新 isFav 状态
       if (x) {
         this.sentenceIndex = x;
         this.isFav = !y;
-        // 立即找到并更新对应的字幕对象，让模板中的 v-if 立即响应
         const targetIndex = x ? x - 1 : this.sentenceIndex - 1;
         if (targetIndex >= 0 && targetIndex < this.srtSubtitles.length) {
           const subtitle = this.srtSubtitles[targetIndex];
           if (this.isFav) {
-            // 添加收藏：立即在 content 中添加 [star]; 标记
             if (!this.isUser2) {
               if (!subtitle.content.includes("[star];")) {
                 if (subtitle.content.split("\r\n").length < 3) {
@@ -11251,7 +11264,6 @@ export default {
               }
             }
           } else {
-            // 移除收藏：立即从 content 中移除 [star]; 标记
             if (!this.isUser2) {
               subtitle.content = subtitle.content.replaceAll("[star];", "");
             } else {
@@ -11262,7 +11274,7 @@ export default {
       } else {
         this.isFav = !this.isFav;
       }
-      // 然后调用原有的保存函数，让它们处理保存到文件等后续工作
+      // 调用原有的保存函数
       if (this.isReadyToPlay || (this.isFavOnPlay && this.isPlayFullFavList)) {
         if (this.isFav) {
           //add a fav
