@@ -2497,7 +2497,7 @@
                 <input
                   v-model.lazy="filterForm.testTimes1"
                   type="number"
-                  min="1"
+                  min="0"
                   style="width: 3em"
                 />
                 级的题目
@@ -5393,7 +5393,7 @@ export default {
       editor5: null,
       editor7: null,
       toolbarConfig: {
-        // toolbarKeys: [ /* 显示哪些菜单，如何排序、分组 */ ],...........................................................................................................................
+        // toolbarKeys: [ /* 显示哪些菜单，如何排序、分组 */ ],...................................................................
         excludeKeys: [
           "uploadVideo",
           "fullScreen",
