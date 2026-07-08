@@ -11342,6 +11342,10 @@ header {
   border-radius: 10px;
   overflow-y: auto;
   background: grey;
+  max-width: 100vw;
+  overflow-x: hidden;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .showMsg {

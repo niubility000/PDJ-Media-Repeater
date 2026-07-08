@@ -93,28 +93,6 @@
           <i :style="favListStatus" class="material-icons">folder_special</i>
         </button>
         <button
-          :disabled="
-            loading || showSubtitleList || showNewWordList || showRevision
-          "
-          class="action"
-          @click="onSetting"
-          @dblclick.prevent
-          :title="$t('repeater.settings')"
-        >
-          <i
-            :style="{
-              color:
-                showSubtitleList || showNewWordList || showRevision
-                  ? 'grey'
-                  : isSetting
-                  ? 'red'
-                  : 'blue',
-            }"
-            class="material-icons"
-            >settings</i
-          >
-        </button>
-        <button
           v-if="srtSubtitles"
           :disabled="
             loading ||
@@ -248,6 +226,28 @@
             }"
             class="material-icons"
             >add_alert</i
+          >
+        </button>
+        <button
+          :disabled="
+            loading || showSubtitleList || showNewWordList || showRevision
+          "
+          class="action"
+          @click="onSetting"
+          @dblclick.prevent
+          :title="$t('repeater.settings')"
+        >
+          <i
+            :style="{
+              color:
+                showSubtitleList || showNewWordList || showRevision
+                  ? 'grey'
+                  : isSetting
+                  ? 'red'
+                  : 'blue',
+            }"
+            class="material-icons"
+            >settings</i
           >
         </button>
       </header-bar>
@@ -2321,7 +2321,9 @@
             "
             :style="{ width: isMobile ? '100%' : '70%' }"
           >
-            <span style="font-size: 0.9em">{{ $t("repeater.timeNote") }} </span>
+            <span style="font-size: 0.9em; padding-right: 16px"
+              >{{ $t("repeater.timeNote") }}
+            </span>
           </div>
           <div
             style="display: flex; flex-direction: row; align-items: center"
@@ -14876,6 +14878,10 @@ header {
   border-radius: 10px;
   overflow-y: auto;
   background: grey;
+  max-width: 100vw;
+  overflow-x: hidden;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .showMsg {
