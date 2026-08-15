@@ -131,6 +131,17 @@
         {{ createMode ? $t("login.signup") : $t("login.submit") }}
       </button>
 
+      <select
+        v-model="selectedApp"
+        @change="onAppChange"
+        class="input input--block"
+        style="margin-top: 8px"
+      >
+        <option value="">单行版</option>
+        <option value="https://niubility000.github.io/a/">PDJ计算天天练</option>
+        <option value="https://niubility000.github.io/b/">PDJ阅读天天练</option>
+      </select>
+
       <p @click="toggleMode" v-if="signup">
         {{
           createMode ? $t("login.loginInstead") : $t("login.createAnAccount")
@@ -257,6 +268,7 @@ export default {
       cleanMedia: false,
       cleanSrtandSettings: false,
       showCleanUp: false,
+      selectedApp: "",
     };
   },
 
@@ -303,6 +315,14 @@ export default {
     });
   },
   methods: {
+    onAppChange() {
+      if (this.selectedApp) {
+        const url = this.selectedApp;
+        window.localStorage.setItem("selectedApp", url);
+        window.open(url, "_blank");
+        this.selectedApp = "";
+      }
+    },
     cleanUp() {
       this.showCleanUp = true;
     },

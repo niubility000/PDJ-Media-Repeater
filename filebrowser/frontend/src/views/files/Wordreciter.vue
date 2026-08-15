@@ -399,6 +399,7 @@
                 <select id="prLayout" v-model="selectedLayout">
                   <option value="layout1">单词默写布局 (A4横向打印)</option>
                   <option value="layout2">单词卡布局 (A4横向打印)</option>
+                  <option value="layout3">单词卡布局 (A4纵向打印)</option>
                 </select>
               </div>
             </div>
@@ -411,7 +412,9 @@
                 {{
                   selectedLayout === "layout1"
                     ? "单词默写布局 (A4横向打印)"
-                    : "单词卡布局 (A4横向打印)"
+                    : selectedLayout === "layout2"
+                    ? "单词卡布局 (A4横向打印)"
+                    : "单词卡布局 (A4纵向打印)"
                 }}
                 <button
                   class="action"
@@ -439,7 +442,10 @@
                 </table>
 
                 <!-- 布局2预览 -->
-                <div v-else class="layout2-container">
+                <div
+                  v-else-if="selectedLayout === 'layout2'"
+                  class="layout2-container"
+                >
                   <table class="prPreviewTable layout2-table">
                     <tr v-for="i in 3" :key="i">
                       <td v-for="j in 4" :key="j" class="prPreviewCell">
@@ -465,17 +471,49 @@
                     </tr>
                   </table>
                 </div>
+
+                <!-- 布局3预览（纵向，左右两栏） -->
+                <div v-else class="layout3-container">
+                  <table class="prPreviewTable layout3-table">
+                    <tr v-for="i in 4" :key="i">
+                      <td v-for="j in 4" :key="j" class="prPreviewCell">
+                        <div v-if="j === 1">序号</div>
+                        <div v-else-if="j === 2">释义</div>
+                        <div v-else-if="j === 3">单词</div>
+                        <div v-else class="prCheckboxCell">
+                          <div class="prCheckbox" v-for="k in 1" :key="k"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                  <table class="prPreviewTable layout3-table">
+                    <tr v-for="i in 4" :key="i">
+                      <td v-for="j in 4" :key="j" class="prPreviewCell">
+                        <div v-if="j === 1">序号</div>
+                        <div v-else-if="j === 2">释义</div>
+                        <div v-else-if="j === 3">单词</div>
+                        <div v-else class="prCheckboxCell">
+                          <div class="prCheckbox" v-for="k in 1" :key="k"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
               </div>
             </div>
 
             <div class="prStats">
               <span>已选择单词: {{ prSelectedWords.length }} 个</span>
               <span
-                >预计页数:
+                >预计页数: 约
                 {{
                   Math.ceil(
                     prSelectedWords.length /
-                      (selectedLayout === "layout1" ? 18 : 36)
+                      (selectedLayout === "layout1"
+                        ? 18
+                        : selectedLayout === "layout2"
+                        ? 36
+                        : 60)
                   )
                 }}
                 页</span
@@ -797,6 +835,11 @@
           自动切换下一个单词
         </p>
         <div>
+          <hr style="border: none; border-top: 1px solid black; height: 0" />
+          <p>
+            <input type="checkbox" v-model="showCardSen" />
+            词卡正面显示例句
+          </p>
           <hr style="border: none; border-top: 1px solid black; height: 0" />
           <p>
             <input type="checkbox" v-model="isFromLocal" />
@@ -1351,7 +1394,7 @@
         <div style="flex-grow: 1"></div>
         <div style="height: 80%">
           <div
-            v-if="showSelectT"
+            v-if="showSelectT && !showSelfTestT"
             class="clz-vocabulary-test"
             style="height: auto; overflow-y: hidden; flex-direction: column"
           >
@@ -1517,6 +1560,101 @@
             >
               不会
             </p>
+          </div>
+
+          <div
+            v-if="showSelfTestT"
+            class="clz-vocabulary-test"
+            style="height: auto; overflow-y: hidden; flex-direction: column"
+          >
+            <div class="clz-test-container allow-select" @click.stop>
+              <div
+                class="clz-word-display"
+                style="
+                  min-height: 30vh;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: center;
+                  align-items: center;
+                "
+              >
+                <h3
+                  v-if="!clzIsAnswered && clzShowWord"
+                  @touchmove.stop
+                  @click.stop="clzShowWord = !clzShowWord"
+                  style="font-size: 3em; cursor: pointer"
+                >
+                  {{ clzCurrentWord.word }}
+                </h3>
+                <h3
+                  v-if="!clzIsAnswered && !clzShowWord"
+                  @touchmove.stop
+                  @click.stop="clzShowWord = !clzShowWord"
+                  style="font-size: 3em; cursor: pointer"
+                >
+                  {{ clzCurrentWord.partOfSpeech }}
+                </h3>
+                <h3 v-if="clzIsAnswered" @touchmove.stop style="font-size: 3em">
+                  {{ clzCurrentWord.word }}&nbsp;&nbsp;{{
+                    clzCurrentWord.partOfSpeech
+                  }}
+                </h3>
+                <p
+                  v-if="
+                    showExampleSenTest &&
+                    clzCurrentWord &&
+                    clzCurrentWord.exampleSentence &&
+                    clzCurrentWord.exampleSentence !== '-'
+                  "
+                  @click.stop="clzShowExampleTrans = !clzShowExampleTrans"
+                  style="
+                    color: black;
+                    cursor: pointer;
+                    font-size: 1.2em;
+                    padding: 0.3em 1em;
+                    border: 1px solid #bbdefb;
+                    border-radius: 0.5em;
+                    text-align: center;
+                  "
+                >
+                  {{
+                    clzShowExampleTrans
+                      ? clzCurrentWord.exampleTranslation ||
+                        clzCurrentWord.exampleSentence
+                      : clzCurrentWord.exampleSentence
+                  }}
+                </p>
+              </div>
+            </div>
+            <div
+              v-if="!clzIsAnswered"
+              style="display: flex; justify-content: center; gap: 1em"
+            >
+              <p
+                @click.stop="clzHandleSelect(clzCorrectAnswer)"
+                style="
+                  color: white;
+                  background: green;
+                  padding: 0.2em 1em;
+                  cursor: pointer;
+                  font-weight: 500;
+                "
+              >
+                会
+              </p>
+              <p
+                @click.stop="clzHandleSelect('888888')"
+                style="
+                  color: white;
+                  background: red;
+                  padding: 0.2em 1em;
+                  cursor: pointer;
+                  font-weight: 500;
+                "
+              >
+                不会
+              </p>
+            </div>
           </div>
 
           <div v-if="!showSelectT">
@@ -2521,9 +2659,26 @@
                   >
                     {{ studyWordList[wordIndex - 1].word }}
                   </p>
+                  <p
+                    v-if="
+                      studyWordList[wordIndex - 1].exampleSentence.replace(
+                        /\\s|-/g,
+                        ''
+                      ) && showCardSen
+                    "
+                    style="
+                      margin: 60px 0;
+                      font-weight: 500;
+                      cursor: pointer;
+                      word-break: normal;
+                      overflow-wrap: break-word;
+                      font-size: 3em;
+                    "
+                  >
+                    {{ studyWordList[wordIndex - 1].exampleSentence }}
+                  </p>
                 </div>
               </div>
-
               <!-- 反面：完整信息 -->
               <div
                 class="flip-back"
@@ -4200,7 +4355,7 @@
           />
         </p>
         <p>
-          升级测验的错题复习中，单词答错
+          升级测验和错题复习中，单词答错
           <input
             class="input input--repeater"
             type="number"
@@ -4264,8 +4419,22 @@
                 题型二：选择题(根据释义选单词)
               </span>
               <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="7" />
+                题型三：单词自测。选择"会"或"不会"进行自测。
+                <input
+                  type="checkbox"
+                  :disabled="selectedValue != 7"
+                  v-model="showExampleSenTest"
+                />
+                显示例句
+              </span>
+              <span class="radio-item">
+                <input type="radio" v-model="selectedValue" :value="6" />
+                题型四：快刷列表自测
+              </span>
+              <span class="radio-item">
                 <input type="radio" v-model="selectedValue" :value="2" />
-                题型三：字母排序，看释义拼单词。干扰字符比例：(0为无干扰字符)
+                题型五：字母排序，看释义拼单词。干扰字符比例：(0为无干扰字符)
                 <input
                   class="input input--repeater"
                   :disabled="selectedValue != 2"
@@ -4278,16 +4447,12 @@
                 />
               </span>
               <span class="radio-item">
-                <input type="radio" v-model="selectedValue" :value="6" />
-                题型四：快刷列表自测
-              </span>
-              <span class="radio-item">
                 <input type="radio" v-model="selectedValue" :value="5" />
-                题型五：听单词默写单词(可同时自行说释义)，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
+                题型六：听单词默写单词(可同时自行说释义)，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
               </span>
               <span class="radio-item">
                 <input type="radio" v-model="selectedValue" :value="1" />
-                题型六：看释义默写单词，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
+                题型七：看释义默写单词，可使用键盘，或系统输入法的语音输入、手写输入来进行单词输入。
               </span>
             </div>
           </div>
@@ -4366,7 +4531,7 @@ export default {
       toMedia: false,
       totalSelectedList: [],
       wrongAddToFav: 1,
-      wrongNum: 0,
+      wrongNum: 1,
       groupI: 0,
       roundDone: false,
       testAllList: [],
@@ -4409,6 +4574,9 @@ export default {
       showPhonics: false,
       showSelect: false,
       showSelectT: false,
+      showSelfTestT: false,
+      clzShowWord: true,
+      clzShowExampleTrans: false,
       urla: "",
       showCToE: false,
       showCToET: false,
@@ -4431,6 +4599,8 @@ export default {
       prFilterFam2: 8,
       showFav: false,
       isAutoNext: true,
+      showCardSen: true,
+      showExampleSenTest: false,
       readCount: 0,
       options: [
         { value: "option1", label: "单词" },
@@ -4856,6 +5026,8 @@ export default {
         this.prEarlyDate2,
         this.maxCount,
         this.autoLoop,
+        this.showCardSen,
+        this.showExampleSenTest,
       ];
     },
     mediaAvailable() {
@@ -5102,12 +5274,12 @@ export default {
         return this.wordList.filter((obj) => {
           if (
             this.earlyDate1.length !== 0 &&
-            new Date(this.earlyDate1) > obj.date
+            this.beijingDateStrToTs(this.earlyDate1) > obj.date
           )
             return false;
           if (
             this.earlyDate2.length !== 0 &&
-            new Date(this.earlyDate2) < obj.date
+            this.beijingDateStrToTs(this.earlyDate2) < obj.date
           )
             return false;
           let a = 0;
@@ -5248,36 +5420,49 @@ export default {
         this.showCToET = false;
         this.showLToET = false;
         this.showQuickTest1 = false;
+        this.showSelfTestT = false;
       } else if (this.selectedValue == 2) {
         this.inputByLetters = true;
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = false;
         this.showQuickTest1 = false;
+        this.showSelfTestT = false;
       } else if (this.selectedValue == 3) {
         this.inputByLetters = false;
         this.showSelectT = true;
         this.showCToET = false;
         this.showLToET = false;
         this.showQuickTest1 = false;
+        this.showSelfTestT = false;
       } else if (this.selectedValue == 4) {
         this.inputByLetters = false;
         this.showSelectT = true;
         this.showCToET = true;
         this.showLToET = false;
         this.showQuickTest1 = false;
+        this.showSelfTestT = false;
       } else if (this.selectedValue == 5) {
         this.inputByLetters = false;
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = true;
         this.showQuickTest1 = false;
+        this.showSelfTestT = false;
       } else if (this.selectedValue == 6) {
         this.inputByLetters = false;
         this.showSelectT = false;
         this.showCToET = false;
         this.showLToET = false;
         this.showQuickTest1 = true;
+        this.showSelfTestT = false;
+      } else if (this.selectedValue == 7) {
+        this.inputByLetters = false;
+        this.showSelectT = true;
+        this.showCToET = false;
+        this.showLToET = false;
+        this.showQuickTest1 = false;
+        this.showSelfTestT = true;
       }
     },
     prTempList() {
@@ -5447,53 +5632,48 @@ export default {
         if (this.selectList[this.readCount - 1].value == "option1") {
           this.readContent = this.studyWordList[this.wordIndex - 1].word
             ? this.studyWordList[this.wordIndex - 1].word
-            : "empty";
+            : "";
           this.readPart(0);
         } else if (this.selectList[this.readCount - 1].value == "option2") {
           this.readContent = this.studyWordList[this.wordIndex - 1].word
             ? this.studyWordList[this.wordIndex - 1].word
-            : "empty";
+            : "";
           this.letterRead(this.readContent);
         } else if (this.selectList[this.readCount - 1].value == "option3") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].partOfSpeech != "-"
               ? this.studyWordList[this.wordIndex - 1].partOfSpeech
-              : "empty";
+              : "";
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option4") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].wordNote != "-"
               ? this.studyWordList[this.wordIndex - 1].wordNote
-              : "empty";
-          this.readContent = "助记法：" + this.readContent;
+              : "";
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option5") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].roots != "-"
               ? this.studyWordList[this.wordIndex - 1].roots
-              : "empty";
-          this.readContent = "词根词缀：" + this.readContent;
+              : "";
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option6") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].collocation != "-"
               ? this.studyWordList[this.wordIndex - 1].collocation
-              : "empty";
-          this.readContent = "collocation" + this.readContent;
+              : "";
           this.readPart(0);
         } else if (this.selectList[this.readCount - 1].value == "option7") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].exampleSentence != "-"
               ? this.studyWordList[this.wordIndex - 1].exampleSentence
-              : "empty";
-          this.readContent = "example: " + this.readContent;
+              : "";
           this.readPart(0);
         } else if (this.selectList[this.readCount - 1].value == "option8") {
           this.readContent =
             this.studyWordList[this.wordIndex - 1].exampleTranslation != "-"
               ? this.studyWordList[this.wordIndex - 1].exampleTranslation
-              : "empty";
-          this.readContent = "例句翻译：" + this.readContent;
+              : "";
           this.readPart(1);
         } else if (this.selectList[this.readCount - 1].value == "option9") {
           if (
@@ -5545,7 +5725,7 @@ export default {
           } else {
             this.readContent = this.studyWordList[this.wordIndex - 1].word
               ? this.studyWordList[this.wordIndex - 1].word
-              : "empty";
+              : "";
             this.readPart(0);
           }
         }
@@ -5725,6 +5905,7 @@ export default {
     },
 
     wordIndex() {
+      this.clzShowExampleTrans = false;
       if (
         (this.isTesting && this.autoRead) ||
         (this.isStudying &&
@@ -5860,6 +6041,8 @@ export default {
           this.prEarlyDate2 = arr[45] || "";
           this.maxCount = arr[46] || 3;
           this.autoLoop = arr[47] || true;
+          this.showCardSen = arr[48] || true;
+          this.showExampleSenTest = arr[49] || false;
         }
         setTimeout(() => {
           this.settingLoaded = true;
@@ -6264,19 +6447,30 @@ export default {
       }
 
       const htmlContent = this.prCreateHTMLTable();
-      const printWindow = window.open("", "_blank");
+      const printWindow = window.open("", "_blank", "width=0,height=0");
+      if (!printWindow) {
+        alert("无法打开打印窗口，请允许浏览器弹窗权限");
+        return;
+      }
+      printWindow.document.open();
       printWindow.document.write(htmlContent);
       printWindow.document.close();
       setTimeout(() => {
+        printWindow.focus();
         printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 500);
       }, 500);
     },
 
     prCreateHTMLTable() {
       if (this.selectedLayout === "layout1") {
         return this.createLayout1();
-      } else {
+      } else if (this.selectedLayout === "layout2") {
         return this.createLayout2();
+      } else {
+        return this.createLayout3();
       }
     },
 
@@ -6322,6 +6516,15 @@ export default {
             text-align: left;
             font-size: 12px;
             height: 30px;
+        }
+        tr {
+            page-break-inside: avoid;
+        }
+        thead {
+            display: table-header-group;
+        }
+        thead th {
+            border-top: 1px solid #000;
         }
         th:first-child, td:first-child {
             border-left: 1px solid #000;
@@ -6385,7 +6588,7 @@ export default {
         html += `<div class="prPage">`;
         html += `<div class="prPageHeader">${this.prFileName}</div>`;
         html += `<table>`;
-        html += `<tr>`;
+        html += `<thead><tr>`;
         for (let col = 0; col < columns; col++) {
           if (col === 0) {
             html += `<th class="prRowNumber">序号</th>`;
@@ -6401,7 +6604,8 @@ export default {
             html += `<th class="prWritingCell">书写区${col}</th>`;
           }
         }
-        html += `</tr>`;
+        html += `</tr></thead>`;
+        html += `<tbody>`;
         const startIndex = sheetIndex * rowsPerPage;
         const endIndex = Math.min(
           startIndex + rowsPerPage,
@@ -6436,6 +6640,7 @@ export default {
 
           html += `</tr>`;
         }
+        html += `</tbody>`;
 
         html += `</table></div>`;
       }
@@ -6446,6 +6651,8 @@ export default {
     clzGenerateOptions() {
       this.clzSelectedOption = null;
       this.clzIsAnswered = false;
+      this.clzShowWord = true;
+      this.clzShowExampleTrans = false;
       const includeCorrect = Math.random() < 0.95;
       let otherWords;
       let poolList;
@@ -6521,10 +6728,6 @@ export default {
     },
 
     createLayout2() {
-      const rowsPerPage = 18;
-      const totalSheets = Math.ceil(
-        this.prSelectedWords.length / (rowsPerPage * 2)
-      );
       let html = `
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -6534,135 +6737,181 @@ export default {
     <title>${this.prFileName}</title>
     <style>
         @page {
-            size: A4 landscape; /* A4横向排版 */
+            size: A4 landscape;
+            margin: 10mm;
         }
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: white;
         }
-        .prPage {
-            page-break-after: always;
-            margin-bottom: 20px;
+        .flow-container {
+            column-count: 2;
+            column-gap: 60px;
+            column-fill: auto;
+        }
+        .flow-item {
             display: flex;
-            justify-content: space-between;
-            gap: 100px;
-        }
-        .prPage:last-child {
-            page-break-after: auto;
-        }
-        .layout2-table {
-            flex: 1;
-            width: 48%;
-            border-collapse: collapse;
+            page-break-inside: avoid;
+            break-inside: avoid;
             border: 1px solid #000;
-        }
-        th, td {
-            border: 1px solid #000;
-            padding: 3px;
-            text-align: left;
+            margin-top: -1px;
             font-size: 12px;
-            height: 30px;
+            line-height: 28px;
+            min-height: 28px;
         }
-        th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .prRowNumber {
+        .flow-num {
             text-align: center;
             width: 40px;
+            border-right: 1px solid #000;
+            flex-shrink: 0;
+            padding: 3px 0;
         }
-        .prWordCell {
+        .flow-meaning {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 3px 5px;
+            word-break: break-all;
+        }
+        .flow-word {
             font-weight: bold;
-            width: 165px;
-            font-size: 1em;
             text-align: center;
-        }
-        .prMeaningCell {
             width: 165px;
+            border-right: 1px solid #000;
+            flex-shrink: 0;
+            padding: 3px 5px;
+            word-break: break-all;
         }
-        .prCheckboxCell {
+        .flow-check {
             text-align: center;
             width: 40px;
-        }
-        .prPageHeader {
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 16px;
-            font-weight: bold;
+            flex-shrink: 0;
+            padding: 3px 0;
         }
         @media print {
             body {
-                padding: 0;
-            }
-            .prPage {
                 margin: 0;
-                padding: 10px;
-            }
-            @page {
-              margin-top: 10mm; /* 上页边距（mm单位更适合打印） */
-              margin-bottom: 10mm; /* 下页边距 */
+                padding: 10mm;
             }
         }
     </style>
 </head>
 <body>
+    <div class="flow-container">
     `;
 
-      for (let sheetIndex = 0; sheetIndex < totalSheets; sheetIndex++) {
-        html += `<div class="prPage">`;
-        html += `<table class="layout2-table">`;
-
-        const leftStart = sheetIndex * rowsPerPage * 2;
-        const leftEnd = Math.min(
-          leftStart + rowsPerPage,
-          this.prSelectedWords.length
-        );
-        for (let i = leftStart; i < leftEnd; i++) {
-          const word = this.prSelectedWords[i];
-          html += `<tr>`;
-          html += `<td class="prRowNumber">${i + 1}</td>`;
-          html += `<td class="prMeaningCell">${word.partOfSpeech}</td>`;
-          if (this.printWithPron && word.pronunciation?.split(" ")[1])
-            html += `<td class="prWordCell">${
-              word.word
-            }  <span style="font-weight: normal; font-size: 0.7em">${
-              word.pronunciation.split(" ")[1]
-            }</span></td>`;
-          else html += `<td class="prWordCell">${word.word}</td>`;
-          html += `<td class="prCheckboxCell">□</td>`;
-          html += `</tr>`;
-        }
-        html += `</table>`;
-        html += `<table class="layout2-table">`;
-        const rightStart = leftStart + rowsPerPage;
-        const rightEnd = Math.min(
-          rightStart + rowsPerPage,
-          this.prSelectedWords.length
-        );
-        for (let i = rightStart; i < rightEnd; i++) {
-          const word = this.prSelectedWords[i];
-          html += `<tr>`;
-          html += `<td class="prRowNumber">${i + 1}</td>`;
-          html += `<td class="prMeaningCell">${word.partOfSpeech}</td>`;
-          if (this.printWithPron && word.pronunciation?.split(" ")[1])
-            html += `<td class="prWordCell">${
-              word.word
-            }  <span style="font-weight: normal; font-size: 0.7em">${
-              word.pronunciation.split(" ")[1]
-            }</span></td>`;
-          else html += `<td class="prWordCell">${word.word}</td>`;
-          html += `<td class="prCheckboxCell">□</td>`;
-          html += `</tr>`;
-        }
-        html += `</table>`;
-
+      for (let i = 0; i < this.prSelectedWords.length; i++) {
+        const word = this.prSelectedWords[i];
+        html += `<div class="flow-item">`;
+        html += `<span class="flow-num">${i + 1}</span>`;
+        html += `<span class="flow-meaning">${word.partOfSpeech}</span>`;
+        if (this.printWithPron && word.pronunciation?.split(" ")[1])
+          html += `<span class="flow-word">${
+            word.word
+          } <span style="font-weight:normal;font-size:0.7em">${
+            word.pronunciation.split(" ")[1]
+          }</span></span>`;
+        else html += `<span class="flow-word">${word.word}</span>`;
+        html += `<span class="flow-check">□</span>`;
         html += `</div>`;
       }
 
-      html += `</body></html>`;
+      html += `</div></body></html>`;
+      return html;
+    },
+
+    createLayout3() {
+      let html = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${this.prFileName}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+        .flow-container {
+            column-count: 2;
+            column-gap: 40px;
+            column-fill: auto;
+        }
+        .flow-item {
+            display: flex;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            border: 1px solid #000;
+            margin-top: -1px;
+            font-size: 11px;
+            line-height: 20px;
+            min-height: 20px;
+        }
+        .flow-num {
+            text-align: center;
+            width: 28px;
+            border-right: 1px solid #000;
+            flex-shrink: 0;
+            padding: 1px 0;
+        }
+        .flow-meaning {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 1px 3px;
+            word-break: break-all;
+        }
+        .flow-word {
+            font-weight: bold;
+            text-align: center;
+            width: 130px;
+            border-right: 1px solid #000;
+            flex-shrink: 0;
+            padding: 1px 3px;
+            word-break: break-all;
+        }
+        .flow-check {
+            text-align: center;
+            width: 28px;
+            flex-shrink: 0;
+            padding: 1px 0;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flow-container">
+    `;
+
+      for (let i = 0; i < this.prSelectedWords.length; i++) {
+        const word = this.prSelectedWords[i];
+        html += `<div class="flow-item">`;
+        html += `<span class="flow-num">${i + 1}</span>`;
+        html += `<span class="flow-meaning">${word.partOfSpeech}</span>`;
+        if (this.printWithPron && word.pronunciation?.split(" ")[1])
+          html += `<span class="flow-word">${
+            word.word
+          } <span style="font-weight:normal;font-size:0.7em">${
+            word.pronunciation.split(" ")[1]
+          }</span></span>`;
+        else html += `<span class="flow-word">${word.word}</span>`;
+        html += `<span class="flow-check">□</span>`;
+        html += `</div>`;
+      }
+
+      html += `</div></body></html>`;
       return html;
     },
 
@@ -6734,13 +6983,12 @@ export default {
               this.studyWordList[this.wordIndex - 1].user1.split(",")[1] +
               "," +
               date;
-          } else {
-            if (this.wrongNum == this.wrongAddToFav) {
-              this.studyWordList[this.wordIndex - 1].user1 =
-                this.studyWordList[this.wordIndex - 1].user1.split(",")[0] +
-                ",1," +
-                this.studyWordList[this.wordIndex - 1].user1.split(",")[2];
-            }
+          }
+          if (this.wrongNum == this.wrongAddToFav) {
+            this.studyWordList[this.wordIndex - 1].user1 =
+              this.studyWordList[this.wordIndex - 1].user1.split(",")[0] +
+              ",1," +
+              this.studyWordList[this.wordIndex - 1].user1.split(",")[2];
           }
         } else if (this.isTesting && this.isUser2) {
           this.isCorrect = false;
@@ -6754,7 +7002,8 @@ export default {
               this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
               "," +
               date;
-          } else if (this.wrongNum == this.wrongAddToFav) {
+          }
+          if (this.wrongNum == this.wrongAddToFav) {
             this.studyWordList[this.wordIndex - 1].user2 =
               this.studyWordList[this.wordIndex - 1].user2.split(",")[0] +
               ",1," +
@@ -7357,13 +7606,12 @@ export default {
               this.studyWordList[this.wordIndex - 1].user1.split(",")[1] +
               "," +
               date;
-          } else {
-            if (this.wrongNum == this.wrongAddToFav) {
-              this.studyWordList[this.wordIndex - 1].user1 =
-                this.studyWordList[this.wordIndex - 1].user1.split(",")[0] +
-                ",1," +
-                this.studyWordList[this.wordIndex - 1].user1.split(",")[2];
-            }
+          }
+          if (this.wrongNum == this.wrongAddToFav) {
+            this.studyWordList[this.wordIndex - 1].user1 =
+              this.studyWordList[this.wordIndex - 1].user1.split(",")[0] +
+              ",1," +
+              this.studyWordList[this.wordIndex - 1].user1.split(",")[2];
           }
         } else {
           if (!this.isReview) {
@@ -7374,7 +7622,8 @@ export default {
               this.studyWordList[this.wordIndex - 1].user2.split(",")[1] +
               "," +
               date;
-          } else if (this.wrongNum == this.wrongAddToFav) {
+          }
+          if (this.wrongNum == this.wrongAddToFav) {
             this.studyWordList[this.wordIndex - 1].user2 =
               this.studyWordList[this.wordIndex - 1].user2.split(",")[0] +
               ",1," +
@@ -7461,12 +7710,12 @@ export default {
       return this.wordList.filter((obj) => {
         if (
           this.prEarlyDate1.length !== 0 &&
-          new Date(this.prEarlyDate1) > obj.date
+          this.beijingDateStrToTs(this.prEarlyDate1) > obj.date
         )
           return false;
         if (
           this.prEarlyDate2.length !== 0 &&
-          new Date(this.prEarlyDate2) < obj.date
+          this.beijingDateStrToTs(this.prEarlyDate2) < obj.date
         )
           return false;
         let k = false;
@@ -7508,22 +7757,31 @@ export default {
       return this.getStudyWordList1(x);
     },
 
+    beijingStartOfDay(t = Date.now()) {
+      const OFFSET = 8 * 60 * 60 * 1000;
+      const DAY = 24 * 60 * 60 * 1000;
+      return Math.floor((t + OFFSET) / DAY) * DAY - OFFSET;
+    },
+
+    beijingDateStrToTs(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      return Date.UTC(y, m - 1, d) - 8 * 60 * 60 * 1000;
+    },
+
     getStudyWordList1(x) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayTimestamp = today.getTime();
+      const todayTimestamp = this.beijingStartOfDay();
       if (this.testInterval == "Need more numbers...")
         this.testInterval = this.generateReviewIntervals(this.maxLevel);
       if (x == 1) {
         return this.wordList.filter((obj) => {
           if (
             this.earlyDate1.length !== 0 &&
-            new Date(this.earlyDate1) > obj.date
+            this.beijingDateStrToTs(this.earlyDate1) > obj.date
           )
             return false;
           if (
             this.earlyDate2.length !== 0 &&
-            new Date(this.earlyDate2) < obj.date
+            this.beijingDateStrToTs(this.earlyDate2) < obj.date
           )
             return false;
           let a = 0;
@@ -7543,10 +7801,8 @@ export default {
           let b = 0;
           if (!this.isUser2) b = Number(obj.user1.split(",")[2]);
           else b = Number(obj.user2.split(",")[2]);
-          const timeDiff = Math.abs(b - todayTimestamp);
-          const dateObj = new Date(b);
-          dateObj.setHours(0, 0, 0, 0);
-          const dateZeroTimestamp = dateObj.getTime();
+          const dateZeroTimestamp = this.beijingStartOfDay(b);
+          const timeDiff = todayTimestamp - dateZeroTimestamp;
           if (dateZeroTimestamp == todayTimestamp && c == 1) return false;
           let d = false;
           let dd = this.filterLevel
@@ -7560,7 +7816,7 @@ export default {
           }
           if (this.filterLevel.split("；")[0].trim() != "" && !d) return false;
           return (
-            timeDiff > 24 * 60 * 60 * 1000 * days &&
+            timeDiff >= 24 * 60 * 60 * 1000 * days &&
             a >= this.filterFam1 &&
             a <= this.filterFam2
           );
@@ -7570,12 +7826,12 @@ export default {
           return this.wordList.filter((obj) => {
             if (
               this.earlyDate1.length !== 0 &&
-              new Date(this.earlyDate1) > obj.date
+              this.beijingDateStrToTs(this.earlyDate1) > obj.date
             )
               return false;
             if (
               this.earlyDate2.length !== 0 &&
-              new Date(this.earlyDate2) < obj.date
+              this.beijingDateStrToTs(this.earlyDate2) < obj.date
             )
               return false;
             let a = 0;
@@ -7610,9 +7866,7 @@ export default {
             let b = 0;
             if (!this.isUser2) b = Number(obj.user1.split(",")[2]);
             else b = Number(obj.user2.split(",")[2]);
-            const dateObj = new Date(b);
-            dateObj.setHours(0, 0, 0, 0);
-            const dateZeroTimestamp = dateObj.getTime();
+            const dateZeroTimestamp = this.beijingStartOfDay(b);
             const timeDiff = todayTimestamp - dateZeroTimestamp;
             let c = 0;
             if (!this.isUser2) c = Number(obj.temp3.split(",")[0]);
@@ -7639,12 +7893,12 @@ export default {
           return this.wordList.filter((obj) => {
             if (
               this.earlyDate1.length !== 0 &&
-              new Date(this.earlyDate1) > obj.date
+              this.beijingDateStrToTs(this.earlyDate1) > obj.date
             )
               return false;
             if (
               this.earlyDate2.length !== 0 &&
-              new Date(this.earlyDate2) < obj.date
+              this.beijingDateStrToTs(this.earlyDate2) < obj.date
             )
               return false;
             let a = 0;
@@ -7828,7 +8082,7 @@ export default {
         this.close();
         return;
       }
-      this.wrongNum = 0;
+      this.wrongNum = 1;
       this.roundDone = false;
       this.testRound = this.testRound + 1;
       this.studyWordList = this.testAllList.slice(
@@ -7841,7 +8095,7 @@ export default {
 
     isTest(x) {
       if (this.isInstruction) return;
-      this.wrongNum = 0;
+      this.wrongNum = 1;
       this.roundDone = false;
       this.tested = [];
       this.testDone = [];
@@ -10915,7 +11169,8 @@ input:checked + .clz-slider:before {
 .clz-word-display h3 {
   font-size: 1.5em;
   color: blue;
-  margin: 8px 0;
+  margin: 0;
+  min-height: 1.2em;
 }
 
 .clz-options {
@@ -11507,6 +11762,15 @@ input:disabled {
     margin-bottom: 10px;
   }
 
+  .layout3-container {
+    flex-direction: column;
+  }
+
+  .layout3-table {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
   header {
     display: flex;
     justify-content: space-around !important;
@@ -11858,6 +12122,14 @@ input:disabled {
 }
 
 .layout2-table {
+  width: 48%;
+}
+
+.layout3-container {
+  display: flex;
+}
+
+.layout3-table {
   width: 48%;
 }
 

@@ -52,16 +52,15 @@ Both of these can be used online or offline.
 
 **Update method:** After running the new version of Filebrowser, please access the PDJ media repeater page in non offline APP mode and click the browser 'refresh' button for the update to take effect.
 
-20260709 update: add a mindmap to mistakebook. Version: 6.16.88
-
-[filebrowser-windows.zip](https://github.com/user-attachments/files/29830197/filebrowser-windows.zip)
-[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/29830203/filebrowser-linux-amd64.zip)
-[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/29830212/filebrowser-linux-arm64.zip)
-[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/29830218/filebrowser-darwin-amd64.for.mac.zip)
-[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/29830223/filebrowser-darwin-arm64.for.mac.zip)
+20260815 update: add some small functions. Version: 6.16.88
+[filebrowser-windows.zip](https://github.com/user-attachments/files/31104478/filebrowser-windows.zip)
+[filebrowser-linux-amd64.zip](https://github.com/user-attachments/files/31104485/filebrowser-linux-amd64.zip)
+[filebrowser-linux-arm64.zip](https://github.com/user-attachments/files/31104491/filebrowser-linux-arm64.zip)
+[filebrowser-darwin-amd64(for mac).zip](https://github.com/user-attachments/files/31104494/filebrowser-darwin-amd64.for.mac.zip)
+[filebrowser-darwin-arm64(for mac).zip](https://github.com/user-attachments/files/31104495/filebrowser-darwin-arm64.for.mac.zip)
 
 Source code:
-[filebrowser_source_code.zip](https://github.com/user-attachments/files/29830227/filebrowser_source_code.zip)
+[filebrowser_source_code.zip](https://github.com/user-attachments/files/31104502/filebrowser_source_code.zip)
 
 To compile the filebrowser for other platforms, see [Method of Compiling Filebrowser Source Codes in windows](https://github.com/niubility000/PDJ-Media-Repeater?tab=readme-ov-file#method-of-compiling-filebrowser-source-codes-in-windows)
 

@@ -1313,44 +1313,356 @@
       >
         <!-- 列表页面 -->
         <div v-if="dtCurrentPage === 'home'" class="dt-home-wrapper">
+          <!-- 顶部背景装饰 -->
+          <div class="dt-home-bg-decor">
+            <div class="dt-home-bg-circle dt-home-bg-circle-1"></div>
+            <div class="dt-home-bg-circle dt-home-bg-circle-2"></div>
+            <div class="dt-home-bg-circle dt-home-bg-circle-3"></div>
+          </div>
           <div class="dt-home-container">
-            <h1>思维导图列表</h1>
-            <div class="dt-home-header-actions">
-              <button @click="dtCreateNewMindMap" class="dt-btn dt-btn-primary">
+            <!-- 品牌头部 -->
+            <div class="dt-home-brand">
+              <div class="dt-home-brand-icon">
+                <svg
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    width="48"
+                    height="48"
+                    rx="12"
+                    fill="url(#brand-grad)"
+                  />
+                  <circle
+                    cx="24"
+                    cy="18"
+                    r="5"
+                    stroke="#fff"
+                    stroke-width="2"
+                    fill="none"
+                  />
+                  <circle
+                    cx="14"
+                    cy="32"
+                    r="4"
+                    stroke="#fff"
+                    stroke-width="2"
+                    fill="none"
+                  />
+                  <circle
+                    cx="34"
+                    cy="32"
+                    r="4"
+                    stroke="#fff"
+                    stroke-width="2"
+                    fill="none"
+                  />
+                  <line
+                    x1="24"
+                    y1="23"
+                    x2="14"
+                    y2="28"
+                    stroke="#fff"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="24"
+                    y1="23"
+                    x2="34"
+                    y2="28"
+                    stroke="#fff"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <defs>
+                    <linearGradient
+                      id="brand-grad"
+                      x1="0"
+                      y1="0"
+                      x2="48"
+                      y2="48"
+                    >
+                      <stop offset="0%" stop-color="#4facfe" />
+                      <stop offset="100%" stop-color="#00f2fe" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div class="dt-home-brand-text">
+                <h1>PDJ 富文本思维导图</h1>
+                <p class="dt-home-brand-subtitle">高效整理思路，激发创造力</p>
+              </div>
+            </div>
+
+            <!-- 操作栏 -->
+            <div class="dt-home-actions">
+              <button @click="dtCreateNewMindMap" class="dt-home-btn-create">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
                 新建思维导图
               </button>
-              <button @click="dtOpenImport" class="dt-btn dt-btn-primary">
-                导入
-              </button>
-              <button @click="dtOpenExport" class="dt-btn dt-btn-primary">
-                导出
-              </button>
+              <div class="dt-home-actions-secondary">
+                <button @click="dtOpenImport" class="dt-home-btn-outline">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  导入
+                </button>
+                <button @click="dtOpenExport" class="dt-home-btn-outline">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+
+                  导出
+                </button>
+              </div>
             </div>
-            <div class="dt-mind-map-list">
+
+            <!-- 列表区域 -->
+            <div class="dt-home-list-header" v-if="dtMindMaps.length > 0">
+              <h2>我的导图</h2>
+              <span class="dt-home-list-count"
+                >{{ dtMindMaps.length }} 个导图</span
+              >
+            </div>
+            <div class="dt-mind-map-list" v-if="dtMindMaps.length > 0">
               <div
                 v-for="(mindMap, index) in dtMindMaps"
                 :key="mindMap.id"
                 class="dt-mind-map-item"
+                :class="{
+                  'dt-mind-map-item-highlight': dtLastOpenedIndex === index,
+                }"
                 @click="dtOpenMindMap(index)"
               >
+                <div class="dt-mind-map-item-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <circle cx="5" cy="6" r="2" />
+                    <circle cx="19" cy="6" r="2" />
+                    <circle cx="5" cy="18" r="2" />
+                    <line x1="12" y1="9" x2="7" y2="7.5" />
+                    <line x1="12" y1="9" x2="17" y2="7.5" />
+                    <line x1="12" y1="15" x2="7" y2="16.5" />
+                  </svg>
+                </div>
                 <div class="dt-mind-map-info">
                   <h3>{{ mindMap.name }}</h3>
-                  <p>
-                    节点数: {{ mindMap.nodes.length }} | 创建时间:
-                    {{ dtFormatDate(mindMap.createdAt) }}
-                  </p>
+                  <div class="dt-mind-map-meta">
+                    <span class="dt-meta-item">
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        width="12"
+                        height="12"
+                      >
+                        <circle cx="8" cy="8" r="2.5" />
+                        <path
+                          d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 1a6 6 0 110 12A6 6 0 018 2z"
+                          opacity=".4"
+                        />
+                      </svg>
+                      {{ mindMap.nodes.length }} 个节点
+                    </span>
+                    <span class="dt-meta-divider"></span>
+                    <span class="dt-meta-item">
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        width="12"
+                        height="12"
+                      >
+                        <rect
+                          x="3"
+                          y="2"
+                          width="10"
+                          height="12"
+                          rx="1.5"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.2"
+                        />
+                        <line
+                          x1="6"
+                          y1="5.5"
+                          x2="10"
+                          y2="5.5"
+                          stroke="currentColor"
+                          stroke-width="1.2"
+                          stroke-linecap="round"
+                        />
+                        <line
+                          x1="6"
+                          y1="8"
+                          x2="10"
+                          y2="8"
+                          stroke="currentColor"
+                          stroke-width="1.2"
+                          stroke-linecap="round"
+                        />
+                        <line
+                          x1="6"
+                          y1="10.5"
+                          x2="9"
+                          y2="10.5"
+                          stroke="currentColor"
+                          stroke-width="1.2"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      {{ dtFormatDate(mindMap.createdAt) }}
+                    </span>
+                  </div>
                 </div>
-                <button
-                  @click.stop="dtDeleteMindMap(index)"
-                  class="dt-btn dt-btn-danger"
-                >
-                  删除
-                </button>
-              </div>
-              <div v-if="dtMindMaps.length === 0" class="dt-empty-hint">
-                暂无思维导图，点击"新建思维导图"开始创建
+                <div class="dt-mind-map-item-actions">
+                  <button
+                    @click.stop="dtDeleteMindMap(index)"
+                    class="dt-home-item-btn dt-home-item-btn-delete"
+                    title="删除"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
+
+            <!-- 空状态 -->
+            <div v-if="dtMindMaps.length === 0" class="dt-home-empty">
+              <div class="dt-home-empty-icon">
+                <svg
+                  viewBox="0 0 120 120"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    stroke="#d0e8ff"
+                    stroke-width="2"
+                    stroke-dasharray="6 4"
+                  />
+                  <circle
+                    cx="60"
+                    cy="42"
+                    r="10"
+                    stroke="#90caf9"
+                    stroke-width="2"
+                    fill="#e3f2fd"
+                  />
+                  <circle
+                    cx="40"
+                    cy="72"
+                    r="7"
+                    stroke="#90caf9"
+                    stroke-width="2"
+                    fill="#e3f2fd"
+                  />
+                  <circle
+                    cx="80"
+                    cy="72"
+                    r="7"
+                    stroke="#90caf9"
+                    stroke-width="2"
+                    fill="#e3f2fd"
+                  />
+                  <line
+                    x1="60"
+                    y1="52"
+                    x2="40"
+                    y2="65"
+                    stroke="#90caf9"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="60"
+                    y1="52"
+                    x2="80"
+                    y2="65"
+                    stroke="#90caf9"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="44"
+                    y1="72"
+                    x2="40"
+                    y2="82"
+                    stroke="#bbdefb"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-dasharray="3 2"
+                  />
+                  <line
+                    x1="76"
+                    y1="72"
+                    x2="80"
+                    y2="82"
+                    stroke="#bbdefb"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-dasharray="3 2"
+                  />
+                </svg>
+              </div>
+              <h3>暂无思维导图</h3>
+              <p>点击上方「新建思维导图」按钮开始创建你的第一个导图</p>
+            </div>
+          </div>
+
+          <!-- 底部版权 -->
+          <div class="dt-home-footer">
+            PDJ Mind Map &copy; {{ new Date().getFullYear() }}
           </div>
         </div>
 
@@ -1373,7 +1685,7 @@
               <button
                 @click="dtAddSiblingNode"
                 class="dt-btn dt-btn-small"
-                :disabled="!dtSelectedNode"
+                :disabled="!dtSelectedNode || dtIsFullscreen"
                 title="添加同级节点"
               >
                 <svg viewBox="0 0 1024 1024" style="width: 32; height: 32">
@@ -1386,7 +1698,7 @@
               <button
                 @click="dtAddChildNode"
                 class="dt-btn dt-btn-small"
-                :disabled="!dtSelectedNode"
+                :disabled="!dtSelectedNode || dtIsFullscreen"
                 title="添加下级节点"
               >
                 <svg viewBox="0 0 1024 1024" style="width: 32; height: 32">
@@ -1428,6 +1740,7 @@
             <div class="dt-btn-group">
               <button
                 v-if="!dtNoteNode"
+                :disabled="dtIsFullscreen"
                 @click="dtAddNote"
                 class="dt-btn dt-btn-small"
                 title="添加笔记"
@@ -1444,6 +1757,7 @@
               </button>
               <button
                 v-else
+                :disabled="dtIsFullscreen"
                 @click="dtDeleteNote"
                 class="dt-btn dt-btn-small"
                 title="删除笔记"
@@ -1461,7 +1775,7 @@
                     dtSelectedNode.description.replace(/<[^>]*>/g, '').trim()
                       .length == 0 &&
                     !/(img|video|audio)/i.test(dtSelectedNode.description || '')
-                  )
+                  ) || dtIsFullscreen
                 "
                 title="添加注释"
               >
@@ -1481,7 +1795,8 @@
                 :disabled="
                   !dtIsRealNodeSelected ||
                   (dtSelectedNode.attachments &&
-                    dtSelectedNode.attachments.length > 0)
+                    dtSelectedNode.attachments.length > 0) ||
+                  dtIsFullscreen
                 "
                 title="添加附件"
               >
@@ -1498,7 +1813,7 @@
               <button
                 @click="dtOpenTagEditor"
                 class="dt-btn dt-btn-small"
-                :disabled="!dtIsRealNodeSelected"
+                :disabled="!dtIsRealNodeSelected || dtIsFullscreen"
                 title="标签"
               >
                 <svg
@@ -1523,6 +1838,7 @@
                 "
                 @click="dtDeleteSummary"
                 class="dt-btn dt-btn-small"
+                :disabled="dtIsFullscreen"
                 title="删除概要"
               >
                 <svg
@@ -1543,7 +1859,11 @@
                 v-else
                 @click="dtToggleSummary"
                 class="dt-btn dt-btn-small"
-                :disabled="!dtIsRealNodeSelected || dtSelectedNode?.level === 1"
+                :disabled="
+                  !dtIsRealNodeSelected ||
+                  dtSelectedNode?.level === 1 ||
+                  dtIsFullscreen
+                "
                 title="添加概要"
               >
                 <svg
@@ -1613,7 +1933,11 @@
               <button
                 @click="dtCloneNode"
                 class="dt-btn dt-btn-small"
-                :disabled="!dtIsRealNodeSelected || dtSelectedNode.level === 1"
+                :disabled="
+                  !dtIsRealNodeSelected ||
+                  dtSelectedNode.level === 1 ||
+                  dtIsFullscreen
+                "
                 title="克隆节点"
               >
                 <svg
@@ -1658,7 +1982,8 @@
                   !dtSelectedNode ||
                   (dtSelectedNode.level === 1 &&
                     dtRootNodesCount <= 1 &&
-                    !dtSelectedNode.id.startsWith('summary_'))
+                    !dtSelectedNode.id.startsWith('summary_')) ||
+                  dtIsFullscreen
                 "
                 title="删除节点"
               >
@@ -1697,7 +2022,9 @@
             </div>
             <div class="dt-btn-group dt-zoom-controls">
               <button @click="dtZoomIn()" class="dt-btn dt-btn-small">+</button>
-              <span class="dt-zoom-level" style="color: #1296db"
+              <span
+                class="dt-zoom-level"
+                style="color: #1296db; min-width: 42px; text-align: center"
                 >{{ Math.round(dtScale * 100) }}%</span
               >
               <button @click="dtZoomOut()" class="dt-btn dt-btn-small">
@@ -1754,6 +2081,56 @@
             </div>
             <div class="dt-btn-group">
               <button
+                @click="dtOpenAiModal"
+                :disabled="dtIsFullscreen"
+                class="dt-btn dt-btn-small"
+                title="AI生成思维导图"
+              >
+                <svg
+                  viewBox="0 0 1024 1024"
+                  style="width: 32; height: 32; vertical-align: middle"
+                >
+                  <path
+                    d="M326.183722 206.500257c19.568414 0 36.788619 9.523295 47.529504 24.177863a41.528523 41.528523 0 0 1 17.394146 18.698707l1.348046 3.391858 249.910392 711.072687c8.088278 22.916787-6.348863 48.529667-32.17917 57.22674-24.525746 8.262219-50.529994-1.652444-60.009803-22.351478l-1.304561-3.348373-64.793194-184.247491H160.460996l-64.706223 184.247491c-8.088278 22.916787-35.527543 34.440409-61.314364 25.699851-24.569231-8.262219-38.788945-31.787802-33.222819-53.791396l1.000164-3.47883L252.08466 252.81217a43.267938 43.267938 0 0 1 30.439756-26.91744A58.574787 58.574787 0 0 1 326.140237 206.500257h0.043485z m459.553336 201.511181c25.960763 0 47.225106 12.958639 49.312404 29.396106l0.130456 2.609122v549.046217c0 17.698544-22.177536 32.005229-49.44286 32.005229-25.960763 0-47.225106-12.915153-49.268918-29.396107l-0.217427-2.609122V440.060152c0-17.698544 22.177536-32.005229 49.486345-32.005229zM322.226554 350.741212l-127.760002 363.494165h255.563489L322.226554 350.697727zM1038.430514 105.52724a14.958966 14.958966 0 0 1 9.697236 9.56678l38.658489 117.801853 120.889315 42.87657a14.958966 14.958966 0 0 1-0.869708 28.482914l-118.410648 33.266304-36.658163 116.018954a14.958966 14.958966 0 0 1-28.439428 0.130456l-38.701975-117.758368-117.323515-37.223473a14.958966 14.958966 0 0 1-0.217426-28.395943l115.975468-39.049858 36.658162-115.975468a14.958966 14.958966 0 0 1 18.742193-9.740721zM772.387051 0.553569a10.436488 10.436488 0 0 1 6.653261 6.827202l22.04708 70.489776 72.490103 24.569232a10.436488 10.436488 0 0 1-0.391368 19.959782l-72.185706 21.48177-23.569067 70.794174a10.436488 10.436488 0 0 1-19.872812-0.173941l-22.04708-70.489777-70.228865-21.220858a10.436488 10.436488 0 0 1-0.434853-19.872811l70.794174-24.873629 23.525582-70.881145a10.436488 10.436488 0 0 1 13.219551-6.609775z"
+                    fill="#1296DB"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="dt-btn-group">
+              <button
+                @click="dtToggleFullscreen"
+                class="dt-btn dt-btn-small"
+                :title="dtIsFullscreen ? '退出全屏-只读' : '全屏-只读'"
+              >
+                <template>
+                  <span v-if="!dtIsFullscreen">
+                    <svg
+                      viewBox="0 0 1024 1024"
+                      style="width: 32; height: 32; vertical-align: middle"
+                    >
+                      <path
+                        d="M288 256h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m0 384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m384-384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m0 384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z"
+                        fill="#1296DB"
+                      />
+                    </svg>
+                  </span>
+                  <span v-else>
+                    <svg
+                      viewBox="0 0 1024 1024"
+                      style="width: 32; height: 32; vertical-align: middle"
+                    >
+                      <path
+                        d="M288 256h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m0 384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m384-384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z m0 384h-64c-17.673 0-32 14.327-32 32v64c0 17.673 14.327 32 32 32h64c17.673 0 32-14.327 32-32v-64c0-17.673-14.327-32-32-32z"
+                        fill="#1296DB"
+                      />
+                    </svg>
+                  </span>
+                </template>
+              </button>
+            </div>
+            <div class="dt-btn-group">
+              <button
                 @click="dtOpenSettings"
                 class="dt-btn dt-btn-small"
                 title="设置"
@@ -1785,6 +2162,7 @@
             class="dt-mind-map-container"
             :style="{ overflow: isMobile ? 'auto' : 'hidden' }"
             ref="dtContainer"
+            tabindex="0"
             @mousedown="dtStartDrag"
             @mousemove="dtOnDrag"
             @mouseup="dtEndDrag"
@@ -1794,6 +2172,7 @@
             @touchstart="dtHandleTouchStart"
             @touchmove="dtHandleTouchMove"
             @touchend="dtHandleTouchEnd"
+            @keydown="dtOnCanvasKeydown"
           >
             <div
               v-if="dtCanvasReady"
@@ -2281,7 +2660,10 @@
           </div>
           <!-- 注释查看弹窗 -->
           <div class="dt-edit-modal" v-if="dtIsDescriptionViewOpen">
-            <div class="dt-edit-modal-content">
+            <div
+              class="dt-edit-modal-content"
+              @dblclick="dtOpenDescriptionEdit(dtCurrentDescriptionNode)"
+            >
               <div class="dt-modal-header">
                 <h3>节点注释</h3>
                 <button
@@ -2291,11 +2673,7 @@
                   关闭
                 </button>
               </div>
-              <div
-                class="dt-description-view-content"
-                @dblclick="dtOpenDescriptionEdit(dtCurrentDescriptionNode)"
-                @click="handleLinkClick"
-              >
+              <div class="dt-description-view-content" @click="handleLinkClick">
                 <span
                   v-html="ex(dtCurrentDescriptionNode?.description || '')"
                 ></span>
@@ -2398,7 +2776,6 @@
               </div>
             </div>
           </div>
-
           <!-- 概要编辑弹窗 -->
           <div class="dt-edit-modal" v-if="dtIsSummaryEditorOpen">
             <div class="dt-edit-modal-content">
@@ -2749,124 +3126,185 @@
           <div class="dt-edit-modal" v-if="dtIsSettingsOpen">
             <div class="dt-edit-modal-content">
               <h3>设置</h3>
-              <div class="dt-settings-form">
-                <div class="dt-settings-item">
-                  <label>默认字号：</label>
-                  <input
-                    type="number"
-                    v-model.number="dtSettings.defaultFontSize"
-                    min="10"
-                    max="32"
-                    class="dt-settings-input"
-                  />
-                  <span class="dt-settings-unit">px</span>
+              <div style="overflow-y: auto">
+                <div class="dt-settings-form">
+                  <div class="dt-settings-item">
+                    <label>默认字号：</label>
+                    <input
+                      type="number"
+                      v-model.number="dtSettings.defaultFontSize"
+                      min="10"
+                      max="32"
+                      class="dt-settings-input"
+                    />
+                    <span class="dt-settings-unit">px</span>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>字体：</label>
+                    <select
+                      v-model="dtSettings.defaultFontFamily"
+                      class="dt-settings-input"
+                    >
+                      <option value="Microsoft YaHei">微软雅黑</option>
+                      <option value="SimSun">宋体</option>
+                      <option value="SimHei">黑体</option>
+                      <option value="KaiTi">楷体</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                    </select>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>节点自动调整时最大宽度：</label>
+                    <input
+                      type="number"
+                      v-model.number="dtSettings.maxNodeWidth"
+                      min="4"
+                      max="30"
+                      class="dt-settings-input"
+                    />
+                    <span class="dt-settings-unit">em</span>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>节点自动调整时最大高度：</label>
+                    <input
+                      type="number"
+                      v-model.number="dtSettings.maxNodeHeight"
+                      min="4"
+                      max="30"
+                      class="dt-settings-input"
+                    />
+                    <span class="dt-settings-unit">em</span>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>父子节点间距：</label>
+                    <input
+                      type="number"
+                      v-model.number="dtSettings.levelGap"
+                      min="50"
+                      max="400"
+                      class="dt-settings-input"
+                    />
+                    <span class="dt-settings-unit">px</span>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>{{
+                      dtSettings.expandDirection === "vertical"
+                        ? "节点水平间距："
+                        : "节点垂直间距："
+                    }}</label>
+                    <input
+                      type="number"
+                      v-model.number="dtSettings.nodeGap"
+                      min="5"
+                      max="100"
+                      class="dt-settings-input"
+                    />
+                    <span class="dt-settings-unit">px</span>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>连线样式：</label>
+                    <select
+                      v-model="dtSettings.lineStyle"
+                      class="dt-settings-input"
+                    >
+                      <option value="diverge">折线</option>
+                      <option value="straight">直线</option>
+                      <option value="curve">曲线</option>
+                    </select>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>展开方向：</label>
+                    <select
+                      v-model="dtSettings.expandDirection"
+                      class="dt-settings-input"
+                    >
+                      <option value="horizontal">水平</option>
+                      <option value="vertical">垂直</option>
+                      <option value="both">双侧</option>
+                    </select>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>显示边框：</label>
+                    <input
+                      type="checkbox"
+                      v-model="dtSettings.showBorder"
+                      class="dt-settings-checkbox"
+                    />
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>主题：</label>
+                    <select
+                      v-model="dtSettings.theme"
+                      class="dt-settings-input"
+                    >
+                      <option value="default">默认主题</option>
+                      <option value="light">白天主题</option>
+                      <option value="dark">黑夜主题</option>
+                      <option value="clearview">清晰主题</option>
+                      <option value="eyecare">护眼主题</option>
+                    </select>
+                  </div>
+                  <div class="dt-settings-divider"></div>
+                  <div class="dt-settings-item">
+                    <label>朗读语言：</label>
+                    <select
+                      v-model="dtSettings.speechLang"
+                      class="dt-settings-input"
+                    >
+                      <option value="zh-CN">中文</option>
+                      <option value="en-US">英文</option>
+                      <option value="ja-JP">日语</option>
+                      <option value="ko-KR">韩语</option>
+                      <option value="fr-FR">法语</option>
+                      <option value="de-DE">德语</option>
+                      <option value="es-ES">西班牙语</option>
+                      <option value="ru-RU">俄语</option>
+                    </select>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>发音人：</label>
+                    <select
+                      v-model="dtSettings.speechVoice"
+                      class="dt-settings-input"
+                    >
+                      <option value="">系统默认</option>
+                      <option
+                        v-for="voice in dtFilteredSpeechVoices"
+                        :key="voice.name"
+                        :value="voice.name"
+                      >
+                        {{ voice.name }}
+                      </option>
+                    </select>
+                    <button
+                      @click="dtTestSpeechVoice"
+                      class="dt-btn dt-btn-secondary"
+                      title="测试发音"
+                      style="margin-left: 8px; padding: 4px 8px"
+                    >
+                      🔊
+                    </button>
+                  </div>
+                  <div class="dt-settings-item">
+                    <label>朗读速度：</label>
+                    <input
+                      type="range"
+                      v-model.number="dtSettings.speechRate"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      class="dt-settings-range"
+                    />
+                    <span
+                      class="dt-settings-unit"
+                      style="min-width: 40px; text-align: right"
+                      >{{ dtSettings.speechRate }}x</span
+                    >
+                  </div>
                 </div>
-                <div class="dt-settings-item">
-                  <label>字体：</label>
-                  <select
-                    v-model="dtSettings.defaultFontFamily"
-                    class="dt-settings-input"
-                  >
-                    <option value="Microsoft YaHei">微软雅黑</option>
-                    <option value="SimSun">宋体</option>
-                    <option value="SimHei">黑体</option>
-                    <option value="KaiTi">楷体</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                  </select>
+                <div class="dt-settings-tips">
+                  本思维导图的节点内容、节点注释、笔记、概要都支持富文本(文本、图片、待办列表、表格、链接等)。并可插入**填空答案**变为可测试的填空题。
                 </div>
-                <div class="dt-settings-item">
-                  <label>节点自动调整时最大宽度：</label>
-                  <input
-                    type="number"
-                    v-model.number="dtSettings.maxNodeWidth"
-                    min="4"
-                    max="30"
-                    class="dt-settings-input"
-                  />
-                  <span class="dt-settings-unit">em</span>
-                </div>
-                <div class="dt-settings-item">
-                  <label>节点自动调整时最大高度：</label>
-                  <input
-                    type="number"
-                    v-model.number="dtSettings.maxNodeHeight"
-                    min="4"
-                    max="30"
-                    class="dt-settings-input"
-                  />
-                  <span class="dt-settings-unit">em</span>
-                </div>
-                <div class="dt-settings-item">
-                  <label>父子节点间距：</label>
-                  <input
-                    type="number"
-                    v-model.number="dtSettings.levelGap"
-                    min="50"
-                    max="400"
-                    class="dt-settings-input"
-                  />
-                  <span class="dt-settings-unit">px</span>
-                </div>
-                <div class="dt-settings-item">
-                  <label>{{
-                    dtSettings.expandDirection === "vertical"
-                      ? "节点水平间距："
-                      : "节点垂直间距："
-                  }}</label>
-                  <input
-                    type="number"
-                    v-model.number="dtSettings.nodeGap"
-                    min="5"
-                    max="100"
-                    class="dt-settings-input"
-                  />
-                  <span class="dt-settings-unit">px</span>
-                </div>
-                <div class="dt-settings-item">
-                  <label>连线样式：</label>
-                  <select
-                    v-model="dtSettings.lineStyle"
-                    class="dt-settings-input"
-                  >
-                    <option value="diverge">折线</option>
-                    <option value="straight">直线</option>
-                    <option value="curve">曲线</option>
-                  </select>
-                </div>
-                <div class="dt-settings-item">
-                  <label>展开方向：</label>
-                  <select
-                    v-model="dtSettings.expandDirection"
-                    class="dt-settings-input"
-                  >
-                    <option value="horizontal">水平</option>
-                    <option value="vertical">垂直</option>
-                    <option value="both">双侧</option>
-                  </select>
-                </div>
-                <div class="dt-settings-item">
-                  <label>显示边框：</label>
-                  <input
-                    type="checkbox"
-                    v-model="dtSettings.showBorder"
-                    class="dt-settings-checkbox"
-                  />
-                </div>
-
-                <div class="dt-settings-item">
-                  <label>主题：</label>
-                  <select v-model="dtSettings.theme" class="dt-settings-input">
-                    <option value="default">默认主题</option>
-                    <option value="light">白天主题</option>
-                    <option value="dark">黑夜主题</option>
-                    <option value="presbyopia">清晰主题</option>
-                    <option value="eyecare">护眼主题</option>
-                  </select>
-                </div>
-              </div>
-              <div class="dt-settings-tips">
-                本思维导图的节点内容、节点注释、笔记、概要都支持富文本(文本、图片、待办列表、表格、链接等)。并可插入**填空答案**变为可测试的填空题。
               </div>
               <div class="dt-edit-modal-buttons">
                 <button
@@ -2881,7 +3319,6 @@
               </div>
             </div>
           </div>
-
           <!-- 搜索弹窗 -->
           <div class="dt-edit-modal" v-if="dtIsSearchOpen">
             <div class="dt-edit-modal-content dt-search-modal">
@@ -3089,6 +3526,68 @@
             <div class="dt-edit-modal-buttons">
               <button @click="dtCloseExport" class="dt-btn dt-btn-secondary">
                 关闭
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- AI生成思维导图弹窗（全局） -->
+        <div class="dt-edit-modal" v-if="dtIsAiModalOpen">
+          <div class="dt-edit-modal-content">
+            <div class="dt-modal-header">
+              <h3>使用豆包AI生成思维导图：</h3>
+              <span class="dt-ai-warning"
+                >当前思维导图将被替换，请提前备份</span
+              >
+            </div>
+            <div class="dt-ai-form">
+              <div class="dt-ai-form-item">
+                <textarea
+                  v-model="dtAiInputText"
+                  class="dt-ai-input-textarea"
+                  placeholder="请输入要总结的内容，或导图主题"
+                  rows="4"
+                ></textarea>
+              </div>
+              <div class="dt-ai-form-item">
+                <label>火山方舟 API Key：</label>
+                <input
+                  type="text"
+                  v-model="dtAiApiKey"
+                  class="dt-ai-input"
+                  placeholder="形如：ark-08eead92-xxx..."
+                />
+              </div>
+              <div class="dt-ai-form-item">
+                <label>Endpoint ID：</label>
+                <input
+                  type="text"
+                  v-model="dtAiEndpointId"
+                  class="dt-ai-input"
+                  placeholder="形如：doubao-seed-2-0-lite-260428"
+                />
+              </div>
+              <div v-if="!dtAiIsGenerating" style="color: #303133">
+                <span
+                  >*请询问豆包如何获取火山方舟 API Key及Endpoint
+                  ID；无法获取时，可在豆包客户端生成导图内容后手动录入。doubao-seed-2-0-lite、doubao-seed-2-0-pro均单独享有新人一次性
+                  50 万 token 免费额度。</span
+                >
+              </div>
+            </div>
+            <div v-if="dtAiIsGenerating" class="dt-ai-loading">
+              <div class="dt-ai-loading-spinner"></div>
+              <span>正在生成思维导图...</span>
+            </div>
+            <div class="dt-edit-modal-buttons">
+              <button @click="dtCloseAiModal" class="dt-btn dt-btn-secondary">
+                取消
+              </button>
+              <button
+                @click="dtGenerateMindMapWithAi"
+                class="dt-btn dt-btn-primary"
+                :disabled="dtAiIsGenerating || !dtAiInputText.trim()"
+              >
+                确认
               </button>
             </div>
           </div>
@@ -6516,90 +7015,153 @@
       <!-- 日积月累任务视图 -->
       <div v-if="currentView === 'task'" class="task-view">
         <div
+          class="task-view-header"
           style="
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
           "
         >
           <h3 style="margin: 0">日积月累任务列表</h3>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button
+              @click="shiftTaskMonth(-1)"
+              class="read-btn"
+              style="padding: 4px 10px"
+            >
+              ◀
+            </button>
+            <input
+              type="month"
+              v-model="currentTaskMonth"
+              style="padding: 4px 8px; font-size: 14px"
+            />
+            <button
+              @click="shiftTaskMonth(1)"
+              class="read-btn"
+              style="padding: 4px 10px"
+            >
+              ▶
+            </button>
+          </div>
           <button @click="openAddTaskModal" class="add-task-btn">
             添加任务
           </button>
         </div>
-        <div class="task-list" v-if="taskList.length">
-          <div class="task-item" v-for="(task, index) in taskList" :key="index">
-            <div style="display: flex; justify-content: space-between">
-              <div class="task-header">
-                <span class="task-id">任务{{ index + 1 }}</span>
-                <span class="task-subject">: {{ task.subject }}</span>
-                <span class="task-subject">-{{ task.subClass }}</span>
-                <span class="task-subject">-{{ task.questionType }}</span>
-              </div>
-              <div
-                class="error-actions"
-                style="display: flex; justify-content: right"
-              >
-                <button
-                  @click="editTask(task, index)"
-                  class="read-btn"
-                  title="编辑任务"
-                >
-                  编辑
-                </button>
-                <button
-                  @click="deleteTask(index)"
-                  class="read-btn"
-                  title="删除任务"
-                >
-                  删除
-                </button>
-              </div>
-            </div>
-            <p>{{ task.improveMethod }}</p>
 
-            <!-- 新增：今日完成状态 -->
-            <div class="completion-section">
-              <label class="completion-label">
-                <input
-                  v-if="!task.completionHistory?.includes(todayDate)"
-                  type="checkbox"
-                  v-model.lazy="task.completedToday"
-                  @change="toggleTaskCompletion(task)"
-                  class="completion-checkbox"
-                />
-                <input
-                  v-if="task.completionHistory?.includes(todayDate)"
-                  disabled
-                  v-model="cons"
-                  type="checkbox"
-                  class="completion-checkbox"
-                />
-                今日已完成
-              </label>
-
-              <!-- 完成历史记录 -->
-              <div
-                v-if="task.completionHistory && task.completionHistory.length"
-                class="completion-history"
-              >
-                <strong>完成记录：</strong>
-                <div
-                  class="history-dates"
-                  style="overflow-x: auto; overflow-y: hidden"
+        <div class="task-calendar-wrap" v-if="taskList.length">
+          <table class="task-calendar-table">
+            <thead>
+              <tr>
+                <th class="col-task">任务</th>
+                <th class="col-action">操作</th>
+                <th
+                  v-for="d in taskMonthDays"
+                  :key="'h-' + d"
+                  class="col-day"
+                  :class="{
+                    today: isTodayInMonth(d),
+                  }"
                 >
-                  <span
-                    v-for="date in task.completionHistory"
-                    :key="date"
-                    class="history-date"
+                  {{ d }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(task, index) in taskList" :key="'row-' + index">
+                <td class="col-task">
+                  <div class="cal-task-header">
+                    <span class="task-id">任务{{ index + 1 }}</span>
+                    <span class="task-subject">: {{ task.subject }}</span>
+                    <span class="task-subject">-{{ task.subClass }}</span>
+                    <span class="task-subject">-{{ task.questionType }}</span>
+                  </div>
+                  <div class="cal-task-content">{{ task.improveMethod }}</div>
+                </td>
+                <td class="col-action">
+                  <div
+                    class="error-actions"
+                    style="display: flex; flex-direction: column; gap: 6px"
                   >
-                    {{ formatDateWithWeek(date) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+                    <button
+                      @click="editTask(task, index)"
+                      class="read-btn"
+                      style="margin-left: 0px"
+                      title="编辑任务"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      @click="deleteTask(index)"
+                      class="read-btn"
+                      style="margin-left: 0px"
+                      title="删除任务"
+                    >
+                      删除
+                    </button>
+                  </div>
+                </td>
+                <td
+                  v-for="d in taskMonthDays"
+                  :key="'c-' + index + '-' + d"
+                  class="col-day"
+                  :class="getDayCellClass(task, d)"
+                >
+                  <div class="dual-checkbox">
+                    <input
+                      v-if="isTodayInMonth(d)"
+                      type="checkbox"
+                      title="用户1"
+                      :disabled="
+                        task.completionHistory1?.includes(buildDateForDay(d))
+                      "
+                      :checked="
+                        task.completionHistory1?.includes(buildDateForDay(d))
+                      "
+                      @change="toggleTaskCompletionByDate(task, d, 1)"
+                      class="completion-checkbox user1"
+                    />
+                    <input
+                      v-else-if="isPastDay(d)"
+                      type="checkbox"
+                      title="用户1"
+                      disabled
+                      :checked="
+                        task.completionHistory1?.includes(buildDateForDay(d))
+                      "
+                      class="completion-checkbox user1"
+                    />
+                    <input
+                      v-if="isTodayInMonth(d)"
+                      type="checkbox"
+                      title="用户2"
+                      :disabled="
+                        task.completionHistory2?.includes(buildDateForDay(d))
+                      "
+                      :checked="
+                        task.completionHistory2?.includes(buildDateForDay(d))
+                      "
+                      @change="toggleTaskCompletionByDate(task, d, 2)"
+                      class="completion-checkbox user2"
+                    />
+                    <input
+                      v-else-if="isPastDay(d)"
+                      type="checkbox"
+                      title="用户2"
+                      disabled
+                      :checked="
+                        task.completionHistory2?.includes(buildDateForDay(d))
+                      "
+                      class="completion-checkbox user2"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <div v-else class="empty-tip">暂无日积月累任务。</div>
       </div>
@@ -7603,6 +8165,105 @@
         </div>
       </div>
     </div>
+
+    <div v-if="dtIsSpeechOverlayOpen" class="dt-speech-overlay">
+      <div class="dt-speech-overlay-mask"></div>
+      <div class="dt-speech-overlay-content">
+        <div class="dt-speech-overlay-header">
+          <span class="dt-speech-overlay-title">正在朗读</span>
+          <span class="dt-speech-overlay-counter">
+            {{
+              dtSpeechCurrentNodeIndex >= 0 && dtSpeechNodes.length > 0
+                ? dtNodeLevelNumbers[dtSpeechNodes[dtSpeechCurrentNodeIndex].id]
+                  ? "节点：" +
+                    dtNodeLevelNumbers[
+                      dtSpeechNodes[dtSpeechCurrentNodeIndex].id
+                    ]
+                  : "根节点"
+                : ""
+            }}
+            <span
+              v-if="dtSpeechCurrentNodeIndex >= 0 && dtSpeechNodes.length > 0"
+              class="dt-speech-counter-separator"
+              >|</span
+            >
+            {{ dtSpeechCurrentNodeIndex + 1 }} / {{ dtSpeechNodes.length }}
+          </span>
+        </div>
+        <div class="dt-speech-overlay-body">
+          <div
+            v-if="dtSpeechCurrentNodeIndex >= 0 && dtSpeechNodes.length > 0"
+            class="dt-speech-current-node"
+          >
+            <div class="dt-speech-node-content">
+              <span class="dt-speech-label">内容：</span>
+              <span
+                v-html="dtSpeechNodes[dtSpeechCurrentNodeIndex].content"
+                @click="
+                  handleLinkClick($event);
+                  handleCardImageClick($event);
+                "
+              ></span>
+            </div>
+            <div
+              v-if="dtSpeechNodes[dtSpeechCurrentNodeIndex].description"
+              class="dt-speech-node-description"
+            >
+              <span class="dt-speech-label">注释：</span>
+              <span
+                v-html="dtSpeechNodes[dtSpeechCurrentNodeIndex].description"
+                @click="
+                  handleLinkClick($event);
+                  handleCardImageClick($event);
+                "
+              ></span>
+            </div>
+          </div>
+          <div v-else class="dt-speech-loading">准备朗读中...</div>
+        </div>
+        <div
+          class="dt-speech-auto-pause-option"
+          style="text-align: center; padding: 1em"
+        >
+          <label class="dt-speech-auto-pause-label">
+            <input
+              type="checkbox"
+              v-model="dtSpeechAutoPause"
+              class="dt-speech-auto-pause-checkbox"
+            />
+            <span>朗读完当前页自动暂停，点击朗读后继续下一页</span>
+          </label>
+        </div>
+        <div class="dt-speech-overlay-footer">
+          <button
+            @click="dtSpeechGoPage(-1)"
+            class="dt-btn dt-btn-secondary dt-btn-large"
+            :disabled="dtSpeechCurrentNodeIndex <= 0"
+          >
+            &lt;
+          </button>
+          <button
+            @click="dtTogglePause"
+            class="dt-btn dt-btn-secondary dt-btn-large"
+          >
+            {{ dtIsSpeechPaused ? "朗读" : "暂停" }}
+          </button>
+          <button
+            @click="dtStopSpeak"
+            class="dt-btn dt-btn-primary dt-btn-large"
+          >
+            退出
+          </button>
+          <button
+            @click="dtSpeechGoPage(1)"
+            class="dt-btn dt-btn-secondary dt-btn-large"
+            :disabled="dtSpeechCurrentNodeIndex >= dtSpeechNodes.length - 1"
+          >
+            &gt;
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -7632,6 +8293,7 @@ export default {
       // 页面状态
       dtCurrentPage: "home",
       dtCurrentMindMapIndex: -1,
+      dtLastOpenedIndex: -1,
       dtCurrentMindMapName: "",
       dtIsEditingName: false,
       // 所有思维导图数据
@@ -7697,6 +8359,15 @@ export default {
       // 朗读相关
       dtIsSpeaking: false,
       dtSpeechUtterance: null,
+      dtSpeechTimer: null,
+      dtSpeechAutoPaused: false,
+      dtSpeechEpoch: 0,
+      dtSpeechNodes: [],
+      dtSpeechCurrentNodeIndex: -1,
+      dtIsSpeechOverlayOpen: false,
+      dtIsSpeechPaused: false,
+      dtSpeechAutoPause: false,
+      dtSpeechVoices: [],
       dtSearchMasteryEnabled: false,
       dtSearchMasteryMin: 1,
       dtSearchMasteryMax: 9,
@@ -7714,6 +8385,8 @@ export default {
       dtMasteryLevelAnimating: "",
       dtQuizUserAnswers: {},
       dtAllBlankAnswers: [],
+      // 全屏相关
+      dtIsFullscreen: false,
       // 设置相关
       dtIsSettingsOpen: false,
       dtSettings: {
@@ -7727,6 +8400,9 @@ export default {
         expandDirection: "horizontal",
         theme: "default",
         showBorder: true,
+        speechLang: "zh-CN",
+        speechRate: 1,
+        speechVoice: "",
       },
       // 搜索相关
       dtIsSearchOpen: false,
@@ -7756,6 +8432,9 @@ export default {
       dtTouchStartScale: 1,
       // 性能优化相关
       dtUpdatePositionsPending: false,
+      // 画布坐标偏移（由 dtUpdateCanvasSize 的负坐标修正产生）
+      dtCanvasOffsetX: 0,
+      dtCanvasOffsetY: 0,
       // 笔记相关
       dtNoteNode: null,
       dtNoteCollapsed: true,
@@ -8078,7 +8757,7 @@ export default {
       },
 
       editorConfig: {
-        placeholder: "请输入错题的原题题目或新的同类题目（不含答案）",
+        placeholder: "请输入...",
         MENU_CONF: {
           uploadImage: {
             fieldName: "your-fileName",
@@ -8178,6 +8857,7 @@ export default {
       mistaker: [],
       filteredMistaker: [],
       taskList: [],
+      currentTaskMonth: new Date().toISOString().slice(0, 7),
       backupFiles: [],
       showSettingModal: false,
       showImageViewer: false,
@@ -8220,6 +8900,12 @@ export default {
         specialIL: true,
         importantLevel: 0,
       },
+      // AI生成思维导图相关
+      dtIsAiModalOpen: false,
+      dtAiInputText: "",
+      dtAiApiKey: "",
+      dtAiEndpointId: "",
+      dtAiIsGenerating: false,
     };
   },
   computed: {
@@ -9307,6 +9993,13 @@ export default {
     todayDate() {
       return new Date().toLocaleDateString("sv-SE");
     },
+    taskMonthDays() {
+      const [y, m] = this.currentTaskMonth.split("-").map(Number);
+      const total = new Date(y, m, 0).getDate();
+      const arr = [];
+      for (let i = 1; i <= total; i++) arr.push(i);
+      return arr;
+    },
     // 按备用分组的数据
     trapMap() {
       const map = {};
@@ -9353,6 +10046,13 @@ export default {
       const final = [afill1, afill2];
       return final;
     },
+    dtFilteredSpeechVoices() {
+      const lang = this.dtSettings.speechLang;
+      if (!lang) return this.dtSpeechVoices;
+      return this.dtSpeechVoices.filter((voice) => {
+        return voice.lang.startsWith(lang.split("-")[0]);
+      });
+    },
   },
 
   watch: {
@@ -9363,6 +10063,16 @@ export default {
         setTimeout(() => {
           this.dtResetView();
         }, 100);
+      });
+    },
+
+    "dtSettings.speechLang"() {
+      this.$nextTick(() => {
+        if (this.dtFilteredSpeechVoices.length > 0) {
+          this.dtSettings.speechVoice = this.dtFilteredSpeechVoices[0].name;
+        } else {
+          this.dtSettings.speechVoice = "";
+        }
       });
     },
     dtSettings: {
@@ -9712,6 +10422,18 @@ export default {
         passive: false,
       });
     }
+    document.addEventListener(
+      "fullscreenchange",
+      this.dtHandleFullscreenChange
+    );
+    document.addEventListener(
+      "webkitfullscreenchange",
+      this.dtHandleFullscreenChange
+    );
+    document.addEventListener(
+      "msfullscreenchange",
+      this.dtHandleFullscreenChange
+    );
     this.$window = window;
     this.onOff = true; // 标志位,保证存盘。
     this.readFromForage();
@@ -9728,6 +10450,14 @@ export default {
     window.localStorage.setItem("mistakebook_list_scroll", 0);
     this.dtUpdateContainerSize();
     window.addEventListener("resize", this.dtUpdateContainerSize);
+
+    if (window.speechSynthesis) {
+      this.dtLoadSpeechVoices();
+      window.speechSynthesis.addEventListener(
+        "voiceschanged",
+        this.dtLoadSpeechVoices
+      );
+    }
     // 禁用双击缩放
     let lastTouchEnd = 0;
     document.addEventListener(
@@ -9787,6 +10517,18 @@ export default {
     }
     window.removeEventListener("resize", this.dtUpdateContainerSize);
     document.body.classList.remove("mistakebook-no-scroll");
+    document.removeEventListener(
+      "fullscreenchange",
+      this.dtHandleFullscreenChange
+    );
+    document.removeEventListener(
+      "webkitfullscreenchange",
+      this.dtHandleFullscreenChange
+    );
+    document.removeEventListener(
+      "msfullscreenchange",
+      this.dtHandleFullscreenChange
+    );
   },
   methods: {
     // 列表页面方法
@@ -9846,22 +10588,27 @@ export default {
       const mindMap = this.dtMindMaps[this.dtCurrentMindMapIndex];
 
       // 先加载设置，避免设置变化时触发自动重算覆盖节点尺寸
+      // 合并默认值，防止旧数据缺少语音等新增字段导致 speechRate 为 undefined
+      const dtDefaultSettings = {
+        defaultFontSize: 14,
+        defaultFontFamily: "Microsoft YaHei",
+        maxNodeWidth: 20,
+        maxNodeHeight: 15,
+        levelGap: 100,
+        nodeGap: 60,
+        lineStyle: "diverge",
+        expandDirection: "horizontal",
+        theme: "default",
+        showBorder: true,
+        bothSideLeftCount: null,
+        speechLang: "zh-CN",
+        speechRate: 1,
+        speechVoice: "",
+      };
       if (mindMap.settings) {
-        this.dtSettings = { ...mindMap.settings };
+        this.dtSettings = { ...dtDefaultSettings, ...mindMap.settings };
       } else {
-        this.dtSettings = {
-          defaultFontSize: 14,
-          defaultFontFamily: "Microsoft YaHei",
-          maxNodeWidth: 20,
-          maxNodeHeight: 15,
-          levelGap: 100,
-          nodeGap: 60,
-          lineStyle: "diverge",
-          expandDirection: "horizontal",
-          theme: "default",
-          showBorder: true,
-          bothSideLeftCount: null,
-        };
+        this.dtSettings = { ...dtDefaultSettings };
       }
 
       this.dtNodes = JSON.parse(JSON.stringify(mindMap.nodes || []));
@@ -9871,6 +10618,8 @@ export default {
       this.dtCollapsedNodes = [];
       this.dtOffsetX = 0;
       this.dtOffsetY = 0;
+      this.dtCanvasOffsetX = 0;
+      this.dtCanvasOffsetY = 0;
       this.dtNoteNode = mindMap.noteNode
         ? JSON.parse(JSON.stringify(mindMap.noteNode))
         : null;
@@ -10023,6 +10772,7 @@ export default {
     },
     dtGoBackHome() {
       this.dtSaveCurrentMindMap();
+      this.dtLastOpenedIndex = this.dtCurrentMindMapIndex;
       this.dtCurrentPage = "home";
     },
     dtFormatDate(dateStr) {
@@ -10032,6 +10782,7 @@ export default {
         .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
     },
     dtStartEditName() {
+      if (this.dtIsFullscreen) return;
       this.dtIsEditingName = true;
       this.$nextTick(() => {
         this.$refs.dtNameInput.focus();
@@ -10097,6 +10848,7 @@ export default {
         this.dtStartSpeak();
       }
     },
+
     dtStartSpeak() {
       if (!this.dtSelectedNode || !this.dtIsRealNodeSelected) return;
       if (!window.speechSynthesis) {
@@ -10104,40 +10856,196 @@ export default {
         return;
       }
       const nodes = this.dtGetNodeSubtreeDFS(this.dtSelectedNode);
-      let texts = [];
-      for (const node of nodes) {
-        const contentText = this.dtStripHtml(node.content);
-        let nodeText = `节点 ${node.id}。${contentText}。`;
-        if (node.description) {
-          const descText = this.dtStripHtml(node.description);
-          nodeText += `注解：${descText}。`;
-        }
-        texts.push(nodeText);
-      }
-      const fullText = texts.join(" ");
-      const utterance = new SpeechSynthesisUtterance(fullText);
-      utterance.lang = "zh-CN";
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      utterance.onend = () => {
-        this.dtIsSpeaking = false;
-        this.dtSpeechUtterance = null;
-      };
-      utterance.onerror = () => {
-        this.dtIsSpeaking = false;
-        this.dtSpeechUtterance = null;
-      };
-      this.dtSpeechUtterance = utterance;
+      if (nodes.length === 0) return;
+      this.dtSpeechNodes = nodes;
+      this.dtSpeechCurrentNodeIndex = -1;
+      this.dtIsSpeechOverlayOpen = true;
       this.dtIsSpeaking = true;
+      this.dtIsSpeechPaused = false;
+      this.dtSpeechEpoch++;
       window.speechSynthesis.cancel();
+      if (this.dtSpeechTimer) {
+        clearTimeout(this.dtSpeechTimer);
+        this.dtSpeechTimer = null;
+      }
+      this._dtSpeakNext(0, nodes);
+    },
+    _dtSpeakNext(index, nodes) {
+      if (index >= nodes.length) return;
+      const epoch = this.dtSpeechEpoch;
+      const node = nodes[index];
+      const contentText = this.dtStripHtml(node.content);
+      let nodeText = `${contentText}。`;
+      if (node.description) {
+        const descText = this.dtStripHtml(node.description);
+        nodeText += `注释：${descText}。`;
+      }
+      const utterance = new SpeechSynthesisUtterance(nodeText);
+      utterance.lang = this.dtSettings.speechLang;
+      utterance.rate = this.dtGetSpeechRate();
+      utterance.pitch = 1;
+      if (this.dtSettings.speechVoice) {
+        const voice = this.dtSpeechVoices.find(
+          (v) => v.name === this.dtSettings.speechVoice
+        );
+        if (voice) {
+          utterance.voice = voice;
+        }
+      }
+      utterance.onstart = () => {
+        if (epoch !== this.dtSpeechEpoch) return;
+        this.dtSpeechCurrentNodeIndex = index;
+      };
+      if (index === nodes.length - 1) {
+        utterance.onend = () => {
+          if (epoch !== this.dtSpeechEpoch) return;
+          this.dtIsSpeaking = false;
+          this.dtIsSpeechPaused = false;
+          this.dtIsSpeechOverlayOpen = false;
+          this.dtSpeechNodes = [];
+          this.dtSpeechCurrentNodeIndex = -1;
+        };
+        utterance.onerror = () => {
+          if (epoch !== this.dtSpeechEpoch) return;
+          this.dtIsSpeaking = false;
+          this.dtIsSpeechPaused = false;
+          this.dtIsSpeechOverlayOpen = false;
+          this.dtSpeechNodes = [];
+          this.dtSpeechCurrentNodeIndex = -1;
+        };
+      } else {
+        utterance.onend = () => {
+          if (epoch !== this.dtSpeechEpoch) return;
+          if (this.dtSpeechAutoPause) {
+            // 不调用 pause()（utterance 已结束，pause 无效且 iOS 上 resume 会重播）
+            // 直接标记暂停，等用户点继续时触发下一页
+            this.dtIsSpeechPaused = true;
+            this.dtSpeechAutoPaused = true;
+          } else {
+            // 非自动暂停时，延迟1秒再读下一页
+            this.dtSpeechTimer = setTimeout(() => {
+              this._dtSpeakNext(index + 1, nodes);
+            }, 1000);
+          }
+        };
+        utterance.onerror = () => {
+          if (epoch !== this.dtSpeechEpoch) return;
+          this.dtIsSpeaking = false;
+          this.dtIsSpeechPaused = false;
+          this.dtIsSpeechOverlayOpen = false;
+          this.dtSpeechNodes = [];
+          this.dtSpeechCurrentNodeIndex = -1;
+        };
+      }
+      window.speechSynthesis.speak(utterance);
+    },
+    dtTogglePause() {
+      if (!window.speechSynthesis) return;
+      if (this.dtIsSpeechPaused) {
+        if (this.dtSpeechAutoPaused) {
+          // 自动暂停：不调 resume()，直接触发下一页
+          this.dtSpeechAutoPaused = false;
+          this.dtIsSpeechPaused = false;
+          if (this.dtSpeechCurrentNodeIndex < this.dtSpeechNodes.length - 1) {
+            const nextIndex = this.dtSpeechCurrentNodeIndex + 1;
+            this.dtSpeechTimer = setTimeout(() => {
+              this._dtSpeakNext(nextIndex, this.dtSpeechNodes);
+            }, 1000);
+          }
+        } else if (window.speechSynthesis.paused) {
+          // 页中间手动暂停后继续：正常 resume()
+          window.speechSynthesis.resume();
+          this.dtIsSpeechPaused = false;
+        } else {
+          // 翻页后的暂停：从当前页重新开始朗读
+          this.dtIsSpeechPaused = false;
+          this._dtSpeakNext(this.dtSpeechCurrentNodeIndex, this.dtSpeechNodes);
+        }
+      } else {
+        // 手动暂停：清除可能存在的1秒延迟定时器
+        if (this.dtSpeechTimer) {
+          clearTimeout(this.dtSpeechTimer);
+          this.dtSpeechTimer = null;
+        }
+        window.speechSynthesis.pause();
+        this.dtIsSpeechPaused = true;
+        this.dtSpeechAutoPaused = false;
+      }
+    },
+    dtSpeechGoPage(delta) {
+      if (!window.speechSynthesis) return;
+      const newIndex = this.dtSpeechCurrentNodeIndex + delta;
+      if (newIndex < 0 || newIndex >= this.dtSpeechNodes.length) return;
+      // 停止当前朗读
+      if (this.dtSpeechTimer) {
+        clearTimeout(this.dtSpeechTimer);
+        this.dtSpeechTimer = null;
+      }
+      this.dtSpeechEpoch++;
+      window.speechSynthesis.cancel();
+      // 更新到目标页并暂停
+      this.dtSpeechCurrentNodeIndex = newIndex;
+      this.dtIsSpeechPaused = true;
+      this.dtSpeechAutoPaused = false;
+    },
+
+    dtLoadSpeechVoices() {
+      if (!window.speechSynthesis) return;
+      this.dtSpeechVoices = window.speechSynthesis.getVoices();
+    },
+    // 获取安全的朗读语速，防止 undefined/NaN/Infinity 等非有限值导致报错
+    dtGetSpeechRate() {
+      let rate = parseFloat(this.dtSettings.speechRate);
+      if (!isFinite(rate)) rate = 1;
+      return Math.max(0.5, Math.min(2, rate));
+    },
+    dtTestSpeechVoice() {
+      if (!window.speechSynthesis) {
+        alert("您的浏览器不支持语音朗读功能");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const testText =
+        this.dtSettings.speechLang === "zh-CN"
+          ? "这是一个测试语音"
+          : "This is a test voice.";
+      const utterance = new SpeechSynthesisUtterance(testText);
+      utterance.lang = this.dtSettings.speechLang;
+      utterance.rate = this.dtGetSpeechRate();
+      utterance.pitch = 1;
+      if (this.dtSettings.speechVoice) {
+        const voice = this.dtSpeechVoices.find(
+          (v) => v.name === this.dtSettings.speechVoice
+        );
+        if (voice) {
+          utterance.voice = voice;
+        }
+      }
       window.speechSynthesis.speak(utterance);
     },
     dtStopSpeak() {
+      if (this.dtSpeechTimer) {
+        clearTimeout(this.dtSpeechTimer);
+        this.dtSpeechTimer = null;
+      }
       if (window.speechSynthesis) {
+        this.dtSpeechEpoch++;
         window.speechSynthesis.cancel();
       }
       this.dtIsSpeaking = false;
+      this.dtIsSpeechPaused = false;
+      this.dtIsSpeechOverlayOpen = false;
+      if (this.dtSpeechCurrentNodeIndex >= 0 && this.dtSpeechNodes.length > 0) {
+        const currentNode = this.dtSpeechNodes[this.dtSpeechCurrentNodeIndex];
+        this.dtSelectedNode = currentNode;
+        if (this.dtHasCollapsedChildren(currentNode)) {
+          this.dtExpandAllChildren();
+        }
+      }
+      this.dtSpeechNodes = [];
+      this.dtSpeechCurrentNodeIndex = -1;
       this.dtSpeechUtterance = null;
+      this.dtSpeechAutoPaused = false;
     },
     dtIncreaseMastery() {
       if (!this.dtSelectedNode || !this.dtIsRealNodeSelected) return;
@@ -10652,6 +11560,7 @@ export default {
       }, 600);
     },
     dtQuizEditContent() {
+      if (this.dtIsFullscreen) return;
       const quizItem = this.dtQuizCurrentNode;
       if (!quizItem) return;
       const showAnswer =
@@ -10801,6 +11710,7 @@ export default {
     },
     // 节点拖拽方法
     dtStartNodeDrag(e, node) {
+      if (this.dtIsFullscreen) return;
       // 阻止默认行为，防止触发触摸事件
       if (e.type === "touchstart") {
         e.preventDefault();
@@ -11243,6 +12153,7 @@ export default {
     },
     // resize 方法
     dtStartResize(e, node) {
+      if (this.dtIsFullscreen) return;
       // 阻止默认行为
       if (e.type === "touchstart") {
         e.preventDefault();
@@ -11307,6 +12218,7 @@ export default {
     },
     // 编辑方法
     dtStartEdit(node) {
+      if (this.dtIsFullscreen) return;
       this.dtEditingNode = node;
       const level = node.level - 1;
       this.dtEditingContent =
@@ -11560,6 +12472,7 @@ export default {
       this.dtCurrentDescriptionNode = null;
     },
     dtOpenDescriptionEdit(node) {
+      if (this.dtIsFullscreen) return;
       this.dtEditingDescriptionNode = node;
       this.dtEditingDescription = node.description || "";
       this.openQuestionEditor(this.dtEditingDescription, 32);
@@ -11733,6 +12646,42 @@ export default {
     dtCloseSettings() {
       this.dtIsSettingsOpen = false;
     },
+    dtToggleFullscreen() {
+      if (!this.dtIsFullscreen) {
+        this.dtEnterFullscreen();
+      } else {
+        this.dtExitFullscreen();
+      }
+    },
+    dtEnterFullscreen() {
+      const element = document.documentElement;
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+      }
+      this.dtIsFullscreen = true;
+    },
+    dtExitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+      this.dtIsFullscreen = false;
+    },
+    dtHandleFullscreenChange() {
+      this.dtIsFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement
+      );
+    },
+
     dtResetSettings() {
       this.dtSettings = {
         defaultFontSize: 14,
@@ -11745,6 +12694,10 @@ export default {
         expandDirection: "horizontal",
         theme: "default",
         showBorder: true,
+        bothSideLeftCount: null,
+        speechLang: "zh-CN",
+        speechRate: 1,
+        speechVoice: "",
       };
     },
     // 搜索相关方法
@@ -13097,6 +14050,7 @@ export default {
           existing.startNodeId = this.dtSummaryStartNodeId;
           existing.endNodeId = this.dtSummaryEndNodeId || null;
           existing.parentId = parentId;
+          existing._autoSize = true;
         }
         this.dtSummaryEditingId = null;
       } else {
@@ -13162,6 +14116,7 @@ export default {
       this.dtCloseSummaryEditor();
     },
     dtStartEditSummary(summary) {
+      if (this.dtIsFullscreen) return;
       const startNode = this.dtNodes.find((n) => n.id === summary.startNodeId);
       if (!startNode) return;
       this.dtSelectedNode = summary;
@@ -13235,12 +14190,66 @@ export default {
           summary.y = (minY + maxY) / 2 - (summary.height || 30) / 2;
         }
 
-        // 仅在未手动调整过时自动计算宽度
+        // 仅在未手动调整过时自动计算宽度（与 dtAutoResizeNode 相同逻辑）
         if (summary._autoSize !== false) {
-          const textLength = summary.content.replace(/<[^>]*>/g, "").length;
-          const emSize = this.dtSettings.defaultFontSize || 14;
-          summary.width = Math.max(80, textLength * emSize + 24);
-          summary.height = 30;
+          const emSize = this.dtSettings.defaultFontSize || 16;
+          const maxWidth = this.dtSettings.maxNodeWidth * emSize;
+          const maxHeight = this.dtSettings.maxNodeHeight * emSize;
+          const minWidth = 80;
+          const minHeight = 30;
+          const paddingX = 24;
+          const paddingY = 8;
+          const extraHeight = 4;
+          const contentHtml = this.ex(summary.content);
+
+          // 测量单行内容宽度
+          const tempEl1 = document.createElement("div");
+          tempEl1.innerHTML = contentHtml;
+          tempEl1.style.visibility = "hidden";
+          tempEl1.style.position = "absolute";
+          tempEl1.style.display = "inline-block";
+          tempEl1.style.fontSize = this.dtSettings.defaultFontSize + "px";
+          tempEl1.style.fontFamily = this.dtSettings.defaultFontFamily;
+          tempEl1.style.whiteSpace = "nowrap";
+          tempEl1.style.wordBreak = "break-word";
+          tempEl1.style.lineHeight = "1.5";
+          tempEl1.style.maxWidth = "none";
+          document.body.appendChild(tempEl1);
+          const singleLineWidth = tempEl1.offsetWidth;
+          const singleLineHeight = tempEl1.offsetHeight;
+          document.body.removeChild(tempEl1);
+
+          const neededWidth = singleLineWidth + paddingX;
+
+          if (neededWidth <= maxWidth) {
+            summary.width = Math.max(minWidth, neededWidth);
+            summary.height = Math.max(
+              minHeight,
+              singleLineHeight + paddingY + extraHeight
+            );
+          } else {
+            summary.width = maxWidth;
+            const contentWidth = maxWidth - paddingX;
+            const tempEl2 = document.createElement("div");
+            tempEl2.innerHTML = contentHtml;
+            tempEl2.style.visibility = "hidden";
+            tempEl2.style.position = "absolute";
+            tempEl2.style.display = "inline-block";
+            tempEl2.style.fontSize = this.dtSettings.defaultFontSize + "px";
+            tempEl2.style.fontFamily = this.dtSettings.defaultFontFamily;
+            tempEl2.style.whiteSpace = "pre-wrap";
+            tempEl2.style.wordBreak = "break-word";
+            tempEl2.style.lineHeight = "1.5";
+            tempEl2.style.width = contentWidth + "px";
+            tempEl2.style.maxWidth = contentWidth + "px";
+            document.body.appendChild(tempEl2);
+            const contentHeight = tempEl2.offsetHeight;
+            document.body.removeChild(tempEl2);
+            summary.height = Math.min(
+              Math.max(minHeight, contentHeight + paddingY + extraHeight),
+              maxHeight
+            );
+          }
         }
       });
     },
@@ -13536,12 +14545,14 @@ export default {
       this.dtNoteCollapsed = !this.dtNoteCollapsed;
     },
     dtStartEditNote() {
+      if (this.dtIsFullscreen) return;
       if (!this.dtNoteNode) return;
       this.dtEditingNode = this.dtNoteNode;
       this.dtEditingContent = this.dtNoteNode.content;
       this.openQuestionEditor(this.dtEditingContent, 33);
     },
     dtStartNoteResize(e) {
+      if (this.dtIsFullscreen) return;
       if (e.type === "touchstart") {
         e.preventDefault();
       }
@@ -13594,6 +14605,7 @@ export default {
       document.removeEventListener("touchend", this.dtEndNoteResize);
     },
     dtStartSummaryResize(e, summary) {
+      if (this.dtIsFullscreen) return;
       if (e.type === "touchstart") {
         e.preventDefault();
       }
@@ -13884,6 +14896,21 @@ export default {
 
       return `${x2},${y2} ${px1},${py1} ${px2},${py2}`;
     },
+    // 画布键盘事件处理
+    dtOnCanvasKeydown(e) {
+      // 确保焦点不在富文本编辑器中
+      if (e.target.contentEditable === "true") return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+        return;
+
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        this.dtSelectedNode
+      ) {
+        e.preventDefault();
+        this.dtDeleteNode();
+      }
+    },
     // 鼠标双击画布空白区域处理
     dtHandleCanvasDoubleClick(e) {
       const target = e.target;
@@ -14021,8 +15048,8 @@ export default {
           return;
         }
 
-        const centerX = this.dtContainerWidth / 2;
-        const centerY = this.dtContainerHeight / 2;
+        const centerX = this.dtContainerWidth / 2 + this.dtCanvasOffsetX;
+        const centerY = this.dtContainerHeight / 2 + this.dtCanvasOffsetY;
         const defaultNodeWidth = 120;
         const defaultNodeHeight = 40;
         const levelGap = this.dtSettings.levelGap;
@@ -14515,7 +15542,9 @@ export default {
           if (node._manualX !== undefined) node._manualX += offsetX;
           if (node._manualY !== undefined) node._manualY += offsetY;
         });
-
+        // 记录累计偏移，供 dtUpdatePositions 计算 idealPosition 时使用
+        this.dtCanvasOffsetX += offsetX;
+        this.dtCanvasOffsetY += offsetY;
         this.dtCanvasWidth = Math.max(
           maxX + offsetX + padding,
           this.dtContainerWidth,
@@ -16013,11 +17042,173 @@ export default {
         this.getText1();
       }
     },
+    dtOpenAiModal() {
+      this.dtIsAiModalOpen = true;
+    },
+    dtCloseAiModal() {
+      this.dtIsAiModalOpen = false;
+      this.dtAiIsGenerating = false;
+    },
+    async dtGenerateMindMapWithAi() {
+      if (!this.dtAiInputText.trim() || !this.dtAiApiKey.trim()) {
+        alert("请填写内容和API Key");
+        return;
+      }
+
+      this.dtAiIsGenerating = true;
+
+      try {
+        const prompt = `请根据以下内容生成一个思维导图的JSON数据：
+
+用户输入：${this.dtAiInputText}
+
+要求：
+1. 返回纯JSON格式，不要包含markdown代码块标记
+2. JSON结构：{"root": {"content": "根节点内容", "children": [{"content": "子节点1", "children": [...]}, ...]}}
+3. 支持无限层级的子节点
+4. 节点内容要简洁明了，符合思维导图的结构
+5. 如果用户输入是一个主题，请围绕该主题展开生成详细的思维导图`;
+
+        const endpointId =
+          this.dtAiEndpointId.trim() || "doubao-seed-2-0-lite-260428";
+        const apiKey = this.dtAiApiKey.trim();
+
+        const response = await fetch(
+          `https://ark.cn-beijing.volces.com/api/v3/chat/completions`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: endpointId,
+              messages: [
+                {
+                  role: "user",
+                  content: prompt,
+                },
+              ],
+              stream: false,
+              max_tokens: 4096,
+              temperature: 0.7,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API调用失败: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const aiResponse = result.choices?.[0]?.message?.content;
+
+        if (!aiResponse) {
+          throw new Error("AI返回数据为空");
+        }
+
+        let mindMapData;
+        try {
+          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            mindMapData = JSON.parse(jsonMatch[0]);
+          } else {
+            mindMapData = JSON.parse(aiResponse);
+          }
+        } catch (e) {
+          throw new Error("解析AI返回的JSON失败");
+        }
+
+        this.dtCreateMindMapFromAiData(mindMapData);
+        this.dtCloseAiModal();
+        setTimeout(() => {
+          this.dtResetView();
+        }, 300);
+      } catch (error) {
+        console.error("生成思维导图失败:", error);
+        alert("生成思维导图失败: " + error.message);
+      } finally {
+        this.dtAiIsGenerating = false;
+      }
+    },
+    dtCreateMindMapFromAiData(data) {
+      const today = new Date().toISOString().split("T")[0];
+      const nodes = [];
+      const childCount = {};
+
+      const buildNode = (nodeData, parentId, level) => {
+        const nodeId = parentId
+          ? `${parentId}.${(childCount[parentId] || 0) + 1}`
+          : "1";
+
+        if (!childCount[parentId]) {
+          childCount[parentId] = 0;
+        }
+        childCount[parentId]++;
+
+        const node = {
+          id: nodeId,
+          content: nodeData.content || "未命名节点",
+          description: "",
+          descriptionMastery: { level: 1, lastTestDate: today },
+          level: level,
+          parentId: parentId,
+          x: 0,
+          y: 0,
+          isFavorite: false,
+          tags: [],
+          masteryLevel: { level: 1, lastTestDate: today },
+        };
+
+        if (level === 1 && this.dtSettings.expandDirection === "both") {
+          node.side = "right";
+        }
+
+        nodes.push(node);
+        childCount[nodeId] = 0;
+
+        if (nodeData.children && nodeData.children.length > 0) {
+          nodeData.children.forEach((child) => {
+            buildNode(child, nodeId, level + 1);
+          });
+        }
+
+        return node;
+      };
+
+      if (data.root) {
+        buildNode(data.root, null, 1);
+      } else if (data.content) {
+        buildNode(data, null, 1);
+      } else if (Array.isArray(data)) {
+        data.forEach((item) => {
+          buildNode(item, null, 1);
+        });
+      }
+
+      this.dtNodes = nodes;
+      this.dtChildCount = childCount;
+      this.dtLines = [];
+      this.dtSelectedNode = null;
+      this.dtCollapsedNodes = [];
+      this.dtOffsetX = 0;
+      this.dtOffsetY = 0;
+      this.dtCanvasOffsetX = 0;
+      this.dtCanvasOffsetY = 0;
+
+      nodes.forEach((node) => {
+        this.dtAutoResizeNode(node);
+      });
+
+      this.dtUpdatePositions();
+      this.dtSaveCurrentMindMap();
+    },
     ex(x) {
       if (!x) return x;
       let xx = x
         .replace(/<\/p><p>/g, "</p><br><p>")
         .replace(/<p>/g, "<p style='margin: 0'>")
+        .replace(/<img/g, "<img style='vertical-align: middle'")
         .replace(/##(\d+)##/g, (match, num) => {
           return `<a class="link-tag" style="color:#409eff;cursor:pointer;text-decoration:underline dashed;" data-id="${num}">题号${num}</a>`;
         });
@@ -17137,7 +18328,8 @@ export default {
         questionType: questionType, // 新增
         improveMethod: this.taskForm.improveMethod.trim(),
         completedToday: false,
-        completionHistory: [],
+        completionHistory1: [],
+        completionHistory2: [],
       };
       if (
         this.isEditingTask &&
@@ -17164,16 +18356,100 @@ export default {
     },
     toggleTaskCompletion(task) {
       if (task.completedToday) {
-        if (!task.completionHistory) {
-          task.completionHistory = [];
+        if (!task.completionHistory1) {
+          task.completionHistory1 = [];
+        }
+        if (!task.completionHistory2) {
+          task.completionHistory2 = [];
         }
 
-        if (!task.completionHistory?.includes(this.todayDate)) {
-          task.completionHistory.push(this.todayDate);
-          task.completionHistory.sort((a, b) => new Date(b) - new Date(a));
+        if (!task.completionHistory1?.includes(this.todayDate)) {
+          task.completionHistory1.push(this.todayDate);
+          task.completionHistory1.sort((a, b) => new Date(b) - new Date(a));
+        }
+        if (!task.completionHistory2?.includes(this.todayDate)) {
+          task.completionHistory2.push(this.todayDate);
+          task.completionHistory2.sort((a, b) => new Date(b) - new Date(a));
         }
         task.completedToday = false;
       }
+    },
+    // ==== 日历视图辅助方法 ====
+    shiftTaskMonth(delta) {
+      const [y, m] = this.currentTaskMonth.split("-").map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      const yy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      this.currentTaskMonth = `${yy}-${mm}`;
+    },
+    getTaskMonthDays() {
+      const [y, m] = this.currentTaskMonth.split("-").map(Number);
+      return new Date(y, m, 0).getDate();
+    },
+    buildDateForDay(day) {
+      const [y, m] = this.currentTaskMonth.split("-").map(Number);
+      const dd = String(day).padStart(2, "0");
+      return `${y}-${String(m).padStart(2, "0")}-${dd}`;
+    },
+    isTodayInMonth(day) {
+      return this.buildDateForDay(day) === this.todayDate;
+    },
+    isPastDay(day) {
+      return this.buildDateForDay(day) < this.todayDate;
+    },
+    isFutureDay(day) {
+      return this.buildDateForDay(day) > this.todayDate;
+    },
+    getDayCellClass(task, day) {
+      const cls = [];
+      if (this.isTodayInMonth(day)) cls.push("today");
+      if (this.isPastDay(day)) cls.push("past");
+      if (this.isFutureDay(day)) cls.push("future");
+      const dateStr = this.buildDateForDay(day);
+      const done1 =
+        task.completionHistory1 && task.completionHistory1.includes(dateStr);
+      const done2 =
+        task.completionHistory2 && task.completionHistory2.includes(dateStr);
+      if (done1 && done2) {
+        cls.push("done", "done-both");
+      } else if (done1 || done2) {
+        cls.push("done", "done-partial");
+      }
+      return cls;
+    },
+    toggleTaskCompletionByDate(task, day, userIndex) {
+      const dateStr = this.buildDateForDay(day);
+      const key = userIndex === 2 ? "completionHistory2" : "completionHistory1";
+      if (!task[key]) {
+        task[key] = [];
+      }
+      if (!task[key].includes(dateStr)) {
+        task[key].push(dateStr);
+        task[key].sort((a, b) => new Date(b) - new Date(a));
+      }
+      const allDone =
+        task.completionHistory1?.includes(this.todayDate) &&
+        task.completionHistory2?.includes(this.todayDate);
+      task.completedToday = allDone;
+    },
+    migrateTaskCompletionHistory() {
+      if (!this.taskList) return;
+      this.taskList.forEach((task) => {
+        if (
+          task.completionHistory &&
+          (!task.completionHistory1 || task.completionHistory1.length === 0)
+        ) {
+          task.completionHistory1 = [...task.completionHistory];
+        }
+        if (!task.completionHistory1) {
+          task.completionHistory1 = [];
+        }
+        if (!task.completionHistory2) {
+          task.completionHistory2 = [];
+        }
+        task.completionHistory1.sort((a, b) => new Date(b) - new Date(a));
+        task.completionHistory2.sort((a, b) => new Date(b) - new Date(a));
+      });
     },
     toggleSubjectSummary(index) {
       this.$set(
@@ -18062,7 +19338,8 @@ export default {
           questionType: this.form.questionType?.trim(),
           improveMethod: this.form.improveMethod?.trim(),
           completedToday: false,
-          completionHistory: [],
+          completionHistory1: [],
+          completionHistory2: [],
         };
         this.taskList.push(newA);
       }
@@ -19542,6 +20819,7 @@ export default {
           this.finalCheatSheet = importData.finalCheatSheet || [];
           this.mistaker = importData.mistaker || [];
           this.taskList = importData.taskList || [];
+          this.migrateTaskCompletionHistory();
           this.backupFiles = importData.backupFiles || [];
           this.dtMindMaps = importData.dtMindMaps || [];
           this.testInterval =
@@ -19616,6 +20894,7 @@ export default {
         this.finalCheatSheet = importData.finalCheatSheet || [];
         this.mistaker = importData.mistaker || [];
         this.taskList = importData.taskList || [];
+        this.migrateTaskCompletionHistory();
         this.backupFiles = importData.backupFiles || [];
         this.dtMindMaps = importData.dtMindMaps || [];
         this.testInterval =
@@ -19673,6 +20952,7 @@ export default {
       this.finalCheatSheet = importData.finalCheatSheet || [];
       this.mistaker = importData.mistaker || [];
       this.taskList = importData.taskList || [];
+      this.migrateTaskCompletionHistory();
       this.backupFiles = importData.backupFiles || [];
       this.dtMindMaps = importData.dtMindMaps || [];
       this.testInterval =
@@ -19971,6 +21251,18 @@ export default {
   border-radius: 8px;
 }
 
+/* 日积月累任务列表：固定标题行与表头，仅任务表格体滚动 */
+.task-view {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 90px);
+  overflow: hidden;
+}
+
+.task-view > .task-view-header {
+  flex-shrink: 0;
+}
+
 .filter-section {
   margin: 5px 0;
   padding: 8px;
@@ -20063,6 +21355,189 @@ export default {
 .error-list,
 .task-list {
   margin-top: 0;
+}
+
+.task-calendar-wrap {
+  margin-top: 12px;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 2px solid #90a4ae;
+  border-radius: 6px;
+  background: white;
+}
+
+.task-calendar-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 13px;
+  table-layout: auto;
+}
+
+.task-calendar-table thead th {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  font-weight: 600;
+  padding: 8px 6px;
+  border-bottom: 2px solid #1a73e8;
+  border-right: 1px solid #b0bec5;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.task-calendar-table thead th:last-child {
+  border-right: none;
+}
+
+.task-calendar-table thead th.col-task,
+.task-calendar-table tbody td.col-task {
+  text-align: left;
+}
+
+.task-calendar-table thead th.col-task {
+  min-width: 240px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background-color: #e8f0fe;
+  border-right: 2px solid #90a4ae;
+}
+
+.task-calendar-table thead th.col-action,
+.task-calendar-table tbody td.col-action {
+  min-width: 70px;
+  border-right: 2px solid #90a4ae;
+}
+
+.task-calendar-table thead th.col-day,
+.task-calendar-table tbody td.col-day {
+  min-width: 36px;
+  max-width: 36px;
+  padding: 4px 2px;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.dual-checkbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-calendar-table tbody td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #b0bec5;
+  border-right: 1px solid #cfd8dc;
+  vertical-align: middle;
+}
+
+.task-calendar-table tbody td:last-child {
+  border-right: none;
+}
+
+.task-calendar-table tbody td.col-task {
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 2;
+  min-width: 240px;
+  max-width: 300px;
+  border-right: 2px solid #90a4ae;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+}
+
+.task-calendar-table tbody tr:hover td {
+  background-color: #f8fbff;
+}
+
+.task-calendar-table tbody tr:hover td.col-task {
+  background-color: #f8fbff;
+}
+
+.cal-task-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.cal-task-header .task-id {
+  font-weight: bold;
+  color: #3498db;
+}
+
+.cal-task-content {
+  color: #333;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-calendar-table th.today,
+.task-calendar-table td.today {
+  background-color: #fff4e5 !important;
+  color: #d84315;
+  font-weight: bold;
+}
+
+.task-calendar-table td.col-day.past {
+  background-color: #f2f2f2;
+  color: #999;
+}
+
+.task-calendar-table td.col-day.past.done-both {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.task-calendar-table td.col-day.past.done-partial {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.task-calendar-table td.col-day.today.done-both {
+  background-color: #c8e6c9 !important;
+}
+
+.task-calendar-table td.col-day.today.done-partial {
+  background-color: #ffe0b2 !important;
+}
+
+.task-calendar-table td.col-day.future {
+  background-color: #fafafa;
+}
+
+.task-calendar-table td.col-day .completion-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.task-calendar-table td.col-day .completion-checkbox.user1 {
+  accent-color: #1976d2;
+}
+
+.task-calendar-table td.col-day .completion-checkbox.user2 {
+  accent-color: #e91e63;
+}
+
+.task-calendar-table td.col-day.past .completion-checkbox {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.task-calendar-table td.col-day.future {
+  color: #bbb;
 }
 
 .error-item,
@@ -22785,89 +24260,727 @@ img {
 }
 
 /* 列表页面样式 */
+/* ==================== 首页样式 ==================== */
 .dt-home-wrapper {
   width: 100%;
   height: 100%;
-  background-color: #f5f5f5;
+  background: linear-gradient(160deg, #f0f5ff 0%, #e8f4f8 40%, #f5f0ff 100%);
   display: flex;
-  justify-content: center;
-  padding-top: 50px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
+/* 背景装饰圆 */
+.dt-home-bg-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dt-home-bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+}
+
+.dt-home-bg-circle-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #4facfe 0%, transparent 70%);
+  top: -180px;
+  right: -100px;
+  animation: dt-bg-float 12s ease-in-out infinite;
+}
+
+.dt-home-bg-circle-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #00f2fe 0%, transparent 70%);
+  bottom: -120px;
+  left: -80px;
+  animation: dt-bg-float 15s ease-in-out infinite reverse;
+}
+
+.dt-home-bg-circle-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: dt-bg-float 10s ease-in-out infinite 3s;
+}
+
+@keyframes dt-bg-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(30px, -20px);
+  }
+  66% {
+    transform: translate(-20px, 15px);
+  }
+}
+
+/* 主容器 */
 .dt-home-container {
-  width: 800px;
-  max-width: 90%;
-  max-height: calc(100vh - 100px);
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 30px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  width: 720px;
+  max-width: 98%;
+  max-height: calc(100vh - 60px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 40px 36px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
   overflow-y: auto;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
 }
 
-.dt-home-header-actions {
+.dt-home-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dt-home-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dt-home-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+}
+
+/* 品牌头部 */
+.dt-home-brand {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
-.dt-home-header-actions button:nth-child(2) {
+.dt-home-brand-icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  animation: dt-brand-pulse 3s ease-in-out infinite;
+}
+
+@keyframes dt-brand-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.dt-home-brand-icon svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 12px rgba(79, 172, 254, 0.4));
+}
+
+.dt-home-brand-text h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}
+
+.dt-home-brand-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #8892a4;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* 操作按钮区 */
+.dt-home-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.dt-home-btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #4facfe 0%, #00c6fb 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.35);
+  white-space: nowrap;
+}
+
+.dt-home-btn-create svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.dt-home-btn-create:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79, 172, 254, 0.45);
+  background: linear-gradient(135deg, #3d9be8 0%, #00b8e8 100%);
+}
+
+.dt-home-btn-create:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+.dt-home-actions-secondary {
+  display: flex;
+  gap: 8px;
   margin-left: auto;
 }
 
-.dt-home-container h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+.dt-home-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5a6b80;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
 }
 
-.dt-home-container .dt-btn {
+.dt-home-btn-outline svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.dt-home-btn-outline:hover {
+  color: #4facfe;
+  border-color: rgba(79, 172, 254, 0.3);
+  background: rgba(79, 172, 254, 0.06);
+  box-shadow: 0 2px 8px rgba(79, 172, 254, 0.12);
+}
+
+.dt-home-btn-outline:hover svg {
+  opacity: 1;
+}
+
+/* 列表头部 */
+.dt-home-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
-  display: block;
-  color: white;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+.dt-home-list-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.dt-home-list-count {
+  font-size: 13px;
+  color: #a0aec0;
+  font-weight: 400;
+}
+
+/* 导图列表 */
 .dt-mind-map-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 .dt-mind-map-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  gap: 16px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s;
-  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
   overflow: hidden;
+}
+
+.dt-mind-map-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #4facfe, #00f2fe);
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .dt-mind-map-item:hover {
-  background-color: #ecf5ff;
-  transform: scale(1.005);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(79, 172, 254, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transform: translateX(4px);
 }
 
+.dt-mind-map-item:hover::before {
+  opacity: 1;
+}
+
+.dt-mind-map-item:active {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.dt-mind-map-item-highlight {
+  background: rgba(79, 172, 254, 0.08);
+  border-color: rgba(79, 172, 254, 0.2);
+  box-shadow:
+    0 0 0 2px rgba(79, 172, 254, 0.15),
+    0 4px 16px rgba(79, 172, 254, 0.1);
+  animation: dt-highlight-pulse 0.6s ease-out;
+}
+
+.dt-mind-map-item-highlight::before {
+  opacity: 1;
+}
+
+@keyframes dt-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.4);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(79, 172, 254, 0.15),
+      0 4px 16px rgba(79, 172, 254, 0.1);
+  }
+}
+
+/* 列表项图标 */
+.dt-mind-map-item-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eef6ff 0%, #e0f4ff 100%);
+  border-radius: 12px;
+  color: #4facfe;
+  transition: all 0.25s ease;
+}
+
+.dt-mind-map-item:hover .dt-mind-map-item-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00c6fb 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.dt-mind-map-item-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 列表项信息 */
 .dt-mind-map-info {
   flex: 1;
   overflow: hidden;
+  min-width: 0;
 }
 
 .dt-mind-map-info h3 {
-  margin: 0 0 5px 0;
-  color: #409eff;
-  font-size: 16px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a202c;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
-.dt-mind-map-info p {
-  margin: 0;
-  color: #666;
-  font-size: 12px;
+.dt-mind-map-meta {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 13px;
+  color: #8892a4;
 }
+
+.dt-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dt-meta-item svg {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.dt-meta-divider {
+  width: 1px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 0 10px;
+}
+
+/* 列表项操作按钮 */
+.dt-mind-map-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: all 0.25s ease;
+}
+
+.dt-mind-map-item:hover .dt-mind-map-item-actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.dt-home-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dt-home-item-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dt-home-item-btn-delete {
+  background: rgba(245, 101, 101, 0.06);
+  color: #f56565;
+}
+
+.dt-home-item-btn-delete:hover {
+  background: linear-gradient(135deg, #f56565 0%, #fc8181 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+}
+
+/* 空状态 */
+.dt-home-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 36px;
+  animation: dt-empty-fade-in 0.6s ease;
+}
+
+@keyframes dt-empty-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dt-home-empty-icon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 20px;
+  animation: dt-empty-bob 4s ease-in-out infinite;
+}
+
+@keyframes dt-empty-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.dt-home-empty-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dt-home-empty h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.dt-home-empty p {
+  margin: 0;
+  font-size: 14px;
+  color: #a0aec0;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* 底部版权 */
+.dt-home-footer {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.2);
+  padding: 16px 0;
+  letter-spacing: 0.5px;
+}
+
+/* ==================== 首页移动端适配 ==================== */
+@media screen and (max-width: 600px) {
+  .dt-home-wrapper {
+    justify-content: flex-start;
+  }
+
+  .dt-home-bg-circle-1 {
+    width: 280px;
+    height: 280px;
+    top: -100px;
+    right: -60px;
+    filter: blur(60px);
+  }
+
+  .dt-home-bg-circle-2 {
+    width: 220px;
+    height: 220px;
+    bottom: -60px;
+    left: -40px;
+    filter: blur(60px);
+  }
+
+  .dt-home-bg-circle-3 {
+    width: 180px;
+    height: 180px;
+    filter: blur(50px);
+  }
+
+  .dt-home-container {
+    max-width: 96%;
+    padding: 16px 8px;
+    border-radius: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    max-height: calc(100vh - 40px);
+  }
+
+  /* 品牌区缩小 */
+  .dt-home-brand {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .dt-home-brand-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .dt-home-brand-text h1 {
+    font-size: 20px;
+    letter-spacing: -0.3px;
+  }
+
+  .dt-home-brand-subtitle {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  /* 按钮区换行 */
+  .dt-home-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .dt-home-btn-create {
+    flex: 1 1 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .dt-home-actions-secondary {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .dt-home-btn-outline {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* 列表 */
+  .dt-home-list-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .dt-home-list-header h2 {
+    font-size: 15px;
+  }
+
+  .dt-home-list-count {
+    font-size: 12px;
+  }
+
+  /* 列表项：手机上操作按钮常显，去掉 hover 依赖 */
+  .dt-mind-map-item {
+    gap: 12px;
+    padding: 14px 14px;
+    border-radius: 12px;
+  }
+
+  .dt-mind-map-item:hover {
+    transform: none;
+  }
+
+  .dt-mind-map-item:active {
+    transform: none;
+    background: rgba(79, 172, 254, 0.06);
+  }
+
+  .dt-mind-map-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .dt-mind-map-item-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .dt-mind-map-info h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .dt-mind-map-meta {
+    font-size: 12px;
+  }
+
+  .dt-meta-divider {
+    margin: 0 8px;
+  }
+
+  .dt-mind-map-item-actions {
+    opacity: 1;
+    transform: none;
+  }
+
+  .dt-home-item-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* 空状态缩小 */
+  .dt-home-empty {
+    padding: 32px 16px 24px;
+  }
+
+  .dt-home-empty-icon {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 16px;
+  }
+
+  .dt-home-empty h3 {
+    font-size: 15px;
+  }
+
+  .dt-home-empty p {
+    font-size: 13px;
+  }
+
+  /* 底部 */
+  .dt-home-footer {
+    font-size: 11px;
+    padding: 12px 0;
+  }
+}
+
+/* 超小屏幕（<360px） */
+@media screen and (max-width: 360px) {
+  .dt-home-container {
+    padding: 18px 14px;
+    border-radius: 14px;
+  }
+
+  .dt-home-brand-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .dt-home-brand-text h1 {
+    font-size: 18px;
+  }
+
+  .dt-home-brand-subtitle {
+    font-size: 11px;
+  }
+
+  .dt-mind-map-item {
+    gap: 10px;
+    padding: 12px 12px;
+  }
+
+  .dt-mind-map-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+  }
+}
+
+/* 兼容旧的 .dt-empty-hint（其他地方可能用到） */
 
 .dt-empty-hint {
   text-align: center;
@@ -23177,8 +25290,8 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
-  padding: 16px;
+  gap: 12px;
+  padding: 16px 0;
   background: rgba(255, 255, 255, 0.95);
   border-top: 1px solid #e4e7ed;
 }
@@ -23279,15 +25392,6 @@ img {
 
 .dt-cursor-pointer {
   cursor: pointer;
-}
-
-.dt-btn-danger {
-  background-color: #f56c6c;
-  color: white;
-}
-
-.dt-btn-danger:hover {
-  background-color: #f78989;
 }
 
 .dt-mind-map-title {
@@ -23420,6 +25524,7 @@ img {
 
 .dt-btn-danger {
   background-color: red;
+  color: white;
 }
 
 .dt-btn-danger:hover {
@@ -23433,6 +25538,7 @@ img {
   overflow: hidden;
   cursor: grab;
   will-change: transform;
+  outline: none;
 }
 
 .dt-mind-map-container:active {
@@ -23893,13 +25999,8 @@ img {
 
 /* 高亮节点样式 - 标签和收藏共用 */
 .dt-node-content.dt-tag-highlight {
-  background-color: #409eff !important;
-  color: #fff !important;
+  background: #409eff !important;
   border-color: #409eff !important;
-}
-
-.dt-node-content.dt-tag-highlight > span {
-  color: #fff !important;
 }
 
 .dt-node-content.dt-tag-highlight .dt-blank {
@@ -23994,15 +26095,16 @@ img {
 
 .dt-edit-modal-content {
   background-color: #fff;
-  padding: 20px;
+  padding: 10px;
   border-radius: 8px;
-  width: 800px;
-  max-width: 90%;
-  max-height: 85vh;
+  width: 1000px;
+  max-width: 100%;
+  height: 95vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
 .dt-edit-modal-content h3 {
   margin: 0 0 15px 0;
   font-size: 16px;
@@ -24207,6 +26309,43 @@ img {
   border-radius: 4px;
   font-size: 14px;
   outline: none;
+}
+
+.dt-settings-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 16px 0;
+}
+
+.dt-settings-range {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #e4e7ed;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dt-settings-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #409eff;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dt-settings-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #409eff;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .dt-settings-input:focus {
@@ -24612,11 +26751,11 @@ img {
 }
 
 /* 清晰主题 - 大字体高对比度 */
-.dt-theme-presbyopia {
+.dt-theme-clearview {
   --line-color: #4a5568;
 }
 
-.dt-theme-presbyopia .dt-node-content {
+.dt-theme-clearview .dt-node-content {
   --node-color: #2d3748;
   background-color: #ffffff;
   border: 2px solid #4a5568;
@@ -24624,12 +26763,12 @@ img {
   font-size: 14px !important;
 }
 
-.dt-theme-presbyopia .dt-node-content-text {
+.dt-theme-clearview .dt-node-content-text {
   color: #2d3748;
   font-size: 14px !important;
 }
 
-.dt-theme-presbyopia .dt-node-content.dt-root {
+.dt-theme-clearview .dt-node-content.dt-root {
   --node-color: #2b6cb0;
   background-color: cyan;
   color: #fff;
@@ -24637,64 +26776,64 @@ img {
   font-size: 16px !important;
 }
 
-.dt-theme-presbyopia .dt-node-content.dt-root .dt-node-content-text {
+.dt-theme-clearview .dt-node-content.dt-root .dt-node-content-text {
   font-size: 16px !important;
 }
 
-.dt-theme-presbyopia .dt-node-content.dt-selected {
+.dt-theme-clearview .dt-node-content.dt-selected {
   outline: 2px dashed #38a169;
   outline-offset: 2px;
 }
 
-.dt-theme-presbyopia .dt-node-content.dt-selected:hover {
+.dt-theme-clearview .dt-node-content.dt-selected:hover {
   background-color: #ffffff;
 }
 
-.dt-theme-presbyopia .dt-node-content.dt-root.dt-selected:hover {
+.dt-theme-clearview .dt-node-content.dt-root.dt-selected:hover {
   background-color: cyan;
 }
 
-.dt-theme-presbyopia .dt-mind-map-wrapper {
+.dt-theme-clearview .dt-mind-map-wrapper {
   background-color: #f7fafc;
 }
 
-.dt-theme-presbyopia .dt-toolbar {
+.dt-theme-clearview .dt-toolbar {
   background-color: #edf2f7;
   border-bottom: 2px solid #cbd5e0;
 }
 
-.dt-theme-presbyopia .dt-btn {
+.dt-theme-clearview .dt-btn {
   background-color: beige;
   color: #1296db;
 }
 
-.dt-theme-presbyopia .dt-btn:hover {
+.dt-theme-clearview .dt-btn:hover {
   background-color: wheat;
 }
 
-.dt-theme-presbyopia .dt-home-container h1 {
+.dt-theme-clearview .dt-home-container h1 {
   font-size: 22px;
 }
 
-.dt-theme-presbyopia .dt-mind-map-item {
+.dt-theme-clearview .dt-mind-map-item {
   font-size: 14px;
 }
 
-.dt-theme-presbyopia .dt-search-input {
+.dt-theme-clearview .dt-search-input {
   font-size: 14px;
   padding: 8px 12px;
   border-width: 2px;
 }
 
-.dt-theme-presbyopia .dt-search-result-text {
+.dt-theme-clearview .dt-search-result-text {
   font-size: 14px;
 }
 
-.dt-theme-presbyopia .dt-search-result-level {
+.dt-theme-clearview .dt-search-result-level {
   font-size: 13px;
 }
 
-.dt-theme-presbyopia .dt-btn:disabled {
+.dt-theme-clearview .dt-btn:disabled {
   font-size: 14px;
   padding: 6px 14px;
   background-color: #bfc9c5;
@@ -24995,82 +27134,82 @@ img {
 }
 
 /* 清晰主题 - 清晰易读 */
-.dt-theme-presbyopia .dt-outline-container {
+.dt-theme-clearview .dt-outline-container {
   background-color: #f7fafc;
 }
 
-.dt-theme-presbyopia .dt-outline-node {
+.dt-theme-clearview .dt-outline-node {
   background-color: #ffffff;
   border: 2px solid #4a5568;
   color: #2d3748;
   font-size: 14px !important;
 }
 
-.dt-theme-presbyopia .dt-outline-node:hover {
+.dt-theme-clearview .dt-outline-node:hover {
   background-color: #ebf8ff;
 }
 
-.dt-theme-presbyopia .dt-outline-root-node {
+.dt-theme-clearview .dt-outline-root-node {
   background-color: #3182ce;
   border-color: #2b6cb0;
   color: #fff;
   font-size: 16px !important;
 }
 
-.dt-theme-presbyopia .dt-outline-selected {
+.dt-theme-clearview .dt-outline-selected {
   background-color: #ebf8ff !important;
   border-color: #3182ce !important;
   border-width: 2px !important;
 }
 
-.dt-theme-presbyopia .dt-outline-root-node.dt-outline-selected {
+.dt-theme-clearview .dt-outline-root-node.dt-outline-selected {
   color: #fff;
 }
 
-.dt-theme-presbyopia .dt-outline-level-number {
+.dt-theme-clearview .dt-outline-level-number {
   background-color: #3182ce;
   color: #fff;
   font-size: 13px;
   padding: 2px 10px;
 }
 
-.dt-theme-presbyopia .dt-outline-bullet {
+.dt-theme-clearview .dt-outline-bullet {
   color: #718096;
 }
 
-.dt-theme-presbyopia .dt-outline-toggle {
+.dt-theme-clearview .dt-outline-toggle {
   color: #718096;
   font-size: 13px;
 }
 
-.dt-theme-presbyopia .dt-outline-toggle:hover {
+.dt-theme-clearview .dt-outline-toggle:hover {
   color: #2d3748;
 }
 
-.dt-theme-presbyopia .dt-outline-node-text {
+.dt-theme-clearview .dt-outline-node-text {
   color: #2d3748;
   font-size: 14px !important;
 }
 
-.dt-theme-presbyopia .dt-outline-root-text {
+.dt-theme-clearview .dt-outline-root-text {
   color: #fff;
   font-size: 16px !important;
 }
 
-.dt-theme-presbyopia .dt-outline-favorite {
+.dt-theme-clearview .dt-outline-favorite {
   color: #ecc94b;
   font-size: 14px;
 }
 
-.dt-theme-presbyopia .dt-outline-meta {
+.dt-theme-clearview .dt-outline-meta {
   color: #718096;
 }
 
-.dt-theme-presbyopia .dt-outline-description {
+.dt-theme-clearview .dt-outline-description {
   color: #4a5568;
 }
 
-.dt-theme-presbyopia .dt-outline-attachments {
+.dt-theme-clearview .dt-outline-attachments {
   color: #4a5568;
 }
 
@@ -25559,5 +27698,229 @@ body.mistakebook-no-scroll {
 
 .dt-blank-show {
   color: #000;
+}
+.dt-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dt-ai-warning {
+  font-size: 12px;
+  color: red;
+  width: 30%;
+  text-align: left;
+}
+
+.dt-ai-form {
+  margin-bottom: 20px;
+}
+
+.dt-ai-form-item {
+  margin-bottom: 16px;
+}
+
+.dt-ai-form-item label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #303133;
+}
+
+.dt-ai-input-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.dt-ai-input-textarea:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.dt-ai-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.dt-ai-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.dt-ai-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #606266;
+}
+
+.dt-ai-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #409eff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.dt-speech-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dt-speech-overlay-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+.dt-speech-overlay-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 1000px;
+  height: 90vh;
+  overflow: hidden;
+  animation: speechOverlayIn 0.3s ease-out;
+}
+
+@keyframes speechOverlayIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dt-speech-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #1296db 0%, #1890ff 100%);
+  color: #fff;
+}
+
+.dt-speech-overlay-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.dt-speech-overlay-counter {
+  font-size: 14px;
+  opacity: 0.9;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dt-speech-counter-separator {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: bold;
+}
+
+.dt-speech-overlay-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.dt-speech-current-node {
+  line-height: 1.8;
+}
+
+.dt-speech-label {
+  font-weight: bold;
+  color: #666;
+  display: inline-block;
+  min-width: 50px;
+}
+
+.dt-speech-node-content {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.dt-speech-node-description {
+  font-size: 15px;
+  color: #666;
+  padding: 12px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  border-left: 4px solid #1296db;
+}
+
+.dt-speech-loading {
+  text-align: center;
+  color: #999;
+  font-size: 16px;
+  padding: 40px;
+}
+
+.dt-speech-overlay-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dt-btn-large {
+  padding: 12px 40px;
+  font-size: 16px;
+}
+
+.dt-btn-secondary {
+  background-color: #f5f7fa;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+}
+
+.dt-btn-secondary:hover {
+  background-color: #ecf5ff;
+  color: white;
+  border-color: #b3d8ff;
 }
 </style>
